@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title><%= title || 'Iniciar sesión — MONSELEY' %></title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/css/login.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+  <main class="card" role="main" aria-label="Formulario de acceso">
+    <a href="/" class="back-to-web" title="Volver a la página web">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
+        <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"/>
+      </svg>
+      <span>Volver a la página web</span>
+    </a>
+    <header>
+      <div class="brand" aria-label="Identidad visual">
+        <!-- Coloca tu logo en /public/img/logo.png -->
+      
+        <span class="brand-name">BYGGER SRL · MONSELEY</span>
+      </div>
+        <img src="/img/logo.png" alt="Logo de la empresa" class="logo" />
+      <h1 class="title">Bienvenido de Nuevo</h1>
+      <p class="subtitle">Inicia sesión para acceder a tu cuenta</p>
+    </header>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="error-box" role="alert"><%= error %></div>
+    <% } %>
+
+    <form id="login-form" action="/login" method="post" novalidate>
+      <div class="field">
+        <label for="ci">CI</label>
+        <div class="control" id="wrap-ci">
+          <input
+            id="ci" name="ci"
+            type="text"
+            placeholder="Ej. 88728882"
+            inputmode="numeric"
+            autocomplete="username"
+            minlength="6" maxlength="12"
+            pattern="\\d{6,12}"
+            required
+            aria-describedby="ci-msg"
+          />
+        </div>
+        <div id="ci-msg" class="msg" aria-live="polite"></div>
+      </div>
+
+      <div class="field">
+        <label for="password">Contraseña</label>
+        <div class="control" id="wrap-password">
+          <input
+            id="password" name="password"
+            type="password"
+            placeholder="••••••••"
+            autocomplete="current-password"
+            minlength="6" maxlength="72"
+            required
+            aria-describedby="pwd-msg"
+          />
+          <button type="button" class="toggle" id="toggle-pwd" aria-label="Mostrar contraseña" aria-pressed="false">👁️</button>
+        </div>
+        <div id="pwd-msg" class="msg" aria-live="polite"></div>
+      </div>
+
+      <button id="btn-submit" type="submit" class="btn">Iniciar sesión</button>
+    </form>
+
+    <p class="foot">© <%= new Date().getFullYear() %> BYGGER SRL · Todos los derechos reservados.</p>
+  </main>
+
+  <script>
+    // Utilidad
+    const $ = s => document.querySelector(s);
+
+    const form   = $('#login-form');
+    const ci     = $('#ci');
+    const pwd    = $('#password');
+    const btn    = $('#btn-submit');
+    const wrapCI = $('#wrap-ci');
+    const wrapPW = $('#wrap-password');
+    const msgCI  = $('#ci-msg');
+    const msgPW  = $('#pwd-msg');
+    const toggle = $('#toggle-pwd');
+
+    // --- Toggle "ojito" ---
+    function togglePwd(){
+      const show = pwd.type === 'password';
+      pwd.type = show ? 'text' : 'password';
+      toggle.setAttribute('aria-pressed', String(show));
+      toggle.setAttribute('aria-label', show ? 'Ocultar contraseña' : 'Mostrar contraseña');
+      // Mantener foco accesible
+      toggle.focus({ preventScroll: true });
+    }
+    toggle.addEventListener('click', togglePwd);
+    toggle.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); togglePwd(); } });
+
+    // --- Validaciones en vivo ---
+    function setErr(ctrlEl, msgEl, text){
+      ctrlEl.classList.add('error');
+      msgEl.textContent = text;
+      msgEl.classList.add('error');
+    }
+    function clearErr(ctrlEl, msgEl){
+      ctrlEl.classList.remove('error');
+      msgEl.textContent = '';
+      msgEl.classList.remove('error');
+    }
+
+    function validateCI(){
+      const v = ci.value.trim();
+      if(!/^\d{6,12}$/.test(v)){
+        setErr(wrapCI, msgCI, 'Ingresa 6–12 dígitos (solo números).');
+        return false;
+      }
+      clearErr(wrapCI, msgCI);
+      return true;
+    }
+
+    function validatePwd(){
+      const v = pwd.value;
+      if(!v || v.length < 6){
+        setErr(wrapPW, msgPW, 'La contraseña debe tener al menos 6 caracteres.');
+        return false;
+      }
+      clearErr(wrapPW, msgPW);
+      return true;
+    }
+
+    function updateButton(){
+      btn.disabled = !(validateCI() && validatePwd());
+    }
+
+    ci.addEventListener('input', updateButton);
+    pwd.addEventListener('input', updateButton);
+
+    form.addEventListener('submit', (e) => {
+      const ok = validateCI() && validatePwd();
+      if(!ok){ e.preventDefault(); return; }
+      btn.disabled = true;
+      btn.textContent = 'Ingresando…';
+    });
+
+    // Estado inicial
+    updateButton();
+
+    // Mensaje de error del servidor (ya manejado arriba con .error-box),
+    // pero si prefieres SweetAlert, descomenta:
+    <% if (typeof error !== 'undefined' && error) { %>
+       Swal.fire({ icon:'error', title:'Error', text:'<%= error %>' });
+    <% } %>
+  </script>
+</body>
+</html>

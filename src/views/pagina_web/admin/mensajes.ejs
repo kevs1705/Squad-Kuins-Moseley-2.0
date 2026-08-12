@@ -1,0 +1,74 @@
+<%
+  pageTitle = 'Mensajes';
+  pageSubtitle = 'Mensajes recibidos desde la web';
+%>
+<%- include('../../partials/header') %>
+
+<style>
+  /* Estilos específicos de mensajes */
+  .toolbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; }
+  .search { flex:1; min-width:220px; height:40px; border-radius:10px; border:1px solid var(--border); background:#0b1628; color:var(--text); padding:0 12px; }
+  .table-wrap { overflow:auto; border:1px solid var(--border); border-radius:14px; }
+  table { width:100%; border-collapse:collapse; min-width:720px; }
+  th, td { padding:12px 14px; border-bottom:1px solid rgba(255,255,255,0.06); text-align:left; font-size:14px; vertical-align:top; }
+  th { color:var(--muted); background:#0b1c30; position:sticky; top:0; z-index:1; }
+  tr:hover td { background:rgba(255,255,255,0.02); }
+  @media (max-width: 720px) {
+    .toolbar { flex-direction:column; align-items:stretch; }
+    .search { width:100%; }
+  }
+</style>
+
+<div class="panel">
+  <div class="toolbar">
+    <span class="muted">Filtrar mensajes:</span>
+    <input id="q" class="search" placeholder="Buscar por nombre, email o asunto">
+  </div>
+</div>
+
+    <section class="panel">
+      <div class="table-wrap">
+        <table id="tbl">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nombre</th>
+              <th>Email</th>
+              <th>Teléfono</th>
+              <th>Asunto</th>
+              <th>Mensaje</th>
+              <th>Fecha</th>
+            </tr>
+          </thead>
+          <tbody id="tbody">
+            <% (mensajes || []).forEach(m => { %>
+              <tr>
+                <td><%= m.id %></td>
+                <td><%= m.nombre %></td>
+                <td><%= m.email %></td>
+                <td><%= m.telefono || '-' %></td>
+                <td><%= m.asunto || '-' %></td>
+                <td style="white-space:pre-wrap;"><%= m.mensaje %></td>
+                <td><%= m.fecha_envio ? new Date(m.fecha_envio).toLocaleString() : '-' %></td>
+              </tr>
+            <% }) %>
+            <% if (!mensajes || mensajes.length === 0) { %>
+              <tr><td colspan="7" class="muted">Sin mensajes aún.</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  <script>
+    const q = document.getElementById('q');
+    const tbody = document.getElementById('tbody');
+    q.addEventListener('input', () => {
+      const val = q.value.toLowerCase();
+      [...tbody.rows].forEach(tr => {
+        const cells = [...tr.cells].map(c => c.textContent.toLowerCase()).join(' ');
+        tr.style.display = cells.includes(val) ? '' : 'none';
+      });
+    });
+  </script>
+<%- include('../../partials/footer') %>

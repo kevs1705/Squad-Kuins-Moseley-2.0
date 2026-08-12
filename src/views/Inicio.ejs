@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inicio | TRIXIA V1.0</title>
+  <style>
+    :root {
+      --bg: #0b1628;
+      --text: #f5f7fb;
+      --muted: #9fb1c8;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(circle at 20% 20%, rgba(39,154,228,0.12), transparent 35%),
+                  radial-gradient(circle at 80% 30%, rgba(255,255,255,0.06), transparent 30%),
+                  var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      position: relative;
+      overflow: hidden;
+    }
+    .logo {
+      width: 220px;
+      max-width: 60vw;
+      height: auto;
+      filter: drop-shadow(0 8px 25px rgba(0,0,0,0.35));
+    }
+    .system-name {
+      margin-top: 12px;
+      font-size: 20px;
+      letter-spacing: 2px;
+      color: var(--muted);
+    }
+    .watermark {
+      position: absolute;
+      right: 18px;
+      bottom: 14px;
+      font-size: 14px;
+      letter-spacing: 1px;
+      color: rgba(255,255,255,0.65);
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+  <div class="center">
+    <img src="/img/logo.png" alt="Logo TRIXIA" class="logo" loading="lazy" decoding="async">
+    <div class="system-name">TRIXIA V1.0</div>
+  </div>
+
+  <div class="watermark">TRIXIA V1.0</div>
+</body>
+</html>

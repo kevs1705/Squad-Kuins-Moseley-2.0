@@ -1,0 +1,26 @@
+<aside class="sidebar">
+  <div class="sidebar__brand">
+    <img src="/img/logo.png" alt="Logo BYGGER SRL" loading="lazy" decoding="async" />
+    <div>
+      <div class="sidebar__title">BYGGER SRL</div>
+      <div class="muted">Panel MONSELEY</div>
+    </div>
+  </div>
+
+  <nav aria-label="Navegación principal">
+    <a href="/cuenta" class="sidebar-link">Mi Cuenta</a>
+
+    <% if (user && user.rol === 0) { %>
+      <a href="/reporte" class="sidebar-link">Reporte</a>
+    <% } %>
+
+    <% if (user && user.rol === 1) { %>
+      <a href="/admin/reportes" class="sidebar-link">Reporte</a>
+      <a href="/usuarios" class="sidebar-link">Usuarios</a>
+      <a href="/admin/pagina-web" class="sidebar-link">Administrar página web</a>
+      <a href="/admin/mensajes" class="sidebar-link">Mensajes web</a>
+    <% } %>
+
+    <a href="/logout" class="btn-danger">Cerrar sesión</a>
+  </nav>
+</aside>

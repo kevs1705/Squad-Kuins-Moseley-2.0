@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Estadísticas — MONSELEY</title>
+  <meta name="color-scheme" content="dark light" />
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <main class="container">
+    <section class="card">
+      <div class="toolbar justify-between">
+        <div>
+          <h1 class="h1 m-0">Estadísticas</h1>
+          <p class="subtitle mb-0">Horas por semana, totales por pasante y KPI</p>
+        </div>
+        <div class="toolbar">
+          <a href="/admin/reportes" class="btn btn--secondary">🏠 Volver</a>
+        </div>
+      </div>
+
+      <div class="row mt-3">
+        <!-- Izquierda: Lineal -->
+        <div class="col-2">
+          <div class="panel">
+            <div class="toolbar justify-between mb-3">
+              <div class="toolbar gap-2">
+                <h2 class="h2 m-0">Tendencia semanal</h2>
+                <span class="chip chip--info">Interactivo</span>
+              </div>
+              <div class="toolbar gap-2">
+                <label for="sel-user" class="muted">Pasante:</label>
+                <select id="sel-user" class="select">
+                  <% (users || []).forEach(u => { %>
+                    <option value="<%= u.id_usuario %>"><%= u.nombre %></option>
+                  <% }) %>
+                </select>
+              </div>
+            </div>
+            <div class="chart-box">
+              <canvas id="lineChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Derecha: Pastel + KPI -->
+        <div class="col-2">
+          <div class="panel mb-3">
+            <div class="toolbar justify-between mb-3">
+              <h2 class="h2 m-0">Horas totales por pasante</h2>
+              <span class="chip chip--ok">Acumulado</span>
+            </div>
+            <div class="chart-box chart-box--sm">
+              <canvas id="pieChart"></canvas>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="toolbar justify-between">
+              <h2 class="h2 m-0">Total de pasantes</h2>
+              <span id="kpi-pasantes" class="h2 m-0"><%= totalPasantes %></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+<script>
+  // ====== Tema ======
+  const cssVar = (n,f)=>getComputedStyle(document.documentElement).getPropertyValue(n).trim()||f;
+  const colorText   = cssVar('--text','#e5e7eb');
+  const colorMuted  = cssVar('--muted','#94a3b8');
+  const colorBorder = cssVar('--border','#27324c');
+  const colorBrand  = cssVar('--brand','#24c58a');
+
+  // ====== Helpers ======
+  const $ = s => document.querySelector(s);
+  const selUser = $('#sel-user');
+  const kpiNode = $('#kpi-pasantes');
+
+  const commonScales = {
+    x:{ ticks:{ color: colorMuted, maxRotation: 0 }, grid:{ color: colorBorder } },
+    y:{ ticks:{ color: colorMuted }, grid:{ color: colorBorder } }
+  };
+  const commonPlugins = { legend:{ labels:{ color: colorText } }, title:{ color: colorText } };
+
+  // ====== Charts ======
+  const lineChart = new Chart(document.getElementById('lineChart'), {
+    type: 'line',
+    data: { labels: [], datasets: [
+      {
+        label: 'Horas por semana',
+        data: [],
+        borderColor: colorBrand,
+        backgroundColor: colorBrand + '33',
+        fill: true,
+        tension: .35,
+        pointRadius: 3,
+        pointHoverRadius: 5
+      },
+      {
+        label: 'Acumulado',
+        data: [],
+        borderColor: '#60a5fa',
+        backgroundColor: '#60a5fa33',
+        fill: false,
+        tension: .35,
+        pointRadius: 0,
+        pointHoverRadius: 3,
+        borderDash: [6,4]
+      }
+    ] },
+    options: { responsive: true, maintainAspectRatio: false, scales: commonScales, plugins: commonPlugins }
+  });
+
+  const pieChart = new Chart(document.getElementById('pieChart'), {
+  type: 'pie',
+  data: { 
+    labels: [], 
+    datasets: [{
+      data: [],
+      backgroundColor: [
+        '#22c55e', // verde
+        '#3b82f6', // azul
+        '#f59e0b', // naranja
+        '#ef4444', // rojo
+        '#8b5cf6', // violeta
+        '#14b8a6', // turquesa
+        '#eab308', // amarillo
+        '#ec4899'  // rosa
+      ],
+      borderColor: '#141c2f', // mismo que panel oscuro
+      borderWidth: 2
+    }] 
+  },
+  options: { 
+    responsive: true, 
+    maintainAspectRatio: false, 
+    plugins: commonPlugins 
+  }
+});
+
+
+  // ====== Data loaders ======
+  async function loadPie(){
+    const r = await fetch('/api/graficos/pie');
+    const j = await r.json();
+    if (!j.ok) return;
+    pieChart.data.labels = j.labels;
+    pieChart.data.datasets[0].data = j.data;
+    pieChart.update();
+  }
+
+  async function loadKPI(){
+    const r = await fetch('/api/graficos/kpi');
+    const j = await r.json();
+    if (j.ok && kpiNode) kpiNode.textContent = j.total;
+  }
+
+  async function loadLine(userId){
+    if (!userId) return;
+    const r = await fetch(`/api/graficos/line?userId=${encodeURIComponent(userId)}`);
+    const j = await r.json();
+    if (!j.ok) return;
+
+    lineChart.data.labels = j.labels;
+    lineChart.data.datasets[0].data = j.horas;
+    lineChart.data.datasets[1].data = j.acumulado;
+    lineChart.update();
+  }
+
+  // ====== Eventos ======
+  selUser?.addEventListener('change', () => loadLine(selUser.value));
+
+  // ====== Init ======
+  (async () => {
+    // Si no hay usuarios en EJS, intenta cargarlos por API (fallback)
+    if (!selUser || selUser.options.length === 0) {
+      const ru = await fetch('/api/graficos/usuarios');
+      const ju = await ru.json();
+      if (ju.ok) {
+        ju.data.forEach(u => {
+          const opt = document.createElement('option');
+          opt.value = u.id_usuario; opt.textContent = u.nombre;
+          selUser.appendChild(opt);
+        });
+      }
+    }
+    if (selUser && selUser.value) await loadLine(selUser.value);
+    await loadPie();
+    await loadKPI();
+
+    // Ajustes responsivos suaves
+    const mq = window.matchMedia('(max-width: 768px)');
+    function applyTweaks(){
+      const isMobile = mq.matches;
+      lineChart.options.plugins.legend.position = isMobile ? 'bottom' : 'top';
+      pieChart.options.plugins.legend.position  = isMobile ? 'bottom' : 'top';
+      lineChart.update('none'); pieChart.update('none');
+    }
+    mq.addEventListener ? mq.addEventListener('change', applyTweaks)
+                        : mq.addListener(applyTweaks);
+    applyTweaks();
+  })();
+</script>
+</body>
+</html>

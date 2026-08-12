@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Verificación de presencia</title>
+
+  <link rel="stylesheet" href="/css/geofence.css">
+
+  <!-- Leaflet -->
+  <link rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+        crossorigin>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+          crossorigin></script>
+
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+  <div class="wrap">
+    <!-- Panel -->
+    <div class="card">
+      <h1>Verificación de presencia en oficina</h1>
+      <p>Para acceder, confirma tu ubicación dentro del radio autorizado.</p>
+      <p class="small">
+        Centro: <b><%= office.lat %>, <%= office.lng %></b> · Radio: <b><%= office.radiusM %> m</b>
+      </p>
+      <button id="btn">Verificar ubicación</button>
+      <div id="log" class="log"></div>
+      <p class="small" style="margin-top:10px">
+        * Consejo: activa el GPS y Wi-Fi para mejor precisión.
+      </p>
+    </div>
+
+    <!-- Mapa -->
+    <div style="position:relative">
+      <div id="map"></div>
+      <div class="legend">
+        <div><span class="dot dot-office"></span>Oficina (círculo verde)</div>
+        <div><span class="dot dot-user"></span>Tu ubicación (círculo de precisión)</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+const btn = document.getElementById('btn');
+const log = document.getElementById('log');
+const redirect = "<%= redirect %>";
+const OFFICE = { lat: <%= office.lat %>, lng: <%= office.lng %>, radiusM: <%= office.radiusM %> };
+
+// Aviso de contexto seguro (mejora precisión)
+(async () => {
+  if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+    await Swal.fire({
+      icon:'info',
+      title:'Recomendación',
+      text:'Para mejor precisión de GPS, usa HTTPS o localhost.'
+    });
+  }
+})();
+
+// --- MAPA ---
+const map = L.map('map', { zoomControl:true, attributionControl:true });
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+  { maxZoom:20, attribution:'&copy; OpenStreetMap contributors' }).addTo(map);
+
+const officeMarker = L.circleMarker([OFFICE.lat, OFFICE.lng], {
+  radius:8, color:'#22c55e', weight:2, fill:true, fillOpacity:1
+}).addTo(map).bindPopup('Centro de oficina');
+
+const officeCircle = L.circle([OFFICE.lat, OFFICE.lng], {
+  radius:OFFICE.radiusM, color:'#22c55e', weight:1.5, fill:true, fillOpacity:0.08
+}).addTo(map);
+
+let userMarker = null;
+let userAccCircle = null;
+map.setView([OFFICE.lat, OFFICE.lng], 17);
+
+function fitAll() {
+  const items = [officeCircle];
+  if (userMarker) items.push(userMarker);
+  const group = L.featureGroup(items);
+  map.fitBounds(group.getBounds().pad(0.2), { animate:true });
+}
+
+function write(s){ log.textContent = s; }
+
+btn.addEventListener('click', verifyPosition);
+
+async function verifyPosition() {
+  write('Solicitando permiso de ubicación…');
+  btn.disabled = true;
+
+  const opts = { enableHighAccuracy:true, maximumAge:15000, timeout:12000 };
+
+  navigator.geolocation.getCurrentPosition(async pos => {
+    const { latitude: lat, longitude: lng, accuracy } = pos.coords;
+
+    // Dibuja/actualiza ubicación del usuario
+    if (!userMarker) {
+      userMarker = L.circleMarker([lat, lng], {
+        radius:8, color:'#eab308', weight:2, fill:true, fillOpacity:1
+      }).addTo(map).bindPopup('Tú');
+    } else {
+      userMarker.setLatLng([lat, lng]);
+    }
+
+    if (!userAccCircle) {
+      userAccCircle = L.circle([lat, lng], {
+        radius:Math.max(accuracy, 1), color:'#eab308', weight:1, fill:true, fillOpacity:0.08
+      }).addTo(map);
+    } else {
+      userAccCircle.setLatLng([lat, lng]).setRadius(Math.max(accuracy, 1));
+    }
+
+    fitAll();
+    write(`Lat: ${lat.toFixed(6)} · Lng: ${lng.toFixed(6)} · Precisión: ${Math.round(accuracy)}m\nVerificando en servidor…`);
+
+    try {
+      const res = await fetch('/api/geofence/verify', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
+        credentials:'include',
+        body: JSON.stringify({ lat, lng, accuracy })
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.ok) {
+        write(`❌ ${data.msg || 'No autorizado'}`);
+        await Swal.fire({
+          icon:'error',
+          title:'Fuera de zona',
+          text:data.msg || 'No estás dentro del área autorizada',
+          confirmButtonText:'Entendido'
+        });
+        btn.disabled = false;
+        return;
+      }
+
+      // ✅ Verificado por geocerca → redirigir
+      write(`✅ ${data.msg} · Distancia: ${data.distanceM} m`);
+      await Swal.fire({
+        icon:'success',
+        title:'Ubicación verificada',
+        html:`Estás dentro de la zona autorizada.<br><small>Distancia: <b>${data.distanceM} m</b>${data.accuracyM ? ` · Precisión: <b>${data.accuracyM} m</b>` : ''}</small>`,
+        timer:1400,
+        showConfirmButton:false
+      });
+      location.assign(redirect);
+
+    } catch (e) {
+      console.error(e);
+      write('Error de red al verificar. Intenta de nuevo.');
+      await Swal.fire({ icon:'warning', title:'Error de red', text:'Reintenta en unos segundos.' });
+      btn.disabled = false;
+    }
+  }, async err => {
+    write('No se pudo obtener la ubicación: ' + err.message);
+    await Swal.fire({ icon:'error', title:'Ubicación bloqueada', text:err.message });
+    btn.disabled = false;
+  }, opts);
+}
+
+// Seguimiento en vivo (opcional)
+navigator.geolocation.watchPosition(p => {
+  const { latitude: lat, longitude: lng, accuracy } = p.coords;
+  if (userMarker) userMarker.setLatLng([lat, lng]);
+  if (userAccCircle) userAccCircle.setLatLng([lat, lng]).setRadius(Math.max(accuracy, 1));
+}, () => {}, { enableHighAccuracy:true, maximumAge:15000, timeout:12000 });
+</script>
+</body>
+</html>

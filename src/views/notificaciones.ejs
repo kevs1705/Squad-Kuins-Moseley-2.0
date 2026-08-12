@@ -1,0 +1,127 @@
+<%
+  pageTitle = 'Notificaciones';
+  pageSubtitle = 'Solicitudes de horas extra — ' + (user ? user.nombre : '');
+%>
+<%- include('partials/header') %>
+
+  <!-- HEADER -->
+  <div class="row">
+    <section class="card col">
+
+      <div class="grid grid-2 gap-2 mt-3">
+        <div class="kv">
+          <span class="label">Nombre</span>
+          <span class="value"><%= user?.nombre || '—' %></span>
+        </div>
+        <div class="kv">
+          <span class="label">Solicitudes</span>
+          <span class="value"><%= (notifs||[]).length %></span>
+        </div>
+      </div>
+    </section>
+
+    <aside class="card col-2" style="max-width:360px">
+       <div class="panel">
+          <div class="grid grid-2 gap-2">
+            <a class="btn max-w" href="/reporte">🏠 Volver</a>
+          </div>
+        </div>
+    </aside>
+  </div>
+
+  <!-- LISTADOR -->
+  <section class="card mt-4">
+    <div class="toolbar justify-between">
+      <h3 class="h3 m-0">Listado de notificaciones</h3>
+      <div class="toolbar">
+        <input id="q" class="input" placeholder="Buscar por motivo o fecha..." />
+        <select id="filtroEstado" class="select">
+          <option value="">Todos</option>
+          <option value="1">Pendiente</option>
+          <option value="2">Aprobado</option>
+          <option value="3">Rechazado</option>
+        </select>
+      </div>
+    </div>
+
+    <% if ((notifs||[]).length === 0) { %>
+      <div class="empty">Aún no tienes solicitudes de horas extra.</div>
+    <% } else { %>
+
+    <!-- tabla desktop -->
+    <div class="table-wrap desktop-only">
+      <table class="table">
+        <thead class="thead">
+          <tr>
+            <th>Fecha</th>
+            <th>Inicio</th>
+            <th>Fin</th>
+            <th>Motivo</th>
+            <th>Estado</th>
+            <th class="muted">Creado</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+        <% notifs.forEach(n => { %>
+          <tr class="tr"
+              data-estado="<%= Number(n.estado) %>"
+              data-fecha="<%- n.fecha_solicitada %>"
+              data-motivo="<%- (n.motivo||'').toLowerCase().replace(/"/g,'&quot;') %>">
+            <td class="td"><%= n.fecha_solicitada %></td>
+            <td class="td"><%= (n.hora_inicio||'').slice(0,5) %></td>
+            <td class="td"><%= (n.hora_fin||'').slice(0,5) %></td>
+            <td class="td muted"><%- n.motivo %></td>
+            <td class="td">
+              <span class="chip <%= n.estado==1?'chip--pend':(n.estado==2?'chip--ok':'chip--err') %>">
+                <%= n.estado==1?'Pendiente':(n.estado==2?'Aprobado':'Rechazado') %>
+              </span>
+            </td>
+            <td class="td muted"><%= new Date(n.creado_en).toLocaleString('es-BO') %></td>
+          </tr>
+        <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+   
+    </div>
+    <% } %>
+  </section>
+
+
+  <!-- Scripts -->
+  <script>
+    // Filtros simples
+    (function(){
+      const q = document.getElementById('q');
+      const filtro = document.getElementById('filtroEstado');
+      const tbody = document.getElementById('tbody');
+      const cards = document.getElementById('cards');
+
+      function apply(){
+        const txt = (q?.value || '').toLowerCase().trim();
+        const est = filtro?.value || '';
+        const applyTo = (el) => {
+          const motivo = (el.dataset.motivo || '');
+          const fecha  = (el.dataset.fecha || '');
+          const estado = (el.dataset.estado || '');
+          const okTxt = !txt || motivo.includes(txt) || fecha.includes(txt);
+          const okEst = !est || estado === est;
+          el.style.display = (okTxt && okEst) ? '' : 'none';
+        };
+
+        if (tbody) [...tbody.children].forEach(applyTo);
+        if (cards) [...cards.children].forEach(applyTo);
+      }
+
+      q?.addEventListener('input', apply);
+      filtro?.addEventListener('change', apply);
+    })();
+
+    // Abrir modal de "Horas extra" (si ya creaste el handler antes, puedes quitar esto)
+    document.getElementById('btnHorasExtra')?.addEventListener('click', () => {
+      // Aquí puedes reutilizar el SweetAlert2 que ya te pasé para solicitar horas extra.
+      // Ej.: openHorasExtraModal();  // tu función existente
+    });
+  </script>
+<%- include('partials/footer') %>

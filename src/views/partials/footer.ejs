@@ -1,0 +1,54 @@
+      <footer class="muted" style="margin-top:auto; padding-top: 24px;">
+        © <span id="year"></span> BYGGER SRL · Todos los derechos reservados.
+      </footer>
+    </main>
+  </div>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Navegación dinámica: Resaltar enlace activo según window.location.pathname
+    const links = document.querySelectorAll('.sidebar nav a');
+    const sidebar = document.querySelector('.sidebar');
+    const toggleBtn = document.getElementById('sidebar-toggle');
+    const currentPath = window.location.pathname;
+
+    links.forEach(link => {
+      const href = link.getAttribute('href');
+      // Resalta el enlace activo exacto o su raíz (ej. subrutas de pagina-web)
+      if (href === currentPath || (href === '/admin/pagina-web' && currentPath.startsWith('/admin/pagina-web'))) {
+        link.classList.add('active');
+      } else {
+        link.classList.remove('active');
+      }
+    });
+
+    // Lógica para colapsar/expandir el sidebar
+    // Por defecto colapsado en móviles, restaurar preferencia en desktop
+    if (window.innerWidth <= 960) {
+      sidebar.classList.add('collapsed');
+    } else {
+      const collapsedPref = localStorage.getItem('sidebar-collapsed');
+      if (collapsedPref === 'true') {
+        sidebar.classList.add('collapsed');
+      } else {
+        sidebar.classList.remove('collapsed');
+      }
+    }
+    
+    toggleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      sidebar.classList.toggle('collapsed');
+      localStorage.setItem('sidebar-collapsed', sidebar.classList.contains('collapsed'));
+    });
+
+    // Cerrar sidebar al hacer clic fuera en móviles
+    document.querySelector('.content').addEventListener('click', () => {
+      if (window.innerWidth <= 960 && !sidebar.classList.contains('collapsed')) {
+        sidebar.classList.add('collapsed');
+        localStorage.setItem('sidebar-collapsed', 'true');
+      }
+    });
+  </script>
+</body>
+</html>

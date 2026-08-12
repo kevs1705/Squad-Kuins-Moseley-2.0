@@ -1,0 +1,300 @@
+<%
+  pageTitle = 'Reportes (Administrador)';
+  pageSubtitle = 'Listado global · Filtro por CI · Exportación';
+%>
+<%- include('partials/header') %>
+
+<style>
+  /* Estilos específicos de reporte_admin */
+  .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.55); display:none; align-items:center; justify-content:center; padding:16px; z-index:1000; }
+  .modal { background:#0f1c30; border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:18px; max-width:520px; width:100%; color:#f5f7fb; }
+  .modal h3 { margin-top:0; }
+  .form-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; }
+  .form-grid label { color:#9fb1c8; font-size:14px; display:flex; flex-direction:column; gap:6px; }
+  .form-grid input, .form-grid textarea { border-radius:10px; border:1px solid rgba(255,255,255,0.1); background:#0b1628; color:#f5f7fb; padding:10px; }
+  .form-grid textarea { min-height:100px; resize:vertical; }
+  .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:12px; flex-wrap:wrap; }
+</style>
+
+<section class="card">
+
+      <div class="row mt-3">
+        <div class="col">
+          <div class="panel">
+            <form id="filtro-form" class="toolbar items-center gap-2">
+              <label class="muted" for="ci">Filtrar por CI:</label>
+              <input id="ci" name="ci" class="input" type="text" placeholder="Ej.: 7099111" value="<%= filtroCI %>">
+              <a href="/cuenta" class="btn btn--secondary" style="text-decoration: none;">Menú</a>
+              <button class="btn btn--primary" type="submit">Buscar</button>
+              <button class="btn btn--secondary" id="btn-limpiar" type="button">Limpiar</button>
+              <button class="btn btn--secondary" id="btn-exportar" type="button">Exportar</button>
+              <a href="/graficos" class="btn btn--secondary" style="text-decoration: none;">Gráficos</a>
+              <a href="/notificaciones_admin" class="btn btn--secondary" style="text-decoration: none;">Notificaciones</a>
+            </form>
+          </div>
+        </div>
+        <div class="col">
+          <div class="panel">
+            <div class="toolbar items-center gap-2">
+              <label for="page-size" class="muted">Filas por página:</label>
+              <select id="page-size" class="select">
+                <option value="10" selected>10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+              <span id="range-info" class="muted"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-wrap mt-2" aria-describedby="tabla-reportes">
+        <table class="table">
+          <thead class="thead">
+              <tr>
+                <th>Nombre</th>
+                <th>CI</th>
+                <th>Fecha</th>
+                <th>Hora acumulada</th>
+                <th>Inicio</th>
+                <th>Fin</th>
+                <th>Tarea</th>
+                <th>Comprobante</th>
+                <th>Observaciones</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-reportes">
+              <tr><td colspan="10" class="muted">Cargando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      <div class="toolbar gap-2 mt-3 justify-end">
+        <button id="btn-prev" class="btn btn--secondary" disabled>Anterior</button>
+        <span id="page-info" class="muted">Página 1 de 1</span>
+        <button id="btn-next" class="btn btn--secondary" disabled>Siguiente</button>
+      </div>
+    </section>
+
+  <div class="modal-backdrop" id="edit-backdrop">
+    <div class="modal">
+      <h3 id="edit-title">Editar reporte</h3>
+      <form id="edit-form">
+        <div class="form-grid">
+          <label>Hora acumulada (HH:MM:SS)
+            <input type="text" id="f-hora-acum" required>
+          </label>
+          <label>Hora inicio (HH:MM)
+            <input type="text" id="f-hora-inicio" required>
+          </label>
+          <label>Hora fin (HH:MM)
+            <input type="text" id="f-hora-fin" required>
+          </label>
+        </div>
+        <label style="display:flex; flex-direction:column; gap:6px; margin-top:10px; color:#9fb1c8;">Observación
+          <textarea id="f-observacion"></textarea>
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="btn btn--secondary" id="edit-cancel">Cancelar</button>
+          <button type="submit" class="btn btn--primary" id="edit-save">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+  (() => {
+    let state = {
+      ci: '',
+      page: 1,
+      size: 10,
+      total: 0,
+      totalPages: 1,
+      data: []
+    };
+
+    const $  = (s) => document.querySelector(s);
+    const qs = (obj) => new URLSearchParams(obj).toString();
+    const escapeHTML = (str) =>
+      (str || '').replace(/[&<>\"']/g, m =>
+        ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])
+      );
+
+    const form    = $('#filtro-form');
+    const inputCI = $('#ci');
+    const pageSizeS = $('#page-size');
+    const tbody   = $('#tbody-reportes');
+    const pageInfo  = $('#page-info');
+    const rangeInfo = $('#range-info');
+    const btnPrev = $('#btn-prev');
+    const btnNext = $('#btn-next');
+    const btnLimpiar = $('#btn-limpiar');
+    const btnExport  = $('#btn-exportar');
+
+    async function fetchData() {
+      const params = { page: state.page, size: state.size };
+      if (state.ci) params.ci = state.ci;
+
+      const url = `/api/admin/reportes?${qs(params)}`;
+      tbody.innerHTML = `<tr><td colspan="10" class="muted">Cargando...</td></tr>`;
+
+      const r = await fetch(url);
+      const j = await r.json();
+      if (!j.ok) {
+        tbody.innerHTML = `<tr><td colspan="10" class="muted">Error cargando datos</td></tr>`;
+        return;
+      }
+      state.data = j.data || [];
+      state.total = j.total || 0;
+      state.totalPages = j.totalPages || 1;
+      renderTable();
+    }
+
+    function renderTable() {
+      if (!state.data.length) {
+        tbody.innerHTML = `<tr><td colspan="10" class="muted">Sin registros</td></tr>`;
+      } else {
+        tbody.innerHTML = state.data.map(r => {
+          const comp = r.comprobante
+            ? `<a class="pill" href="${escapeHTML(r.comprobante)}" target="_blank" rel="noopener">Ver</a>`
+            : `<span class="muted">-</span>`;
+          return `
+            <tr>
+              <td>${escapeHTML(r.nombre || '')}</td>
+              <td class="nowrap">${escapeHTML(r.CI || '')}</td>
+              <td class="nowrap">${escapeHTML(r.fecha || '')}</td>
+              <td class="nowrap">${escapeHTML(r.hora_acumulada || '')}</td>
+              <td class="nowrap">${escapeHTML(r.hora_inicio || '')}</td>
+              <td class="nowrap">${escapeHTML(r.hora_fin || '')}</td>
+              <td>${escapeHTML(r.tarea || '')}</td>
+              <td>${comp}</td>
+              <td class="muted">${escapeHTML(r.observacion || '-')}</td>
+              <td><button class="btn btn--secondary btn-edit" data-id="${r.id_reporte}">Editar</button></td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      pageInfo.textContent = `Página ${state.page} de ${state.totalPages}`;
+      const start = (state.total === 0) ? 0 : ((state.page - 1) * state.size) + 1;
+      const end   = Math.min(state.page * state.size, state.total);
+      rangeInfo.textContent = `Mostrando ${start}-${end} de ${state.total}`;
+
+      btnPrev.disabled = (state.page <= 1);
+      btnNext.disabled = (state.page >= state.totalPages);
+    }
+
+    // Eventos
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      state.ci = inputCI.value.trim();
+      state.page = 1;
+      fetchData();
+    });
+
+    btnLimpiar.addEventListener('click', () => {
+      inputCI.value = '';
+      state.ci = '';
+      state.page = 1;
+      fetchData();
+    });
+
+    pageSizeS.addEventListener('change', () => {
+      state.size = parseInt(pageSizeS.value || '10', 10) || 10;
+      state.page = 1;
+      fetchData();
+    });
+
+    btnPrev.addEventListener('click', () => {
+      if (state.page > 1) {
+        state.page--;
+        fetchData();
+      }
+    });
+
+    btnNext.addEventListener('click', () => {
+      if (state.page < state.totalPages) {
+        state.page++;
+        fetchData();
+      }
+    });
+
+    btnExport.addEventListener('click', () => {
+      const q = state.ci ? `?ci=${encodeURIComponent(state.ci)}` : '';
+      window.location.href = `/admin/reportes/export${q}`;
+    });
+
+    // Editar reporte con modal único
+    const backdrop = document.getElementById('edit-backdrop');
+    const editForm = document.getElementById('edit-form');
+    const fHoraAcum = document.getElementById('f-hora-acum');
+    const fHoraInicio = document.getElementById('f-hora-inicio');
+    const fHoraFin = document.getElementById('f-hora-fin');
+    const fObs = document.getElementById('f-observacion');
+    const editTitle = document.getElementById('edit-title');
+    const editCancel = document.getElementById('edit-cancel');
+    let editId = null;
+
+    function openEditModal(r) {
+      editId = r.id_reporte;
+      editTitle.textContent = `Editar reporte #${r.id_reporte}`;
+      fHoraAcum.value = r.hora_acumulada || '';
+      fHoraInicio.value = r.hora_inicio || '';
+      fHoraFin.value = r.hora_fin || '';
+      fObs.value = r.observacion || '';
+      backdrop.style.display = 'flex';
+    }
+    function closeEditModal() {
+      backdrop.style.display = 'none';
+      editId = null;
+    }
+
+    tbody.addEventListener('click', (e) => {
+      const btn = e.target.closest('.btn-edit');
+      if (!btn) return;
+      const id = btn.dataset.id;
+      const r = state.data.find(x => String(x.id_reporte) === String(id));
+      if (!r) return;
+      openEditModal(r);
+    });
+
+    editCancel.addEventListener('click', closeEditModal);
+    backdrop.addEventListener('click', (e) => { if (e.target === backdrop) closeEditModal(); });
+
+    editForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!editId) return;
+      const payload = {
+        hora_acumulada: fHoraAcum.value.trim(),
+        hora_inicio: fHoraInicio.value.trim(),
+        hora_fin: fHoraFin.value.trim(),
+        observacion: fObs.value.trim()
+      };
+      try {
+        const resp = await fetch(`/api/admin/reportes/${editId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const json = await resp.json();
+        if (!resp.ok || !json.ok) throw new Error(json.msg || 'No se pudo actualizar');
+        const r = state.data.find(x => String(x.id_reporte) === String(editId));
+        if (r) Object.assign(r, payload);
+        renderTable();
+        closeEditModal();
+        alert('Reporte actualizado');
+      } catch (err) {
+        alert(err.message || 'Error al actualizar');
+      }
+    });
+
+    // Init
+    pageSizeS.value = '10';
+    state.size = 10;
+    state.ci = inputCI.value.trim();
+    fetchData();
+  })();
+  </script>
+<%- include('partials/footer') %>

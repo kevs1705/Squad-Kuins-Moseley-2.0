@@ -1,0 +1,405 @@
+<%
+  extraStyles = ['/css/cuenta.css'];
+  extraScripts = ['https://cdn.jsdelivr.net/npm/sweetalert2@11'];
+  pageTitle = 'Perfil';
+  pageSubtitle = 'Información de usuario — MONSELEY';
+%>
+<%- include('partials/header') %>
+
+<div class="cuenta-wrapper">
+  <% if (typeof error !== 'undefined' && error) { %>
+    <div class="alert alert--err"><%= error %></div>
+  <% } %>
+
+  <% if (user) { %>
+    <div class="cuenta-grid">
+      <!-- Tarjeta Izquierda (Resumen del Usuario) -->
+      <section class="cuenta-card user-summary-card">
+        <div class="avatar-container">
+          <img src="/img/perfil.png" alt="Foto de perfil" class="avatar" loading="lazy" decoding="async" />
+        </div>
+        <h2 class="user-name" id="v-nombre"><%= user.nombre %></h2>
+        
+        <div class="ci-badge" aria-label="Identificador de usuario">
+          <span class="ci-tag">ID</span>
+          <span class="ci-val" id="v-ci"><%= user.CI %></span>
+        </div>
+
+        <div class="status-badge status-activo">
+          <span class="status-dot"></span>
+          <span id="v-estado-texto">Activo</span>
+        </div>
+      </section>
+
+      <!-- Tarjeta Derecha (Información Personal) -->
+      <section class="cuenta-card user-info-card">
+        <div class="card-header">
+          <div class="header-icon-box">
+            <svg class="header-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+          </div>
+          <h3 class="card-header-title">Información personal</h3>
+        </div>
+
+        <div class="info-fields-grid">
+          <!-- Universidad -->
+          <div class="info-item">
+            <div class="info-icon-container">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"/>
+              </svg>
+            </div>
+            <div class="info-text">
+              <span class="info-label">Universidad</span>
+              <span class="info-value" id="v-universidad"><%= user.universidad || '—' %></span>
+            </div>
+          </div>
+
+          <!-- Carrera -->
+          <div class="info-item">
+            <div class="info-icon-container">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+              </svg>
+            </div>
+            <div class="info-text">
+              <span class="info-label">Carrera</span>
+              <span class="info-value" id="v-carrera"><%= user.carrera || '—' %></span>
+            </div>
+          </div>
+
+          <!-- Celular -->
+          <div class="info-item">
+            <div class="info-icon-container">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+              </svg>
+            </div>
+            <div class="info-text">
+              <span class="info-label">Celular</span>
+              <span class="info-value <%= user.celular ? '' : 'muted' %>" id="v-celular"><%= user.celular || '—' %></span>
+            </div>
+          </div>
+
+          <!-- Estado -->
+          <div class="info-item">
+            <div class="info-icon-container">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+            </div>
+            <div class="info-text">
+              <span class="info-label">Estado</span>
+              <span class="info-value" id="v-estado"><%= user.estadoTexto %></span>
+            </div>
+          </div>
+
+          <!-- Contraseña (Ancho completo abajo) -->
+          <div class="info-item pwd-item">
+            <div class="info-icon-container">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+            </div>
+            <div class="info-text pwd-info-text">
+              <span class="info-label">Contraseña</span>
+              <div class="pwd-field-container">
+                <input id="v-password" class="pwd-display-input" type="password" value="<%= user.contrasena || '' %>" readonly>
+                <button type="button" id="togglePwd" class="pwd-toggle-button" aria-label="Mostrar/ocultar contraseña">👁️</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Botones de Acción (Alineados abajo a la derecha) -->
+    <div class="cuenta-actions">
+      <button type="button" class="btn-action btn-edit-profile" id="editBtn" aria-label="Editar perfil">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="btn-icon">
+          <path d="M12 20h9"/>
+          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+        </svg>
+        <span>Editar Perfil</span>
+      </button>
+      <a class="btn-action btn-back-home" href="/cuenta" aria-label="Volver al inicio">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="btn-icon">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+        <span>Inicio</span>
+      </a>
+    </div>
+  <% } %>
+</div>
+
+  <% if (user) { %>
+  <script>
+    // Toggle de contraseña
+    {
+      const toggleBtn = document.getElementById('togglePwd');
+      const pwdInput  = document.getElementById('v-password');
+      toggleBtn?.addEventListener('click', () => {
+        pwdInput.type = (pwdInput.type === 'password') ? 'text' : 'password';
+        toggleBtn.textContent = (pwdInput.type === 'password') ? '👁️' : '🙈';
+      });
+    }
+
+    // Valores iniciales seguros para el formulario SweetAlert2
+    const initial = <%- JSON.stringify({
+      ci: user.CI || '',
+      nombre: user.nombre || '',
+      universidad: user.universidad || '',
+      carrera: user.carrera || '',
+      celular: user.celular || ''
+    }) %>;
+
+    const editBtn = document.getElementById('editBtn');
+
+
+editBtn?.addEventListener('click', async () => {
+  const html = `
+  <style>
+  /* Encapsulado: solo afecta al contenido del modal */
+  .swal-form {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: 1fr;
+    align-items: start;
+    background: #ffffff;           /* ✅ fondo blanco del form */
+    padding: 10px;
+    border-radius: 8px;
+  }
+  @media (min-width: 640px) {
+    .swal-form {
+      grid-template-columns: 1fr 1fr; /* 2 columnas en pantallas medianas+ */
+    }
+  }
+
+  .swal-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .swal-span-2 { grid-column: 1 / -1; }
+
+  .swal-field label {
+    font-size: 0.925rem;
+    font-weight: 600;
+    color: #374151;                /* ✅ gris oscuro legible */
+  }
+
+  /* Campos input claros */
+  .swal-inputx {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;     /* ✅ borde gris claro */
+    border-radius: 8px;
+    background: #ffffff;           /* ✅ fondo blanco */
+    color: #111827;                /* ✅ texto negro/gris oscuro */
+    outline: none;
+  }
+  .swal-inputx::placeholder {
+    color: #9ca3af;                /* ✅ placeholder gris medio */
+  }
+  .swal-inputx:focus {
+    border-color: #24c58a;         /* verde brand */
+    box-shadow: 0 0 0 3px rgba(36,197,138,.25);
+  }
+
+  /* Grupo de contraseña con botón ojo */
+  .pwd-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .pwd-group .swal-inputx {
+    flex: 1;
+  }
+  .eye-btn {
+    border: 1px solid #d1d5db;
+    background: #f9fafb;           /* ✅ gris claro */
+    border-radius: 8px;
+    padding: 8px 10px;
+    cursor: pointer;
+    line-height: 1;
+    color: #374151;                /* ✅ icono gris oscuro */
+  }
+  .eye-btn:hover {
+    background: #e5e7eb;           /* hover más oscuro */
+  }
+  .eye-btn:active { transform: scale(0.98); }
+
+  /* Separador */
+  .swal-hr {
+    height: 1px;
+    background: #e5e7eb;
+    border: 0;
+    margin: 6px 0 2px;
+  }
+</style>
+
+  <div class="swal-form" role="group" aria-labelledby="perfil-edit">
+    <div class="swal-field">
+      <label for="swal-ci">CI</label>
+      <input id="swal-ci" class="swal-inputx" placeholder="CI" inputmode="numeric" />
+    </div>
+
+    <div class="swal-field">
+      <label for="swal-nombre">Nombre</label>
+      <input id="swal-nombre" class="swal-inputx" placeholder="Nombre completo" />
+    </div>
+
+    <div class="swal-field">
+      <label for="swal-univ">Universidad</label>
+      <input id="swal-univ" class="swal-inputx" placeholder="Universidad" />
+    </div>
+
+    <div class="swal-field">
+      <label for="swal-career">Carrera</label>
+      <input id="swal-career" class="swal-inputx" placeholder="Carrera" />
+    </div>
+
+    <div class="swal-field swal-span-2">
+      <label for="swal-phone">Celular</label>
+      <input id="swal-phone" class="swal-inputx" placeholder="Ej. 70000000" inputmode="tel" />
+    </div>
+
+    <hr class="swal-hr swal-span-2" />
+
+    <div class="swal-field swal-span-2">
+      <label for="swal-pass">Contraseña <small>(opcional)</small></label>
+      <div class="pwd-group">
+        <input id="swal-pass" class="swal-inputx" type="password" placeholder="Nueva contraseña (opcional)" />
+        <button type="button" id="toggle-pass" class="eye-btn" aria-label="Mostrar/ocultar contraseña">👁️</button>
+      </div>
+    </div>
+
+    <div class="swal-field swal-span-2">
+      <label for="swal-pass2">Confirmar contraseña</label>
+      <div class="pwd-group">
+        <input id="swal-pass2" class="swal-inputx" type="password" placeholder="Repite la contraseña" />
+        <button type="button" id="toggle-pass2" class="eye-btn" aria-label="Mostrar/ocultar contraseña">👁️</button>
+      </div>
+    </div>
+  </div>
+`;
+
+  const result = await Swal.fire({
+    title: 'Editar perfil',
+    html,
+    width: 'min(820px, 92vw)', 
+    focusConfirm: false,
+    showCancelButton: true,
+    confirmButtonText: 'Guardar',
+    cancelButtonText: 'Cancelar',
+    didOpen: () => {
+      // Setear valores iniciales
+      document.getElementById('swal-ci').value      = initial.ci;
+      document.getElementById('swal-nombre').value  = initial.nombre;
+      document.getElementById('swal-univ').value    = initial.universidad;
+      document.getElementById('swal-career').value  = initial.carrera;
+      document.getElementById('swal-phone').value   = initial.celular;
+
+      const p1 = document.getElementById('swal-pass');
+      const p2 = document.getElementById('swal-pass2');
+      const t1 = document.getElementById('toggle-pass');
+      const t2 = document.getElementById('toggle-pass2');
+      t1.onclick = () => { p1.type = (p1.type === 'password' ? 'text' : 'password'); };
+      t2.onclick = () => { p2.type = (p2.type === 'password' ? 'text' : 'password'); };
+    },
+    preConfirm: () => {
+      const ci          = document.getElementById('swal-ci').value.trim();
+      const nombre      = document.getElementById('swal-nombre').value.trim();
+      const universidad = document.getElementById('swal-univ').value.trim();
+      const carrera     = document.getElementById('swal-career').value.trim();
+      const celular     = document.getElementById('swal-phone').value.trim();
+      const contrasena  = document.getElementById('swal-pass').value;
+      const contrasena2 = document.getElementById('swal-pass2').value;
+
+      if (!ci || !/^[0-9.\-]{5,32}$/.test(ci)) {
+        Swal.showValidationMessage('CI obligatorio (5–32): solo dígitos, punto o guion.');
+        return false;
+      }
+      if (!nombre || nombre.length < 2 || nombre.length > 100) {
+        Swal.showValidationMessage('Nombre: 2–100 caracteres.');
+        return false;
+      }
+      if (!universidad || universidad.length > 120) {
+        Swal.showValidationMessage('Universidad es obligatoria (máx. 120).');
+        return false;
+      }
+      if (!carrera || carrera.length > 120) {
+        Swal.showValidationMessage('Carrera es obligatoria (máx. 120).');
+        return false;
+      }
+      if (celular && !/^[0-9]{7,12}$/.test(celular)) {
+        Swal.showValidationMessage('Celular: 7–12 dígitos.');
+        return false;
+      }
+
+      // Validación de password (opcional)
+      if (contrasena || contrasena2) {
+        if (contrasena.length < 4) {
+          Swal.showValidationMessage('La contraseña debe tener mínimo 4 caracteres.');
+          return false;
+        }
+        if (contrasena !== contrasena2) {
+          Swal.showValidationMessage('Las contraseñas no coinciden.');
+          return false;
+        }
+      }
+
+      const payload = { ci, nombre, universidad, carrera, celular };
+      if (contrasena) payload.contrasena = contrasena;
+      return payload;
+    }
+  });
+
+  if (!result.isConfirmed || !result.value) return;
+
+  try {
+    const res = await fetch('/api/cuenta/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(result.value)
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.msg || 'No se pudo guardar');
+
+    // Actualiza UI visible
+    document.getElementById('v-ci').textContent           = result.value.ci;
+    document.getElementById('v-nombre').textContent       = result.value.nombre;
+    document.getElementById('v-universidad').textContent  = result.value.universidad || '—';
+    document.getElementById('v-carrera').textContent      = result.value.carrera || '—';
+    const celSpan = document.getElementById('v-celular');
+    celSpan.textContent = result.value.celular || '—';
+    celSpan.classList.toggle('muted', !result.value.celular);
+
+    // Si cambió contraseña, refleja en el input de la vista (opcional)
+    if (result.value.contrasena) {
+      document.getElementById('v-password').value = result.value.contrasena;
+    }
+
+    // refresca initial
+    initial.ci = result.value.ci;
+    initial.nombre = result.value.nombre;
+    initial.universidad = result.value.universidad;
+    initial.carrera = result.value.carrera;
+    initial.celular = result.value.celular;
+
+    await Swal.fire({ icon:'success', title:'Guardado', timer:1200, showConfirmButton:false });
+  } catch (e) {
+    await Swal.fire({ icon:'error', title:'Error', text: e.message || 'No se pudo guardar' });
+  }
+});
+  </script>
+  <% } %>
+<%- include('partials/footer') %>

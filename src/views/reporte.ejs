@@ -1,0 +1,573 @@
+<%
+  pageTitle = 'Reporte de Pasantías';
+  pageSubtitle = 'Resumen y detalle de horas';
+%>
+<%- include('partials/header') %>
+
+<section class="card">
+
+    <!-- SUMMARY -->
+    <div class="row mt-3">
+      <div class="col">
+        <div class="panel">
+          <div class="kv">
+            <span class="label">Nombre</span>
+            <span class="value"><%= user.nombre %></span>
+          </div>
+          <div class="kv">
+            <span class="label">Horas acumuladas</span>
+            <span class="value"><%= total_acumulada %></span>
+          </div>
+        </div>
+      </div>
+      <aside class="card col-2" style="max-width:400px">
+        <div class="panel">
+          <div class="grid grid-2 gap-2">
+            <a class="btn w-100" href="/reportes/export">⬇️ Exportar</a>
+            <a class="btn btn--primary w-100" id="btnHorasExtra">⏱ Horas extra</a>
+            <a class="btn w-100" href="/notificaciones">🔔 Notificaciones</a>
+            <a class="btn w-100" href="/cuenta">🏠 Menú</a>
+          </div>
+        </div>
+
+
+      </aside>
+    </div>
+
+    <!-- BLOQUE: Comenzar / Reporte Activo -->
+    <div class="card mt-4">
+      <div id="nuevo-reporte-header" class="toolbar justify-between items-center">
+        <div>
+          <h2 class="h3">Nuevo reporte</h2>
+          <p class="subtitle">Crea o continúa tu reporte del día</p>
+        </div>
+        <!-- AGREGA la clase actions aquí -->
+        <div class="actions">
+          <button id="btn-comenzar" class="btn btn--primary">▶️ Comenzar nuevo reporte</button>
+        </div>
+      </div>
+
+
+      <!-- REPORTE ACTIVO -->
+      <div id="reporte-activo" class="mt-3 hide">
+        <div class="table-wrap" aria-describedby="tabla-reporte-activo">
+          <table class="table">
+            <thead class="thead">
+              <tr>
+                <th>Fecha</th>
+                <th>Hora inicio</th>
+                <th>Hora actual</th>
+                <th>Tarea</th>
+                <th>Comprobante</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="tr">
+                <td class="td nowrap" id="ra-fecha">—</td>
+                <td class="td nowrap" id="ra-hora-inicio">—</td>
+                <td class="td nowrap" id="ra-hora-actual">--:--:--</td>
+                <td class="td" id="ra-tarea">—</td>
+                <td class="td" id="ra-comprobante"><span class="muted">—</span></td>
+                <td class="td">
+                  <div class="toolbar gap-2">
+                    <button id="btn-agregar-tarea" class="btn">📝 Agregar tarea</button>
+                    <button id="btn-subir-comprobante" class="btn">📎 Subir</button>
+                    <button id="btn-finalizar" class="btn btn--danger">⏹️ Finalizar</button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <input type="hidden" id="ra-id" value="">
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTROLES SUPERIORES -->
+    <div class="toolbar mt-4">
+      <label for="page-size" class="muted">Filas por página:</label>
+      <select id="page-size" class="input" style="max-width:8rem;">
+        <option value="10" selected>10</option>
+        <option value="25">25</option>
+        <option value="50">50</option>
+        <option value="100">100</option>
+        <option value="all">Todos</option>
+      </select>
+      <span id="range-info" class="muted" style="margin-left:auto;"></span>
+    </div>
+
+    <!-- TABLA DE REPORTES -->
+    <div class="table-wrap mt-2" aria-describedby="tabla-reportes">
+      <table class="table">
+        <thead class="thead">
+          <tr>
+            <th>Fecha</th>
+            <th>Hora acumulada</th>
+            <th>Hora inicio</th>
+            <th>Hora fin</th>
+            <th>Tarea (descripción)</th>
+            <th>Comprobante</th>
+            <th>Observaciones</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-reportes">
+          <tr><td colspan="9" class="muted">Cargando…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- CONTROLES INFERIORES -->
+    <div class="toolbar justify-end gap-2 mt-2">
+      <button id="btn-prev" class="btn" disabled>◀ Anterior</button>
+      <span id="page-info" class="muted">Página 1 de 1</span>
+      <button id="btn-next" class="btn" disabled>Siguiente ▶</button>
+    </div>
+  </section>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+// helper: hoy en formato YYYY-MM-DD
+function hoyISO() {
+  const d = new Date();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${d.getFullYear()}-${m}-${day}`;
+}
+
+document.getElementById('btnHorasExtra')?.addEventListener('click', async () => {
+  const html = `
+  <div class="form-grid" role="group" aria-labelledby="horas-extra">
+    <div class="form-field">
+      <label for="solic-fecha" class="label">Fecha realizada</label>
+      <input id="solic-fecha" class="input" type="date" />
+    </div>
+
+    <div class="form-field">
+      <label for="solic-inicio" class="label">Hora inicio</label>
+      <input id="solic-inicio" class="input" type="time" step="60" />
+    </div>
+
+    <div class="form-field">
+      <label for="solic-fin" class="label">Hora fin</label>
+      <input id="solic-fin" class="input" type="time" step="60" />
+    </div>
+
+    <div class="form-field span-2">
+      <label for="solic-motivo" class="label">Motivo / descripción</label>
+      <textarea id="solic-motivo" class="input" rows="3" placeholder="Describe brevemente lo que realizaste..."></textarea>
+    </div>
+
+    <hr class="divider span-2" />
+
+    <div class="form-field span-2 muted" style="font-size:.9rem;">
+      Al enviar, tu solicitud quedará <b>pendiente</b> hasta que un administrador la apruebe o rechace.
+    </div>
+  </div>
+`;
+
+
+  const res = await Swal.fire({
+    title: 'Solicitar horas extra',
+    html,
+    width: 'min(720px, 92vw)',
+    showCancelButton: true,
+    confirmButtonText: 'Enviar solicitud',
+    cancelButtonText: 'Cancelar',
+    focusConfirm: false,
+    didOpen: () => {
+      // valores por defecto
+      const f = document.getElementById('solic-fecha');
+      const hi = document.getElementById('solic-inicio');
+      const hf = document.getElementById('solic-fin');
+      f.value = hoyISO();
+      hi.value = '18:00';
+      hf.value = '20:00';
+    },
+    preConfirm: () => {
+      const fecha_solicitada = (document.getElementById('solic-fecha').value || '').trim();
+      const hora_inicio      = (document.getElementById('solic-inicio').value || '').trim();
+      const hora_fin         = (document.getElementById('solic-fin').value || '').trim();
+      const motivo           = (document.getElementById('solic-motivo').value || '').trim();
+
+      if (!fecha_solicitada) {
+        Swal.showValidationMessage('La fecha es obligatoria.');
+        return false;
+      }
+      if (!hora_inicio || !hora_fin) {
+        Swal.showValidationMessage('Hora inicio y fin son obligatorias.');
+        return false;
+      }
+      // comparar HH:MM
+      if (hora_inicio >= hora_fin) {
+        Swal.showValidationMessage('La hora fin debe ser mayor que la hora inicio.');
+        return false;
+      }
+      if (!motivo || motivo.length < 5) {
+        Swal.showValidationMessage('Describe el motivo (mínimo 5 caracteres).');
+        return false;
+      }
+      return { fecha_solicitada, hora_inicio, hora_fin, motivo };
+    }
+  });
+
+  if (!res.isConfirmed || !res.value) return;
+
+  try {
+    const r = await fetch('/api/notificaciones', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(res.value)
+    });
+    const data = await r.json();
+    if (!r.ok || !data.ok) throw new Error(data.msg || 'No se pudo enviar la solicitud');
+
+    await Swal.fire({ icon:'success', title:'Solicitud enviada', text:'Quedó en estado pendiente.', timer:1400, showConfirmButton:false });
+  } catch (e) {
+    await Swal.fire({ icon:'error', title:'Error', text:e.message || 'No se pudo enviar la solicitud' });
+  }
+});
+</script>
+
+
+<script>
+(() => {
+  // ===== Utilidades =====
+  const $ = (s) => document.querySelector(s);
+
+  // Elementos UI
+  const btnComenzar = $('#btn-comenzar');
+  const wrapActivo  = $('#reporte-activo');
+  const fechaEl     = $('#ra-fecha');
+  const horaIniEl   = $('#ra-hora-inicio');
+  const horaActEl   = $('#ra-hora-actual'); // HORA ACTUAL (en vivo desde servidor)
+  const tareaEl     = $('#ra-tarea');
+  const compEl      = $('#ra-comprobante');
+  const idInput     = $('#ra-id');
+
+  const btnTarea = $('#btn-agregar-tarea');
+  const btnComp  = $('#btn-subir-comprobante');
+  const btnFin   = $('#btn-finalizar');
+
+  let tick = null;        // Intervalo del reloj
+  let serverNow = null;   // Date basado 100% en la hora del servidor
+
+  // Formatea Date a HH:mm:ss
+  function fmtHHMMSS(d) {
+    const H = String(d.getHours()).padStart(2,'0');
+    const M = String(d.getMinutes()).padStart(2,'0');
+    const S = String(d.getSeconds()).padStart(2,'0');
+    return `${H}:${M}:${S}`;
+  }
+
+  function startClock(initialNowStr) {
+    stopClock();
+    // Guardar hora del server como base (formato "YYYY-MM-DD HH:mm:ss")
+    serverNow = new Date(initialNowStr.replace(' ', 'T'));
+    horaActEl.textContent = fmtHHMMSS(serverNow);
+    tick = setInterval(() => {
+      serverNow.setSeconds(serverNow.getSeconds() + 1);
+      horaActEl.textContent = fmtHHMMSS(serverNow);
+    }, 1000);
+  }
+
+  function stopClock() {
+    if (tick) clearInterval(tick);
+    tick = null;
+  }
+
+ async function loadActivo() {
+  try {
+    const r = await fetch('/reportes/active');
+    const j = await r.json();
+    if (!j.ok) return;
+
+    // Reloj desde servidor
+    if (j.now) {
+      startClock(j.now);
+    } else {
+      stopClock();
+      horaActEl.textContent = '--:--:--';
+    }
+
+    const actions = document.querySelector('#nuevo-reporte-header .actions');
+
+    if (j.data) {
+      const a = j.data;
+
+      // Poblar UI
+      idInput.value         = a.id_reporte || '';
+      fechaEl.textContent   = a.fecha || '—';
+      horaIniEl.textContent = a.hora_inicio || '—';
+      tareaEl.textContent   = (a.tarea && a.tarea.trim()) ? a.tarea : '—';
+      compEl.innerHTML      = a.comprobante
+        ? `<a class="pill" href="${a.comprobante}" target="_blank" rel="noopener">📎 Ver</a>`
+        : `<span class="muted">—</span>`;
+
+      // Mostrar bloque activo si hay hora_inicio
+      if (a.hora_inicio) {
+        wrapActivo.classList.remove('hide');   // <- importante
+        actions?.classList.add('hide');        // ocultar botón comenzar
+      } else {
+        wrapActivo.classList.add('hide');
+        actions?.classList.remove('hide');
+      }
+    } else {
+      // No hay reporte activo
+      wrapActivo.classList.add('hide');
+      actions?.classList.remove('hide');
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+
+  // ===== Eventos =====
+
+  // Comenzar nuevo reporte
+  btnComenzar?.addEventListener('click', async () => {
+    try {
+      const r = await fetch('/reportes/start', { method: 'POST' });
+      const j = await r.json();
+      if (!j.ok) {
+        return Swal.fire('Error', j.error || 'No se pudo iniciar el reporte', 'error');
+      }
+      await loadActivo();
+      Swal.fire('Listo', j.already ? 'Ya tienes un reporte activo' : 'Reporte iniciado', 'success');
+    } catch (e) {
+      console.error(e);
+      Swal.fire('Error', 'No se pudo iniciar el reporte', 'error');
+    }
+  });
+
+  // Agregar/editar tarea (solo descripción)
+  btnTarea?.addEventListener('click', async () => {
+    const id = idInput.value;
+    if (!id) return Swal.fire('Aviso', 'No hay reporte activo.', 'info');
+
+    const { value: tarea } = await Swal.fire({
+      title: 'Agregar tarea',
+      input: 'textarea',
+      inputLabel: 'Descripción (obligatoria)',
+      inputPlaceholder: 'Ej.: Clasificación de documentos, soporte a usuarios, etc.',
+      inputAttributes: { maxlength: 1000 },
+      showCancelButton: true,
+      confirmButtonText: 'Guardar',
+      cancelButtonText: 'Cancelar',
+      inputValidator: (v) => (!v || !v.trim()) ? 'La descripción es obligatoria' : undefined
+    });
+
+    if (!tarea) return;
+
+    try {
+      const r = await fetch('/reportes/task', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id_reporte: id, tarea })
+      });
+      const j = await r.json();
+      if (!j.ok) return Swal.fire('Error', j.error || 'No se guardó la tarea', 'error');
+
+      tareaEl.textContent = tarea;
+      Swal.fire('Guardado', 'La tarea se guardó correctamente', 'success');
+    } catch (e) {
+      console.error(e);
+      Swal.fire('Error', 'No se pudo guardar la tarea', 'error');
+    }
+  });
+
+  // Subir comprobante (PNG/JPG)
+  btnComp?.addEventListener('click', async () => {
+    const id = idInput.value;
+    if (!id) return Swal.fire('Aviso', 'No hay reporte activo.', 'info');
+
+    const { value: file } = await Swal.fire({
+      title: 'Subir comprobante',
+      text: 'Solo imágenes PNG/JPG. Máx 5 MB.',
+      input: 'file',
+      inputAttributes: { accept: 'image/png, image/jpg, image/jpeg' },
+      showCancelButton: true,
+      confirmButtonText: 'Subir',
+      cancelButtonText: 'Cancelar'
+    });
+
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('id_reporte', id);
+    formData.append('comprobante', file);
+
+    try {
+      const r = await fetch('/reportes/comprobante', { method: 'POST', body: formData });
+      const j = await r.json();
+      if (!j.ok) return Swal.fire('Error', j.error || 'No se pudo subir', 'error');
+
+      compEl.innerHTML = `<a class="pill" href="${j.path}" target="_blank" rel="noopener">📎 Ver</a>`;
+      Swal.fire('Subido', 'El comprobante fue guardado', 'success');
+    } catch (e) {
+      console.error(e);
+      Swal.fire('Error', 'No se pudo subir el comprobante', 'error');
+    }
+  });
+
+  // Finalizar reporte (usa hora actual del servidor)
+  btnFin?.addEventListener('click', async () => {
+    const id = idInput.value;
+    if (!id) return Swal.fire('Aviso', 'No hay reporte activo.', 'info');
+
+    const ok = await Swal.fire({
+      title: 'Finalizar reporte',
+      text: 'Se registrará la hora de fin (hora actual del servidor) y el tiempo acumulado.',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, finalizar',
+      cancelButtonText: 'Cancelar'
+    }).then(r => r.isConfirmed);
+
+    if (!ok) return;
+
+    try {
+      const r = await fetch('/reportes/finish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id_reporte: id })
+      });
+      const j = await r.json();
+      if (!j.ok) return Swal.fire('Error', j.error || 'No se pudo finalizar', 'error');
+
+      stopClock();
+      await Swal.fire('Listo', 'Reporte finalizado', 'success');
+      location.reload(); // refresca tabla inferior y oculta bloque activo
+    } catch (e) {
+      console.error(e);
+      Swal.fire('Error', 'No se pudo finalizar', 'error');
+    }
+  });
+
+  // ===== Inicializar estado =====
+  loadActivo();
+})();
+</script>
+<script>
+  document.querySelector('#btn-exportar')?.addEventListener('click', () => {
+    window.location.href = '/reportes/export';
+  });
+</script>
+<script>
+(() => {
+  // Datos desde el servidor
+  const REPORTS = <%- JSON.stringify(reports || []) %>;
+
+  // Helpers
+  const $ = s => document.querySelector(s);
+  const escapeHTML = (str) => (str || '').replace(/[&<>"']/g, m => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[m]));
+
+  // Elementos
+  const tbody     = $('#tbody-reportes');
+  const pageSizeS = $('#page-size');
+  const pageInfo  = $('#page-info');
+  const rangeInfo = $('#range-info');
+  const btnPrev   = $('#btn-prev');
+  const btnNext   = $('#btn-next');
+
+  // Estado
+  let currentPage = 1;
+  let pageSize = 10;
+
+  function getTotalPages() {
+    if (pageSize === Infinity) return 1;
+    return Math.max(1, Math.ceil(REPORTS.length / pageSize));
+  }
+
+  function render() {
+    // Calcular límites
+    const total = REPORTS.length;
+    const totalPages = getTotalPages();
+
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+
+    let start = 0, end = total;
+    if (pageSize !== Infinity) {
+      start = (currentPage - 1) * pageSize;
+      end = Math.min(start + pageSize, total);
+    }
+
+    // Render filas
+    if (total === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" class="muted">Sin registros por ahora.</td>
+        </tr>
+      `;
+    } else {
+      const rows = REPORTS.slice(start, end).map(r => {
+        const fecha          = escapeHTML(r.fecha || '');
+        const horaAcumulada  = escapeHTML(r.hora_acumulada || '');
+        const horaInicio     = escapeHTML(r.hora_inicio || '');
+        const horaFin        = escapeHTML(r.hora_fin || '');
+        const tarea          = escapeHTML(r.tarea || '');
+        const observacion    = escapeHTML(r.observacion || '');
+        const comp           = r.comprobante ? `<a class="pill" href="${escapeHTML(r.comprobante)}" target="_blank" rel="noopener">📎 Ver</a>` : `<span class="muted">—</span>`;
+
+        return `
+          <tr>
+            <td class="nowrap">${fecha}</td>
+            <td class="nowrap">${horaAcumulada}</td>
+            <td class="nowrap">${horaInicio}</td>
+            <td class="nowrap">${horaFin}</td>
+            <td>${tarea}</td>
+            <td>${comp}</td>
+            <td class="muted">${observacion || '—'}</td>
+          </tr>
+        `;
+      }).join('');
+      tbody.innerHTML = rows;
+    }
+
+    // UI paginación
+    pageInfo.textContent = `Página ${currentPage} de ${getTotalPages()}`;
+    if (total === 0) {
+      rangeInfo.textContent = 'Mostrando 0 de 0';
+    } else {
+      rangeInfo.textContent = pageSize === Infinity
+        ? `Mostrando 1–${total} de ${total}`
+        : `Mostrando ${start + 1}–${end} de ${total}`;
+    }
+
+    btnPrev.disabled = (currentPage <= 1);
+    btnNext.disabled = (currentPage >= getTotalPages());
+  }
+
+  // Eventos
+  pageSizeS.addEventListener('change', () => {
+    const val = pageSizeS.value;
+    pageSize = (val === 'all') ? Infinity : parseInt(val, 10) || 10;
+    currentPage = 1; // reset
+    render();
+  });
+
+  btnPrev.addEventListener('click', () => {
+    if (currentPage > 1) currentPage--;
+    render();
+  });
+
+  btnNext.addEventListener('click', () => {
+    const totalPages = getTotalPages();
+    if (currentPage < totalPages) currentPage++;
+    render();
+  });
+
+  // Inicial
+  // Valor por defecto: 10 filas
+  pageSizeS.value = '10';
+  pageSize = 10;
+  render();
+})();
+</script>
+
+<%- include('partials/footer') %>
