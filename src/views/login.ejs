@@ -146,12 +146,12 @@
 
     // Estado inicial
     updateButton();
-
+</script>
     // Mensaje de error del servidor (ya manejado arriba con .error-box),
     // pero si prefieres SweetAlert, descomenta:
     <% if (typeof error !== 'undefined' && error) { %>
        Swal.fire({ icon:'error', title:'Error', text:'<%= error %>' });
     <% } %>
-  </script>
+  
 </body>
 </html>

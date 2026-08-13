@@ -2,140 +2,500 @@
   pageTitle = 'Usuarios';
   pageSubtitle = 'Gestión de usuarios';
 %>
+
 <%- include('partials/header') %>
 
 <style>
   /* Estilos específicos de usuarios */
-  .toolbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; }
-  .search { flex:1; min-width:220px; height:40px; border-radius:10px; border:1px solid var(--border); background:#0b1628; color:var(--text); padding:0 12px; }
-  .btn { padding:10px 14px; border-radius:10px; border:1px solid transparent; background:var(--accent); color:#fff; font-weight:700; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; gap:6px; }
-  .btn:hover { background:#2ea7f5; }
-  .btn.secondary { background:#122642; color:var(--text); border-color:var(--border); }
-  .table-wrap { overflow:auto; border:1px solid var(--border); border-radius:14px; }
-  table { width:100%; border-collapse:collapse; min-width:720px; }
-  th, td { padding:12px 14px; border-bottom:1px solid rgba(255,255,255,0.06); text-align:left; font-size:14px; }
-  th { color:var(--muted); background:#0b1c30; position:sticky; top:0; z-index:1; }
-  tr:hover td { background:rgba(255,255,255,0.02); }
-  .chip { padding:4px 10px; border-radius:999px; font-size:12px; border:1px solid var(--border); display:inline-block; }
-  .chip.ok { background:rgba(46,204,113,0.12); color:#8ef0bd; border-color:rgba(46,204,113,0.4); }
-  .chip.off { background:rgba(255,99,132,0.12); color:#ffc6d1; border-color:rgba(255,99,132,0.4); }
-  .chip.role { background:rgba(39,154,228,0.12); color:#9ad6ff; border-color:rgba(39,154,228,0.4); }
-  .actions { display:flex; gap:8px; flex-wrap:wrap; }
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .search {
+    flex: 1;
+    min-width: 220px;
+    height: 40px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: #0b1628;
+    color: var(--text);
+    padding: 0 12px;
+  }
+
+  .btn {
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn:hover {
+    background: #2ea7f5;
+  }
+
+  .btn.secondary {
+    background: #122642;
+    color: var(--text);
+    border-color: var(--border);
+  }
+
+  .table-wrap {
+    overflow: auto;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 1000px;
+  }
+
+  th,
+  td {
+    padding: 12px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    text-align: left;
+    font-size: 14px;
+  }
+
+  th {
+    color: var(--muted);
+    background: #0b1c30;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  tr:hover td {
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .chip {
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    border: 1px solid var(--border);
+    display: inline-block;
+  }
+
+  .chip.ok {
+    background: rgba(46, 204, 113, 0.12);
+    color: #8ef0bd;
+    border-color: rgba(46, 204, 113, 0.4);
+  }
+
+  .chip.off {
+    background: rgba(255, 99, 132, 0.12);
+    color: #ffc6d1;
+    border-color: rgba(255, 99, 132, 0.4);
+  }
+
+  .chip.role {
+    background: rgba(39, 154, 228, 0.12);
+    color: #9ad6ff;
+    border-color: rgba(39, 154, 228, 0.4);
+  }
+
+  .actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
   /* Modal */
-  .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.55); display:none; align-items:center; justify-content:center; padding:16px; z-index:1000; }
-  .modal { background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:18px; max-width:520px; width:100%; box-shadow:0 15px 40px rgba(0,0,0,0.35); }
-  .modal h3 { margin-top:0; }
-  .form-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; }
-  .form-grid label { color:var(--muted); font-size:14px; display:flex; flex-direction:column; gap:6px; }
-  .form-grid input, .form-grid select { border-radius:10px; border:1px solid var(--border); background:#0b1628; color:var(--text); padding:10px; }
-  .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:12px; flex-wrap:wrap; }
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    z-index: 1000;
+  }
+
+  .modal {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px;
+    max-width: 520px;
+    width: 100%;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.35);
+  }
+
+  .modal h3 {
+    margin-top: 0;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+  }
+
+  .form-grid label {
+    color: var(--muted);
+    font-size: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .form-grid input,
+  .form-grid select {
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: #0b1628;
+    color: var(--text);
+    padding: 10px;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+
   @media (max-width: 720px) {
-    .search { width:100%; }
-    .toolbar { flex-direction:column; align-items:stretch; }
-    .btn { justify-content:center; width:100%; }
-    .actions { justify-content:flex-start; }
-    .modal { max-width:100%; }
+    .search {
+      width: 100%;
+    }
+
+    .toolbar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .btn {
+      justify-content: center;
+      width: 100%;
+    }
+
+    .actions {
+      justify-content: flex-start;
+    }
+
+    .modal {
+      max-width: 100%;
+    }
   }
 </style>
 
-    <section class="panel">
-      <div class="toolbar" style="gap:12px;">
-        <input id="q" class="search" placeholder="Buscar por nombre o CI">
-        <div style="display:flex; gap:10px; flex-wrap:wrap;">
-          <button id="btnNew" class="btn">+ Nuevo</button>
-        </div>
-      </div>
 
-      <div class="table-wrap" style="margin-top:14px;">
-        <table id="tbl">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Nombre</th>
-              <th>CI</th>
-              <th>Universidad</th>
-              <th>Carrera</th>
-              <th>Celular</th>
-              <th>Estado</th>
-              <th>Rol</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="tbody">
-            <% (users||[]).forEach(u => { %>
-              <tr data-id="<%= u.id_usuario %>"
-                  data-nombre="<%- (u.nombre||'').replace(/\"/g,'&quot;') %>"
-                  data-ci="<%- (u.CI||'').replace(/\"/g,'&quot;') %>"
-                  data-universidad="<%- (u.universidad||'').replace(/\"/g,'&quot;') %>"
-                  data-carrera="<%- (u.carrera||'').replace(/\"/g,'&quot;') %>"
-                  data-celular="<%- (u.celular||'').replace(/\"/g,'&quot;') %>"
-                  data-estado="<%= Number(u.estado)||0 %>"
-                  data-rol="<%= Number(u.rol)||0 %>"
-                  data-contrasena="<%- (u.contrasena||'').replace(/\"/g,'&quot;') %>">
-                <td><%= u.id_usuario %></td>
-                <td class="c-nombre"><%= u.nombre %></td>
-                <td class="c-ci"><%= u.CI %></td>
-                <td class="c-univ"><%= u.universidad %></td>
-                <td class="c-carr"><%= u.carrera %></td>
-                <td class="c-cel"><%= u.celular || '-' %></td>
-                <td class="c-est"><span class="chip <%= u.estado? 'ok':'off' %>"><%= u.estado? 'Activo':'Inactivo' %></span></td>
-                <td class="c-rol"><span class="chip role"><%= u.rol? 'Admin':'Usuario' %></span></td>
-                <td class="actions">
-                  <button class="btn secondary btnEdit">Editar</button>
-                  <button class="btn secondary btnDel">Eliminar</button>
-                </td>
-              </tr>
-            <% }) %>
-          </tbody>
-        </table>
-      </div>
-    </section>
+<section class="panel">
 
-  <div class="modal-backdrop" id="modal-backdrop">
-    <div class="modal">
-      <h3 id="modal-title">Nuevo usuario</h3>
-      <form id="user-form">
-        <div class="form-grid">
-          <label>Nombre
-            <input id="f-nombre" name="nombre" required placeholder="Nombre completo">
-          </label>
-          <label>CI
-            <input id="f-ci" name="ci" required placeholder="CI" inputmode="numeric">
-          </label>
-          <label>Universidad
-            <input id="f-univ" name="universidad" required placeholder="Universidad">
-          </label>
-          <label>Carrera
-            <input id="f-carr" name="carrera" required placeholder="Carrera">
-          </label>
-          <label>Celular
-            <input id="f-cel" name="celular" placeholder="Ej. 70000000" inputmode="tel">
-          </label>
-          <label>Estado
-            <select id="f-est" name="estado">
-              <option value="1">Activo</option>
-              <option value="0">Inactivo</option>
-            </select>
-          </label>
-          <label>Rol
-            <select id="f-rol" name="rol">
-              <option value="0">Usuario</option>
-              <option value="1">Admin</option>
-            </select>
-          </label>
-          <label>Contraseña <small>(obligatoria al crear)</small>
-            <input id="f-pass" name="contrasena" placeholder="Contraseña">
-          </label>
-        </div>
-        <div class="modal-actions">
-          <button type="button" class="btn secondary" id="btn-cancel">Cancelar</button>
-          <button type="submit" class="btn" id="btn-save">Guardar</button>
-        </div>
-      </form>
+  <div class="toolbar" style="gap:12px;">
+
+    <input
+      id="q"
+      class="search"
+      placeholder="Buscar por nombre o CI"
+    >
+
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button id="btnNew" class="btn">
+        + Nuevo
+      </button>
     </div>
+
   </div>
 
-  <script>
+
+  <div class="table-wrap" style="margin-top:14px;">
+
+    <table id="tbl">
+
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nombre</th>
+          <th>Apellido Paterno</th>
+          <th>Apellido Materno</th>
+          <th>CI</th>
+          <th>Universidad</th>
+          <th>Carrera</th>
+          <th>Celular</th>
+          <th>Estado</th>
+          <th>Rol</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+
+
+      <tbody id="tbody">
+
+        <% (users || []).forEach(u => { %>
+
+          <tr
+            data-id="<%= u.id_usuario %>"
+            data-nombre="<%- (u.nombre || '').replace(/\"/g, '&quot;') %>"
+            data-apellido_paterno="<%- (u.apellido_paterno || '').replace(/\"/g, '&quot;') %>"
+            data-apellido_materno="<%- (u.apellido_materno || '').replace(/\"/g, '&quot;') %>"
+            data-ci="<%- (u.CI || '').replace(/\"/g, '&quot;') %>"
+            data-universidad="<%- (u.universidad || '').replace(/\"/g, '&quot;') %>"
+            data-carrera="<%- (u.carrera || '').replace(/\"/g, '&quot;') %>"
+            data-celular="<%- (u.celular || '').replace(/\"/g, '&quot;') %>"
+            data-estado="<%= Number(u.estado) || 0 %>"
+            data-rol="<%= Number(u.rol) || 0 %>"
+          >
+
+            <td>
+              <%= u.id_usuario %>
+            </td>
+
+            <td class="c-nombre">
+              <%= u.nombre || '' %>
+            </td>
+
+            <td class="c-apellido_paterno">
+              <%= u.apellido_paterno || '' %>
+            </td>
+
+            <td class="c-apellido_materno">
+              <%= u.apellido_materno || '' %>
+            </td>
+
+            <td class="c-ci">
+              <%= u.CI || '' %>
+            </td>
+
+            <td class="c-univ">
+              <%= u.universidad || '' %>
+            </td>
+
+            <td class="c-carr">
+              <%= u.carrera || '' %>
+            </td>
+
+            <td class="c-cel">
+              <%= u.celular || '-' %>
+            </td>
+
+            <td class="c-est">
+              <span class="chip <%= u.estado ? 'ok' : 'off' %>">
+                <%= u.estado ? 'Activo' : 'Inactivo' %>
+              </span>
+            </td>
+
+            <td class="c-rol">
+              <span class="chip role">
+                <%= u.rol ? 'Admin' : 'Usuario' %>
+              </span>
+            </td>
+
+            <td class="actions">
+
+              <button class="btn secondary btnEdit">
+                Editar
+              </button>
+
+              <button class="btn secondary btnDel">
+                Eliminar
+              </button>
+
+            </td>
+
+          </tr>
+
+        <% }) %>
+
+      </tbody>
+
+    </table>
+
+  </div>
+
+</section>
+
+
+<!-- MODAL -->
+
+<div class="modal-backdrop" id="modal-backdrop">
+
+  <div class="modal">
+
+    <h3 id="modal-title">
+      Nuevo usuario
+    </h3>
+
+    <form id="user-form">
+
+      <div class="form-grid">
+
+        <label>
+          Nombre
+          <input
+            id="f-nombre"
+            name="nombre"
+            required
+            placeholder="Nombre completo"
+          >
+        </label>
+
+
+        <label>
+          Apellido Paterno
+          <input
+            id="f-app"
+            name="apellido_paterno"
+            required
+            placeholder="Apellido paterno"
+          >
+        </label>
+
+
+        <label>
+          Apellido Materno
+          <input
+            id="f-apm"
+            name="apellido_materno"
+            required
+            placeholder="Apellido materno"
+          >
+        </label>
+
+
+        <label>
+          CI
+          <input
+            id="f-ci"
+            name="ci"
+            required
+            placeholder="CI"
+            inputmode="numeric"
+          >
+        </label>
+
+
+        <label>
+          Universidad
+          <input
+            id="f-univ"
+            name="universidad"
+            required
+            placeholder="Universidad"
+          >
+        </label>
+
+
+        <label>
+          Carrera
+          <input
+            id="f-carr"
+            name="carrera"
+            required
+            placeholder="Carrera"
+          >
+        </label>
+
+
+        <label>
+          Celular
+          <input
+            id="f-cel"
+            name="celular"
+            placeholder="Ej. 70000000"
+            inputmode="tel"
+          >
+        </label>
+
+
+        <label>
+          Estado
+
+          <select id="f-est" name="estado">
+
+            <option value="1">
+              Activo
+            </option>
+
+            <option value="0">
+              Inactivo
+            </option>
+
+          </select>
+
+        </label>
+
+
+        <label>
+          Rol
+
+          <select id="f-rol" name="rol">
+
+            <option value="0">
+              Usuario
+            </option>
+
+            <option value="1">
+              Admin
+            </option>
+
+          </select>
+
+        </label>
+
+
+        <label>
+          Contraseña
+          <small>(obligatoria al crear)</small>
+
+          <input
+            id="f-pass"
+            name="contrasena"
+            type="password"
+            placeholder="Contraseña"
+          >
+
+        </label>
+
+      </div>
+
+
+      <div class="modal-actions">
+
+        <button
+          type="button"
+          class="btn secondary"
+          id="btn-cancel"
+        >
+          Cancelar
+        </button>
+
+        <button
+          type="submit"
+          class="btn"
+          id="btn-save"
+        >
+          Guardar
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+
+
+<script>
+
   const q = document.getElementById('q');
   const tbody = document.getElementById('tbody');
   const btnNew = document.getElementById('btnNew');
@@ -143,183 +503,748 @@
   const form = document.getElementById('user-form');
   const modalTitle = document.getElementById('modal-title');
   const btnCancel = document.getElementById('btn-cancel');
+
   let editId = null;
 
+
+  /* =========================
+     BUSCAR USUARIOS
+     ========================= */
+
   q.addEventListener('input', () => {
-    const val = q.value.toLowerCase();
+
+    const val = q.value.toLowerCase().trim();
+
     [...tbody.rows].forEach(tr => {
-      const name = tr.querySelector('.c-nombre').textContent.toLowerCase();
-      const ci   = tr.querySelector('.c-ci').textContent.toLowerCase();
-      tr.style.display = (name.includes(val) || ci.includes(val)) ? '' : 'none';
+
+      const name =
+        tr.querySelector('.c-nombre')
+          ?.textContent
+          .toLowerCase() || '';
+
+      const ci =
+        tr.querySelector('.c-ci')
+          ?.textContent
+          .toLowerCase() || '';
+
+      tr.style.display =
+        (name.includes(val) || ci.includes(val))
+          ? ''
+          : 'none';
+
     });
+
   });
+
+
+  /* =========================
+     NUEVO USUARIO
+     ========================= */
 
   btnNew.addEventListener('click', () => {
-    openModal('Nuevo usuario');
+
     editId = null;
-    initFormValues();
+
     form.dataset.mode = 'create';
+
+    initFormValues();
+
+    openModal('Nuevo usuario');
+
+    document.getElementById('f-pass').required = true;
+
   });
+
+
+  /* =========================
+     EDITAR / ELIMINAR
+     ========================= */
 
   tbody.addEventListener('click', async (ev) => {
+
     const tr = ev.target.closest('tr');
+
     if (!tr) return;
 
+
+    /* EDITAR */
+
     if (ev.target.closest('.btnEdit')) {
+
       const user = rowToObj(tr);
+
       editId = user.id_usuario;
-      initFormValues(user);
+
       form.dataset.mode = 'edit';
+
+      initFormValues(user);
+
       openModal(`Editar #${user.id_usuario}`);
+
+      document.getElementById('f-pass').required = false;
+
+      return;
     }
+
+
+    /* ELIMINAR */
 
     if (ev.target.closest('.btnDel')) {
+
       const id = tr.dataset.id;
-      const conf = confirm(`¿Eliminar usuario #${id}?`);
+
+      const conf = confirm(
+        `¿Eliminar usuario #${id}?`
+      );
+
       if (!conf) return;
 
+
       try {
-        const res = await fetch(`/api/usuarios/${id}`, {
-          method: 'DELETE',
-          credentials: 'include'
-        });
+
+        const res = await fetch(
+          `/api/usuarios/${id}`,
+          {
+            method: 'DELETE',
+            credentials: 'include'
+          }
+        );
+
+
         const data = await res.json();
-        if (!res.ok || !data.ok) throw new Error(data.msg||'No se pudo eliminar');
+
+
+        if (!res.ok || !data.ok) {
+
+          throw new Error(
+            data.msg || 'No se pudo eliminar'
+          );
+
+        }
+
+
         tr.remove();
+
+
       } catch (e) {
-        alert(e.message || 'No se pudo eliminar');
+
+        console.error(e);
+
+        alert(
+          e.message ||
+          'No se pudo eliminar'
+        );
+
       }
+
     }
+
   });
 
-  btnCancel.addEventListener('click', closeModal);
+
+  /* =========================
+     CERRAR MODAL
+     ========================= */
+
+  btnCancel.addEventListener(
+    'click',
+    closeModal
+  );
+
+
   backdrop.addEventListener('click', (e) => {
-    if (e.target === backdrop) closeModal();
-  });
-  form.addEventListener('submit', onSubmit);
 
-  function initFormValues(u={}) {
-    document.getElementById('f-nombre').value = u.nombre||'';
-    document.getElementById('f-ci').value     = u.CI||'';
-    document.getElementById('f-univ').value   = u.universidad||'';
-    document.getElementById('f-carr').value   = u.carrera||'';
-    document.getElementById('f-cel').value    = u.celular||'';
-    document.getElementById('f-est').value    = (u.estado||0);
-    document.getElementById('f-rol').value    = (u.rol||0);
-    document.getElementById('f-pass').value   = '';
+    if (e.target === backdrop) {
+
+      closeModal();
+
+    }
+
+  });
+
+
+  form.addEventListener(
+    'submit',
+    onSubmit
+  );
+
+
+  /* =========================
+     INICIALIZAR FORMULARIO
+     ========================= */
+
+  function initFormValues(u = {}) {
+
+    document.getElementById('f-nombre').value =
+      u.nombre || '';
+
+    document.getElementById('f-app').value =
+      u.apellido_paterno || '';
+
+    document.getElementById('f-apm').value =
+      u.apellido_materno || '';
+
+    document.getElementById('f-ci').value =
+      u.CI || '';
+
+    document.getElementById('f-univ').value =
+      u.universidad || '';
+
+    document.getElementById('f-carr').value =
+      u.carrera || '';
+
+    document.getElementById('f-cel').value =
+      u.celular || '';
+
+    document.getElementById('f-est').value =
+      Number(u.estado ?? 1);
+
+    document.getElementById('f-rol').value =
+      Number(u.rol ?? 0);
+
+    document.getElementById('f-pass').value =
+      '';
+
   }
+
+
+  /* =========================
+     ABRIR MODAL
+     ========================= */
 
   function openModal(title) {
+
     modalTitle.textContent = title;
+
     backdrop.style.display = 'flex';
+
   }
+
+
+  /* =========================
+     CERRAR MODAL
+     ========================= */
+
   function closeModal() {
+
     backdrop.style.display = 'none';
+
+    form.reset();
+
+    editId = null;
+
   }
+
+
+  /* =========================
+     GUARDAR USUARIO
+     ========================= */
 
   async function onSubmit(e) {
+
     e.preventDefault();
-    const payload = getFormValues(form.dataset.mode === 'create');
+
+
+    const payload =
+      getFormValues(
+        form.dataset.mode === 'create'
+      );
+
+
     if (!payload) return;
+
+
     try {
+
       let url = '/api/usuarios';
-      if (form.dataset.mode === 'edit' && editId) url = `/api/usuarios/${editId}`;
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type':'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(payload)
-      });
+
+      let method = 'POST';
+
+
+      if (
+        form.dataset.mode === 'edit' &&
+        editId
+      ) {
+
+        url = `/api/usuarios/${editId}`;
+
+        /*
+         * IMPORTANTE:
+         * Aquí dejamos POST porque tu código
+         * original utilizaba POST.
+         *
+         * Si tu backend utiliza PUT para editar,
+         * cambia esta línea a:
+         *
+         * method = 'PUT';
+         */
+
+        method = 'POST';
+
+      }
+
+
+      const res = await fetch(
+        url,
+        {
+          method: method,
+
+          headers: {
+            'Content-Type': 'application/json'
+          },
+
+          credentials: 'include',
+
+          body: JSON.stringify(payload)
+
+        }
+      );
+
+
       const data = await res.json();
-      if (!res.ok || !data.ok) throw new Error(data.msg || 'Error al guardar');
+
+
+      if (!res.ok || !data.ok) {
+
+        throw new Error(
+          data.msg ||
+          'Error al guardar usuario'
+        );
+
+      }
+
+
       appendOrReplaceRow(data.user);
+
       closeModal();
+
+
     } catch (err) {
-      alert(err.message || 'No se pudo guardar');
+
+      console.error(err);
+
+      alert(
+        err.message ||
+        'No se pudo guardar el usuario'
+      );
+
     }
+
   }
+
+
+  /* =========================
+     OBTENER DATOS DEL FORMULARIO
+     ========================= */
 
   function getFormValues(requirePass) {
-    const nombre = document.getElementById('f-nombre').value.trim();
-    const CI = document.getElementById('f-ci').value.trim();
-    const universidad = document.getElementById('f-univ').value.trim();
-    const carrera = document.getElementById('f-carr').value.trim();
-    const celular = document.getElementById('f-cel').value.trim();
-    const estado = document.getElementById('f-est').value;
-    const rol = document.getElementById('f-rol').value;
-    const contrasena = document.getElementById('f-pass').value;
 
-    if (!nombre || !CI || !universidad || !carrera) {
-      alert('Nombre, CI, Universidad y Carrera son obligatorios');
+    const nombre =
+      document.getElementById('f-nombre')
+        .value
+        .trim();
+
+
+    const apellido_paterno =
+      document.getElementById('f-app')
+        .value
+        .trim();
+
+
+    const apellido_materno =
+      document.getElementById('f-apm')
+        .value
+        .trim();
+
+
+    const CI =
+      document.getElementById('f-ci')
+        .value
+        .trim();
+
+
+    const universidad =
+      document.getElementById('f-univ')
+        .value
+        .trim();
+
+
+    const carrera =
+      document.getElementById('f-carr')
+        .value
+        .trim();
+
+
+    const celular =
+      document.getElementById('f-cel')
+        .value
+        .trim();
+
+
+    const estado =
+      Number(
+        document.getElementById('f-est').value
+      );
+
+
+    const rol =
+      Number(
+        document.getElementById('f-rol').value
+      );
+
+
+    const contrasena =
+      document.getElementById('f-pass')
+        .value;
+
+
+    /* VALIDACIONES */
+
+    if (
+      !nombre ||
+      !apellido_paterno ||
+      !apellido_materno ||
+      !CI ||
+      !universidad ||
+      !carrera
+    ) {
+
+      alert(
+        'Nombre, apellidos, CI, Universidad y Carrera son obligatorios'
+      );
+
       return false;
-    }
-    if (!/^[0-9.\\-]{5,32}$/.test(CI)) {
-      alert('CI inválido (5-32, dígitos/punto/guion)');
-      return false;
-    }
-    if (celular && !/^[0-9]{7,12}$/.test(celular)) {
-      alert('Celular: 7-12 dígitos');
-      return false;
-    }
-    if (requirePass && !contrasena) {
-      alert('Contraseña obligatoria al crear');
-      return false;
+
     }
 
-    return { nombre, CI, universidad, carrera, celular, estado, rol, contrasena };
+
+    /* Validar CI */
+
+    if (!/^[0-9.\-]{5,32}$/.test(CI)) {
+
+      alert(
+        'CI inválido (5-32 caracteres, dígitos/punto/guion)'
+      );
+
+      return false;
+
+    }
+
+
+    /* Validar celular */
+
+    if (
+      celular &&
+      !/^[0-9]{7,12}$/.test(celular)
+    ) {
+
+      alert(
+        'Celular: debe contener entre 7 y 12 dígitos'
+      );
+
+      return false;
+
+    }
+
+
+    /* Contraseña obligatoria solamente al crear */
+
+    if (
+      requirePass &&
+      !contrasena
+    ) {
+
+      alert(
+        'Contraseña obligatoria al crear'
+      );
+
+      return false;
+
+    }
+
+
+    return {
+
+      nombre,
+
+      apellido_paterno,
+
+      apellido_materno,
+
+      CI,
+
+      universidad,
+
+      carrera,
+
+      celular,
+
+      estado,
+
+      rol,
+
+      /*
+       * Si estamos editando y la contraseña
+       * está vacía, no se envía.
+       *
+       * Esto permite que el backend conserve
+       * la contraseña actual.
+       */
+
+      ...(contrasena
+        ? { contrasena }
+        : {})
+
+    };
+
   }
+
+
+  /* =========================
+     CONVERTIR FILA A OBJETO
+     ========================= */
 
   function rowToObj(tr) {
+
     return {
-      id_usuario: Number(tr.dataset.id),
-      nombre: tr.dataset.nombre || tr.querySelector('.c-nombre').textContent,
-      CI: tr.dataset.ci || tr.querySelector('.c-ci').textContent,
-      universidad: tr.dataset.universidad || tr.querySelector('.c-univ').textContent,
-      carrera: tr.dataset.carrera || tr.querySelector('.c-carr').textContent,
-      celular: tr.dataset.celular || (tr.querySelector('.c-cel').textContent==='-'?'':tr.querySelector('.c-cel').textContent),
-      estado: Number(tr.dataset.estado||0),
-      rol: Number(tr.dataset.rol||0),
-      contrasena: tr.dataset.contrasena || ''
+
+      id_usuario:
+        Number(tr.dataset.id),
+
+
+      nombre:
+        tr.dataset.nombre ||
+        tr.querySelector('.c-nombre')
+          ?.textContent
+          .trim() ||
+        '',
+
+
+      apellido_paterno:
+        tr.dataset.apellido_paterno ||
+        tr.querySelector('.c-apellido_paterno')
+          ?.textContent
+          .trim() ||
+        '',
+
+
+      apellido_materno:
+        tr.dataset.apellido_materno ||
+        tr.querySelector('.c-apellido_materno')
+          ?.textContent
+          .trim() ||
+        '',
+
+
+      CI:
+        tr.dataset.ci ||
+        tr.querySelector('.c-ci')
+          ?.textContent
+          .trim() ||
+        '',
+
+
+      universidad:
+        tr.dataset.universidad ||
+        tr.querySelector('.c-univ')
+          ?.textContent
+          .trim() ||
+        '',
+
+
+      carrera:
+        tr.dataset.carrera ||
+        tr.querySelector('.c-carr')
+          ?.textContent
+          .trim() ||
+        '',
+
+
+      celular:
+        tr.dataset.celular ||
+        (
+          tr.querySelector('.c-cel')
+            ?.textContent
+            .trim() === '-'
+            ? ''
+            : tr.querySelector('.c-cel')
+                ?.textContent
+                .trim() || ''
+        ),
+
+
+      estado:
+        Number(
+          tr.dataset.estado || 0
+        ),
+
+
+      rol:
+        Number(
+          tr.dataset.rol || 0
+        )
+
     };
+
   }
+
+
+  /* =========================
+     AGREGAR / REEMPLAZAR FILA
+     ========================= */
 
   function appendOrReplaceRow(u) {
-    let tr = tbody.querySelector(`tr[data-id="${u.id_usuario}"]`);
+
+    let tr =
+      tbody.querySelector(
+        `tr[data-id="${u.id_usuario}"]`
+      );
+
+
     const htmlCells = `
-      <td>${u.id_usuario}</td>
-      <td class="c-nombre"></td>
-      <td class="c-ci"></td>
-      <td class="c-univ"></td>
-      <td class="c-carr"></td>
-      <td class="c-cel"></td>
-      <td class="c-est"><span class="chip ${u.estado? 'ok':'off'}">${u.estado? 'Activo':'Inactivo'}</span></td>
-      <td class="c-rol"><span class="chip role">${u.rol? 'Admin':'Usuario'}</span></td>
-      <td class="actions">
-        <button class="btn secondary btnEdit">Editar</button>
-        <button class="btn secondary btnDel">Eliminar</button>
+
+      <td>
+        ${u.id_usuario}
       </td>
+
+      <td class="c-nombre"></td>
+
+      <td class="c-apellido_paterno"></td>
+
+      <td class="c-apellido_materno"></td>
+
+      <td class="c-ci"></td>
+
+      <td class="c-univ"></td>
+
+      <td class="c-carr"></td>
+
+      <td class="c-cel"></td>
+
+      <td class="c-est">
+        <span class="chip ${u.estado ? 'ok' : 'off'}">
+          ${u.estado ? 'Activo' : 'Inactivo'}
+        </span>
+      </td>
+
+      <td class="c-rol">
+        <span class="chip role">
+          ${u.rol ? 'Admin' : 'Usuario'}
+        </span>
+      </td>
+
+      <td class="actions">
+
+        <button class="btn secondary btnEdit">
+          Editar
+        </button>
+
+        <button class="btn secondary btnDel">
+          Eliminar
+        </button>
+
+      </td>
+
     `;
+
+
+    /* Crear fila si no existe */
+
     if (!tr) {
+
       tr = document.createElement('tr');
-      tr.setAttribute('data-id', u.id_usuario);
+
+      tr.setAttribute(
+        'data-id',
+        u.id_usuario
+      );
+
       tbody.prepend(tr);
+
     }
+
+
     tr.innerHTML = htmlCells;
 
-    tr.querySelector('.c-nombre').textContent = u.nombre || '';
-    tr.querySelector('.c-ci').textContent = u.CI || '';
-    tr.querySelector('.c-univ').textContent = u.universidad || '';
-    tr.querySelector('.c-carr').textContent = u.carrera || '';
-    tr.querySelector('.c-cel').textContent = u.celular || '-';
 
-    tr.dataset.nombre = u.nombre || '';
-    tr.dataset.ci = u.CI || '';
-    tr.dataset.universidad = u.universidad || '';
-    tr.dataset.carrera = u.carrera || '';
-    tr.dataset.celular = u.celular || '';
-    tr.dataset.estado = Number(u.estado)||0;
-    tr.dataset.rol = Number(u.rol)||0;
-    tr.dataset.contrasena = u.contrasena || '';
+    /* =========================
+       ACTUALIZAR CELDAS
+       ========================= */
+
+    tr.querySelector('.c-nombre').textContent =
+      u.nombre || '';
+
+
+    tr.querySelector(
+      '.c-apellido_paterno'
+    ).textContent =
+      u.apellido_paterno || '';
+
+
+    tr.querySelector(
+      '.c-apellido_materno'
+    ).textContent =
+      u.apellido_materno || '';
+
+
+    tr.querySelector('.c-ci').textContent =
+      u.CI || '';
+
+
+    tr.querySelector('.c-univ').textContent =
+      u.universidad || '';
+
+
+    tr.querySelector('.c-carr').textContent =
+      u.carrera || '';
+
+
+    tr.querySelector('.c-cel').textContent =
+      u.celular || '-';
+
+
+    /* =========================
+       ACTUALIZAR DATASET
+       ========================= */
+
+    tr.dataset.nombre =
+      u.nombre || '';
+
+
+    tr.dataset.apellido_paterno =
+      u.apellido_paterno || '';
+
+
+    tr.dataset.apellido_materno =
+      u.apellido_materno || '';
+
+
+    tr.dataset.ci =
+      u.CI || '';
+
+
+    tr.dataset.universidad =
+      u.universidad || '';
+
+
+    tr.dataset.carrera =
+      u.carrera || '';
+
+
+    tr.dataset.celular =
+      u.celular || '';
+
+
+    tr.dataset.estado =
+      Number(u.estado) || 0;
+
+
+    tr.dataset.rol =
+      Number(u.rol) || 0;
+
   }
-  </script>
+
+</script>
+
+
 <%- include('partials/footer') %>
