@@ -3,10 +3,16 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/bd'); // mysql2/promise
 
+// --- IMPORTAMOS LA LIBRERÍA DEL BIOMÉTRICO ---
+const Zkteco = require('zkteco-js-with-restart');
+const BIOMETRICO_IP = process.env.BIOMETRICO_IP || '192.168.0.250';
+const BIOMETRICO_PORT = Number(process.env.BIOMETRICO_PORT) || 4370;
+
 function requireAuth(req, res, next) {
   if (!req.session?.user) return res.redirect('/login');
   next();
 }
+
 // Opcional: solo admin
 function requireAdmin(req, res, next) {
   // if (req.session.user.rol !== 1) return res.status(403).send('No autorizado');
@@ -47,15 +53,42 @@ router.post('/api/usuarios', requireAuth, requireAdmin, async (req, res) => {
     const [dupes] = await db.query('SELECT id_usuario FROM usuarios WHERE CI=? LIMIT 1', [CI]);
     if (dupes.length) return res.status(409).json({ ok:false, msg:'CI ya registrado' });
 
+    // 1. GUARDAR EN MYSQL
     const [result] = await db.query(
       `INSERT INTO usuarios (nombre, CI, universidad, carrera, celular, estado, contrasena, rol)
        VALUES (?,?,?,?,?, ?, ?, ?)`,
       [nombre, CI, universidad, carrera, celular || null, estado, contrasena, rol]
     );
 
+    const idGenerado = result.insertId;
+
+    // 2. SINCRONIZAR CON EL BIOMÉTRICO K14 (Envuelto en un try/catch independiente)
+    try {
+      const dispositivoZk = new Zkteco(BIOMETRICO_IP, BIOMETRICO_PORT, 5200, 5000);
+      await dispositivoZk.createSocket();
+      
+      // En el K14, el rol 14 es Super Admin, el 0 es Usuario Normal.
+      const rolBiometrico = rol === 1 ? 14 : 0; 
+
+      await dispositivoZk.setUser(
+        idGenerado,              // uid
+        idGenerado.toString(),   // userid
+        nombre,                  // nombre
+        contrasena,              // clave
+        rolBiometrico,           // rol (0 normal, 14 admin)
+        0                        // sin tarjeta
+      );
+
+      await dispositivoZk.disconnect();
+      console.log(`🚀 Usuario [${nombre}] inyectado exitosamente en el K14 con ID: ${idGenerado}`);
+    } catch (bioError) {
+      // Si el equipo está apagado, falla el K14 pero NO la base de datos.
+      console.error('⚠️ Usuario guardado en BD, pero el biométrico no respondió:', bioError.message);
+    }
+
     const [rows] = await db.query(
       `SELECT id_usuario, nombre, CI, universidad, carrera, celular, estado, rol, contrasena
-       FROM usuarios WHERE id_usuario=? LIMIT 1`, [result.insertId]
+       FROM usuarios WHERE id_usuario=? LIMIT 1`, [idGenerado]
     );
     res.json({ ok:true, user: rows[0] });
   } catch (e) {
@@ -63,6 +96,7 @@ router.post('/api/usuarios', requireAuth, requireAdmin, async (req, res) => {
     res.status(500).json({ ok:false, msg:'Error creando usuario' });
   }
 });
+
 // EDITAR
 router.post('/api/usuarios/:id', requireAuth, requireAdmin, async (req, res) => {
   try {
@@ -126,7 +160,20 @@ router.delete('/api/usuarios/:id', requireAuth, requireAdmin, async (req, res) =
     const id = Number(req.params.id);
     if (!id) return res.status(400).json({ ok:false, msg:'ID inválido' });
 
+    // 1. ELIMINAR DE MYSQL
     await db.query('DELETE FROM usuarios WHERE id_usuario=? LIMIT 1', [id]);
+    
+    // 2. ELIMINAR DEL BIOMÉTRICO
+    try {
+      const dispositivoZk = new Zkteco(BIOMETRICO_IP, BIOMETRICO_PORT, 5200, 5000);
+      await dispositivoZk.createSocket();
+      await dispositivoZk.deleteUser(id); // Elimina al usuario de la memoria del K14
+      await dispositivoZk.disconnect();
+      console.log(`🗑️ Usuario con ID ${id} eliminado del biométrico K14`);
+    } catch (bioError) {
+      console.error('⚠️ Usuario borrado de MySQL, pero no se pudo borrar del biométrico:', bioError.message);
+    }
+
     res.json({ ok:true });
   } catch (e) {
     console.error(e);
