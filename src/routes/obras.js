@@ -9,7 +9,7 @@ function requireAuth(req, res, next) {
 }
 
 function requireAdmin(req, res, next) {
-  // if (req.session.user.rol !== 1) return res.status(403).send('No autorizado');
+  if (req.session.user.rol !== 1) return res.status(403).send('No autorizado');
   next();
 }
 // ======================================================

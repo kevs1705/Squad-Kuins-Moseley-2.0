@@ -1,0 +1,195 @@
+/* ==========================================
+   ESTILOS COMPARTIDOS DEL PANEL DE CONTROL
+   ========================================== */
+
+/* 1. Íconos del Sidebar por Ruta */
+.sidebar-link[href="/admin/obras"]::before {
+  /* Reemplaza esta propiedad por la que use tu proyecto (mask, background-image, etc.) */
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z'/%3E%3Cpath d='M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2'/%3E%3Cpath d='M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2'/%3E%3Cpath d='M10 6h4'/%3E%3Cpath d='M10 10h4'/%3E%3Cpath d='M10 14h4'/%3E%3Cpath d='M10 18h4'/%3E%3C/svg%3E");
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z'/%3E%3Cpath d='M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2'/%3E%3Cpath d='M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2'/%3E%3Cpath d='M10 6h4'/%3E%3Cpath d='M10 10h4'/%3E%3Cpath d='M10 14h4'/%3E%3Cpath d='M10 18h4'/%3E%3C/svg%3E");
+}
+
+/* 2. Toolbar y Búsqueda */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.search {
+  flex: 1;
+  min-width: 220px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #0b1628;
+  color: var(--text);
+  padding: 0 12px;
+}
+
+/* 3. Botones */
+.btn {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn:hover {
+  background: #2ea7f5;
+}
+
+.btn.secondary {
+  background: #122642;
+  color: var(--text);
+  border-color: var(--border);
+}
+
+/* 4. Tablas */
+.table-wrap {
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1000px;
+}
+
+th, td {
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  text-align: left;
+  font-size: 14px;
+  color: #ffffff;
+}
+
+th {
+  color: var(--muted);
+  background: #0b1c30;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* 5. Chips */
+.chip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  display: inline-block;
+}
+
+.chip.ok {
+  background: rgba(46, 204, 113, 0.12);
+  color: #8ef0bd;
+  border-color: rgba(46, 204, 113, 0.4);
+}
+
+.chip.off {
+  background: rgba(255, 99, 132, 0.12);
+  color: #ffc6d1;
+  border-color: rgba(255, 99, 132, 0.4);
+}
+
+.chip.role {
+  background: rgba(39, 154, 228, 0.12);
+  color: #9ad6ff;
+  border-color: rgba(39, 154, 228, 0.4);
+}
+
+/* 6. Modales y Formuarios */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 1000;
+}
+
+.modal {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px;
+  max-width: 600px;
+  width: 100%;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.35);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal h3 {
+  margin-top: 0;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.form-grid label {
+  color: var(--muted);
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-grid label.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-grid input,
+.form-grid select,
+.form-grid textarea {
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #0b1628;
+  color: var(--text);
+  padding: 10px;
+  font-family: inherit;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+/* Responsive */
+@media (max-width: 720px) {
+  .search { width: 100%; }
+  .toolbar { flex-direction: column; align-items: stretch; }
+  .btn { justify-content: center; width: 100%; }
+  .actions { justify-content: flex-start; }
+  .modal { max-width: 100%; }
+}
