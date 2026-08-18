@@ -70,18 +70,22 @@ async function sincronizarBidireccional() {
       if (!mapBD.has(idBio)) {
         const nombreTemp = String(bioUser.name || `Usuario_${idBio}`).trim().slice(0, 100);
         const pwdTemp = String(bioUser.password || '123456');
-        const ciTemp = `BIO-${idBio}`;
+        const ciTemp = idBio;
 
-        // Obtener el departamento (sigla) ingresado en el K14
-        const deptoBio = String(
-          bioUser.dept || bioUser.department || bioUser.deptId || bioUser.group || ''
-        ).trim().toUpperCase();
+        // Obtener el departamento (ID o sigla) ingresado en el K14
+        const deptoBioRaw = bioUser.dept || bioUser.department || bioUser.deptId || bioUser.group || 0;
+        let idCarreraBD = null;
 
-        // Buscar el id_carrera según las siglas traídas del K14 (o asigna NULL / primera carrera por defecto)
-        const idCarreraBD = mapCarrerasBySigla.get(deptoBio) || (carrerasBD[0]?.id_carrera || null);
+        if (!isNaN(deptoBioRaw) && Number(deptoBioRaw) > 0) {
+          idCarreraBD = Number(deptoBioRaw);
+        } else {
+          const deptoBioSigla = String(deptoBioRaw).trim().toUpperCase();
+          idCarreraBD = mapCarrerasBySigla.get(deptoBioSigla) || (carrerasBD[0]?.id_carrera || null);
+        }
+
         const rolBD = Number(bioUser.role) > 0 ? 1 : 0;
 
-        console.log(`   ➕ Jalando a BD: [ID: ${idBio}] - "${nombreTemp}" | Siglas K14: "${deptoBio}" -> id_carrera: ${idCarreraBD}`);
+        console.log(`   ➕ Jalando a BD: [ID: ${idBio}] - "${nombreTemp}" | Depto K14: "${deptoBioRaw}" -> id_carrera: ${idCarreraBD}`);
 
         await db.query(
           `INSERT INTO usuarios (id_usuario, nombre, CI, universidad, id_carrera, celular, estado, rol, contrasena)
@@ -99,8 +103,8 @@ async function sincronizarBidireccional() {
     for (const [idBD, dbUser] of mapBD.entries()) {
       if (!mapBio.has(idBD)) {
         if (Number(dbUser.estado) === 1) {
-          const siglaCarrera = String(dbUser.carrera_siglas || 'SIS').trim();
-          console.log(`   🚀 Enviando a K14: [ID: ${idBD}] - "${dbUser.nombre}" | Depto/Siglas: "${siglaCarrera}"`);
+          const deptoBio = dbUser.id_carrera ? Number(dbUser.id_carrera) : 1;
+          console.log(`   🚀 Enviando a K14: [ID: ${idBD}] - "${dbUser.nombre}" | Depto ID: ${deptoBio}`);
 
           const bioUid = Number(idBD);
           const bioUserId = String(idBD);
@@ -118,7 +122,8 @@ async function sincronizarBidireccional() {
             bioName,
             bioPassword,
             bioRole,
-            bioCard
+            bioCard,
+            deptoBio // <--- 7mo parámetro: Depto ID
           );
           creadosEnBio++;
         }

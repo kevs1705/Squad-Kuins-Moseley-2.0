@@ -461,9 +461,8 @@ document.getElementById('btnHorasExtra')?.addEventListener('click', async () => 
 <script>
 (() => {
   // Datos desde el servidor
-  //Linea marcada con error 
- //const REPORTS = <%- JSON.stringify(reports || []) %>;
-
+  const REPORTS = <%- JSON.stringify(reports || []) %>;
+ 
   // Helpers
   const $ = s => document.querySelector(s);
   const escapeHTML = (str) => (str || '').replace(/[&<>"']/g, m => ({
