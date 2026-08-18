@@ -23,7 +23,6 @@ function requireAdmin(req, res, next) {
 // =========================================================================
 router.get('/usuarios', requireAuth, requireAdmin, async (req, res) => {
   try {
-    // A. Obtener usuarios con JOIN a la tabla carreras
     const [rows] = await db.query(
       `SELECT u.id_usuario, u.nombre, u.apellido_paterno, u.apellido_materno, u.CI, 
               u.universidad, u.id_carrera, c.nombre AS carrera_nombre, c.siglas AS carrera_siglas,
@@ -33,7 +32,6 @@ router.get('/usuarios', requireAuth, requireAdmin, async (req, res) => {
        ORDER BY u.id_usuario DESC`
     );
 
-    // B. Obtener catálogo de carreras para el <select> del modal
     const [carreras] = await db.query(
       `SELECT id_carrera, nombre, siglas FROM carreras ORDER BY id_carrera ASC`
     );
@@ -94,24 +92,27 @@ router.post('/api/usuarios', requireAuth, requireAdmin, async (req, res) => {
         await dispositivoZk.createSocket();
 
         const rolBiometrico = rol === 1 ? 14 : 0;
+        // Obtenemos el ID de Departamento (id_carrera directo asignado en la BD)
+        const deptoBiometrico = id_carrera ? Number(id_carrera) : 1;
 
         await dispositivoZk.setUser(
-          idUsuario,
-          idUsuario.toString(),
-          nombre.slice(0, 24),
-          contrasena,
-          rolBiometrico,
-          0
+          Number(idUsuario),   // 1. uid
+          String(idUsuario),   // 2. userid
+          nombre.slice(0, 24), // 3. name
+          String(contrasena),  // 4. password
+          rolBiometrico,       // 5. role
+          0,                   // 6. cardno
+          deptoBiometrico      // 7. deptid (Número de departamento creado en el K14)
         );
 
         await dispositivoZk.disconnect();
-        console.log(`🚀 Usuario [${nombre}] registrado en el K14 con ID: ${idUsuario}`);
+        console.log(`🚀 Usuario [${nombre}] registrado en el K14 con ID: ${idUsuario} y Depto ID: ${deptoBiometrico}`);
       } catch (bioError) {
         console.error('⚠️ Usuario guardado en MySQL, pero falló envío al biométrico:', bioError.message);
       }
     }
 
-    // Traer la fila creada con el nombre de la carrera para retornar a la vista
+    // Traer la fila creada con la información de la carrera
     const [rows] = await db.query(
       `SELECT u.id_usuario, u.nombre, u.apellido_paterno, u.apellido_materno, u.CI, 
               u.universidad, u.id_carrera, c.nombre AS carrera_nombre, c.siglas AS carrera_siglas,
@@ -151,8 +152,8 @@ router.post('/api/usuarios/:id', requireAuth, requireAdmin, async (req, res) => 
     rol = Number(rol) ? 1 : 0;
     contrasena = (contrasena == null) ? '' : String(contrasena).slice(0, 255);
 
-    if (!nombre || !CI || !universidad || !id_carrera) {
-      return res.status(400).json({ ok: false, msg: 'Campos obligatorios: nombre, CI, universidad, carrera' });
+    if (!nombre || !CI || !id_carrera) {
+      return res.status(400).json({ ok: false, msg: 'Campos obligatorios: nombre, CI, carrera' });
     }
     if (!/^[0-9.\-]{5,32}$/.test(CI)) {
       return res.status(400).json({ ok: false, msg: 'CI inválido' });
@@ -187,15 +188,18 @@ router.post('/api/usuarios/:id', requireAuth, requireAdmin, async (req, res) => 
 
       if (estado === 1) {
         const rolBiometrico = rol === 1 ? 14 : 0;
+        const deptoBiometrico = id_carrera ? Number(id_carrera) : 1;
+
         await dispositivoZk.setUser(
           id,
           id.toString(),
           nombre.slice(0, 24),
           contrasenaFinal,
           rolBiometrico,
-          0
+          0,
+          deptoBiometrico // <--- Se envía el Depto ID correspondiente
         );
-        console.log(`🔄 Usuario [${nombre}] actualizado en el K14 con ID: ${id}`);
+        console.log(`🔄 Usuario [${nombre}] actualizado en el K14 con ID: ${id} y Depto ID: ${deptoBiometrico}`);
       } else {
         await dispositivoZk.deleteUser(id);
         console.log(`🚫 Usuario [${nombre}] desactivado. Removido del K14.`);

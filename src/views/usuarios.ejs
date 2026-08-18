@@ -63,20 +63,29 @@
   }
 
   th,
-  td {
-    padding: 12px 14px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    text-align: left;
-    font-size: 14px;
-  }
-
-  th {
-    color: var(--muted);
-    background: #0b1c30;
-    position: sticky;
-    top: 0;
-    z-index: 1;
-  }
+      td {
+        padding: 12px 14px;
+        border-bottom: 1px solid rgba(250, 248, 248, 0.06);
+        text-align: left;
+        font-size: 14px;
+      }
+ 
+      th {
+        color: var(--muted);
+        background: #0b1c30;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+      }
+ 
+      /* 👇 NUEVA REGLA: Esto cambia específicamente las letras de los datos de los usuarios */
+      td {
+        color: #ffffff; /* Puedes cambiar #ffffff por el color hexadecimal que quieras */
+      }
+ 
+      tr:hover td {
+        background: rgba(255, 255, 255, 0.02);
+      }
 
   tr:hover td {
     background: rgba(255, 255, 255, 0.02);
@@ -868,8 +877,7 @@
         .value
         .trim();
 
-    const id_carrera = 
-    Number(document.getElementById('f-carr').value);
+    const id_carrera = Number(document.getElementById('f-carr').value);
 
     const celular =
       document.getElementById('f-cel')
@@ -970,8 +978,6 @@
       universidad,
 
       id_carrera,
-
-      carrera,
 
       celular,
 
