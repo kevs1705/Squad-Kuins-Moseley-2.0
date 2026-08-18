@@ -14,7 +14,7 @@ function requireAuth(req, res, next) {
 }
 
 function requireAdmin(req, res, next) {
-  // if (req.session.user.rol !== 1) return res.status(403).send('No autorizado');
+   if (req.session.user.rol !== 1) return res.status(403).send('No autorizado');
   next();
 }
 
@@ -23,6 +23,7 @@ function requireAdmin(req, res, next) {
 // =========================================================================
 router.get('/usuarios', requireAuth, requireAdmin, async (req, res) => {
   try {
+    // A. Obtener usuarios con JOIN a la tabla carreras
     const [rows] = await db.query(
       `SELECT u.id_usuario, u.nombre, u.apellido_paterno, u.apellido_materno, u.CI, 
               u.universidad, u.id_carrera, c.nombre AS carrera_nombre, c.siglas AS carrera_siglas,
