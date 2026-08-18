@@ -1,0 +1,675 @@
+<%
+  pageTitle = 'Obras';
+  pageSubtitle = 'Gestión de obras y proyectos';
+%>
+
+<%- include('../partials/header') %>
+
+<style>
+  /* Estilos específicos de Obras */
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .search {
+    flex: 1;
+    min-width: 220px;
+    height: 40px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: #0b1628;
+    color: var(--text);
+    padding: 0 12px;
+  }
+
+  .btn {
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn:hover {
+    background: #2ea7f5;
+  }
+
+  .btn.secondary {
+    background: #122642;
+    color: var(--text);
+    border-color: var(--border);
+  }
+
+  .table-wrap {
+    overflow: auto;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 1000px;
+  }
+
+  th,
+  td {
+    padding: 12px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    text-align: left;
+    font-size: 14px;
+  }
+
+  th {
+    color: var(--muted);
+    background: #0b1c30;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  tr:hover td {
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .chip {
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    border: 1px solid var(--border);
+    display: inline-block;
+  }
+
+  .chip.ok {
+    background: rgba(46, 204, 113, 0.12);
+    color: #8ef0bd;
+    border-color: rgba(46, 204, 113, 0.4);
+  }
+
+  .chip.off {
+    background: rgba(255, 99, 132, 0.12);
+    color: #ffc6d1;
+    border-color: rgba(255, 99, 132, 0.4);
+  }
+
+  .actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  /* Modal */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    z-index: 1000;
+  }
+
+  .modal {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px;
+    max-width: 600px;
+    width: 100%;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.35);
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .modal h3 {
+    margin-top: 0;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+  }
+
+  .form-grid label {
+    color: var(--muted);
+    font-size: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .form-grid label.full-width {
+    grid-column: 1 / -1;
+  }
+
+  .form-grid input,
+  .form-grid select,
+  .form-grid textarea {
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: #0b1628;
+    color: var(--text);
+    padding: 10px;
+    font-family: inherit;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+
+  @media (max-width: 720px) {
+    .search {
+      width: 100%;
+    }
+
+    .toolbar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .btn {
+      justify-content: center;
+      width: 100%;
+    }
+
+    .actions {
+      justify-content: flex-start;
+    }
+
+    .modal {
+      max-width: 100%;
+    }
+  }
+</style>
+
+<section class="panel">
+
+  <div class="toolbar" style="gap:12px;">
+    <input
+      id="q"
+      class="search"
+      placeholder="Buscar por nombre o dirección..."
+    >
+
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button id="btnNew" class="btn">
+        + Nueva Obra
+      </button>
+    </div>
+  </div>
+
+  <div class="table-wrap" style="margin-top:14px;">
+    <table id="tbl">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nombre</th>
+          <th>Dirección</th>
+          <th>Coordenadas (Lat, Lng)</th>
+          <th>Radio (m)</th>
+          <th>Fechas (Inicio / Fin)</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+
+      <tbody id="tbody">
+        <% (lugares || []).forEach(o => { %>
+          <tr
+            data-id="<%= o.id_lugar %>"
+            data-nombre="<%- (o.nombre || '').replace(/"/g, '&quot;') %>"
+            data-tipo="<%- (o.tipo || 'OBRA').replace(/"/g, '&quot;') %>"
+            data-direccion="<%- (o.direccion || '').replace(/"/g, '&quot;') %>"
+            data-latitud="<%= o.latitud || '' %>"
+            data-longitud="<%= o.longitud || '' %>"
+            data-radio_metros="<%= o.radio_metros || '' %>"
+            data-estado="<%= Number(o.estado) || 0 %>"
+            data-fecha_inicio="<%= o.fecha_inicio ? new Date(o.fecha_inicio).toISOString().split('T')[0] : '' %>"
+            data-fecha_fin="<%= o.fecha_fin ? new Date(o.fecha_fin).toISOString().split('T')[0] : '' %>"
+            data-descripcion="<%- (o.descripcion || '').replace(/"/g, '&quot;') %>"
+          >
+            <td><%= o.id_lugar %></td>
+
+            <td class="c-nombre">
+              <strong><%= o.nombre || '' %></strong>
+            </td>
+
+            <td class="c-direccion">
+              <%= o.direccion || '-' %>
+            </td>
+
+            <td class="c-coords">
+              <%= (o.latitud && o.longitud) ? `${o.latitud}, ${o.longitud}` : '-' %>
+            </td>
+
+            <td class="c-radio">
+              <%= o.radio_metros ? `${o.radio_metros} m` : '-' %>
+            </td>
+
+            <td class="c-fechas">
+              <small>
+                <%= o.fecha_inicio ? new Date(o.fecha_inicio).toLocaleDateString() : 'N/A' %>
+                /
+                <%= o.fecha_fin ? new Date(o.fecha_fin).toLocaleDateString() : 'N/A' %>
+              </small>
+            </td>
+
+            <td class="c-est">
+              <span class="chip <%= o.estado ? 'ok' : 'off' %>">
+                <%= o.estado ? 'Activa' : 'Inactiva' %>
+              </span>
+            </td>
+
+            <td class="actions">
+              <button class="btn secondary btnEdit">
+                Editar
+              </button>
+              <button class="btn secondary btnDel">
+                Eliminar
+              </button>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+</section>
+
+<!-- MODAL OBRAS -->
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal">
+    <h3 id="modal-title">Nueva Obra</h3>
+
+    <form id="obra-form">
+      <div class="form-grid">
+
+        <label class="full-width">
+          Nombre de la Obra *
+          <input
+            id="f-nombre"
+            name="nombre"
+            required
+            placeholder="Ej. Construcción Edificio Central"
+          >
+        </label>
+
+        <label class="full-width">
+          Dirección
+          <input
+            id="f-direccion"
+            name="direccion"
+            placeholder="Ej. Av. Blanco Galindo km 3"
+          >
+        </label>
+
+        <label>
+          Latitud
+          <input
+            id="f-latitud"
+            name="latitud"
+            type="number"
+            step="any"
+            placeholder="-17.3935"
+          >
+        </label>
+
+        <label>
+          Longitud
+          <input
+            id="f-longitud"
+            name="longitud"
+            type="number"
+            step="any"
+            placeholder="-66.1570"
+          >
+        </label>
+
+        <label>
+          Radio Cobertura (Metros)
+          <input
+            id="f-radio"
+            name="radio_metros"
+            type="number"
+            step="any"
+            placeholder="100"
+          >
+        </label>
+
+        <label>
+          Estado
+          <select id="f-est" name="estado">
+            <option value="1">Activa</option>
+            <option value="0">Inactiva</option>
+          </select>
+        </label>
+
+        <label>
+          Fecha Inicio
+          <input
+            id="f-fecha-inicio"
+            name="fecha_inicio"
+            type="date"
+          >
+        </label>
+
+        <label>
+          Fecha Fin
+          <input
+            id="f-fecha-fin"
+            name="fecha_fin"
+            type="date"
+          >
+        </label>
+
+        <label class="full-width">
+          Descripción / Observaciones
+          <textarea
+            id="f-descripcion"
+            name="descripcion"
+            rows="3"
+            placeholder="Detalles sobre el proyecto..."
+          ></textarea>
+        </label>
+
+      </div>
+
+      <div class="modal-actions">
+        <button
+          type="button"
+          class="btn secondary"
+          id="btn-cancel"
+        >
+          Cancelar
+        </button>
+
+        <button
+          type="submit"
+          class="btn"
+          id="btn-save"
+        >
+          Guardar
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<script>
+  const q = document.getElementById('q');
+  const tbody = document.getElementById('tbody');
+  const btnNew = document.getElementById('btnNew');
+  const backdrop = document.getElementById('modal-backdrop');
+  const form = document.getElementById('obra-form');
+  const modalTitle = document.getElementById('modal-title');
+  const btnCancel = document.getElementById('btn-cancel');
+
+  let editId = null;
+
+  /* =========================
+     BUSCAR OBRAS
+     ========================= */
+  q.addEventListener('input', () => {
+    const val = q.value.toLowerCase().trim();
+
+    [...tbody.rows].forEach(tr => {
+      const name = tr.querySelector('.c-nombre')?.textContent.toLowerCase() || '';
+      const dir = tr.querySelector('.c-direccion')?.textContent.toLowerCase() || '';
+
+      tr.style.display = (name.includes(val) || dir.includes(val)) ? '' : 'none';
+    });
+  });
+
+  /* =========================
+     NUEVA OBRA
+     ========================= */
+  btnNew.addEventListener('click', () => {
+    editId = null;
+    form.dataset.mode = 'create';
+    initFormValues();
+    openModal('Nueva Obra');
+  });
+
+  /* =========================
+     EDITAR / ELIMINAR OBRA
+     ========================= */
+  tbody.addEventListener('click', async (ev) => {
+    const tr = ev.target.closest('tr');
+    if (!tr) return;
+
+    /* EDITAR */
+    if (ev.target.closest('.btnEdit')) {
+      const obra = rowToObj(tr);
+      editId = obra.id_lugar;
+      form.dataset.mode = 'edit';
+      initFormValues(obra);
+      openModal(`Editar Obra #${obra.id_lugar}`);
+      return;
+    }
+
+    /* ELIMINAR */
+    if (ev.target.closest('.btnDel')) {
+      const id = tr.dataset.id;
+      const conf = confirm(`¿Eliminar la obra #${id}?`);
+      if (!conf) return;
+
+      try {
+        const res = await fetch(`/api/obras/${id}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.ok) {
+          throw new Error(data.msg || 'No se pudo eliminar la obra');
+        }
+
+        tr.remove();
+      } catch (e) {
+        console.error(e);
+        alert(e.message || 'No se pudo eliminar');
+      }
+    }
+  });
+
+  /* =========================
+     CERRAR MODAL
+     ========================= */
+  btnCancel.addEventListener('click', closeModal);
+
+  backdrop.addEventListener('click', (e) => {
+    if (e.target === backdrop) closeModal();
+  });
+
+  form.addEventListener('submit', onSubmit);
+
+  /* =========================
+     INICIALIZAR FORMULARIO
+     ========================= */
+  function initFormValues(o = {}) {
+    document.getElementById('f-nombre').value = o.nombre || '';
+    document.getElementById('f-direccion').value = o.direccion || '';
+    document.getElementById('f-latitud').value = o.latitud || '';
+    document.getElementById('f-longitud').value = o.longitud || '';
+    document.getElementById('f-radio').value = o.radio_metros || '';
+    document.getElementById('f-est').value = Number(o.estado ?? 1);
+    document.getElementById('f-fecha-inicio').value = o.fecha_inicio || '';
+    document.getElementById('f-fecha-fin').value = o.fecha_fin || '';
+    document.getElementById('f-descripcion').value = o.descripcion || '';
+  }
+
+  /* =========================
+     ABRIR Y CERRAR MODAL
+     ========================= */
+  function openModal(title) {
+    modalTitle.textContent = title;
+    backdrop.style.display = 'flex';
+  }
+
+  function closeModal() {
+    backdrop.style.display = 'none';
+    form.reset();
+    editId = null;
+  }
+
+  /* =========================
+     GUARDAR OBRA
+     ========================= */
+  async function onSubmit(e) {
+    e.preventDefault();
+
+    const payload = getFormValues();
+    if (!payload) return;
+
+    try {
+      let url = '/api/obras';
+      let method = 'POST';
+
+      if (form.dataset.mode === 'edit' && editId) {
+        url = `/api/obras/${editId}`;
+        method = 'PUT'; // O 'POST' dependiendo cómo esté configurada tu API en Express
+      }
+
+      const res = await fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.ok) {
+        throw new Error(data.msg || 'Error al guardar la obra');
+      }
+
+      appendOrReplaceRow(data.obra || payload);
+      closeModal();
+    } catch (err) {
+      console.error(err);
+      alert(err.message || 'No se pudo guardar la obra');
+    }
+  }
+
+  /* =========================
+     OBTENER DATOS DEL FORMULARIO
+     ========================= */
+  function getFormValues() {
+    const nombre = document.getElementById('f-nombre').value.trim();
+    const direccion = document.getElementById('f-direccion').value.trim();
+    const latitud = document.getElementById('f-latitud').value ? parseFloat(document.getElementById('f-latitud').value) : null;
+    const longitud = document.getElementById('f-longitud').value ? parseFloat(document.getElementById('f-longitud').value) : null;
+    const radio_metros = document.getElementById('f-radio').value ? parseFloat(document.getElementById('f-radio').value) : null;
+    const estado = Number(document.getElementById('f-est').value);
+    const fecha_inicio = document.getElementById('f-fecha-inicio').value || null;
+    const fecha_fin = document.getElementById('f-fecha-fin').value || null;
+    const descripcion = document.getElementById('f-descripcion').value.trim();
+
+    if (!nombre) {
+      alert('El nombre de la obra es obligatorio');
+      return false;
+    }
+
+    return {
+      nombre,
+      tipo: 'OBRA',
+      direccion,
+      latitud,
+      longitud,
+      radio_metros,
+      estado,
+      fecha_inicio,
+      fecha_fin,
+      descripcion
+    };
+  }
+
+  /* =========================
+     CONVERTIR FILA A OBJETO
+     ========================= */
+  function rowToObj(tr) {
+    return {
+      id_lugar: Number(tr.dataset.id),
+      nombre: tr.dataset.nombre || '',
+      tipo: tr.dataset.tipo || 'OBRA',
+      direccion: tr.dataset.direccion || '',
+      latitud: tr.dataset.latitud || '',
+      longitud: tr.dataset.longitud || '',
+      radio_metros: tr.dataset.radio_metros || '',
+      estado: Number(tr.dataset.estado || 0),
+      fecha_inicio: tr.dataset.fecha_inicio || '',
+      fecha_fin: tr.dataset.fecha_fin || '',
+      descripcion: tr.dataset.descripcion || ''
+    };
+  }
+
+  /* =========================
+     AGREGAR / REEMPLAZAR FILA
+     ========================= */
+  function appendOrReplaceRow(o) {
+    let tr = tbody.querySelector(`tr[data-id="${o.id_lugar}"]`);
+
+    const htmlCells = `
+      <td>${o.id_lugar}</td>
+      <td class="c-nombre"><strong>${o.nombre || ''}</strong></td>
+      <td class="c-direccion">${o.direccion || '-'}</td>
+      <td class="c-coords">${(o.latitud && o.longitud) ? `${o.latitud}, ${o.longitud}` : '-'}</td>
+      <td class="c-radio">${o.radio_metros ? `${o.radio_metros} m` : '-'}</td>
+      <td class="c-fechas">
+        <small>
+          ${o.fecha_inicio ? new Date(o.fecha_inicio).toLocaleDateString() : 'N/A'} / 
+          ${o.fecha_fin ? new Date(o.fecha_fin).toLocaleDateString() : 'N/A'}
+        </small>
+      </td>
+      <td class="c-est">
+        <span class="chip ${o.estado ? 'ok' : 'off'}">
+          ${o.estado ? 'Activa' : 'Inactiva'}
+        </span>
+      </td>
+      <td class="actions">
+        <button class="btn secondary btnEdit">Editar</button>
+        <button class="btn secondary btnDel">Eliminar</button>
+      </td>
+    `;
+
+    if (!tr) {
+      tr = document.createElement('tr');
+      tr.setAttribute('data-id', o.id_lugar);
+      tbody.prepend(tr);
+    }
+
+    tr.innerHTML = htmlCells;
+
+    // Actualizar Datasets
+    tr.dataset.nombre = o.nombre || '';
+    tr.dataset.tipo = o.tipo || 'OBRA';
+    tr.dataset.direccion = o.direccion || '';
+    tr.dataset.latitud = o.latitud || '';
+    tr.dataset.longitud = o.longitud || '';
+    tr.dataset.radio_metros = o.radio_metros || '';
+    tr.dataset.estado = Number(o.estado) || 0;
+    tr.dataset.fecha_inicio = o.fecha_inicio ? new Date(o.fecha_inicio).toISOString().split('T')[0] : '';
+    tr.dataset.fecha_fin = o.fecha_fin ? new Date(o.fecha_fin).toISOString().split('T')[0] : '';
+    tr.dataset.descripcion = o.descripcion || '';
+  }
+</script>
+
+<%- include('../partials/footer') %>
