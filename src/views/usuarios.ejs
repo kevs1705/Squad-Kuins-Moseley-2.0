@@ -63,20 +63,29 @@
   }
 
   th,
-  td {
-    padding: 12px 14px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    text-align: left;
-    font-size: 14px;
-  }
-
-  th {
-    color: var(--muted);
-    background: #0b1c30;
-    position: sticky;
-    top: 0;
-    z-index: 1;
-  }
+      td {
+        padding: 12px 14px;
+        border-bottom: 1px solid rgba(250, 248, 248, 0.06);
+        text-align: left;
+        font-size: 14px;
+      }
+ 
+      th {
+        color: var(--muted);
+        background: #0b1c30;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+      }
+ 
+      /* 👇 NUEVA REGLA: Esto cambia específicamente las letras de los datos de los usuarios */
+      td {
+        color: #ffffff; /* Puedes cambiar #ffffff por el color hexadecimal que quieras */
+      }
+ 
+      tr:hover td {
+        background: rgba(255, 255, 255, 0.02);
+      }
 
   tr:hover td {
     background: rgba(255, 255, 255, 0.02);
@@ -243,17 +252,16 @@
 
           <tr
             data-id="<%= u.id_usuario %>"
-            data-nombre="<%- (u.nombre || '').replace(/\"/g, '&quot;') %>"
-            data-apellido_paterno="<%- (u.apellido_paterno || '').replace(/\"/g, '&quot;') %>"
-            data-apellido_materno="<%- (u.apellido_materno || '').replace(/\"/g, '&quot;') %>"
-            data-ci="<%- (u.CI || '').replace(/\"/g, '&quot;') %>"
-            data-universidad="<%- (u.universidad || '').replace(/\"/g, '&quot;') %>"
-            data-carrera="<%- (u.carrera || '').replace(/\"/g, '&quot;') %>"
-            data-celular="<%- (u.celular || '').replace(/\"/g, '&quot;') %>"
+            data-nombre="<%- (u.nombre || '').replace(/"/g, '&quot;') %>"
+            data-apellido_paterno="<%- (u.apellido_paterno || '').replace(/"/g, '&quot;') %>"
+            data-apellido_materno="<%- (u.apellido_materno || '').replace(/"/g, '&quot;') %>"
+            data-ci="<%- (u.CI || '').replace(/"/g, '&quot;') %>"
+            data-universidad="<%- (u.universidad || '').replace(/"/g, '&quot;') %>"
+            data-id_carrera="<%= u.id_carrera || '' %>"
+            data-celular="<%- (u.celular || '').replace(/"/g, '&quot;') %>"
             data-estado="<%= Number(u.estado) || 0 %>"
             data-rol="<%= Number(u.rol) || 0 %>"
           >
-
             <td>
               <%= u.id_usuario %>
             </td>
@@ -279,7 +287,7 @@
             </td>
 
             <td class="c-carr">
-              <%= u.carrera || '' %>
+              <%= u.carrera_nombre || u.carrera_siglas || '-' %>
             </td>
 
             <td class="c-cel">
@@ -395,12 +403,14 @@
 
         <label>
           Carrera
-          <input
-            id="f-carr"
-            name="carrera"
-            required
-            placeholder="Carrera"
-          >
+          <select id="f-carr" name="id_carrera" required>
+            <option value="">Seleccione una carrera...</option>
+            <% (carreras || []).forEach(c => { %>
+              <option value="<%= c.id_carrera %>">
+                <%= c.nombre %> (<%= c.siglas %>)
+              </option>
+            <% }) %>
+          </select>
         </label>
 
 
@@ -690,8 +700,7 @@
     document.getElementById('f-univ').value =
       u.universidad || '';
 
-    document.getElementById('f-carr').value =
-      u.carrera || '';
+    document.getElementById('f-carr').value = u.id_carrera || '';
 
     document.getElementById('f-cel').value =
       u.celular || '';
@@ -868,12 +877,7 @@
         .value
         .trim();
 
-
-    const carrera =
-      document.getElementById('f-carr')
-        .value
-        .trim();
-
+    const id_carrera = Number(document.getElementById('f-carr').value);
 
     const celular =
       document.getElementById('f-cel')
@@ -903,14 +907,12 @@
     if (
       !nombre ||
       !apellido_paterno ||
-      !apellido_materno ||
       !CI ||
-      !universidad ||
-      !carrera
+      !id_carrera
     ) {
 
       alert(
-        'Nombre, apellidos, CI, Universidad y Carrera son obligatorios'
+        'Nombre, apellidos, CI y Carrera son obligatorios'
       );
 
       return false;
@@ -975,7 +977,7 @@
 
       universidad,
 
-      carrera,
+      id_carrera,
 
       celular,
 
@@ -1051,13 +1053,7 @@
           .trim() ||
         '',
 
-
-      carrera:
-        tr.dataset.carrera ||
-        tr.querySelector('.c-carr')
-          ?.textContent
-          .trim() ||
-        '',
+      id_carrera: Number(tr.dataset.id_carrera) || null,
 
 
       celular:
@@ -1195,9 +1191,9 @@
       u.universidad || '';
 
 
-    tr.querySelector('.c-carr').textContent =
-      u.carrera || '';
-
+    /*tr.querySelector('.c-carr').textContent =
+      u.carrera || '';*/
+    tr.querySelector('.c-carr').textContent = u.carrera_nombre || u.carrera_siglas || '-';
 
     tr.querySelector('.c-cel').textContent =
       u.celular || '-';
@@ -1227,9 +1223,9 @@
       u.universidad || '';
 
 
-    tr.dataset.carrera =
-      u.carrera || '';
-
+    /*tr.dataset.carrera =
+      u.carrera || '';*/
+    tr.dataset.id_carrera = u.id_carrera || '';
 
     tr.dataset.celular =
       u.celular || '';

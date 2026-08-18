@@ -24,10 +24,24 @@ function requireAdmin(req, res, next) {
 router.get('/usuarios', requireAuth, requireAdmin, async (req, res) => {
   try {
     const [rows] = await db.query(
-      `SELECT id_usuario, nombre, CI, universidad, carrera, celular, estado, rol, contrasena
-       FROM usuarios ORDER BY id_usuario DESC`
+      `SELECT u.id_usuario, u.nombre, u.apellido_paterno, u.apellido_materno, u.CI, 
+              u.universidad, u.id_carrera, c.nombre AS carrera_nombre, c.siglas AS carrera_siglas,
+              u.celular, u.estado, u.rol, u.contrasena
+       FROM usuarios u
+       LEFT JOIN carreras c ON u.id_carrera = c.id_carrera
+       ORDER BY u.id_usuario DESC`
     );
-    res.render('usuarios', { title: 'Usuarios — MONSELEY', users: rows, user: req.session.user });
+
+    const [carreras] = await db.query(
+      `SELECT id_carrera, nombre, siglas FROM carreras ORDER BY id_carrera ASC`
+    );
+
+    res.render('usuarios', { 
+      title: 'Usuarios — MONSELEY', 
+      users: rows, 
+      carreras: carreras,
+      user: req.session.user 
+    });
   } catch (e) {
     console.error('Error al listar usuarios:', e);
     res.status(500).send('Error interno al cargar usuarios');
@@ -39,18 +53,20 @@ router.get('/usuarios', requireAuth, requireAdmin, async (req, res) => {
 // =========================================================================
 router.post('/api/usuarios', requireAuth, requireAdmin, async (req, res) => {
   try {
-    let { nombre, CI, universidad, carrera, celular, estado, rol, contrasena } = req.body;
+    let { nombre, apellido_paterno, apellido_materno, CI, universidad, id_carrera, celular, estado, rol, contrasena } = req.body;
 
     nombre = String(nombre || '').trim().slice(0, 100);
+    apellido_paterno = String(apellido_paterno || '').trim().slice(0, 100);
+    apellido_materno = String(apellido_materno || '').trim().slice(0, 100);
     CI = String(CI || '').trim().slice(0, 32);
     universidad = String(universidad || '').trim().slice(0, 120);
-    carrera = String(carrera || '').trim().slice(0, 120);
+    id_carrera = Number(id_carrera) || null;
     celular = String(celular || '').trim().slice(0, 20);
     estado = Number(estado) ? 1 : 0;
     rol = Number(rol) ? 1 : 0;
     contrasena = String(contrasena || '').slice(0, 255);
 
-    if (!nombre || !CI || !universidad || !carrera || !contrasena) {
+    if (!nombre || !CI || !universidad || !id_carrera || !contrasena) {
       return res.status(400).json({ ok: false, msg: 'Campos obligatorios: nombre, CI, universidad, carrera, contraseña' });
     }
     if (!/^[0-9.\-]{5,32}$/.test(CI)) {
@@ -62,40 +78,48 @@ router.post('/api/usuarios', requireAuth, requireAdmin, async (req, res) => {
 
     // A. Guardar en MySQL
     const [result] = await db.query(
-      `INSERT INTO usuarios (nombre, CI, universidad, carrera, celular, estado, contrasena, rol)
-       VALUES (?,?,?,?,?, ?, ?, ?)`,
-      [nombre, CI, universidad, carrera, celular || null, estado, contrasena, rol]
+      `INSERT INTO usuarios (nombre, apellido_paterno, apellido_materno, CI, universidad, id_carrera, celular, estado, contrasena, rol)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [nombre, apellido_paterno, apellido_materno, CI, universidad, id_carrera, celular || null, estado, contrasena, rol]
     );
 
-    const idUsuario = result.insertId; // ID autoincremental de la base de datos
+    const idUsuario = result.insertId;
 
-    // B. Enviar al Biométrico K14 usando id_usuario
+    // B. Enviar al Biométrico K14
     if (estado === 1) {
       try {
         const dispositivoZk = new Zkteco(BIOMETRICO_IP, BIOMETRICO_PORT, 5200, 5000);
         await dispositivoZk.createSocket();
 
-        const rolBiometrico = rol === 1 ? 14 : 0; // 14 = SuperAdmin K14, 0 = Normal
+        const rolBiometrico = rol === 1 ? 14 : 0;
+        // Obtenemos el ID de Departamento (id_carrera directo asignado en la BD)
+        const deptoBiometrico = id_carrera ? Number(id_carrera) : 1;
 
         await dispositivoZk.setUser(
-          idUsuario,              // uid en el biométrico
-          idUsuario.toString(),   // userid en la pantalla del K14
-          nombre.slice(0, 24),    // nombre
-          contrasena,             // contraseña
-          rolBiometrico,          // rol
-          0                       // tarjeta RFID
+          Number(idUsuario),   // 1. uid
+          String(idUsuario),   // 2. userid
+          nombre.slice(0, 24), // 3. name
+          String(contrasena),  // 4. password
+          rolBiometrico,       // 5. role
+          0,                   // 6. cardno
+          deptoBiometrico      // 7. deptid (Número de departamento creado en el K14)
         );
 
         await dispositivoZk.disconnect();
-        console.log(`🚀 Usuario [${nombre}] registrado en el K14 con ID: ${idUsuario}`);
+        console.log(`🚀 Usuario [${nombre}] registrado en el K14 con ID: ${idUsuario} y Depto ID: ${deptoBiometrico}`);
       } catch (bioError) {
         console.error('⚠️ Usuario guardado en MySQL, pero falló envío al biométrico:', bioError.message);
       }
     }
 
+    // Traer la fila creada con la información de la carrera
     const [rows] = await db.query(
-      `SELECT id_usuario, nombre, CI, universidad, carrera, celular, estado, rol, contrasena
-       FROM usuarios WHERE id_usuario=? LIMIT 1`, [idUsuario]
+      `SELECT u.id_usuario, u.nombre, u.apellido_paterno, u.apellido_materno, u.CI, 
+              u.universidad, u.id_carrera, c.nombre AS carrera_nombre, c.siglas AS carrera_siglas,
+              u.celular, u.estado, u.rol, u.contrasena
+       FROM usuarios u
+       LEFT JOIN carreras c ON u.id_carrera = c.id_carrera
+       WHERE u.id_usuario=? LIMIT 1`, [idUsuario]
     );
     res.json({ ok: true, user: rows[0] });
   } catch (e) {
@@ -109,25 +133,27 @@ router.post('/api/usuarios', requireAuth, requireAdmin, async (req, res) => {
 // =========================================================================
 router.post('/api/usuarios/:id', requireAuth, requireAdmin, async (req, res) => {
   try {
-    const id = Number(req.params.id); // id_usuario de la BD
+    const id = Number(req.params.id);
     if (!id) return res.status(400).json({ ok: false, msg: 'ID inválido' });
 
     const [currentUser] = await db.query('SELECT * FROM usuarios WHERE id_usuario=? LIMIT 1', [id]);
     if (!currentUser.length) return res.status(404).json({ ok: false, msg: 'Usuario no encontrado' });
 
-    let { nombre, CI, universidad, carrera, celular, estado, rol, contrasena } = req.body;
+    let { nombre, apellido_paterno, apellido_materno, CI, universidad, id_carrera, celular, estado, rol, contrasena } = req.body;
 
     nombre = String(nombre || '').trim().slice(0, 100);
+    apellido_paterno = String(apellido_paterno || '').trim().slice(0, 100);
+    apellido_materno = String(apellido_materno || '').trim().slice(0, 100);
     CI = String(CI || '').trim().slice(0, 32);
     universidad = String(universidad || '').trim().slice(0, 120);
-    carrera = String(carrera || '').trim().slice(0, 120);
+    id_carrera = Number(id_carrera) || null;
     celular = String(celular || '').trim().slice(0, 20);
     estado = Number(estado) ? 1 : 0;
     rol = Number(rol) ? 1 : 0;
     contrasena = (contrasena == null) ? '' : String(contrasena).slice(0, 255);
 
-    if (!nombre || !CI || !universidad || !carrera) {
-      return res.status(400).json({ ok: false, msg: 'Campos obligatorios: nombre, CI, universidad, carrera' });
+    if (!nombre || !CI || !id_carrera) {
+      return res.status(400).json({ ok: false, msg: 'Campos obligatorios: nombre, CI, carrera' });
     }
     if (!/^[0-9.\-]{5,32}$/.test(CI)) {
       return res.status(400).json({ ok: false, msg: 'CI inválido' });
@@ -142,37 +168,39 @@ router.post('/api/usuarios/:id', requireAuth, requireAdmin, async (req, res) => 
     if (contrasena) {
       await db.query(
         `UPDATE usuarios
-           SET nombre=?, CI=?, universidad=?, carrera=?, celular=NULLIF(?,''), estado=?, rol=?, contrasena=?
+           SET nombre=?, apellido_paterno=?, apellido_materno=?, CI=?, universidad=?, id_carrera=?, celular=NULLIF(?,''), estado=?, rol=?, contrasena=?
          WHERE id_usuario=? LIMIT 1`,
-        [nombre, CI, universidad, carrera, celular, estado, rol, contrasena, id]
+        [nombre, apellido_paterno, apellido_materno, CI, universidad, id_carrera, celular, estado, rol, contrasena, id]
       );
     } else {
       await db.query(
         `UPDATE usuarios
-           SET nombre=?, CI=?, universidad=?, carrera=?, celular=NULLIF(?,''), estado=?, rol=?
+           SET nombre=?, apellido_paterno=?, apellido_materno=?, CI=?, universidad=?, id_carrera=?, celular=NULLIF(?,''), estado=?, rol=?
          WHERE id_usuario=? LIMIT 1`,
-        [nombre, CI, universidad, carrera, celular, estado, rol, id]
+        [nombre, apellido_paterno, apellido_materno, CI, universidad, id_carrera, celular, estado, rol, id]
       );
     }
 
-    // B. Sincronizar en el Biométrico K14 con su id_usuario
+    // B. Sincronizar en el Biométrico K14
     try {
       const dispositivoZk = new Zkteco(BIOMETRICO_IP, BIOMETRICO_PORT, 5200, 5000);
       await dispositivoZk.createSocket();
 
       if (estado === 1) {
         const rolBiometrico = rol === 1 ? 14 : 0;
+        const deptoBiometrico = id_carrera ? Number(id_carrera) : 1;
+
         await dispositivoZk.setUser(
-          id,                     // uid
-          id.toString(),          // userid
-          nombre.slice(0, 24),    // nombre
-          contrasenaFinal,        // contraseña
-          rolBiometrico,          // rol
-          0
+          id,
+          id.toString(),
+          nombre.slice(0, 24),
+          contrasenaFinal,
+          rolBiometrico,
+          0,
+          deptoBiometrico // <--- Se envía el Depto ID correspondiente
         );
-        console.log(`🔄 Usuario [${nombre}] actualizado en el K14 con ID: ${id}`);
+        console.log(`🔄 Usuario [${nombre}] actualizado en el K14 con ID: ${id} y Depto ID: ${deptoBiometrico}`);
       } else {
-        // Si se deshabilita en la web, se remueve del biométrico
         await dispositivoZk.deleteUser(id);
         console.log(`🚫 Usuario [${nombre}] desactivado. Removido del K14.`);
       }
@@ -183,8 +211,12 @@ router.post('/api/usuarios/:id', requireAuth, requireAdmin, async (req, res) => 
     }
 
     const [rows] = await db.query(
-      `SELECT id_usuario, nombre, CI, universidad, carrera, celular, estado, rol, contrasena
-         FROM usuarios WHERE id_usuario=? LIMIT 1`,
+      `SELECT u.id_usuario, u.nombre, u.apellido_paterno, u.apellido_materno, u.CI, 
+              u.universidad, u.id_carrera, c.nombre AS carrera_nombre, c.siglas AS carrera_siglas,
+              u.celular, u.estado, u.rol, u.contrasena
+       FROM usuarios u
+       LEFT JOIN carreras c ON u.id_carrera = c.id_carrera
+       WHERE u.id_usuario=? LIMIT 1`,
       [id]
     );
     res.json({ ok: true, user: rows[0] });
@@ -202,10 +234,8 @@ router.delete('/api/usuarios/:id', requireAuth, requireAdmin, async (req, res) =
     const id = Number(req.params.id);
     if (!id) return res.status(400).json({ ok: false, msg: 'ID inválido' });
 
-    // A. Borrar de MySQL
     await db.query('DELETE FROM usuarios WHERE id_usuario=? LIMIT 1', [id]);
 
-    // B. Borrar del Biométrico K14
     try {
       const dispositivoZk = new Zkteco(BIOMETRICO_IP, BIOMETRICO_PORT, 5200, 5000);
       await dispositivoZk.createSocket();
