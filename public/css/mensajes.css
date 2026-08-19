@@ -6,12 +6,12 @@
 body {
   background-color: #f8fafc !important;
 }
- 
+
 .content {
   background-color: #f8fafc !important;
   color: #1e293b !important;
 }
- 
+
 /* Encabezado y títulos en modo claro */
 .content-header h1 {
   color: #0f172a !important;
@@ -20,7 +20,7 @@ body {
   align-items: center !important;
   gap: 12px !important;
 }
- 
+
 /* Icono de sobre azul al lado del título "Mensajes" */
 .content-header h1::before {
   content: "" !important;
@@ -31,11 +31,11 @@ body {
   -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>') no-repeat center / contain;
   mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>') no-repeat center / contain;
 }
- 
+
 .content-header .muted {
   color: #64748b !important;
 }
- 
+
 /* Tarjeta principal blanca del listado */
 .mensajes-card {
   background: #ffffff !important;
@@ -48,7 +48,7 @@ body {
   gap: 24px !important;
   margin-top: 14px !important;
 }
- 
+
 /* Barra superior de filtrado dentro de la tarjeta */
 .mensajes-toolbar {
   display: flex !important;
@@ -58,13 +58,13 @@ body {
   flex-wrap: wrap !important;
   padding-bottom: 8px !important;
 }
- 
+
 .filter-title-wrapper {
   display: flex !important;
   align-items: center !important;
   gap: 12px !important;
 }
- 
+
 /* Icono azul de sobre con lupa para buscar */
 .filter-icon {
   width: 32px !important;
@@ -73,13 +73,13 @@ body {
   -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/><circle cx="18" cy="18" r="3"/><line x1="22" y1="22" x2="20" y2="20"/></svg>') no-repeat center / contain;
   mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/><circle cx="18" cy="18" r="3"/><line x1="22" y1="22" x2="20" y2="20"/></svg>') no-repeat center / contain;
 }
- 
+
 .filter-label {
   font-weight: 700 !important;
   color: #1e293b !important;
   font-size: 15px !important;
 }
- 
+
 /* Input del buscador */
 .mensajes-toolbar .search {
   flex: 1 !important;
@@ -95,16 +95,16 @@ body {
   transition: all 0.2s ease !important;
   outline: none !important;
 }
- 
+
 .mensajes-toolbar .search::placeholder {
   color: #94a3b8 !important;
 }
- 
+
 .mensajes-toolbar .search:focus {
   border-color: #3b82f6 !important;
   box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1) !important;
 }
- 
+
 /* Contenedor de la tabla */
 .mensajes-card .table-wrap {
   border: 1px solid #e2e8f0 !important;
@@ -112,13 +112,13 @@ body {
   overflow: hidden !important;
   background-color: #ffffff !important;
 }
- 
+
 /* Estilos de la tabla */
 .mensajes-card table {
   width: 100% !important;
   border-collapse: collapse !important;
 }
- 
+
 .mensajes-card th {
   background-color: #eff6ff !important; /* Fondo azul muy claro */
   color: #1d4ed8 !important; /* Texto azul oscuro */
@@ -129,7 +129,7 @@ body {
   border-bottom: 1px solid #e2e8f0 !important;
   text-align: left;
 }
- 
+
 .mensajes-card td {
   padding: 16px 20px !important;
   border-bottom: 1px solid #f1f5f9 !important;
@@ -137,34 +137,34 @@ body {
   font-size: 14px !important;
   vertical-align: top !important;
 }
- 
+
 .mensajes-card tr:last-child td {
   border-bottom: none !important;
 }
- 
+
 .mensajes-card tr:hover td {
   background-color: #f8fafc !important; /* Hover gris suave */
 }
- 
+
 /* Mensaje cuando no hay registros */
 .mensajes-card td.muted {
   color: #94a3b8 !important;
   text-align: center !important;
   padding: 24px !important;
 }
- 
+
 /* Ajustes responsivos */
 @media (max-width: 768px) {
   .mensajes-card {
     padding: 18px !important;
   }
- 
+  
   .mensajes-toolbar {
     flex-direction: column !important;
     align-items: stretch !important;
     gap: 12px !important;
   }
- 
+  
   .mensajes-toolbar .search {
     width: 100% !important;
     min-width: 100% !important;
