@@ -11,7 +11,7 @@
     <a href="/cuenta" class="sidebar-link">Mi Cuenta</a>
 
 <% if (typeof user !== 'undefined' && user && user.rol === 0) { %>
-    <a href="/reporte" class="sidebar-link">Reporte</a>
+    <a href="/usuario/reporte" class="sidebar-link">Mis Jornadas</a>
 <% } %>
 
     <% if (user && user.rol === 1) { %>

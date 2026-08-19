@@ -5,22 +5,20 @@ const { requireAuth } = require('../middleware/auth');
 const path = require('path');
 const multer = require('multer');
 
-router.get('/reporte', requireAuth, async (req, res) => {
-  // Tomamos el ID del usuario autenticado
+router.get('/usuario/reporte', requireAuth, async (req, res) => {
   const userId = req.session.user.id;
 
   try {
-    // (Opcional) refrescar datos del usuario desde DB
+    // 1. Datos del usuario autenticado
     const [users] = await db.query(
       'SELECT id_usuario, nombre, CI, rol FROM usuarios WHERE id_usuario = ? LIMIT 1',
       [userId]
     );
 
     if (users.length === 0) return res.status(404).send('Usuario no encontrado');
-
     const userDB = users[0];
 
-    // Total acumulado
+    // 2. Total acumulado de horas reportadas
     const [totals] = await db.query(
       `SELECT COALESCE(SEC_TO_TIME(SUM(TIME_TO_SEC(hora_acumulada))), '00:00:00') AS total_acumulada
        FROM reportes
@@ -29,20 +27,31 @@ router.get('/reporte', requireAuth, async (req, res) => {
     );
     const total_acumulada = totals[0].total_acumulada;
 
-    // Reportes del usuario
-    const [reports] = await db.query(`
-      SELECT
-        DATE_FORMAT(fecha, '%Y-%m-%d')          AS fecha,
-        TIME_FORMAT(hora_acumulada, '%H:%i:%s') AS hora_acumulada,
-        TIME_FORMAT(hora_inicio, '%H:%i')       AS hora_inicio,
-        TIME_FORMAT(hora_fin, '%H:%i')          AS hora_fin,
-        tarea, comprobante, observacion
-      FROM reportes
-      WHERE id_usuario = ?
-      ORDER BY fecha DESC, id_reporte DESC
-    `, [userId]);
+    // 3. JORNADAS UNIFICADAS: Asistencias + Reportes (LEFT JOIN por Fecha)
+    const [jornadas] = await db.query(`
+      SELECT 
+        COALESCE(a.fecha, r.fecha) AS fecha,
+        -- Datos de Asistencia
+        a.id_asistencia,
+        a.estado AS asistencia_estado,
+        TIME_FORMAT(COALESCE(a.hora_entrada, TIME(a.fecha_hora_biometrico_entrada)), '%H:%i') AS hora_entrada,
+        TIME_FORMAT(COALESCE(a.hora_salida, TIME(a.fecha_hora_biometrico_salida)), '%H:%i') AS hora_salida,
+        -- Datos de Reportes/Tareas
+        r.id_reporte,
+        TIME_FORMAT(r.hora_inicio, '%H:%i') AS reporte_inicio,
+        TIME_FORMAT(r.hora_fin, '%H:%i') AS reporte_fin,
+        TIME_FORMAT(r.hora_acumulada, '%H:%i:%s') AS hora_acumulada,
+        r.tarea,
+        r.comprobante,
+        r.observacion
+      FROM asistencias a
+      LEFT JOIN reportes r 
+             ON a.id_usuario = r.id_usuario 
+            AND a.fecha = r.fecha
+      WHERE a.id_usuario = ? OR r.id_usuario = ?
+      ORDER BY fecha DESC, r.id_reporte DESC
+    `, [userId, userId]);
 
-    // Puedes pasar lo que ya tienes en la sesión o lo recién consultado
     const user = {
       id: userDB.id_usuario,
       nombre: userDB.nombre,
@@ -50,7 +59,13 @@ router.get('/reporte', requireAuth, async (req, res) => {
       rol: userDB.rol
     };
 
-    res.render('reporte', { user, total_acumulada, reports });
+    // Renderizamos la vista unificada (pasando jornadas)
+    res.render('usuario/reporte', { 
+      user, 
+      total_acumulada, 
+      jornadas 
+    });
+
   } catch (e) {
     console.error(e);
     res.status(500).send('Error consultando la base de datos');
@@ -116,32 +131,46 @@ router.get('/reportes/active', requireAuth, async (req, res) => {
 });
 
 // ===== POST: comenzar nuevo reporte =====
+// POST: comenzar nuevo reporte (Solo si tiene asistencia el día de hoy)
 router.post('/reportes/start', requireAuth, async (req, res) => {
   try {
     const userId = req.session.user.id;
 
-    // Si ya hay uno activo, simplemente regrésalo
+    // Opcional: Verificar si el usuario ya registró asistencia hoy
+    const [asistencia] = await db.query(
+      'SELECT id_asistencia FROM asistencias WHERE id_usuario = ? AND fecha = CURDATE() LIMIT 1',
+      [userId]
+    );
+
+    if (asistencia.length === 0) {
+      return res.status(400).json({ 
+        ok: false, 
+        error: 'Debes registrar tu marca de asistencia antes de iniciar un reporte.' 
+      });
+    }
+
+    // Verificar si ya hay un reporte activo
     const activo = await getReporteActivo(userId);
     if (activo) return res.json({ ok: true, data: activo, already: true });
 
-    // Crear uno nuevo (fecha actual y hora de inicio ahora)
+    // Crear nuevo reporte
     const [result] = await db.query(`
       INSERT INTO reportes (id_usuario, fecha, hora_inicio)
       VALUES (?, CURDATE(), CURTIME())
     `, [userId]);
 
-const [rows] = await db.query(`
-  SELECT 
-    id_reporte, 
-    id_usuario, 
-    DATE_FORMAT(fecha, '%Y-%m-%d') AS fecha,   -- 👈 fecha limpia
-    TIME_FORMAT(hora_inicio, '%H:%i:%s') AS hora_inicio,
-    TIME_FORMAT(hora_fin, '%H:%i:%s') AS hora_fin,
-    tarea, comprobante, observacion
-  FROM reportes
-  WHERE id_reporte = ?
-  LIMIT 1
-`, [result.insertId]);
+    const [rows] = await db.query(`
+      SELECT 
+        id_reporte, 
+        id_usuario, 
+        DATE_FORMAT(fecha, '%Y-%m-%d') AS fecha,
+        TIME_FORMAT(hora_inicio, '%H:%i:%s') AS hora_inicio,
+        TIME_FORMAT(hora_fin, '%H:%i:%s') AS hora_fin,
+        tarea, comprobante, observacion
+      FROM reportes
+      WHERE id_reporte = ?
+      LIMIT 1
+    `, [result.insertId]);
 
     return res.json({ ok: true, data: rows[0] });
   } catch (err) {
