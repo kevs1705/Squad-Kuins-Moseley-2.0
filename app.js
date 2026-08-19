@@ -68,6 +68,9 @@ app.use(GeofenceRoutes);
 const pagina_webRoutes = require('./src/routes/pagina_web/pagina');
 app.use(pagina_webRoutes);
 
+// Rutas para asistencia de pasantes
+const asistenciaPasantesRoutes = require('./src/routes/asistencias');
+app.use(asistenciaPasantesRoutes);   
 
 // 2. Administración
 const UsuarioRoutes = require('./src/routes/usuarios');

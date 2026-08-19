@@ -1,0 +1,376 @@
+<%
+  pageTitle = 'Panel Unificado de Pasantías';
+  pageSubtitle = 'Resumen de asistencias, marcas y tareas diarias';
+%>
+<%- include('../partials/header') %>
+<link rel="stylesheet" href="../css/reporte.css">
+
+<section class="reporte-usuario-page">
+
+  <!-- RESUMEN Y ACCIONES RÁPIDAS -->
+  <div class="summary-grid">
+    <div class="white-card summary-info-box">
+      <div class="summary-item">
+        <span class="label">Nombre</span>
+        <span class="value"><%= user.nombre %></span>
+      </div>
+      <div class="summary-item">
+        <span class="label">Horas acumuladas</span>
+        <span class="value"><%= total_acumulada %></span>
+      </div>
+    </div>
+    
+    <div class="white-card actions-card">
+      <div class="actions-grid">
+        <a class="btn-premium btn-export" href="/reportes/export">⬇️ Exportar Excel</a>
+        <a class="btn-premium btn-horas-extra" id="btnHorasExtra">⏱ Horas extra</a>
+        <a class="btn-premium btn-notif" href="/notificaciones">🔔 Notificaciones</a>
+        <a class="btn-premium btn-menu" href="/cuenta">🏠 Menú</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- BLOQUE: REPORTE ACTIVO / NUEVO REGISTRO -->
+  <div class="white-card">
+    <div id="nuevo-reporte-header" class="nuevo-reporte-bar">
+      <div class="nuevo-reporte-text">
+        <h2>Registro de Jornada</h2>
+        <p>Crea o continúa tu reporte de actividades para el día de hoy</p>
+      </div>
+      <div class="actions">
+        <button id="btn-comenzar" class="btn-premium btn-premium-primary">▶️ Iniciar Tarea del Día</button>
+      </div>
+    </div>
+
+    <!-- PANEL DE CONTROL DE REPORTE EN CURSO -->
+    <div id="reporte-activo" class="active-report-wrap hide">
+      <div class="table-wrap">
+        <table class="table">
+          <thead class="thead">
+            <tr>
+              <th>Fecha</th>
+              <th>Hora Inicio</th>
+              <th>Transcurrido</th>
+              <th>Tarea Descripción</th>
+              <th>Comprobante</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="tr">
+              <td class="td nowrap" id="ra-fecha">—</td>
+              <td class="td nowrap" id="ra-hora-inicio">—</td>
+              <td class="td nowrap" id="ra-hora-actual">--:--:--</td>
+              <td class="td" id="ra-tarea">—</td>
+              <td class="td" id="ra-comprobante"><span class="muted">—</span></td>
+              <td class="td">
+                <div class="toolbar gap-2">
+                  <button id="btn-agregar-tarea" class="btn-premium">📝 Tarea</button>
+                  <button id="btn-subir-comprobante" class="btn-premium">📎 Adjuntar</button>
+                  <button id="btn-finalizar" class="btn-premium btn-premium-danger">⏹️ Finalizar</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <input type="hidden" id="ra-id" value="">
+      </div>
+    </div>
+  </div>
+
+  <!-- TABLA PRINCIPAL UNIFICADA (ASISTENCIA + REPORTES) -->
+  <div class="white-card table-section-card">
+    <div class="table-controls">
+      <div>
+        <label for="page-size">Mostrar filas:</label>
+        <select id="page-size" style="max-width:8rem;">
+          <option value="10" selected>10</option>
+          <option value="25">25</option>
+          <option value="50">50</option>
+          <option value="all">Todos</option>
+        </select>
+      </div>
+      <span id="range-info"></span>
+    </div>
+
+    <div class="table-wrap">
+      <table class="table">
+        <thead class="thead">
+          <tr>
+            <th>Fecha</th>
+            <th>Entrada / Salida</th>
+            <th>Estado Asistencia</th>
+            <th>Horas Reportadas</th>
+            <th>Tarea Realizada</th>
+            <th>Comprobante</th>
+            <th>Observación</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-jornadas">
+          <tr><td colspan="7" class="muted">Cargando datos...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination-bar">
+      <button id="btn-prev" disabled>◀ Anterior</button>
+      <span id="page-info">Página 1 de 1</span>
+      <button id="btn-next" disabled>Siguiente ▶</button>
+    </div>
+  </div>
+
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- REPORTE ACTIVO Y HORAS EXTRA -->
+<script>
+(() => {
+  const $ = (s) => document.querySelector(s);
+
+  const btnComenzar = $('#btn-comenzar');
+  const wrapActivo  = $('#reporte-activo');
+  const fechaEl     = $('#ra-fecha');
+  const horaIniEl   = $('#ra-hora-inicio');
+  const horaActEl   = $('#ra-hora-actual');
+  const tareaEl     = $('#ra-tarea');
+  const compEl      = $('#ra-comprobante');
+  const idInput     = $('#ra-id');
+
+  let tick = null;
+  let serverNow = null;
+
+  function fmtHHMMSS(d) {
+    return [d.getHours(), d.getMinutes(), d.getSeconds()]
+      .map(v => String(v).padStart(2, '0')).join(':');
+  }
+
+  function startClock(initialNowStr) {
+    stopClock();
+    serverNow = new Date(initialNowStr.replace(' ', 'T'));
+    horaActEl.textContent = fmtHHMMSS(serverNow);
+    tick = setInterval(() => {
+      serverNow.setSeconds(serverNow.getSeconds() + 1);
+      horaActEl.textContent = fmtHHMMSS(serverNow);
+    }, 1000);
+  }
+
+  function stopClock() {
+    if (tick) clearInterval(tick);
+    tick = null;
+  }
+
+  async function loadActivo() {
+    try {
+      const r = await fetch('/reportes/active');
+      const j = await r.json();
+      if (!j.ok) return;
+
+      if (j.now) startClock(j.now);
+      else stopClock();
+
+      const actions = document.querySelector('#nuevo-reporte-header .actions');
+
+      if (j.data) {
+        const a = j.data;
+        idInput.value         = a.id_reporte || '';
+        fechaEl.textContent   = a.fecha || '—';
+        horaIniEl.textContent = a.hora_inicio || '—';
+        tareaEl.textContent   = (a.tarea && a.tarea.trim()) ? a.tarea : '—';
+        compEl.innerHTML      = a.comprobante
+          ? `<a class="pill" href="${a.comprobante}" target="_blank">📎 Ver</a>`
+          : `<span class="muted">—</span>`;
+
+        if (a.hora_inicio) {
+          wrapActivo.classList.remove('hide');
+          actions?.classList.add('hide');
+        } else {
+          wrapActivo.classList.add('hide');
+          actions?.classList.remove('hide');
+        }
+      } else {
+        wrapActivo.classList.add('hide');
+        actions?.classList.remove('hide');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  btnComenzar?.addEventListener('click', async () => {
+    try {
+      const r = await fetch('/reportes/start', { method: 'POST' });
+      const j = await r.json();
+      if (!j.ok) return Swal.fire('Atención', j.error || 'No se pudo iniciar el reporte', 'warning');
+      await loadActivo();
+      Swal.fire('Éxito', j.already ? 'Reporte activo en curso' : 'Reporte iniciado', 'success');
+    } catch (e) {
+      Swal.fire('Error', 'No se pudo iniciar la jornada', 'error');
+    }
+  });
+
+  $('#btn-agregar-tarea')?.addEventListener('click', async () => {
+    const id = idInput.value;
+    if (!id) return;
+    const { value: tarea } = await Swal.fire({
+      title: 'Descripción de Tareas',
+      input: 'textarea',
+      inputPlaceholder: 'Ingresa los avances o tareas realizadas...',
+      showCancelButton: true,
+      inputValidator: (v) => (!v || !v.trim()) && 'Debe ingresar una descripción'
+    });
+    if (!tarea) return;
+
+    const r = await fetch('/reportes/task', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id_reporte: id, tarea })
+    });
+    const j = await r.json();
+    if (j.ok) {
+      tareaEl.textContent = tarea;
+      Swal.fire('Guardado', 'Tarea registrada', 'success');
+    }
+  });
+
+  $('#btn-subir-comprobante')?.addEventListener('click', async () => {
+    const id = idInput.value;
+    if (!id) return;
+    const { value: file } = await Swal.fire({
+      title: 'Subir Comprobante',
+      input: 'file',
+      inputAttributes: { accept: 'image/png, image/jpg, image/jpeg' },
+      showCancelButton: true
+    });
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('id_reporte', id);
+    formData.append('comprobante', file);
+
+    const r = await fetch('/reportes/comprobante', { method: 'POST', body: formData });
+    const j = await r.json();
+    if (j.ok) {
+      compEl.innerHTML = `<a class="pill" href="${j.path}" target="_blank">📎 Ver</a>`;
+      Swal.fire('Subido', 'Comprobante guardado', 'success');
+    }
+  });
+
+  $('#btn-finalizar')?.addEventListener('click', async () => {
+    const id = idInput.value;
+    if (!id) return;
+    const ok = await Swal.fire({
+      title: '¿Finalizar Reporte?',
+      text: 'Se registrará el cierre de la actividad actual',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, finalizar'
+    }).then(r => r.isConfirmed);
+
+    if (!ok) return;
+    const r = await fetch('/reportes/finish', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id_reporte: id })
+    });
+    const j = await r.json();
+    if (j.ok) {
+      stopClock();
+      await Swal.fire('Finalizado', 'Jornada guardada', 'success');
+      location.reload();
+    }
+  });
+
+  loadActivo();
+})();
+</script>
+
+<!-- RENDERIZADO TABLA UNIFICADA JORNADAS -->
+<script>
+(() => {
+const JORNADAS = JSON.parse('<%- JSON.stringify(locals.jornadas || []) %>');
+  const $ = s => document.querySelector(s);
+
+  const escapeHTML = (str) => (str || '').replace(/[&<>"']/g, m => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[m]));
+
+  const tbody     = $('#tbody-jornadas');
+  const pageSizeS = $('#page-size');
+  const pageInfo  = $('#page-info');
+  const rangeInfo = $('#range-info');
+  const btnPrev   = $('#btn-prev');
+  const btnNext   = $('#btn-next');
+
+  let currentPage = 1;
+  let pageSize = 10;
+
+  function getTotalPages() {
+    if (pageSize === Infinity) return 1;
+    return Math.max(1, Math.ceil(JORNADAS.length / pageSize));
+  }
+
+  function render() {
+    const total = JORNADAS.length;
+    const totalPages = getTotalPages();
+
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+
+    let start = 0, end = total;
+    if (pageSize !== Infinity) {
+      start = (currentPage - 1) * pageSize;
+      end = Math.min(start + pageSize, total);
+    }
+
+    if (total === 0) {
+      tbody.innerHTML = `<tr><td colspan="7" class="muted">Sin registros de jornadas.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = JORNADAS.slice(start, end).map(j => {
+      const fecha     = escapeHTML(j.fecha || '—');
+      const entrada   = j.hora_entrada ? j.hora_entrada : '--:--';
+      const salida    = j.hora_salida ? j.hora_salida : '--:--';
+      const estado    = escapeHTML(j.asistencia_estado || 'SIN MARCA');
+      const acumulado = escapeHTML(j.hora_acumulada || '00:00:00');
+      const tarea     = escapeHTML(j.tarea || '—');
+      const obs       = escapeHTML(j.observacion || '—');
+      const comp      = j.comprobante 
+        ? `<a class="pill" href="${escapeHTML(j.comprobante)}" target="_blank">📎 Ver</a>` 
+        : `<span class="muted">—</span>`;
+
+      return `
+        <tr>
+          <td class="nowrap"><strong>${fecha}</strong></td>
+          <td class="nowrap">${entrada} - ${salida}</td>
+          <td><span class="pill-estado ${estado.toLowerCase()}">${estado}</span></td>
+          <td class="nowrap">${acumulado}</td>
+          <td>${tarea}</td>
+          <td>${comp}</td>
+          <td class="muted">${obs}</td>
+        </tr>
+      `;
+    }).join('');
+
+    pageInfo.textContent = `Página ${currentPage} de ${totalPages}`;
+    rangeInfo.textContent = `Mostrando ${start + 1}–${end} de ${total}`;
+    btnPrev.disabled = (currentPage <= 1);
+    btnNext.disabled = (currentPage >= totalPages);
+  }
+
+  pageSizeS.addEventListener('change', () => {
+    const val = pageSizeS.value;
+    pageSize = (val === 'all') ? Infinity : parseInt(val, 10) || 10;
+    currentPage = 1;
+    render();
+  });
+
+  btnPrev.addEventListener('click', () => { if (currentPage > 1) { currentPage--; render(); } });
+  btnNext.addEventListener('click', () => { if (currentPage < getTotalPages()) { currentPage++; render(); } });
+
+  render();
+})();
+</script>
+
+<%- include('../partials/footer') %>
