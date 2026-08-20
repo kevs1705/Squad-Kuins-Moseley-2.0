@@ -27,15 +27,35 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
     );
     const total_acumulada = totals[0].total_acumulada;
 
-    // 3. JORNADAS UNIFICADAS: Asistencias + Reportes (LEFT JOIN por Fecha)
+    // 3. JORNADAS UNIFICADAS: Asistencias (App/Biométrico) + Reportes + Lugares
     const [jornadas] = await db.query(`
       SELECT 
         COALESCE(a.fecha, r.fecha) AS fecha,
+        
+        -- Datos del Lugar/Obra
+        l.nombre AS lugar_nombre,
+        l.tipo AS lugar_tipo,
+        
         -- Datos de Asistencia
         a.id_asistencia,
         a.estado AS asistencia_estado,
-        TIME_FORMAT(COALESCE(a.hora_entrada, TIME(a.fecha_hora_biometrico_entrada)), '%H:%i') AS hora_entrada,
-        TIME_FORMAT(COALESCE(a.hora_salida, TIME(a.fecha_hora_biometrico_salida)), '%H:%i') AS hora_salida,
+        
+        -- Priorización de hora de entrada (Biométrico > App)
+        TIME_FORMAT(
+          COALESCE(TIME(a.fecha_hora_biometrico_entrada), a.hora_entrada), 
+          '%H:%i'
+        ) AS hora_entrada,
+        
+        -- Priorización de hora de salida (Biométrico > App)
+        TIME_FORMAT(
+          COALESCE(TIME(a.fecha_hora_biometrico_salida), a.hora_salida), 
+          '%H:%i'
+        ) AS hora_salida,
+        
+        -- Marcas crudas del biométrico por si se requiere auditoría
+        TIME_FORMAT(a.fecha_hora_biometrico_entrada, '%H:%i:%s') AS bio_entrada,
+        TIME_FORMAT(a.fecha_hora_biometrico_salida, '%H:%i:%s') AS bio_salida,
+
         -- Datos de Reportes/Tareas
         r.id_reporte,
         TIME_FORMAT(r.hora_inicio, '%H:%i') AS reporte_inicio,
@@ -45,8 +65,10 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
         r.comprobante,
         r.observacion
       FROM asistencias a
+      LEFT JOIN lugares l 
+            ON a.id_lugar = l.id_lugar
       LEFT JOIN reportes r 
-             ON a.id_usuario = r.id_usuario 
+            ON a.id_usuario = r.id_usuario 
             AND a.fecha = r.fecha
       WHERE a.id_usuario = ? OR r.id_usuario = ?
       ORDER BY fecha DESC, r.id_reporte DESC
@@ -60,10 +82,10 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
     };
 
     // Renderizamos la vista unificada (pasando jornadas)
-    res.render('usuario/reporte', { 
-      user, 
-      total_acumulada, 
-      jornadas 
+    res.render('usuario/reporte', {
+      user,
+      total_acumulada,
+      jornadas
     });
 
   } catch (e) {
@@ -98,8 +120,8 @@ const upload = multer({
 
 // ===== Helper: obtener reporte activo =====
 async function getReporteActivo(userId) {
-// En getReporteActivo o en cualquier SELECT
-const [rows] = await db.query(`
+  // En getReporteActivo o en cualquier SELECT
+  const [rows] = await db.query(`
   SELECT 
     id_reporte, 
     id_usuario, 
@@ -143,9 +165,9 @@ router.post('/reportes/start', requireAuth, async (req, res) => {
     );
 
     if (asistencia.length === 0) {
-      return res.status(400).json({ 
-        ok: false, 
-        error: 'Debes registrar tu marca de asistencia antes de iniciar un reporte.' 
+      return res.status(400).json({
+        ok: false,
+        error: 'Debes registrar tu marca de asistencia antes de iniciar un reporte.'
       });
     }
 
@@ -270,26 +292,26 @@ router.post('/api/notificaciones', requireAuth, async (req, res) => {
     let { fecha_solicitada, hora_inicio, hora_fin, motivo } = req.body;
 
     // Sanitización
-    fecha_solicitada = String(fecha_solicitada||'').trim().slice(0, 10); // YYYY-MM-DD
-    hora_inicio      = String(hora_inicio||'').trim().slice(0, 8);       // HH:MM o HH:MM:SS
-    hora_fin         = String(hora_fin||'').trim().slice(0, 8);
-    motivo           = String(motivo||'').trim().slice(0, 2000);
+    fecha_solicitada = String(fecha_solicitada || '').trim().slice(0, 10); // YYYY-MM-DD
+    hora_inicio = String(hora_inicio || '').trim().slice(0, 8);       // HH:MM o HH:MM:SS
+    hora_fin = String(hora_fin || '').trim().slice(0, 8);
+    motivo = String(motivo || '').trim().slice(0, 2000);
 
     // Validaciones simples
     if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha_solicitada)) {
-      return res.status(400).json({ ok:false, msg:'Fecha inválida (YYYY-MM-DD).' });
+      return res.status(400).json({ ok: false, msg: 'Fecha inválida (YYYY-MM-DD).' });
     }
     if (!/^\d{2}:\d{2}(:\d{2})?$/.test(hora_inicio) || !/^\d{2}:\d{2}(:\d{2})?$/.test(hora_fin)) {
-      return res.status(400).json({ ok:false, msg:'Hora inválida (HH:MM).' });
+      return res.status(400).json({ ok: false, msg: 'Hora inválida (HH:MM).' });
     }
     // normaliza HH:MM a HH:MM:00
     if (hora_inicio.length === 5) hora_inicio += ':00';
     if (hora_fin.length === 5) hora_fin += ':00';
     if (hora_inicio >= hora_fin) {
-      return res.status(400).json({ ok:false, msg:'La hora fin debe ser mayor que la hora inicio.' });
+      return res.status(400).json({ ok: false, msg: 'La hora fin debe ser mayor que la hora inicio.' });
     }
     if (!motivo || motivo.length < 5) {
-      return res.status(400).json({ ok:false, msg:'Motivo mínimo 5 caracteres.' });
+      return res.status(400).json({ ok: false, msg: 'Motivo mínimo 5 caracteres.' });
     }
 
     // Insertar (estado=1 pendiente)
@@ -316,7 +338,7 @@ router.post('/api/notificaciones', requireAuth, async (req, res) => {
     });
   } catch (e) {
     console.error(e);
-    res.status(500).json({ ok:false, msg:'Error creando la solicitud' });
+    res.status(500).json({ ok: false, msg: 'Error creando la solicitud' });
   }
 });
 
@@ -454,7 +476,7 @@ router.get('/reportes/export', requireAuth, async (req, res) => {
 
     // Nombre de archivo
     const safeName = String(usuario.nombre || 'usuario').replace(/[^\w\s-]/g, '').replace(/\s+/g, '_');
-    const ymd = new Date().toISOString().slice(0,10); // YYYY-MM-DD
+    const ymd = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
     const filename = `reportes_${safeName}_${ymd}.xlsx`;
 
     // Enviar descarga
