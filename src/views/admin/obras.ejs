@@ -86,11 +86,14 @@
             </td>
 
             <td class="c-fechas">
-              <small>
+             
                 <%= o.fecha_inicio ? new Date(o.fecha_inicio).toLocaleDateString() : 'N/A' %>
-                /
+                
+              
+           
+            </td>
+            <td class="c-fechas"> 
                 <%= o.fecha_fin ? new Date(o.fecha_fin).toLocaleDateString() : 'N/A' %>
-              </small>
             </td>
 
             <td class="c-est">
@@ -146,23 +149,25 @@
         <label>
           Latitud
          <input
-    id="f-latitud"
-    name="latitud"
-    type="number"
-    step="any"
-    placeholder="-16.5000"
-  >
+          id="f-latitud"
+          name="latitud"
+          type="number"
+          step="any"
+          readonly
+          placeholder="-16.5000"
+        >
         </label>
 
         <label>
           Longitud
         <input
-    id="f-longitud"
-    name="longitud"
-    type="number"
-    step="any"
-    placeholder="-68.1333"
-  >
+          id="f-longitud"
+          name="longitud"
+          type="number"
+          step="any"
+          readonly
+          placeholder="-68.1333"
+        >
         </label>
 
       </div>
@@ -593,52 +598,66 @@ fDireccion.addEventListener('input', () => {
   /* =========================
      AGREGAR / REEMPLAZAR FILA
      ========================= */
-  function appendOrReplaceRow(o) {
-    let tr = tbody.querySelector(`tr[data-id="${o.id_lugar}"]`);
 
-    const htmlCells = `
-      <td>${o.id_lugar}</td>
-      <td class="c-nombre"><strong>${o.nombre || ''}</strong></td>
-      <td class="c-direccion">${o.direccion || '-'}</td>
-      <td class="c-coords">${(o.latitud && o.longitud) ? `${o.latitud}, ${o.longitud}` : '-'}</td>
-      <td class="c-radio">${o.radio_metros ? `${o.radio_metros} m` : '-'}</td>
-      <td class="c-fechas">
-        <small>
-          ${o.fecha_inicio ? new Date(o.fecha_inicio).toLocaleDateString() : 'N/A'} / 
-          ${o.fecha_fin ? new Date(o.fecha_fin).toLocaleDateString() : 'N/A'}
-        </small>
-      </td>
-      <td class="c-est">
-        <span class="chip ${o.estado ? 'ok' : 'off'}">
-          ${o.estado ? 'Activa' : 'Inactiva'}
-        </span>
-      </td>
-      <td class="actions">
-        <button class="btn secondary btnEdit">Editar</button>
-        <button class="btn secondary btnDel">Eliminar</button>
-      </td>
-    `;
+      function appendOrReplaceRow(o) {
+        // Asegurar formato YYYY-MM-DD para atributos de datos e inputs
+        const fInicioISO = o.fecha_inicio ? String(o.fecha_inicio).split('T')[0] : '';
+        const fFinISO = o.fecha_fin ? String(o.fecha_fin).split('T')[0] : '';
 
-    if (!tr) {
-      tr = document.createElement('tr');
-      tr.setAttribute('data-id', o.id_lugar);
-      tbody.prepend(tr);
-    }
+        // Función helper para formatear visualmente la fecha sin desfase horario (UTC)
+        const formatFechaVista = (strFecha) => {
+          if (!strFecha) return 'N/A';
+          const partes = strFecha.split('T')[0].split('-');
+          if (partes.length < 3) return 'N/A';
+          return `${partes[2]}/${partes[1]}/${partes[0]}`; // Formato DD/MM/YYYY
+        };
 
-    tr.innerHTML = htmlCells;
+        let tr = tbody.querySelector(`tr[data-id="${o.id_lugar}"]`);
 
-    // Actualizar Datasets
-    tr.dataset.nombre = o.nombre || '';
-    tr.dataset.tipo = o.tipo || 'OBRA';
-    tr.dataset.direccion = o.direccion || '';
-    tr.dataset.latitud = o.latitud || '';
-    tr.dataset.longitud = o.longitud || '';
-    tr.dataset.radio_metros = o.radio_metros || '';
-    tr.dataset.estado = Number(o.estado) || 0;
-    tr.dataset.fecha_inicio = o.fecha_inicio ? new Date(o.fecha_inicio).toISOString().split('T')[0] : '';
-    tr.dataset.fecha_fin = o.fecha_fin ? new Date(o.fecha_fin).toISOString().split('T')[0] : '';
-    tr.dataset.descripcion = o.descripcion || '';
-  }
+        const htmlCells = `
+          <td>${o.id_lugar}</td>
+          <td class="c-nombre"><strong>${o.nombre || ''}</strong></td>
+          <td class="c-direccion">${o.direccion || '-'}</td>
+          <td class="c-coords">${(o.latitud && o.longitud) ? `${o.latitud}, ${o.longitud}` : '-'}</td>
+          <td class="c-radio">${o.radio_metros ? `${o.radio_metros} m` : '-'}</td>
+          <td class="c-fechas">
+            <small>
+              ${formatFechaVista(fInicioISO)} / ${formatFechaVista(fFinISO)}
+            </small>
+          </td>
+          <td class="c-est">
+            <span class="chip ${Number(o.estado) ? 'ok' : 'off'}">
+              ${Number(o.estado) ? 'Activa' : 'Inactiva'}
+            </span>
+          </td>
+          <td class="actions">
+            <button class="btn secondary btnEdit">Editar</button>
+            <button class="btn secondary btnDel">Eliminar</button>
+          </td>
+        `;
+
+        if (!tr) {
+          tr = document.createElement('tr');
+          tr.setAttribute('data-id', o.id_lugar);
+          tbody.prepend(tr);
+        }
+
+        tr.innerHTML = htmlCells;
+
+        // Actualizar atributos de datos (datasets) en la fila para lecturas posteriores
+        tr.dataset.id = o.id_lugar;
+        tr.dataset.nombre = o.nombre || '';
+        tr.dataset.tipo = o.tipo || 'OBRA';
+        tr.dataset.direccion = o.direccion || '';
+        tr.dataset.latitud = o.latitud || '';
+        tr.dataset.longitud = o.longitud || '';
+        tr.dataset.radio_metros = o.radio_metros || '';
+        tr.dataset.estado = Number(o.estado) || 0;
+        tr.dataset.fecha_inicio = fInicioISO;
+        tr.dataset.fecha_fin = fFinISO;
+        tr.dataset.descripcion = o.descripcion || '';
+      }
+
 </script>
 
 <%- include('../partials/footer') %>
