@@ -5,6 +5,21 @@
 
 <%- include('../partials/header') %>
 
+<!-- Carga de Leaflet CSS y JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+  #map {
+    width: 100%;
+    height: 260px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    margin-top: 6px;
+    z-index: 1;
+  }
+</style>
+
 <section class="panel">
 
   <div class="toolbar" style="gap:12px;">
@@ -31,7 +46,7 @@
           <th>Coordenadas (Lat, Lng)</th>
           <th>Radio (m)</th>
           <th>Fecha Inicio</th>
-           <th>Fecha Fin</th>
+          <th>Fecha Fin</th>
           <th>Estado</th>
           <th>Acciones</th>
         </tr>
@@ -102,7 +117,7 @@
 
 <!-- MODAL OBRAS -->
 <div class="modal-backdrop" id="modal-backdrop">
-  <div class="modal">
+  <div class="modal" style="max-width: 650px;">
     <h3 id="modal-title">Nueva Obra</h3>
 
     <form id="obra-form">
@@ -119,35 +134,45 @@
         </label>
 
         <label class="full-width">
-          Dirección
-          <input
-            id="f-direccion"
-            name="direccion"
-            placeholder="Ej. Av. Blanco Galindo km 3"
-          >
+          Dirección (Escribe para auto-ubicar en el mapa)
+        <input
+    id="f-direccion"
+    name="direccion"
+    placeholder="Ej. Av. 20 de Octubre, La Paz"
+  >
         </label>
+
 
         <label>
           Latitud
-          <input
-            id="f-latitud"
-            name="latitud"
-            type="number"
-            step="any"
-            placeholder="-17.3935"
-          >
+         <input
+    id="f-latitud"
+    name="latitud"
+    type="number"
+    step="any"
+    placeholder="-16.5000"
+  >
         </label>
 
         <label>
           Longitud
-          <input
-            id="f-longitud"
-            name="longitud"
-            type="number"
-            step="any"
-            placeholder="-66.1570"
-          >
+        <input
+    id="f-longitud"
+    name="longitud"
+    type="number"
+    step="any"
+    placeholder="-68.1333"
+  >
         </label>
+
+      </div>
+              <!-- MAPA DE SELECCIÓN -->
+        <div class="full-width">
+          <label>Ubicación en el Mapa (Haz clic o arrastra el marcador para ajustar)</label>
+          <div id="map"></div>
+        </div>
+        <br>
+      <div class="form-grid">
 
         <label>
           Radio Cobertura (Metros)
@@ -157,6 +182,7 @@
             type="number"
             step="any"
             placeholder="100"
+            value="100"
           >
         </label>
 
@@ -195,10 +221,9 @@
             placeholder="Detalles sobre el proyecto..."
           ></textarea>
         </label>
-
       </div>
 
-      <div class="modal-actions">
+      <div class="modal-actions" style="margin-top: 15px;">
         <button
           type="button"
           class="btn secondary"
@@ -229,7 +254,131 @@
   const modalTitle = document.getElementById('modal-title');
   const btnCancel = document.getElementById('btn-cancel');
 
+  const fDireccion = document.getElementById('f-direccion');
+  const fLatitud = document.getElementById('f-latitud');
+  const fLongitud = document.getElementById('f-longitud');
+  const fRadio = document.getElementById('f-radio');
+
   let editId = null;
+  let searchTimeout = null;
+
+ /* =========================
+   VARIABLES Y LÓGICA DE LEAFLET (MAPA)
+   ========================= */
+let map = null;
+let marker = null;
+let circle = null;
+
+// Coordenadas por defecto centrado en La Paz (Ej. El Prado / Av. 16 de Julio)
+const DEFAULT_COORDS = [-16.5000, -68.1333];
+
+  function setupMap() {
+    if (map) return; // Si ya existe no lo re-inicializamos
+
+    map = L.map('map').setView(DEFAULT_COORDS, 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    marker = L.marker(DEFAULT_COORDS, { draggable: true }).addTo(map);
+    
+    // Círculo para representar el radio de geocerca
+    circle = L.circle(DEFAULT_COORDS, {
+      color: '#3b82f6',
+      fillColor: '#93c5fd',
+      fillOpacity: 0.3,
+      radius: 100
+    }).addTo(map);
+
+    // Evento: Arrastrar el marcador
+    marker.on('dragend', function (e) {
+      const position = marker.getLatLng();
+      updateInputsAndCircle(position.lat, position.lng);
+      reverseGeocode(position.lat, position.lng);
+    });
+
+    // Evento: Hacer clic directamente en el mapa
+    map.on('click', function (e) {
+      const { lat, lng } = e.latlng;
+      marker.setLatLng([lat, lng]);
+      updateInputsAndCircle(lat, lng);
+      reverseGeocode(lat, lng);
+    });
+  }
+
+  function setMapPosition(lat, lng, zoom = 15) {
+    if (!map) return;
+    const coords = [lat, lng];
+    map.setView(coords, zoom);
+    marker.setLatLng(coords);
+    circle.setLatLng(coords);
+  }
+
+  function updateInputsAndCircle(lat, lng) {
+    fLatitud.value = parseFloat(lat).toFixed(6);
+    fLongitud.value = parseFloat(lng).toFixed(6);
+    circle.setLatLng([lat, lng]);
+  }
+
+  /* Actualizar radio dinámicamente cuando el usuario cambia el input de metros */
+  fRadio.addEventListener('input', () => {
+    const r = parseFloat(fRadio.value) || 0;
+    if (circle) circle.setRadius(r);
+  });
+
+  /* Actualizar posición si el usuario escribe latitud o longitud directamente */
+  [fLatitud, fLongitud].forEach(inp => {
+    inp.addEventListener('change', () => {
+      const lat = parseFloat(fLatitud.value);
+      const lng = parseFloat(fLongitud.value);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        setMapPosition(lat, lng);
+      }
+    });
+  });
+
+  /* Búsqueda por dirección (Geocodificación con Nominatim) */
+ /* Búsqueda por dirección (Geocodificación con Nominatim) */
+fDireccion.addEventListener('input', () => {
+  clearTimeout(searchTimeout);
+  const query = fDireccion.value.trim();
+
+  if (query.length < 3) return;
+
+  searchTimeout = setTimeout(async () => {
+    try {
+      // Agregamos "La Paz Bolivia" para acotar el resultado a la zona de interés
+      const searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', La Paz, Bolivia')}`;
+      const res = await fetch(searchUrl);
+      const data = await res.json();
+
+      if (data && data.length > 0) {
+        const lat = parseFloat(data[0].lat);
+        const lon = parseFloat(data[0].lon);
+
+        setMapPosition(lat, lon, 16);
+        updateInputsAndCircle(lat, lon);
+      }
+    } catch (err) {
+      console.error('Error al geocodificar la dirección:', err);
+    }
+  }, 800);
+});
+
+  /* Obtener dirección textual cuando se mueve el pin (Geocodificación inversa) */
+  async function reverseGeocode(lat, lng) {
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+      const data = await res.json();
+      if (data && data.display_name) {
+        fDireccion.value = data.display_name;
+      }
+    } catch (err) {
+      console.error('Error al obtener la dirección:', err);
+    }
+  }
 
   /* =========================
      BUSCAR OBRAS
@@ -310,18 +459,30 @@
   form.addEventListener('submit', onSubmit);
 
   /* =========================
-     INICIALIZAR FORMULARIO
+     INICIALIZAR FORMULARIO Y MAPA
      ========================= */
   function initFormValues(o = {}) {
     document.getElementById('f-nombre').value = o.nombre || '';
-    document.getElementById('f-direccion').value = o.direccion || '';
-    document.getElementById('f-latitud').value = o.latitud || '';
-    document.getElementById('f-longitud').value = o.longitud || '';
-    document.getElementById('f-radio').value = o.radio_metros || '';
+    fDireccion.value = o.direccion || '';
+    fLatitud.value = o.latitud || '';
+    fLongitud.value = o.longitud || '';
+    fRadio.value = o.radio_metros || 100;
     document.getElementById('f-est').value = Number(o.estado ?? 1);
     document.getElementById('f-fecha-inicio').value = o.fecha_inicio || '';
     document.getElementById('f-fecha-fin').value = o.fecha_fin || '';
     document.getElementById('f-descripcion').value = o.descripcion || '';
+
+    // Cargar coordenadas en el mapa
+    const lat = parseFloat(o.latitud) || DEFAULT_COORDS[0];
+    const lng = parseFloat(o.longitud) || DEFAULT_COORDS[1];
+    const radio = parseFloat(o.radio_metros) || 100;
+
+    setTimeout(() => {
+      setupMap();
+      setMapPosition(lat, lng, (o.latitud && o.longitud) ? 16 : 13);
+      circle.setRadius(radio);
+      map.invalidateSize(); // Corregir cálculo de dimensiones en modales flex
+    }, 150);
   }
 
   /* =========================
@@ -353,7 +514,7 @@
 
       if (form.dataset.mode === 'edit' && editId) {
         url = `/api/obras/${editId}`;
-        method = 'PUT'; // O 'POST' dependiendo cómo esté configurada tu API en Express
+        method = 'PUT';
       }
 
       const res = await fetch(url, {
@@ -382,10 +543,10 @@
      ========================= */
   function getFormValues() {
     const nombre = document.getElementById('f-nombre').value.trim();
-    const direccion = document.getElementById('f-direccion').value.trim();
-    const latitud = document.getElementById('f-latitud').value ? parseFloat(document.getElementById('f-latitud').value) : null;
-    const longitud = document.getElementById('f-longitud').value ? parseFloat(document.getElementById('f-longitud').value) : null;
-    const radio_metros = document.getElementById('f-radio').value ? parseFloat(document.getElementById('f-radio').value) : null;
+    const direccion = fDireccion.value.trim();
+    const latitud = fLatitud.value ? parseFloat(fLatitud.value) : null;
+    const longitud = fLongitud.value ? parseFloat(fLongitud.value) : null;
+    const radio_metros = fRadio.value ? parseFloat(fRadio.value) : null;
     const estado = Number(document.getElementById('f-est').value);
     const fecha_inicio = document.getElementById('f-fecha-inicio').value || null;
     const fecha_fin = document.getElementById('f-fecha-fin').value || null;
