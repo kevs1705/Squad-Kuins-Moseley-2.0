@@ -50,7 +50,7 @@ app.use(
 const LoginRoutes = require('./src/routes/login');
 app.use(LoginRoutes);
 
-const DashboardRoutes = require('./src/routes/dashboard');
+const DashboardRoutes = require('./src/routes/Dashboard');
 app.use(DashboardRoutes);
 
 const ReporteRoutes = require('./src/routes/reporte');
