@@ -139,6 +139,21 @@ const updateObraHandler = async (req, res) => {
             return res.status(400).json({ ok: false, msg: 'El nombre es obligatorio' });
         }
 
+        // Parsear y validar coordenadas numéricas obligatorias
+        const lat = parseFloat(latitud);
+        const lng = parseFloat(longitud);
+
+        if (isNaN(lat) || isNaN(lng)) {
+            return res.status(400).json({ 
+                ok: false, 
+                msg: 'Las coordenadas de Latitud y Longitud son obligatorias y deben ser números válidos.' 
+            });
+        }
+
+        const radio = parseInt(radio_metros, 10) || 100;
+        const estadoEnum = (req.body.estado == 1 || req.body.estado === 'ACTIVO') 
+        ? 'ACTIVO' 
+        : 'INACTIVO';
         const [result] = await db.query(`
             UPDATE lugares SET
                 nombre = ?,
@@ -152,15 +167,15 @@ const updateObraHandler = async (req, res) => {
                 descripcion = ?
             WHERE id_lugar = ? AND tipo = 'OBRA'
         `, [
-            nombre,
-            direccion || null,
-            latitud || null,
-            longitud || null,
-            radio_metros || null,
-            estado ?? 1,
+            nombre.trim(),
+            direccion ? direccion.trim() : null,
+            lat,
+            lng,
+            radio,
+            estadoEnum,
             fecha_inicio || null,
             fecha_fin || null,
-            descripcion || null,
+            descripcion ? descripcion.trim() : null,
             id
         ]);
 
@@ -176,9 +191,9 @@ const updateObraHandler = async (req, res) => {
                 nombre,
                 tipo: 'OBRA',
                 direccion,
-                latitud,
-                longitud,
-                radio_metros,
+                latitud: lat,
+                longitud: lng,
+                radio_metros: radio,
                 estado: Number(estado),
                 fecha_inicio,
                 fecha_fin,
