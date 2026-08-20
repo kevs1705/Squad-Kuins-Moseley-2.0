@@ -1,4 +1,3 @@
-
 const express = require('express');
 const router = express.Router();
 const db = require('../config/bd');
@@ -25,15 +24,15 @@ router.get('/admin/reportes', requireAdmin, (req, res) => {
 });
 
 /* ==========================================
-   API: Listar reportes (server-side paging)
+   API: Listar reportes desde la tabla 'asistencia'
    GET /api/admin/reportes?ci=xxxx&page=1&size=25
    ========================================== */
 router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
   try {
-    const ci = (req.query.ci || '').trim();              // filtro exacto por CI (opcional)
+    const ci = (req.query.ci || '').trim();
     const page = Math.max(parseInt(req.query.page || '1', 10), 1);
     let size = Math.max(parseInt(req.query.size || '25', 10), 1);
-    size = Math.min(size, 200); // límite sano
+    size = Math.min(size, 200);
 
     const offset = (page - 1) * size;
 
@@ -45,31 +44,36 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
     }
     const whereSQL = where.length ? `WHERE ${where.join(' AND ')}` : '';
 
-    // Total
+    // Total de registros
     const [countRows] = await db.query(
       `SELECT COUNT(*) AS total
-       FROM reportes r
-       INNER JOIN usuarios u ON u.id_usuario = r.id_usuario
+       FROM asistencia a
+       INNER JOIN usuarios u ON u.id_usuario = a.id_usuario
        ${whereSQL}`,
       params
     );
     const total = countRows[0]?.total || 0;
 
-    // Datos
+    // Consulta adaptada a la estructura de 'asistencia'
     const [rows] = await db.query(
       `SELECT
-         r.id_reporte,
+         a.id_asistencia AS id_reporte,
          u.nombre,
          u.CI,
-         DATE_FORMAT(r.fecha, '%Y-%m-%d')          AS fecha,
-         TIME_FORMAT(r.hora_acumulada, '%H:%i:%s') AS hora_acumulada,
-         TIME_FORMAT(r.hora_inicio,   '%H:%i')     AS hora_inicio,
-         TIME_FORMAT(r.hora_fin,      '%H:%i')     AS hora_fin,
-         r.tarea, r.comprobante, r.observacion
-       FROM reportes r
-       INNER JOIN usuarios u ON u.id_usuario = r.id_usuario
+         DATE_FORMAT(a.fecha, '%Y-%m-%d') AS fecha,
+         TIME_FORMAT(
+           COALESCE(TIMEDIFF(a.fecha_hora_biometrico_salida, a.fecha_hora_biometrico_entrada), '00:00:00'),
+           '%H:%i:%s'
+         ) AS hora_acumulada,
+         TIME_FORMAT(a.fecha_hora_biometrico_entrada, '%H:%i') AS hora_inicio,
+         TIME_FORMAT(a.fecha_hora_biometrico_salida, '%H:%i')  AS hora_fin,
+         a.estado AS tarea, 
+         NULL AS comprobante,
+         a.observacion
+       FROM asistencia a
+       INNER JOIN usuarios u ON u.id_usuario = a.id_usuario
        ${whereSQL}
-       ORDER BY r.fecha DESC, r.id_reporte DESC
+       ORDER BY a.fecha DESC, a.id_asistencia DESC
        LIMIT ? OFFSET ?`,
       [...params, size, offset]
     );
@@ -84,27 +88,27 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
     });
   } catch (e) {
     console.error(e);
-    res.status(500).json({ ok: false, error: 'Error listando reportes' });
+    res.status(500).json({ ok: false, error: 'Error listando asistencias' });
   }
 });
 
 /* ==========================================
-   API: Actualizar un reporte
+   API: Actualizar un reporte / asistencia
    POST /api/admin/reportes/:id
-   Body: hora_acumulada, hora_inicio, hora_fin, observacion
+   Body: observacion
    ========================================== */
 router.post('/api/admin/reportes/:id', requireAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (!id) return res.status(400).json({ ok: false, msg: 'ID inválido' });
 
-    const { hora_acumulada, hora_inicio, hora_fin, observacion } = req.body || {};
+    const { observacion } = req.body || {};
 
     await db.query(
-      `UPDATE reportes
-       SET hora_acumulada = ?, hora_inicio = ?, hora_fin = ?, observacion = ?
-       WHERE id_reporte = ?`,
-      [hora_acumulada || null, hora_inicio || null, hora_fin || null, observacion || null, id]
+      `UPDATE asistencia
+       SET observacion = ?
+       WHERE id_asistencia = ?`,
+      [observacion || null, id]
     );
 
     res.json({ ok: true });
@@ -115,7 +119,7 @@ router.post('/api/admin/reportes/:id', requireAdmin, async (req, res) => {
 });
 
 /* ==========================================
-   EXPORT: Excel de todos o por CI
+   EXPORT: Excel desde la tabla 'asistencia'
    GET /admin/reportes/export?ci=xxxx
    ========================================== */
 router.get('/admin/reportes/export', requireAdmin, async (req, res) => {
@@ -130,27 +134,34 @@ router.get('/admin/reportes/export', requireAdmin, async (req, res) => {
     }
     const whereSQL = where.length ? `WHERE ${where.join(' AND ')}` : '';
 
-    // Traer reportes
     const [reports] = await db.query(
       `SELECT
          u.nombre, u.CI,
-         DATE_FORMAT(r.fecha, '%Y-%m-%d')          AS fecha,
-         TIME_FORMAT(r.hora_acumulada, '%H:%i:%s') AS hora_acumulada,
-         TIME_FORMAT(r.hora_inicio,   '%H:%i:%s')  AS hora_inicio,
-         TIME_FORMAT(r.hora_fin,      '%H:%i:%s')  AS hora_fin,
-         r.tarea, r.observacion
-       FROM reportes r
-       INNER JOIN usuarios u ON u.id_usuario = r.id_usuario
+         DATE_FORMAT(a.fecha, '%Y-%m-%d') AS fecha,
+         TIME_FORMAT(
+           COALESCE(TIMEDIFF(a.fecha_hora_biometrico_salida, a.fecha_hora_biometrico_entrada), '00:00:00'),
+           '%H:%i:%s'
+         ) AS hora_acumulada,
+         TIME_FORMAT(a.fecha_hora_biometrico_entrada, '%H:%i:%s') AS hora_inicio,
+         TIME_FORMAT(a.fecha_hora_biometrico_salida, '%H:%i:%s')  AS hora_fin,
+         a.estado AS tarea, 
+         a.observacion
+       FROM asistencia a
+       INNER JOIN usuarios u ON u.id_usuario = a.id_usuario
        ${whereSQL}
-       ORDER BY r.fecha DESC, r.id_reporte DESC`,
+       ORDER BY a.fecha DESC, a.id_asistencia DESC`,
       params
     );
 
-    // Total acumulado (del conjunto filtrado)
     const [tRow] = await db.query(
-      `SELECT COALESCE(SEC_TO_TIME(SUM(TIME_TO_SEC(r.hora_acumulada))), '00:00:00') AS total_acumulada
-       FROM reportes r
-       INNER JOIN usuarios u ON u.id_usuario = r.id_usuario
+      `SELECT COALESCE(
+         SEC_TO_TIME(
+           SUM(
+             TIMESTAMPDIFF(SECOND, a.fecha_hora_biometrico_entrada, a.fecha_hora_biometrico_salida)
+           )
+         ), '00:00:00') AS total_acumulada
+       FROM asistencia a
+       INNER JOIN usuarios u ON u.id_usuario = a.id_usuario
        ${whereSQL}`,
       params
     );
