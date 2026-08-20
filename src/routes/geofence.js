@@ -41,7 +41,7 @@ router.post('/api/geofence/verify', async (req, res) => {
   try {
     // 1. Obtener lugares activos desde la base de datos
     const [lugares] = await db.query(
-      'SELECT id_lugar, nombre, latitud, longitud, radio_metros FROM lugares WHERE estado = "ACTIVO"'
+      "SELECT id_lugar, nombre, latitud, longitud, radio_metros FROM lugares WHERE estado = 'ACTIVO'"
     );
 
     if (!lugares || lugares.length === 0) {
@@ -58,7 +58,7 @@ router.post('/api/geofence/verify', async (req, res) => {
       const radioLugar = parseFloat(lugar.radio_metros);
 
       const dist = distanceMeters(latLugar, lngLugar, lat, lng);
-      const dentro = (dist - accuracy) <= radioLugar;
+      const dentro = dist <= radioLugar; // Validación estricta: distancia menor o igual al radio de la obra
 
       if (dentro) {
         lugarValido = { ...lugar, distanciaCalculada: dist };
