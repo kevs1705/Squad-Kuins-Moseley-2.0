@@ -1,0 +1,195 @@
+<%
+  pageTitle = 'Panel Unificado de Pasantías';
+  pageSubtitle = 'Resumen de asistencias, marcas y tareas diarias';
+%>
+<%- include('../partials/header') %>
+<div class="container">
+
+    <h1>Mi Horario</h1>
+
+    <form action="/usuario/horario" method="POST">
+
+        <div>
+            <label>Día</label>
+
+            <select name="dia_semana" required>
+                <option value="">Seleccione un día</option>
+                <option value="1">Lunes</option>
+                <option value="2">Martes</option>
+                <option value="3">Miércoles</option>
+                <option value="4">Jueves</option>
+                <option value="5">Viernes</option>
+                <option value="6">Sábado</option>
+                <option value="7">Domingo</option>
+            </select>
+        </div>
+
+        <div>
+            <label>Hora de entrada</label>
+            <input
+                type="time"
+                name="hora_entrada"
+                id="hora_entrada"
+                required
+            >
+        </div>
+
+        <div>
+            <label>Hora de salida</label>
+            <input
+                type="time"
+                name="hora_salida"
+                id="hora_salida"
+                required
+            >
+        </div>
+
+        <div>
+            <label>Horas de pasantía</label>
+
+            <select name="horas" id="horas" required>
+                <option value="">Seleccione</option>
+                <option value="4">4 horas</option>
+                <option value="6">6 horas</option>
+                <option value="8">8 horas</option>
+            </select>
+        </div>
+
+        <p>
+            Horas calculadas:
+            <strong id="totalHoras">0</strong>
+        </p>
+
+        <button type="submit">
+            Guardar horario
+        </button>
+
+    </form>
+
+</div>
+<h2>Mi horario actual</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Día</th>
+            <th>Entrada</th>
+            <th>Salida</th>
+            <th>Horas</th>
+        </tr>
+    </thead>
+
+    <tbody>
+
+        <% horarios.forEach(h => { %>
+
+            <tr>
+
+                <td>
+                    <%
+                    const dias = [
+                        '',
+                        'Lunes',
+                        'Martes',
+                        'Miércoles',
+                        'Jueves',
+                        'Viernes',
+                        'Sábado',
+                        'Domingo'
+                    ];
+                    %>
+
+                    <%= dias[h.dia_semana] %>
+                </td>
+
+                <td>
+                    <%= h.hora_entrada %>
+                </td>
+
+                <td>
+                    <%= h.hora_salida %>
+                </td>
+
+                <td>
+                    <%
+                        const inicio = h.hora_entrada.split(':');
+                        const fin = h.hora_salida.split(':');
+
+                        const minutos =
+                            (parseInt(fin[0]) * 60 + parseInt(fin[1])) -
+                            (parseInt(inicio[0]) * 60 + parseInt(inicio[1]));
+
+                        const horasCalculadas = minutos / 60;
+                    %>
+
+                    <%= horasCalculadas %> horas
+                </td>
+
+            </tr>
+
+        <% }) %>
+
+    </tbody>
+</table>
+
+<script>
+const entrada = document.getElementById('hora_entrada');
+const salida = document.getElementById('hora_salida');
+const total = document.getElementById('totalHoras');
+
+function calcularHoras() {
+
+    if (!entrada.value || !salida.value) {
+        total.textContent = '0';
+        return;
+    }
+
+    const inicio = entrada.value.split(':');
+    const fin = salida.value.split(':');
+
+    const minutosInicio =
+        parseInt(inicio[0]) * 60 + parseInt(inicio[1]);
+
+    const minutosFin =
+        parseInt(fin[0]) * 60 + parseInt(fin[1]);
+
+    const diferencia = minutosFin - minutosInicio;
+
+    if (diferencia <= 0) {
+        total.textContent = 'Horario inválido';
+        return;
+    }
+
+    const horas = diferencia / 60;
+
+    total.textContent = horas + ' horas';
+}
+
+entrada.addEventListener('change', calcularHoras);
+salida.addEventListener('change', calcularHoras);
+
+document.getElementById('horas').addEventListener('change', function () {
+
+    const entrada = document.getElementById('hora_entrada').value;
+
+    if (!entrada) return;
+
+    const [hora, minutos] = entrada.split(':').map(Number);
+
+    const horas = parseInt(this.value);
+
+    const fecha = new Date();
+    fecha.setHours(hora);
+    fecha.setMinutes(minutos + horas * 60);
+
+    const nuevaHora =
+        String(fecha.getHours()).padStart(2, '0') +
+        ':' +
+        String(fecha.getMinutes()).padStart(2, '0');
+
+    document.getElementById('hora_salida').value = nuevaHora;
+
+    calcularHoras();
+});
+</script>
+<%- include('../partials/footer') %>
