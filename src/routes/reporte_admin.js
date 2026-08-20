@@ -47,7 +47,7 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
     // Total de registros
     const [countRows] = await db.query(
       `SELECT COUNT(*) AS total
-       FROM asistencia a
+       FROM asistencias a
        INNER JOIN usuarios u ON u.id_usuario = a.id_usuario
        ${whereSQL}`,
       params
@@ -57,7 +57,7 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
     // Consulta adaptada a la estructura de 'asistencia'
     const [rows] = await db.query(
       `SELECT
-         a.id_asistencia AS id_reporte,
+         a.id_asistencias AS id_reporte,
          u.nombre,
          u.CI,
          DATE_FORMAT(a.fecha, '%Y-%m-%d') AS fecha,
@@ -70,7 +70,7 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
          a.estado AS tarea, 
          NULL AS comprobante,
          a.observacion
-       FROM asistencia a
+       FROM asistencias a
        INNER JOIN usuarios u ON u.id_usuario = a.id_usuario
        ${whereSQL}
        ORDER BY a.fecha DESC, a.id_asistencia DESC
@@ -105,7 +105,7 @@ router.post('/api/admin/reportes/:id', requireAdmin, async (req, res) => {
     const { observacion } = req.body || {};
 
     await db.query(
-      `UPDATE asistencia
+      `UPDATE asistencias
        SET observacion = ?
        WHERE id_asistencia = ?`,
       [observacion || null, id]
@@ -146,7 +146,7 @@ router.get('/admin/reportes/export', requireAdmin, async (req, res) => {
          TIME_FORMAT(a.fecha_hora_biometrico_salida, '%H:%i:%s')  AS hora_fin,
          a.estado AS tarea, 
          a.observacion
-       FROM asistencia a
+       FROM asistencias a
        INNER JOIN usuarios u ON u.id_usuario = a.id_usuario
        ${whereSQL}
        ORDER BY a.fecha DESC, a.id_asistencia DESC`,
@@ -160,7 +160,7 @@ router.get('/admin/reportes/export', requireAdmin, async (req, res) => {
              TIMESTAMPDIFF(SECOND, a.fecha_hora_biometrico_entrada, a.fecha_hora_biometrico_salida)
            )
          ), '00:00:00') AS total_acumulada
-       FROM asistencia a
+       FROM asistencias a
        INNER JOIN usuarios u ON u.id_usuario = a.id_usuario
        ${whereSQL}`,
       params

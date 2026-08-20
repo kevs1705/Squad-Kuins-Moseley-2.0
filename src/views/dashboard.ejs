@@ -115,7 +115,6 @@
     .content {
       flex: 1;
       padding: 32px 32px 32px 292px;
-      /* 260px sidebar + 16px margin-left + 16px gap */
       display: flex;
       flex-direction: column;
       gap: 18px;
@@ -164,26 +163,181 @@
       transform: scale(0.95);
     }
 
-    .frame-card {
-      background: #0f1c30;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      border-radius: 14px;
-      padding: 12px;
-      flex: 1;
-      min-height: 60vh;
-    }
-
-    .frame-card iframe {
-      width: 100%;
-      height: 100%;
-      border: 0;
-      border-radius: 10px;
-      background: #0b1628;
-      min-height: 60vh;
-    }
-
     .muted {
       color: #9fb1c8;
+    }
+
+    /* ===== Tarjetas de selección de asistencia ===== */
+    .asistencia-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      gap: 16px;
+      padding: 20px 0;
+    }
+
+    .asistencia-section h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #e8ecf5;
+      margin: 0 0 4px;
+    }
+
+    .asistencia-section .asistencia-subtitle {
+      color: #8a9bb8;
+      font-size: 0.95rem;
+      margin: 0 0 24px;
+      text-align: center;
+    }
+
+    .asistencia-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+      width: 100%;
+      max-width: 700px;
+    }
+
+    .asistencia-card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+      padding: 40px 28px 36px;
+      border-radius: 18px;
+      text-decoration: none;
+      color: #f5f7fb;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      cursor: pointer;
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                  box-shadow 0.25s,
+                  border-color 0.25s;
+      overflow: hidden;
+    }
+
+    .asistencia-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 18px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .asistencia-card:hover {
+      transform: translateY(-6px) scale(1.02);
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3);
+    }
+
+    .asistencia-card:hover::before {
+      opacity: 1;
+    }
+
+    .asistencia-card:active {
+      transform: translateY(-2px) scale(0.99);
+    }
+
+    /* --- Card Biométrico (azul) --- */
+    .card-biometrico {
+      background: linear-gradient(145deg, rgba(39, 100, 228, 0.12), rgba(39, 154, 228, 0.06));
+      border-color: rgba(39, 154, 228, 0.15);
+    }
+
+    .card-biometrico:hover {
+      border-color: rgba(39, 154, 228, 0.4);
+    }
+
+    .card-biometrico::before {
+      background: radial-gradient(circle at 50% 0%, rgba(39, 154, 228, 0.15), transparent 70%);
+    }
+
+    .card-biometrico .card-icon-circle {
+      background: linear-gradient(135deg, #1d6fd1, #399ae4);
+      box-shadow: 0 8px 24px rgba(39, 154, 228, 0.35);
+    }
+
+    /* --- Card Geocerca (verde) --- */
+    .card-geocerca {
+      background: linear-gradient(145deg, rgba(34, 197, 94, 0.12), rgba(34, 197, 94, 0.06));
+      border-color: rgba(34, 197, 94, 0.15);
+    }
+
+    .card-geocerca:hover {
+      border-color: rgba(34, 197, 94, 0.4);
+    }
+
+    .card-geocerca::before {
+      background: radial-gradient(circle at 50% 0%, rgba(34, 197, 94, 0.15), transparent 70%);
+    }
+
+    .card-geocerca .card-icon-circle {
+      background: linear-gradient(135deg, #16a34a, #22c55e);
+      box-shadow: 0 8px 24px rgba(34, 197, 94, 0.35);
+    }
+
+    /* --- Ícono circular --- */
+    .card-icon-circle {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: transform 0.3s;
+    }
+
+    .asistencia-card:hover .card-icon-circle {
+      transform: scale(1.1);
+    }
+
+    .card-icon-circle svg {
+      width: 34px;
+      height: 34px;
+      stroke: #fff;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+
+    .card-desc {
+      font-size: 0.88rem;
+      color: #8a9bb8;
+      text-align: center;
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    .card-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      margin-top: 4px;
+    }
+
+    .card-biometrico .card-badge {
+      background: rgba(39, 154, 228, 0.15);
+      color: #7dc4f5;
+    }
+
+    .card-geocerca .card-badge {
+      background: rgba(34, 197, 94, 0.15);
+      color: #6ee7a0;
     }
 
     /* Responsividad */
@@ -213,8 +367,9 @@
         min-height: auto;
       }
 
-      .frame-card {
-        min-height: 70vh;
+      .asistencia-grid {
+        grid-template-columns: 1fr;
+        max-width: 360px;
       }
     }
   </style>
@@ -232,21 +387,22 @@
       </div>
 
       <nav aria-label="Navegación principal">
-        <a href="/cuenta" class="sidebar-link" data-target="/cuenta">Mi Cuenta</a>
+        <a href="/cuenta" class="sidebar-link">Mi Cuenta</a>
 
-        <% if (user && user.rol===0) { %>
-          <a href="/reporte" class="sidebar-link" data-target="/reporte">Reporte</a>
-          <% } %>
+        <% if (user && user.rol === 0) { %>
+          <a href="/usuario/reporte" class="sidebar-link">Mis Jornadas</a>
+          <a href="/usuario/horario" class="sidebar-link">Mi Horario</a>
+        <% } %>
 
-            <% if (user && user.rol===1) { %>
-              <a href="/admin/reportes" class="sidebar-link" data-target="/admin/reportes">Reporte</a>
-              <a href="/usuarios" class="sidebar-link" data-target="/usuarios">Usuarios</a>
-              <a href="/admin/pagina-web" class="sidebar-link" data-target="/admin/pagina-web">Administrar página
-                web</a>
-              <a href="/admin/mensajes" class="sidebar-link" data-target="/admin/mensajes">Mensajes web</a>
-              <% } %>
+        <% if (user && user.rol === 1) { %>
+          <a href="/admin/reportes" class="sidebar-link">Reporte</a>
+          <a href="/usuarios" class="sidebar-link">Usuarios</a>
+          <a href="/admin/obras" class="sidebar-link">Obras</a>
+          <a href="/admin/pagina-web" class="sidebar-link">Administrar página web</a>
+          <a href="/admin/mensajes" class="sidebar-link">Mensajes web</a>
+        <% } %>
 
-                <a href="/logout" class="btn-danger">Cerrar sesión</a>
+        <a href="/logout" class="btn-danger">Cerrar sesión</a>
       </nav>
     </aside>
 
@@ -262,18 +418,64 @@
             </svg>
           </button>
           <div>
-            <p class="muted" style="margin:0;">Hola <%= user ? user.nombre : '' %>
-            </p>
-            <h1 style="margin:4px 0 0; font-size: clamp(1.2rem, 4vw, 1.8rem);">Bienvenido al Panel</h1>
+            <p class="muted" style="margin:0;">Hola <%= user ? user.nombre : '' %></p>
+            <h1 style="margin:4px 0 0; font-size: clamp(1.2rem, 4vw, 1.8rem);">Registrar Asistencia</h1>
           </div>
         </div>
         <small class="muted">Actualizado <%= new Date().toLocaleDateString() %></small>
       </header>
 
+      <!-- Sección de selección de asistencia -->
+      <section class="asistencia-section">
+        <h2>¿Dónde te encuentras hoy?</h2>
+        <p class="asistencia-subtitle">Selecciona tu método de asistencia según tu ubicación</p>
 
+        <div class="asistencia-grid">
+          <!-- Tarjeta Biométrico (Oficina) -->
+          <a href="/cuenta" class="asistencia-card card-biometrico" id="card-biometrico">
+            <div class="card-icon-circle">
+              <!-- Ícono de huella digital -->
+              <svg viewBox="0 0 24 24">
+                <path d="M2 12C2 6.5 6.5 2 12 2a10 10 0 0 1 8 4"/>
+                <path d="M5 19.5C5.5 18 6 15 6 12c0-2.8 2-5 4.5-5C13 7 15 9 15 12c0 1.5-.5 3-1 4"/>
+                <path d="M12 12c0 3-1 5-2 7.5"/>
+                <path d="M18 12c0 4-1 7-3 9"/>
+                <path d="M22 12c0 5.5-2.5 10-5 12.5"/>
+                <path d="M9 12c0 1 0 3-.5 5"/>
+              </svg>
+            </div>
+            <span class="card-title">Biométrico</span>
+            <p class="card-desc">Estoy en la oficina y registraré mi asistencia con el lector biométrico</p>
+            <span class="card-badge">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+              Oficina
+            </span>
+          </a>
 
-      <section class="frame-card">
-        <iframe id="dashboard-frame" title="Panel de contenido" src="/cuenta"></iframe>
+          <!-- Tarjeta Geocerca (Obra) -->
+          <a href="/geofence?redirect=/cuenta" class="asistencia-card card-geocerca" id="card-geocerca">
+            <div class="card-icon-circle">
+              <!-- Ícono de ubicación -->
+              <svg viewBox="0 0 24 24">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+            </div>
+            <span class="card-title">Geocerca</span>
+            <p class="card-desc">Estoy en una obra y verificaré mi ubicación mediante GPS</p>
+            <span class="card-badge">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
+                <line x1="8" y1="2" x2="8" y2="18"/>
+                <line x1="16" y1="6" x2="16" y2="22"/>
+              </svg>
+              Obra / Campo
+            </span>
+          </a>
+        </div>
       </section>
 
       <footer class="muted" style="margin-top:auto;">
@@ -285,43 +487,10 @@
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
 
-    // Navegación dinámica dentro del iframe
-    const frame = document.getElementById('dashboard-frame');
-    const links = document.querySelectorAll('.sidebar nav a');
     const sidebar = document.querySelector('.sidebar');
     const toggleBtn = document.getElementById('sidebar-toggle');
 
-    links.forEach(link => {
-      link.addEventListener('click', (e) => {
-        const target = link.getAttribute('data-target');
-        if (target) {
-          e.preventDefault();
-          frame.src = target;
-
-          // Resaltar enlace activo
-          links.forEach(l => l.classList.remove('active'));
-          if (!link.classList.contains('btn-danger')) {
-            link.classList.add('active');
-          }
-
-          // En móviles, colapsar sidebar automáticamente tras clic
-          if (window.innerWidth <= 960) {
-            sidebar.classList.add('collapsed');
-            localStorage.setItem('sidebar-collapsed', 'true');
-          }
-        }
-      });
-    });
-
-    // Configurar enlace activo inicial
-    const currentPath = frame.getAttribute('src');
-    const initialLink = document.querySelector(`.sidebar nav a[data-target="${currentPath}"]`);
-    if (initialLink) {
-      initialLink.classList.add('active');
-    }
-
-    // Lógica para colapsar/expandir el sidebar
-    // Por defecto colapsado en móviles, restaurar preferencia en desktop
+    // Sidebar: colapsado por defecto en móviles
     if (window.innerWidth <= 960) {
       sidebar.classList.add('collapsed');
     } else {
@@ -340,7 +509,8 @@
     });
 
     // Cerrar sidebar al hacer clic fuera en móviles
-    document.querySelector('.content').addEventListener('click', () => {
+    document.querySelector('.content').addEventListener('click', (e) => {
+      if (e.target.closest('.sidebar-toggle')) return;
       if (window.innerWidth <= 960 && !sidebar.classList.contains('collapsed')) {
         sidebar.classList.add('collapsed');
         localStorage.setItem('sidebar-collapsed', 'true');
