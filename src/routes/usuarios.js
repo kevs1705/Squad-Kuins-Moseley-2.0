@@ -4,7 +4,14 @@ const router = express.Router();
 const db = require('../config/bd'); // mysql2/promise
 
 // --- INTEGRACIÓN BIOMÉTRICO ZKTECO K14 ---
-const Zkteco = require('zkteco-js-with-restart');
+let Zkteco = null;
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+  try {
+    Zkteco = require('zkteco-js-with-restart');
+  } catch (error) {
+    console.warn('⚠️ No se pudo cargar zkteco-js-with-restart en este entorno:', error.message);
+  }
+}
 const BIOMETRICO_IP = process.env.BIOMETRICO_IP || '192.168.0.250';
 const BIOMETRICO_PORT = Number(process.env.BIOMETRICO_PORT) || 4370;
 
@@ -87,7 +94,7 @@ router.post('/api/usuarios', requireAuth, requireAdmin, async (req, res) => {
     const idUsuario = result.insertId;
 
     // B. Enviar al Biométrico K14
-    if (estado === 1) {
+    if (estado === 1 && Zkteco) {
       try {
         const dispositivoZk = new Zkteco(BIOMETRICO_IP, BIOMETRICO_PORT, 5200, 5000);
         await dispositivoZk.createSocket();
@@ -111,6 +118,8 @@ router.post('/api/usuarios', requireAuth, requireAdmin, async (req, res) => {
       } catch (bioError) {
         console.error('⚠️ Usuario guardado en MySQL, pero falló envío al biométrico:', bioError.message);
       }
+    } else if (estado === 1) {
+      console.log('⚠️ Sincronización con biométrico omitida (librería no disponible en este entorno)');
     }
 
     // Traer la fila creada con la información de la carrera
@@ -183,32 +192,36 @@ router.post('/api/usuarios/:id', requireAuth, requireAdmin, async (req, res) => 
     }
 
     // B. Sincronizar en el Biométrico K14
-    try {
-      const dispositivoZk = new Zkteco(BIOMETRICO_IP, BIOMETRICO_PORT, 5200, 5000);
-      await dispositivoZk.createSocket();
+    if (Zkteco) {
+      try {
+        const dispositivoZk = new Zkteco(BIOMETRICO_IP, BIOMETRICO_PORT, 5200, 5000);
+        await dispositivoZk.createSocket();
 
-      if (estado === 1) {
-        const rolBiometrico = rol === 1 ? 14 : 0;
-        const deptoBiometrico = id_carrera ? Number(id_carrera) : 1;
+        if (estado === 1) {
+          const rolBiometrico = rol === 1 ? 14 : 0;
+          const deptoBiometrico = id_carrera ? Number(id_carrera) : 1;
 
-        await dispositivoZk.setUser(
-          id,
-          id.toString(),
-          nombre.slice(0, 24),
-          contrasenaFinal,
-          rolBiometrico,
-          0,
-          deptoBiometrico // <--- Se envía el Depto ID correspondiente
-        );
-        console.log(`🔄 Usuario [${nombre}] actualizado en el K14 con ID: ${id} y Depto ID: ${deptoBiometrico}`);
-      } else {
-        await dispositivoZk.deleteUser(id);
-        console.log(`🚫 Usuario [${nombre}] desactivado. Removido del K14.`);
+          await dispositivoZk.setUser(
+            id,
+            id.toString(),
+            nombre.slice(0, 24),
+            contrasenaFinal,
+            rolBiometrico,
+            0,
+            deptoBiometrico // <--- Se envía el Depto ID correspondiente
+          );
+          console.log(`🔄 Usuario [${nombre}] actualizado en el K14 con ID: ${id} y Depto ID: ${deptoBiometrico}`);
+        } else {
+          await dispositivoZk.deleteUser(id);
+          console.log(`🚫 Usuario [${nombre}] desactivado. Removido del K14.`);
+        }
+
+        await dispositivoZk.disconnect();
+      } catch (bioError) {
+        console.error('⚠️ BD actualizada, pero falló sincronización con biométrico:', bioError.message);
       }
-
-      await dispositivoZk.disconnect();
-    } catch (bioError) {
-      console.error('⚠️ BD actualizada, pero falló sincronización con biométrico:', bioError.message);
+    } else {
+      console.log('⚠️ Sincronización con biométrico omitida (librería no disponible en este entorno)');
     }
 
     const [rows] = await db.query(
@@ -237,14 +250,18 @@ router.delete('/api/usuarios/:id', requireAuth, requireAdmin, async (req, res) =
 
     await db.query('DELETE FROM usuarios WHERE id_usuario=? LIMIT 1', [id]);
 
-    try {
-      const dispositivoZk = new Zkteco(BIOMETRICO_IP, BIOMETRICO_PORT, 5200, 5000);
-      await dispositivoZk.createSocket();
-      await dispositivoZk.deleteUser(id);
-      await dispositivoZk.disconnect();
-      console.log(`🗑️ Usuario con ID ${id} eliminado del biométrico K14.`);
-    } catch (bioError) {
-      console.error('⚠️ Borrado de MySQL, pero no se pudo remover del biométrico:', bioError.message);
+    if (Zkteco) {
+      try {
+        const dispositivoZk = new Zkteco(BIOMETRICO_IP, BIOMETRICO_PORT, 5200, 5000);
+        await dispositivoZk.createSocket();
+        await dispositivoZk.deleteUser(id);
+        await dispositivoZk.disconnect();
+        console.log(`🗑️ Usuario con ID ${id} eliminado del biométrico K14.`);
+      } catch (bioError) {
+        console.error('⚠️ Borrado de MySQL, pero no se pudo remover del biométrico:', bioError.message);
+      }
+    } else {
+      console.log('⚠️ Eliminación en biométrico omitida (librería no disponible en este entorno)');
     }
 
     res.json({ ok: true });
