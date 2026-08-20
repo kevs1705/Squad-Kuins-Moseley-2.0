@@ -34,9 +34,9 @@ app.use(
     secret: "supersecreto", // cámbialo
     resave: false,
     saveUninitialized: false,
-   cookie: { 
+    cookie: {
       secure: false, // Debe estar en false si no usas HTTPS local o si estás probando con vercel dev
-      maxAge: 1000 * 60 * 60 * 4 
+      maxAge: 1000 * 60 * 60 * 4
     }
   })
 );
@@ -70,8 +70,8 @@ app.use(pagina_webRoutes);
 
 // Rutas para asistencia de pasantes
 const asistenciaPasantesRoutes = require('./src/routes/asistencias');
-app.use(asistenciaPasantesRoutes);   
-const horarioPasantesRoutes=require ('./src/routes/horario');
+app.use(asistenciaPasantesRoutes);
+const horarioPasantesRoutes = require('./src/routes/horario');
 app.use(horarioPasantesRoutes);
 
 // 2. Administración
