@@ -3,17 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Verificación de presencia</title>
+  <title>Verificación de Presencia</title>
 
   <link rel="stylesheet" href="/css/geofence.css">
 
   <!-- Leaflet -->
   <link rel="stylesheet"
         href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
         crossorigin>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
           crossorigin></script>
 
   <!-- SweetAlert2 -->
@@ -23,13 +21,16 @@
   <div class="wrap">
     <!-- Panel -->
     <div class="card">
-      <h1>Verificación de presencia en oficina</h1>
-      <p>Para acceder, confirma tu ubicación dentro del radio autorizado.</p>
-      <p class="small">
-        Centro: <b><%= office.lat %>, <%= office.lng %></b> · Radio: <b><%= office.radiusM %> m</b>
-      </p>
-      <button id="btn">Verificar ubicación</button>
+      <h1>Verificación de presencia</h1>
+      <p>Para acceder, confirma que te encuentras dentro de una zona o lugar de trabajo autorizado.</p>
+      
+      <div id="lugares-info" class="small" style="margin-bottom: 12px;">
+        <b>Zonas autorizadas registradas: <%= lugares.length %></b>
+      </div>
+
+      <button id="btn">Verificar mi ubicación</button>
       <div id="log" class="log"></div>
+      
       <p class="small" style="margin-top:10px">
         * Consejo: activa el GPS y Wi-Fi para mejor precisión.
       </p>
@@ -39,51 +40,90 @@
     <div style="position:relative">
       <div id="map"></div>
       <div class="legend">
-        <div><span class="dot dot-office"></span>Oficina (círculo verde)</div>
-        <div><span class="dot dot-user"></span>Tu ubicación (círculo de precisión)</div>
+        <div><span class="dot" style="background:#22c55e"></span> Obras / Lugares Autorizados</div>
+        <div><span class="dot" style="background:#eab308"></span> Tu ubicación GPS</div>
       </div>
     </div>
   </div>
+<!-- Guardamos el JSON de forma segura en un tag HTML oculto -->
+<script id="lugares-data" type="application/json">
+  <%- JSON.stringify(lugares || []) %>
+</script>
 
 <script>
 const btn = document.getElementById('btn');
 const log = document.getElementById('log');
 const redirect = "<%= redirect %>";
-const OFFICE = { lat: <%= office.lat %>, lng: <%= office.lng %>, radiusM: <%= office.radiusM %> };
 
-// Aviso de contexto seguro (mejora precisión)
-(async () => {
-  if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-    await Swal.fire({
-      icon:'info',
-      title:'Recomendación',
-      text:'Para mejor precisión de GPS, usa HTTPS o localhost.'
-    });
-  }
-})();
+// Inyección segura
+let LUGARES = [];
+try {
+  LUGARES = JSON.parse(document.getElementById('lugares-data').textContent);
+} catch (e) {
+  console.error("Error al parsear lugares:", e);
+}
 
 // --- MAPA ---
-const map = L.map('map', { zoomControl:true, attributionControl:true });
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-  { maxZoom:20, attribution:'&copy; OpenStreetMap contributors' }).addTo(map);
+const map = L.map('map', { zoomControl: true, attributionControl: true });
 
-const officeMarker = L.circleMarker([OFFICE.lat, OFFICE.lng], {
-  radius:8, color:'#22c55e', weight:2, fill:true, fillOpacity:1
-}).addTo(map).bindPopup('Centro de oficina');
-
-const officeCircle = L.circle([OFFICE.lat, OFFICE.lng], {
-  radius:OFFICE.radiusM, color:'#22c55e', weight:1.5, fill:true, fillOpacity:0.08
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
+  maxZoom: 19,
+  subdomains: ['a', 'b', 'c'],
+  attribution: '&copy; OpenStreetMap contributors' 
 }).addTo(map);
+
+const bounds = []; // Colección de coordenadas [lat, lng] válidas
+
+// Dibujar los lugares válidos
+LUGARES.forEach(lugar => {
+  const lat = parseFloat(lugar.latitud);
+  const lng = parseFloat(lugar.longitud);
+  const radio = parseFloat(lugar.radio_metros) || 100;
+
+  if (!isNaN(lat) && !isNaN(lng)) {
+    // Marcador central
+    L.circleMarker([lat, lng], {
+      radius: 7, color: '#22c55e', weight: 2, fill: true, fillOpacity: 1
+    }).addTo(map).bindPopup(`<b>${lugar.nombre}</b><br>Radio: ${radio}m`);
+
+    // Círculo de cobertura
+    L.circle([lat, lng], {
+      radius: radio, color: '#22c55e', weight: 1.5, fill: true, fillOpacity: 0.1
+    }).addTo(map);
+
+    // Guardamos la coordenada en nuestro array para los límites
+    bounds.push([lat, lng]);
+  }
+});
+
+// Ajustar vista del mapa de forma segura
+if (bounds.length > 0) {
+  // Ajustamos los límites pasando directamente la lista de coordenadas LatLng
+  map.fitBounds(bounds, { padding: [50, 50] });
+} else {
+  // Coordenadas por defecto (La Paz) si no hay lugares válidos
+  map.setView([-16.5000, -68.1333], 14);
+}
+
+// Forzar el recálculo de dimensiones del mapa tras renderizar el DOM
+setTimeout(() => {
+  map.invalidateSize();
+}, 250);
 
 let userMarker = null;
 let userAccCircle = null;
-map.setView([OFFICE.lat, OFFICE.lng], 17);
 
 function fitAll() {
-  const items = [officeCircle];
-  if (userMarker) items.push(userMarker);
-  const group = L.featureGroup(items);
-  map.fitBounds(group.getBounds().pad(0.2), { animate:true });
+  const points = [...bounds];
+
+  if (userMarker) {
+    const userLatLng = userMarker.getLatLng();
+    points.push([userLatLng.lat, userLatLng.lng]);
+  }
+
+  if (points.length > 0) {
+    map.fitBounds(points, { padding: [40, 40], animate: true });
+  }
 }
 
 function write(s){ log.textContent = s; }
@@ -91,85 +131,78 @@ function write(s){ log.textContent = s; }
 btn.addEventListener('click', verifyPosition);
 
 async function verifyPosition() {
-  write('Solicitando permiso de ubicación…');
+  write('Obteniendo posición GPS...');
   btn.disabled = true;
 
-  const opts = { enableHighAccuracy:true, maximumAge:15000, timeout:12000 };
+  const opts = { enableHighAccuracy: true, maximumAge: 15000, timeout: 12000 };
 
   navigator.geolocation.getCurrentPosition(async pos => {
     const { latitude: lat, longitude: lng, accuracy } = pos.coords;
 
-    // Dibuja/actualiza ubicación del usuario
     if (!userMarker) {
       userMarker = L.circleMarker([lat, lng], {
-        radius:8, color:'#eab308', weight:2, fill:true, fillOpacity:1
-      }).addTo(map).bindPopup('Tú');
+        radius: 8, color: '#eab308', weight: 2, fill: true, fillOpacity: 1
+      }).addTo(map).bindPopup('Tu posición');
     } else {
       userMarker.setLatLng([lat, lng]);
     }
 
     if (!userAccCircle) {
       userAccCircle = L.circle([lat, lng], {
-        radius:Math.max(accuracy, 1), color:'#eab308', weight:1, fill:true, fillOpacity:0.08
+        radius: Math.max(accuracy, 1), color: '#eab308', weight: 1, fill: true, fillOpacity: 0.08
       }).addTo(map);
     } else {
       userAccCircle.setLatLng([lat, lng]).setRadius(Math.max(accuracy, 1));
     }
 
     fitAll();
-    write(`Lat: ${lat.toFixed(6)} · Lng: ${lng.toFixed(6)} · Precisión: ${Math.round(accuracy)}m\nVerificando en servidor…`);
+    write(`Lat: ${lat.toFixed(6)} · Lng: ${lng.toFixed(6)} · Precisión: ${Math.round(accuracy)}m\nVerificando...`);
 
     try {
       const res = await fetch('/api/geofence/verify', {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json' },
-        credentials:'include',
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ lat, lng, accuracy })
       });
+
       const data = await res.json();
 
       if (!res.ok || !data.ok) {
-        write(`❌ ${data.msg || 'No autorizado'}`);
+        write(`❌ ${data.msg || 'Ubicación no autorizada'}`);
         await Swal.fire({
-          icon:'error',
-          title:'Fuera de zona',
-          text:data.msg || 'No estás dentro del área autorizada',
-          confirmButtonText:'Entendido'
+          icon: 'error',
+          title: 'Fuera de zona',
+          text: data.msg || 'No estás dentro del radio permitido.',
+          confirmButtonText: 'Entendido'
         });
         btn.disabled = false;
         return;
       }
 
-      // ✅ Verificado por geocerca → redirigir
-      write(`✅ ${data.msg} · Distancia: ${data.distanceM} m`);
+      write(`✅ ${data.msg}`);
       await Swal.fire({
-        icon:'success',
-        title:'Ubicación verificada',
-        html:`Estás dentro de la zona autorizada.<br><small>Distancia: <b>${data.distanceM} m</b>${data.accuracyM ? ` · Precisión: <b>${data.accuracyM} m</b>` : ''}</small>`,
-        timer:1400,
-        showConfirmButton:false
+        icon: 'success',
+        title: 'Acceso autorizado',
+        html: `Ubicación verificada en: <b>${data.lugar}</b><br><small>Distancia: <b>${data.distanceM} m</b></small>`,
+        timer: 1800,
+        showConfirmButton: false
       });
+
       location.assign(redirect);
 
     } catch (e) {
       console.error(e);
-      write('Error de red al verificar. Intenta de nuevo.');
-      await Swal.fire({ icon:'warning', title:'Error de red', text:'Reintenta en unos segundos.' });
+      write('Error de conexión.');
+      await Swal.fire({ icon: 'warning', title: 'Error de red', text: 'Reintenta en unos momentos.' });
       btn.disabled = false;
     }
   }, async err => {
-    write('No se pudo obtener la ubicación: ' + err.message);
-    await Swal.fire({ icon:'error', title:'Ubicación bloqueada', text:err.message });
+    write('Error GPS: ' + err.message);
+    await Swal.fire({ icon: 'error', title: 'Ubicación bloqueada', text: err.message });
     btn.disabled = false;
   }, opts);
 }
-
-// Seguimiento en vivo (opcional)
-navigator.geolocation.watchPosition(p => {
-  const { latitude: lat, longitude: lng, accuracy } = p.coords;
-  if (userMarker) userMarker.setLatLng([lat, lng]);
-  if (userAccCircle) userAccCircle.setLatLng([lat, lng]).setRadius(Math.max(accuracy, 1));
-}, () => {}, { enableHighAccuracy:true, maximumAge:15000, timeout:12000 });
 </script>
 </body>
 </html>
