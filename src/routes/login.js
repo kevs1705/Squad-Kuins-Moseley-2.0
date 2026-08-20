@@ -48,7 +48,7 @@ router.post("/login", async (req, res) => {
     if (user.rol === 1) {
       return res.redirect("/dashboard");
     } else {
-      return res.redirect("/geofence");
+      return res.redirect("/dashboard");
     }
 
   } catch (err) {
