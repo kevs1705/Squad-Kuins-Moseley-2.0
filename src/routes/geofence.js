@@ -2,9 +2,10 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/bd.js'); // Ajusta la ruta a tu conexión MySQL (pool/promise)
 const { distanceMeters } = require('../middleware/geofence');
+const { requireAuth } = require('../middleware/auth.js');
 
 // GET: Cargar la vista de geocerca con los lugares activos
-router.get('/geofence', async (req, res) => {
+router.get('/geofence', requireAuth, async (req, res) => {
   const redirect = req.query.redirect || '/dashboard';
 
   try {
@@ -27,6 +28,9 @@ router.get('/geofence', async (req, res) => {
 
 // POST API: Validar si las coordenadas del usuario coinciden con alguna obra/lugar activo
 router.post('/api/geofence/verify', async (req, res) => {
+  if (!req.session || !req.session.user) {
+    return res.status(401).json({ ok: false, msg: 'Sesión no iniciada.' });
+  }
   const { lat, lng, accuracy } = req.body;
 
   if (typeof lat !== 'number' || typeof lng !== 'number' || typeof accuracy !== 'number') {
@@ -108,6 +112,75 @@ router.post('/api/geofence/verify', async (req, res) => {
   } catch (error) {
     console.error('Error en verificación de geocerca:', error);
     return res.status(500).json({ ok: false, msg: 'Error de base de datos.' });
+  }
+});
+
+// POST API: Registrar la Entrada/Salida en la tabla asistencias
+router.post('/api/geofence/register', async (req, res) => {
+  if (!req.session || !req.session.user) {
+    return res.status(401).json({ ok: false, msg: 'Sesión no iniciada.' });
+  }
+
+  const { tipo } = req.body;
+  if (tipo !== 'entrada' && tipo !== 'salida') {
+    return res.status(400).json({ ok: false, msg: 'Tipo de asistencia inválido.' });
+  }
+
+  // Verificar que la geocerca haya sido validada en esta sesión y no haya expirado
+  if (!req.session.geofence || !req.session.geofence.ok || Date.now() > req.session.geofence.until) {
+    return res.status(403).json({ ok: false, msg: 'Ubicación no verificada o sesión de ubicación expirada.' });
+  }
+
+  const userId = req.session.user.id || req.session.user.id_usuario;
+  const idLugar = req.session.geofence.id_lugar;
+
+  try {
+    // Buscar si ya existe una asistencia para hoy
+    const [existing] = await db.query(
+      'SELECT id_asistencia, hora_entrada, hora_salida FROM asistencias WHERE id_usuario = ? AND fecha = CURDATE() LIMIT 1',
+      [userId]
+    );
+
+    if (existing && existing.length > 0) {
+      const record = existing[0];
+      if (tipo === 'entrada') {
+        await db.query(
+          'UPDATE asistencias SET hora_entrada = CURTIME(), id_lugar = ? WHERE id_asistencia = ?',
+          [idLugar, record.id_asistencia]
+        );
+      } else {
+        await db.query(
+          'UPDATE asistencias SET hora_salida = CURTIME(), id_lugar = ? WHERE id_asistencia = ?',
+          [idLugar, record.id_asistencia]
+        );
+      }
+    } else {
+      // No existe, insertar un nuevo registro
+      if (tipo === 'entrada') {
+        await db.query(
+          'INSERT INTO asistencias (id_usuario, id_lugar, fecha, hora_entrada, estado) VALUES (?, ?, CURDATE(), CURTIME(), ?)',
+          [userId, idLugar, 'PRESENTE']
+        );
+      } else {
+        await db.query(
+          'INSERT INTO asistencias (id_usuario, id_lugar, fecha, hora_salida, estado) VALUES (?, ?, CURDATE(), CURTIME(), ?)',
+          [userId, idLugar, 'PRESENTE']
+        );
+      }
+    }
+
+    // Obtener la hora actual registrada
+    const [[{ server_time }]] = await db.query("SELECT TIME_FORMAT(CURTIME(), '%H:%i:%s') AS server_time");
+
+    return res.json({
+      ok: true,
+      msg: `Se registró tu ${tipo} con éxito.`,
+      hora: server_time
+    });
+
+  } catch (error) {
+    console.error('Error al registrar asistencia en BD:', error);
+    return res.status(500).json({ ok: false, msg: 'Error al guardar la asistencia en la base de datos.' });
   }
 });
 

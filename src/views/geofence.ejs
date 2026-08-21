@@ -181,11 +181,61 @@ async function verifyPosition() {
       }
 
       write(`✅ ${data.msg}`);
+      
+      const result = await Swal.fire({
+        title: 'Ubicación Verificada',
+        html: `Te encuentras en: <b>${data.lugar}</b><br>¿Deseas registrar tu entrada o salida?`,
+        icon: 'success',
+        showDenyButton: true,
+        showCancelButton: true,
+        confirmButtonText: 'Marcar Entrada',
+        denyButtonText: 'Marcar Salida',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#22c55e',
+        denyButtonColor: '#3b82f6',
+        cancelButtonColor: '#6b7280',
+        reverseButtons: true
+      });
+
+      let tipo = null;
+      if (result.isConfirmed) {
+        tipo = 'entrada';
+      } else if (result.isDenied) {
+        tipo = 'salida';
+      } else {
+        write('Acción cancelada.');
+        btn.disabled = false;
+        return;
+      }
+
+      write(`Registrando ${tipo}...`);
+
+      const regRes = await fetch('/api/geofence/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ tipo })
+      });
+
+      const regData = await regRes.json();
+      if (!regRes.ok || !regData.ok) {
+        write(`❌ Error: ${regData.msg || 'No se pudo registrar'}`);
+        await Swal.fire({
+          icon: 'error',
+          title: 'Error de registro',
+          text: regData.msg || 'Ocurrió un error al guardar en la base de datos.',
+          confirmButtonText: 'Entendido'
+        });
+        btn.disabled = false;
+        return;
+      }
+
+      write(`✅ Registrado: ${tipo}`);
       await Swal.fire({
         icon: 'success',
-        title: 'Acceso autorizado',
-        html: `Ubicación verificada en: <b>${data.lugar}</b><br><small>Distancia: <b>${data.distanceM} m</b></small>`,
-        timer: 1800,
+        title: 'Asistencia Registrada',
+        html: `Acción: <b>${tipo.toUpperCase()}</b><br>Lugar: <b>${data.lugar}</b><br>Hora del servidor: <b>${regData.hora}</b>`,
+        timer: 2500,
         showConfirmButton: false
       });
 
