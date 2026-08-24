@@ -17,7 +17,7 @@
     <a href="/usuario/reporte" class="sidebar-link">Reportes</a>
 <% } %>
 
-    <% if (user && user.rol === 1) { %>
+    <% if (typeof user !== 'undefined' && user && user.rol === 1) { %>  
       <a href="/admin/reportes" class="sidebar-link">Reporte</a>
       <a href="/usuarios" class="sidebar-link">Usuarios</a>
       <a href="/admin/obras" class="sidebar-link">Obras</a>
