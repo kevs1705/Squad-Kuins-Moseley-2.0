@@ -158,7 +158,7 @@
 </head>
 <body>
   <div class="dashboard-shell">
-    <%- include('sidebar') %>
+   <%- include('sidebar', { user: typeof user !== 'undefined' ? user : null }) %>
 
     <main class="content">
       <header class="content-header">
