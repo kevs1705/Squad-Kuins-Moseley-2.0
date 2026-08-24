@@ -3,8 +3,9 @@
    ========================================================================== */
 
 :root {
-  --primary-color: #0d6efd;
-  --secondary-color: #0b1f3a;
+  --primary-color: #2563eb;
+  --primary-light: #eff6ff;
+  --secondary-color: #0f172a;
   --bg-card: #ffffff;
   --border-color: #e2e8f0;
   --text-primary: #1e293b;
@@ -15,7 +16,7 @@
 
 body {
   background-color: #f8fafc;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
   color: var(--text-primary);
 }
 
@@ -56,7 +57,7 @@ body {
   color: var(--secondary-color);
 }
 
-/* Bar de Progreso */
+/* Barra de Progreso */
 .progress-bar-container {
   height: 8px;
   background-color: #e2e8f0;
@@ -102,11 +103,13 @@ body {
   flex-direction: column;
 }
 
+.form-label,
 .form-group label {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 0.4rem;
+  color: var(--text-primary) !important;
+  margin-bottom: 0.5rem;
+  display: block;
 }
 
 .form-control,
@@ -114,6 +117,7 @@ body {
   width: 100%;
   padding: 0.625rem 0.875rem;
   font-size: 0.95rem;
+  color: var(--text-primary);
   border: 1px solid var(--border-color);
   border-radius: 6px;
   background-color: #fff;
@@ -125,7 +129,51 @@ body {
 .form-select:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+/* --- ESTILOS MEJORADOS PARA SELECCIÓN DE DÍAS (CHECKBOXES) --- */
+.dias-checkbox-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.checkbox-day {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.85rem;
+  background-color: #f8fafc;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary) !important;
+  user-select: none;
+  transition: all 0.2s ease;
+}
+
+.checkbox-day:hover {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.checkbox-day input[type="checkbox"] {
+  accent-color: var(--primary-color);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* Efecto visual al seleccionar un día */
+.checkbox-day:has(input:checked) {
+  background-color: var(--primary-light);
+  border-color: var(--primary-color);
+  color: var(--primary-color) !important;
+  font-weight: 600;
 }
 
 /* Caja del Total de Horas Calculadas */
@@ -152,7 +200,7 @@ body {
 
 .btn-submit {
   background-color: var(--secondary-color);
-  color: #ffffff;
+  color: #ffffff !important;
   font-weight: 600;
   padding: 0.75rem 1.5rem;
   border: none;
@@ -164,14 +212,14 @@ body {
 }
 
 .btn-submit:hover {
-  background-color: #152c4a;
+  background-color: #1e293b;
 }
 
 .btn-submit:active {
   transform: scale(0.99);
 }
 
-/* --- TABLA DE HORARIO ACTUAL --- */
+/* --- TABLA DE HORARIO ACTUAL (REDiseñada) --- */
 .table-container {
   background: var(--bg-card);
   border-radius: var(--radius-md);
@@ -187,38 +235,52 @@ body {
 }
 
 .custom-table thead {
-  background-color: var(--secondary-color);
-  color: #ffffff;
+  background-color: #1e293b;
 }
 
 .custom-table th {
-  padding: 1rem;
-  font-size: 0.85rem;
+  padding: 1rem 1.25rem;
+  font-size: 0.8rem;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: 600;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  color: #ffffff !important; /* Cabecera con texto blanco contrastado */
 }
 
 .custom-table td {
-  padding: 1rem;
+  padding: 1rem 1.25rem;
   border-bottom: 1px solid var(--border-color);
-  font-size: 0.95rem;
+  font-size: 0.925rem;
+  color: var(--text-primary) !important; /* Texto oscuro para celdas */
+  vertical-align: middle;
+}
+
+.custom-table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.custom-table tbody tr:nth-child(even) {
+  background-color: #f8fafc;
+}
+
+.custom-table tbody tr:hover {
+  background-color: #f1f5f9;
 }
 
 .custom-table tbody tr:last-child td {
   border-bottom: none;
 }
 
-.custom-table tbody tr:hover {
-  background-color: #f8fafc;
-}
-
+/* Insignia / Badge de Horas */
 .badge-hours {
-  display: inline-block;
-  background-color: #e0f2fe;
-  color: #0369a1;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background-color: #dbeafe;
+  color: #1e40af !important;
   font-weight: 700;
-  padding: 0.25rem 0.6rem;
-  border-radius: 12px;
-  font-size: 0.85rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 20px;
+  font-size: 0.825rem;
+  border: 1px solid #bfdbfe;
 }
