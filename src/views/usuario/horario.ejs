@@ -1,210 +1,308 @@
-<%
-  pageTitle = 'Panel Unificado de Pasantías';
-  pageSubtitle = 'Resumen de asistencias, marcas y tareas diarias';
-%>
+<% pageTitle='Panel Unificado de Pasantías' ; pageSubtitle='Resumen de asistencias, marcas y horarios' ; %>
 <%- include('../partials/header') %>
 
 <link rel="stylesheet" href="/css/horario.css">
 
 <div class="horario-wrapper">
 
-    <!-- METRICAS DE HORAS Y PASANTÍA -->
-    <%
-      const horasRequeridas = user.horas_requeridas || 280;
-      const horasPrevias = user.horas_previas || 0;
-      const horasSistema = (typeof totalHorasSistema !== 'undefined') ? totalHorasSistema : 0;
-      const totalAcumulado = horasPrevias + horasSistema;
-      const porcentaje = Math.min(100, Math.round((totalAcumulado / horasRequeridas) * 100));
-    %>
+  <!-- METRICAS DE HORAS Y PASANTÍA -->
+  <% 
+    const horasRequeridas = user.horas_requeridas || 280; 
+    const horasPrevias = user.horas_previas || 0; 
+    const horasSistema = (typeof totalHorasSistema !== 'undefined') ? totalHorasSistema : 0; 
+    const totalAcumulado = horasPrevias + horasSistema; 
+    const porcentaje = Math.min(100, Math.round((totalAcumulado / horasRequeridas) * 100)); 
+  %>
 
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="title">Meta Carrera</div>
-        <div class="value"><%= horasRequeridas %> hrs</div>
-      </div>
-      <div class="stat-card">
-        <div class="title">Horas Previas (Reconocidas)</div>
-        <div class="value"><%= horasPrevias %> hrs</div>
-      </div>
-      <div class="stat-card">
-        <div class="title">Total Acumulado</div>
-        <div class="value"><%= totalAcumulado %> / <%= horasRequeridas %> hrs</div>
-        <div class="progress-bar-container">
-      
-        </div>
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="title">Meta Carrera</div>
+      <div class="value">
+        <%= horasRequeridas %> hrs
       </div>
     </div>
+    <div class="stat-card">
+      <div class="title">Horas Previas (Reconocidas)</div>
+      <div class="value">
+        <%= horasPrevias %> hrs
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="title">Total Acumulado</div>
+      <div class="value">
+        <%= totalAcumulado %> / <%= horasRequeridas %> hrs
+      </div>
+      <div class="progress-bar-container">
+        <div class="progress-bar-fill" style="width: <%= porcentaje %>%;"></div>
+      </div>
+    </div>
+  </div>
 
-    <!-- TARJETA FORMULARIO: REGISTRAR DIA Y HORARIO -->
-    <div class="card-form">
-      <div class="card-title">Configurar Horario de Asistencia</div>
+  <!-- TARJETA FORMULARIO: REGISTRAR HORARIO -->
+  <div class="card-form">
+    <div class="card-title">
+      Configurar Horario de Asistencia
+    </div>
 
-      <form action="/usuario/horario" method="POST">
-        
-        <!-- SELECCIÓN MÚLTIPLE DE DÍAS -->
-        <div class="form-group" style="margin-bottom: 1.5rem;">
-          <label class="form-label" style="font-weight: 600; margin-bottom: 0.5rem; display: block;">
-            Seleccione los días en los que aplica este horario:
+    <p class="card-subtitle">
+      Establece los días y las horas de tu jornada de pasantía. Puedes seleccionar duraciones habituales (4h, 6h, 8h) o <strong>escribir directamente tu hora de salida</strong> si tienes choque de materias universitarias.
+    </p>
+
+    <form action="/usuario/horario" method="POST" id="formHorario">
+
+      <!-- SELECCIÓN MÚLTIPLE DE DÍAS -->
+      <div class="form-group" style="margin-bottom: 1.25rem;">
+        <label class="form-label" style="font-weight: 700; margin-bottom: 0.5rem; display: block; color: #000000;">
+          Seleccione los días en los que aplica este horario:
+        </label>
+        <div class="dias-checkbox-container">
+          <label class="checkbox-day">
+            <input type="checkbox" name="dias_semana" value="1" checked> Lunes
           </label>
-          <div class="dias-checkbox-container">
-            <label class="checkbox-day">
-              <input type="checkbox" name="dias_semana" value="1" checked> Lunes
-            </label>
-            <label class="checkbox-day">
-              <input type="checkbox" name="dias_semana" value="2" checked> Martes
-            </label>
-            <label class="checkbox-day">
-              <input type="checkbox" name="dias_semana" value="3" checked> Miércoles
-            </label>
-            <label class="checkbox-day">
-              <input type="checkbox" name="dias_semana" value="4" checked> Jueves
-            </label>
-            <label class="checkbox-day">
-              <input type="checkbox" name="dias_semana" value="5" checked> Viernes
-            </label>
-            <label class="checkbox-day">
-              <input type="checkbox" name="dias_semana" value="6"> Sábado
-            </label>
-            <label class="checkbox-day">
-              <input type="checkbox" name="dias_semana" value="7"> Domingo
-            </label>
-          </div>
+          <label class="checkbox-day">
+            <input type="checkbox" name="dias_semana" value="2" checked> Martes
+          </label>
+          <label class="checkbox-day">
+            <input type="checkbox" name="dias_semana" value="3" checked> Miércoles
+          </label>
+          <label class="checkbox-day">
+            <input type="checkbox" name="dias_semana" value="4" checked> Jueves
+          </label>
+          <label class="checkbox-day">
+            <input type="checkbox" name="dias_semana" value="5" checked> Viernes
+          </label>
+          <label class="checkbox-day">
+            <input type="checkbox" name="dias_semana" value="6"> Sábado
+          </label>
+          <label class="checkbox-day">
+            <input type="checkbox" name="dias_semana" value="7"> Domingo
+          </label>
+        </div>
+      </div>
+
+      <div class="form-grid">
+
+        <div class="form-group">
+          <label for="hora_entrada">Hora de entrada</label>
+          <input type="time" name="hora_entrada" id="hora_entrada" class="form-control" value="08:00" required>
         </div>
 
-        <div class="form-grid">
-
-          <div class="form-group">
-            <label for="hora_entrada">Hora de entrada</label>
-            <!-- Valor por defecto: 08:00 AM -->
-            <input type="time" name="hora_entrada" id="hora_entrada" class="form-control" value="08:00" required>
-          </div>
-
-          <div class="form-group">
-            <label for="horas">Horas de pasantía</label>
-            <select name="horas" id="horas" class="form-select" required>
-              <option value="4" selected>4 horas</option>
-              <option value="6">6 horas</option>
-              <option value="8">8 horas</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="hora_salida">Hora de salida (Calculada)</label>
-            <input type="time" name="hora_salida" id="hora_salida" class="form-control" required>
-          </div>
-
+        <div class="form-group">
+          <label for="horas">Horas de pasantía</label>
+          <select name="horas" id="horas" class="form-select">
+            <option value="4" selected>4 horas</option>
+            <option value="6">6 horas</option>
+            <option value="8">8 horas</option>
+            <option value="custom">Personalizado (Manual)</option>
+          </select>
         </div>
 
-        <div class="total-box" style="margin-top: 1.25rem;">
-          <span>Horas calculadas por día seleccionado:</span>
-          <strong id="totalHoras">0 hrs</strong>
+        <div class="form-group">
+          <label for="hora_salida">Hora de salida (Editable)</label>
+          <input type="time" name="hora_salida" id="hora_salida" class="form-control" value="12:00" required>
         </div>
 
-        <button type="submit" class="btn-submit">
-          Guardar Configuración de Horario
-        </button>
-      </form>
+      </div>
+
+      <!-- ALERTA DE ERROR EN HORARIOS -->
+      <div id="alertaHorario" class="time-warning">
+        ⚠️ La hora de salida debe ser posterior a la hora de entrada.
+      </div>
+
+      <div class="total-box" style="margin-top: 1.25rem;">
+        <span>Horas calculadas por día seleccionado:</span>
+        <strong id="totalHoras">4.0 hrs</strong>
+      </div>
+
+      <button type="submit" class="btn-submit" id="btnGuardar">
+        Guardar Configuración de Horario
+      </button>
+    </form>
+  </div>
+
+  <!-- TABLA DE HORARIO PERMANENTE -->
+  <div class="card-form">
+    <div class="card-title">
+      Mi Horario Programado
     </div>
 
-    <!-- TABLA DE HORARIO PERMANENTE -->
-    <div class="card-form">
-      <div class="card-title">Mi Horario Programado</div>
-      
-      <div class="table-container">
-        <table class="custom-table">
-          <thead>
-            <tr>
-              <th>Día</th>
-              <th>Entrada</th>
-              <th>Salida</th>
-              <th>Horas Programadas</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% if (horarios && horarios.length > 0) { %>
-              <% horarios.forEach(h => { %>
-                <tr>
-                  <td>
-                    <%
-                      const dias = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-                    %>
-                    <strong><%= dias[h.dia_semana] %></strong>
-                  </td>
-                  <td><%= h.hora_entrada %></td>
-                  <td><%= h.hora_salida %></td>
-                  <td>
-                    <%
-                      const inicio = h.hora_entrada.split(':');
-                      const fin = h.hora_salida.split(':');
-                      const minutos = (parseInt(fin[0]) * 60 + parseInt(fin[1])) - (parseInt(inicio[0]) * 60 + parseInt(inicio[1]));
-                      const horasCalculadas = (minutos / 60).toFixed(1);
-                    %>
-                    <span class="badge-hours"><%= horasCalculadas %> hrs</span>
-                  </td>
-                </tr>
-              <% }) %>
-            <% } else { %>
+    <div class="table-container">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>Día</th>
+            <th>Entrada</th>
+            <th>Salida</th>
+            <th>Horas Programadas</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% const dias = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']; %>
+          <% if (horarios && horarios.length > 0) { %>
+            <% horarios.forEach(h => { %>
               <tr>
-                <td colspan="4" style="text-align: center; color: #64748b; padding: 2rem;">
-                  No tienes días asignados aún. Registra tu horario en el formulario superior.
+                <td>
+                  <strong><%= dias[h.dia_semana] || ('Día ' + h.dia_semana) %></strong>
+                </td>
+                <td>
+                  <%= h.hora_entrada %>
+                </td>
+                <td>
+                  <%= h.hora_salida %>
+                </td>
+                <td>
+                  <% 
+                    const inicio = h.hora_entrada.split(':'); 
+                    const fin = h.hora_salida.split(':'); 
+                    const minutos = (parseInt(fin[0]) * 60 + parseInt(fin[1])) - (parseInt(inicio[0]) * 60 + parseInt(inicio[1])); 
+                    const horasDec = (minutos / 60).toFixed(1);
+                  %>
+                  <span class="badge-hours">
+                    <%= horasDec %> hrs
+                  </span>
                 </td>
               </tr>
-            <% } %>
-          </tbody>
-        </table>
-      </div>
+            <% }) %>
+          <% } else { %>
+            <tr>
+              <td colspan="4" style="text-align: center; color: #000000; font-weight: 600; padding: 2rem;">
+                No tienes días asignados aún. Registra tu horario en el formulario superior.
+              </td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
     </div>
+  </div>
 
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-  const entrada = document.getElementById('hora_entrada');
-  const salida = document.getElementById('hora_salida');
-  const selectorHoras = document.getElementById('horas');
-  const totalLabel = document.getElementById('totalHoras');
-  const form = document.querySelector('form[action="/usuario/horario"]');
+  document.addEventListener('DOMContentLoaded', () => {
+    const entrada = document.getElementById('hora_entrada');
+    const salida = document.getElementById('hora_salida');
+    const selectorHoras = document.getElementById('horas');
+    const totalLabel = document.getElementById('totalHoras');
+    const alertaHorario = document.getElementById('alertaHorario');
+    const form = document.getElementById('formHorario');
+    const btnGuardar = document.getElementById('btnGuardar');
 
-  function calcularHoraSalida() {
-    if (!entrada.value || !selectorHoras.value) return;
+    // Calcula la hora de salida a partir de una duración elegida en el selector (4, 6, 8)
+    function calcularDesdePreset() {
+      if (!entrada.value) return;
+      if (selectorHoras.value === 'custom') {
+        calcularDesdeSalida();
+        return;
+      }
 
-    const [hora, minutos] = entrada.value.split(':').map(Number);
-    const duracionHoras = parseFloat(selectorHoras.value);
+      const [hora, minutos] = entrada.value.split(':').map(Number);
+      const duracionHoras = parseFloat(selectorHoras.value);
 
-    if (isNaN(hora) || isNaN(minutos) || isNaN(duracionHoras)) return;
+      if (isNaN(hora) || isNaN(minutos) || isNaN(duracionHoras)) return;
 
-    const fechaTemp = new Date();
-    fechaTemp.setHours(hora);
-    fechaTemp.setMinutes(minutos + Math.round(duracionHoras * 60));
+      const totalMin = (hora * 60 + minutos) + Math.round(duracionHoras * 60);
+      const hSalida = Math.floor((totalMin / 60) % 24);
+      const mSalida = Math.round(totalMin % 60);
 
-    const hSalida = String(fechaTemp.getHours()).padStart(2, '0');
-    const mSalida = String(fechaTemp.getMinutes()).padStart(2, '0');
+      salida.value = `${String(hSalida).padStart(2, '0')}:${String(mSalida).padStart(2, '0')}`;
+      validarYActualizarEtiqueta();
+    }
 
-    salida.value = `${hSalida}:${mSalida}`;
-    totalLabel.textContent = `${duracionHoras} hrs`;
-  }
+    // Calcula las horas cuando el usuario escribe o edita directamente la salida
+    function calcularDesdeSalida() {
+      if (!entrada.value || !salida.value) return;
 
-  // Escuchar cambios
-  entrada.addEventListener('input', calcularHoraSalida);
-  selectorHoras.addEventListener('change', calcularHoraSalida);
+      const [hEntrada, mEntrada] = entrada.value.split(':').map(Number);
+      const [hSalida, mSalida] = salida.value.split(':').map(Number);
 
-  // Asegurar que la hora de salida esté calculada al enviar el formulario
-  if (form) {
-    form.addEventListener('submit', (e) => {
-      calcularHoraSalida();
-      
-      // Verificar si hay al menos un checkbox de día seleccionado
-      const diasSeleccionados = document.querySelectorAll('input[name="dias_semana"]:checked');
-      if (diasSeleccionados.length === 0) {
-        e.preventDefault();
-        alert('Por favor, seleccione al menos un día de la semana.');
+      const minEntrada = hEntrada * 60 + mEntrada;
+      const minSalida = hSalida * 60 + mSalida;
+      const diffMinutos = minSalida - minEntrada;
+
+      if (diffMinutos > 0) {
+        const horasDecimales = (diffMinutos / 60);
+        const valorEntero = horasDecimales.toString();
+        const opcionesExistentes = ['4', '6', '8'];
+
+        if (opcionesExistentes.includes(valorEntero)) {
+          selectorHoras.value = valorEntero;
+        } else {
+          selectorHoras.value = 'custom';
+        }
+      }
+
+      validarYActualizarEtiqueta();
+    }
+
+    // Valida y actualiza el texto resumen
+    function validarYActualizarEtiqueta() {
+      if (!entrada.value || !salida.value) return;
+
+      const [hEntrada, mEntrada] = entrada.value.split(':').map(Number);
+      const [hSalida, mSalida] = salida.value.split(':').map(Number);
+
+      const minEntrada = hEntrada * 60 + mEntrada;
+      const minSalida = hSalida * 60 + mSalida;
+      const diffMinutos = minSalida - minEntrada;
+
+      if (diffMinutos <= 0) {
+        if (alertaHorario) alertaHorario.style.display = 'block';
+        totalLabel.textContent = 'Horario inválido';
+        totalLabel.style.color = '#dc2626';
+        if (btnGuardar) btnGuardar.disabled = true;
+      } else {
+        if (alertaHorario) alertaHorario.style.display = 'none';
+        const horasDec = (diffMinutos / 60).toFixed(1);
+        totalLabel.textContent = `${horasDec} hrs`;
+        totalLabel.style.color = '#000000';
+        if (btnGuardar) btnGuardar.disabled = false;
+      }
+    }
+
+    // Listeners
+    selectorHoras.addEventListener('change', () => {
+      if (selectorHoras.value !== 'custom') {
+        calcularDesdePreset();
+      } else {
+        calcularDesdeSalida();
       }
     });
-  }
 
-  // Ejecución inicial inmediata
-  calcularHoraSalida();
-});
+    entrada.addEventListener('input', () => {
+      if (selectorHoras.value !== 'custom') {
+        calcularDesdePreset();
+      } else {
+        calcularDesdeSalida();
+      }
+    });
+
+    salida.addEventListener('input', calcularDesdeSalida);
+
+    // Validación al enviar
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        const diasSeleccionados = document.querySelectorAll('input[name="dias_semana"]:checked');
+        if (diasSeleccionados.length === 0) {
+          e.preventDefault();
+          alert('Por favor, seleccione al menos un día de la semana.');
+          return;
+        }
+
+        const [hEntrada, mEntrada] = entrada.value.split(':').map(Number);
+        const [hSalida, mSalida] = salida.value.split(':').map(Number);
+        const diffMinutos = (hSalida * 60 + mSalida) - (hEntrada * 60 + mEntrada);
+
+        if (diffMinutos <= 0) {
+          e.preventDefault();
+          alert('La hora de salida debe ser posterior a la hora de entrada.');
+          return;
+        }
+      });
+    }
+
+    // Inicializar
+    calcularDesdePreset();
+  });
 </script>
 
 <%- include('../partials/footer') %>

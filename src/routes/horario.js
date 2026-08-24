@@ -110,4 +110,33 @@ router.post('/usuario/horario', async (req, res) => {
         res.status(500).send('Error al guardar el horario');
     }
 });
+
+// ===============================
+// ELIMINAR DÍA DE HORARIO
+// ===============================
+router.post('/usuario/horario/eliminar/:id', async (req, res) => {
+    try {
+        if (!req.session.user) {
+            return res.redirect('/login');
+        }
+
+        const id_usuario = req.session.user.id_usuario || req.session.user.id || req.session.user.id_user;
+        const id_horario = req.params.id;
+
+        if (!id_usuario || !id_horario) {
+            return res.status(400).send('Parámetros inválidos.');
+        }
+
+        await db.query(`
+            DELETE FROM horarios
+            WHERE id_horario = ? AND id_usuario = ?
+        `, [id_horario, id_usuario]);
+
+        res.redirect('/usuario/horario');
+    } catch (error) {
+        console.error('Error eliminando horario:', error);
+        res.status(500).send('Error al eliminar el horario');
+    }
+});
+
 module.exports = router;

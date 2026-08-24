@@ -4,25 +4,20 @@
 
 :root {
   --primary-color: #0d6efd;
-  --secondary-color: #0b1f3a;
+  --secondary-color: #1e293b;
   --bg-card: #ffffff;
-  --border-color: #e2e8f0;
-  --text-primary: #1e293b;
-  --text-muted: #64748b;
+  --border-color: #cbd5e1;
+  --text-dark: #000000;
+  --text-muted: #334155;
   --radius-md: 10px;
-  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-}
-
-body {
-  background-color: #f8fafc;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: var(--text-primary);
+  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
 }
 
 .horario-wrapper {
-  max-width: 1100px;
+  max-width: 1050px;
   margin: 0 auto;
   padding: 1.5rem;
+  color: #000000;
 }
 
 /* --- TARJETAS DE PROGRESO Y CONTADORES --- */
@@ -39,28 +34,29 @@ body {
   border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-sm);
+  color: #000000;
 }
 
 .stat-card .title {
   font-size: 0.85rem;
-  color: var(--text-muted);
+  color: #1e293b;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  font-weight: 600;
+  font-weight: 700;
   margin-bottom: 0.5rem;
 }
 
 .stat-card .value {
   font-size: 1.75rem;
-  font-weight: 700;
-  color: var(--secondary-color);
+  font-weight: 800;
+  color: #000000;
 }
 
-/* Bar de Progreso */
+/* Barra de Progreso */
 .progress-bar-container {
-  height: 8px;
+  height: 9px;
   background-color: #e2e8f0;
-  border-radius: 4px;
+  border-radius: 5px;
   overflow: hidden;
   margin-top: 0.75rem;
 }
@@ -79,15 +75,24 @@ body {
   box-shadow: var(--shadow-sm);
   padding: 1.75rem;
   margin-bottom: 2.5rem;
+  color: #000000;
 }
 
 .card-title {
   font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--secondary-color);
+  font-weight: 800;
+  color: #000000;
   margin-bottom: 1.25rem;
-  border-bottom: 2px solid #f1f5f9;
+  border-bottom: 2px solid #e2e8f0;
   padding-bottom: 0.75rem;
+}
+
+.card-subtitle {
+  font-size: 0.9rem;
+  color: #334155;
+  margin-top: -0.5rem;
+  margin-bottom: 1.25rem;
+  line-height: 1.4;
 }
 
 .form-grid {
@@ -103,9 +108,9 @@ body {
 }
 
 .form-group label {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #000000;
   margin-bottom: 0.4rem;
 }
 
@@ -114,9 +119,11 @@ body {
   width: 100%;
   padding: 0.625rem 0.875rem;
   font-size: 0.95rem;
-  border: 1px solid var(--border-color);
+  font-weight: 600;
+  color: #000000;
+  border: 1.5px solid var(--border-color);
   border-radius: 6px;
-  background-color: #fff;
+  background-color: #ffffff;
   transition: border-color 0.2s, box-shadow 0.2s;
   box-sizing: border-box;
 }
@@ -128,33 +135,71 @@ body {
   box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
 }
 
+/* Checkboxes de Días */
+.dias-checkbox-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.checkbox-day {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #f8fafc;
+  border: 1.5px solid #cbd5e1;
+  padding: 0.45rem 0.85rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #000000;
+  user-select: none;
+  transition: all 0.2s ease;
+}
+
+.checkbox-day:hover {
+  background: #e2e8f0;
+}
+
+.checkbox-day input[type="checkbox"] {
+  cursor: pointer;
+  accent-color: #0d6efd;
+  width: 17px;
+  height: 17px;
+}
+
 /* Caja del Total de Horas Calculadas */
 .total-box {
   background-color: #f0fdf4;
-  border: 1px dashed #86efac;
+  border: 1.5px solid #86efac;
   border-radius: 6px;
-  padding: 0.625rem 1rem;
+  padding: 0.75rem 1rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  color: #000000;
 }
 
 .total-box span {
-  font-size: 0.875rem;
-  color: #166534;
-  font-weight: 600;
+  font-size: 0.9rem;
+  color: #14532d;
+  font-weight: 700;
 }
 
 .total-box strong {
-  font-size: 1.1rem;
-  color: #15803d;
+  font-size: 1.15rem;
+  color: #000000;
+  font-weight: 800;
 }
 
 .btn-submit {
-  background-color: var(--secondary-color);
+  background-color: #0b1f3a;
   color: #ffffff;
-  font-weight: 600;
-  padding: 0.75rem 1.5rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+  padding: 0.85rem 1.5rem;
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -171,7 +216,7 @@ body {
   transform: scale(0.99);
 }
 
-/* --- TABLA DE HORARIO ACTUAL --- */
+/* --- TABLA DE HORARIO ACTUAL (LETRAS EN NEGRO) --- */
 .table-container {
   background: var(--bg-card);
   border-radius: var(--radius-md);
@@ -184,25 +229,34 @@ body {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
+  color: #000000;
 }
 
 .custom-table thead {
-  background-color: var(--secondary-color);
-  color: #ffffff;
+  background-color: #f1f5f9;
+  border-bottom: 2px solid #cbd5e1;
 }
 
 .custom-table th {
-  padding: 1rem;
+  padding: 1rem 1.25rem;
   font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  font-weight: 600;
+  font-weight: 800;
+  color: #000000;
 }
 
 .custom-table td {
-  padding: 1rem;
-  border-bottom: 1px solid var(--border-color);
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #e2e8f0;
   font-size: 0.95rem;
+  font-weight: 600;
+  color: #000000;
+}
+
+.custom-table td strong {
+  color: #000000;
+  font-weight: 800;
 }
 
 .custom-table tbody tr:last-child td {
@@ -215,10 +269,24 @@ body {
 
 .badge-hours {
   display: inline-block;
-  background-color: #e0f2fe;
-  color: #0369a1;
-  font-weight: 700;
-  padding: 0.25rem 0.6rem;
+  background-color: #e2e8f0;
+  color: #000000;
+  font-weight: 800;
+  padding: 0.3rem 0.75rem;
   border-radius: 12px;
   font-size: 0.85rem;
+  border: 1px solid #cbd5e1;
+}
+
+/* Alerta de advertencia de horas */
+.time-warning {
+  display: none;
+  background-color: #fef2f2;
+  color: #991b1b;
+  border: 1.5px solid #f87171;
+  padding: 0.6rem 0.9rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  margin-top: 0.75rem;
+  font-weight: 700;
 }

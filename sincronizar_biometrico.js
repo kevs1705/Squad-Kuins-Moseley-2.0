@@ -31,8 +31,10 @@ async function sincronizarBiometricoCompleto() {
   let dispositivoZk;
 
   try {
-    console.log('1. Cargando catálogo de carreras...');
+    console.log('1. Cargando catálogo de carreras y lugares...');
     const [carrerasBD] = await db.query('SELECT id_carrera, nombre, siglas FROM carreras');
+    const [lugaresBD] = await db.query("SELECT id_lugar, nombre FROM lugares WHERE estado = 'ACTIVO' LIMIT 1");
+    const idLugarDefecto = lugaresBD.length > 0 ? lugaresBD[0].id_lugar : 2;
 
     const mapCarrerasBySigla = new Map();
     carrerasBD.forEach(c => {
@@ -58,7 +60,7 @@ async function sincronizarBiometricoCompleto() {
     const responseBio = await dispositivoZk.getUsers();
     const usuariosBio = responseBio.data || [];
 
-    // Mapear usuarios de la BD por id_usuario y por CI para evitar duplicados
+    // Mapear usuarios de la BD por id_usuario y por CI para búsqueda rápida
     const mapBD = new Map();
     usuariosBD.forEach(u => {
       if (u.id_usuario) mapBD.set(String(u.id_usuario), u);
@@ -67,13 +69,16 @@ async function sincronizarBiometricoCompleto() {
 
     const mapBio = new Map();
     usuariosBio.forEach(u => {
-      const id = String(u.user_id || u.userId || u.uid || u.deviceUserId).trim();
+      const id = String(u.user_id || u.userId || u.uid || u.deviceUserId || '').trim();
       if (id && id !== 'undefined') mapBio.set(id, u);
+      const uid = String(u.uid || '').trim();
+      if (uid && uid !== 'undefined') mapBio.set(uid, u);
     });
 
     let creadosEnBD = 0;
     let creadosEnBio = 0;
 
+    // 1. Usuarios en Biométrico que NO están en la BD -> Importar a BD
     for (const [idBio, bioUser] of mapBio.entries()) {
       if (!mapBD.has(idBio)) {
         const nombreTemp = String(bioUser.name || `Usuario_${idBio}`).trim().slice(0, 100);
@@ -97,27 +102,45 @@ async function sincronizarBiometricoCompleto() {
            VALUES (?, ?, 'UNIVALLE', ?, NULL, 1, ?, ?)`,
           [nombreTemp, ciTemp, idCarreraBD, rolBD, pwdTemp]
         );
+        // Actualizar mapBD local para evitar duplicados en la misma corrida
+        mapBD.set(String(ciTemp), { CI: ciTemp, nombre: nombreTemp });
         creadosEnBD++;
       }
     }
 
-    for (const [idBD, dbUser] of mapBD.entries()) {
-      const idSearch = String(dbUser.CI || dbUser.id_usuario).trim();
-      if (!mapBio.has(idSearch) && Number(dbUser.estado) === 1) {
-        const deptoBio = dbUser.id_carrera ? Number(dbUser.id_carrera) : 1;
+    // 2. Usuarios en BD que NO están en Biométrico -> Exportar a Biométrico
+    for (const dbUser of usuariosBD) {
+      const idSearchCI = String(dbUser.CI || '').trim();
+      const idSearchId = String(dbUser.id_usuario || '').trim();
+
+      const yaEnBio = (idSearchCI && mapBio.has(idSearchCI)) || (idSearchId && mapBio.has(idSearchId));
+
+      if (!yaEnBio && Number(dbUser.estado) === 1) {
         const bioUid = Number(dbUser.id_usuario);
-        const bioUserId = String(dbUser.CI || dbUser.id_usuario);
-        const bioName = String(dbUser.nombre || 'Usuario').trim().slice(0, 24);
+        const bioUserId = String(dbUser.CI || dbUser.id_usuario).trim().slice(0, 9);
+        // Normalizar nombre sin acentos para compatibilidad con el firmware ZK
+        const bioName = String(dbUser.nombre || 'Usuario')
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .trim()
+          .slice(0, 24);
 
         let bioPassword = String(dbUser.contrasena || '123456').replace(/\D/g, '').slice(0, 8);
         if (!bioPassword) bioPassword = '123456';
 
         const bioRole = Number(dbUser.rol) === 1 ? 14 : 0;
 
-        await dispositivoZk.setUser(bioUid, bioUserId, bioName, bioPassword, bioRole, 0, deptoBio);
-        creadosEnBio++;
+        try {
+          await dispositivoZk.setUser(bioUid, bioUserId, bioName, bioPassword, bioRole, 0);
+          mapBio.set(bioUserId, { uid: bioUid, userId: bioUserId, name: bioName });
+          creadosEnBio++;
+          console.log(`   ✅ Usuario enviado al K14: [ID/CI: ${bioUserId}] ${bioName}`);
+        } catch (errSet) {
+          console.error(`   ❌ Error enviando usuario ${bioUserId} (${bioName}) al K14:`, errSet.message);
+        }
       }
     }
+
     console.log(`   --> Usuarios K14 -> BD: ${creadosEnBD} | BD -> K14: ${creadosEnBio}\n`);
 
     // -----------------------------------------------------------------
@@ -176,8 +199,8 @@ async function sincronizarBiometricoCompleto() {
 
           const { fecha, fechaHoraSql } = formatearFecha(fechaHoraObj);
 
-          // Asignar ID_LUGAR_DEFECTO directamente (ya que no existe la tabla lugar_usuarios)
-          const idLugar = ID_LUGAR_DEFECTO;
+          // Asignar idLugarDefecto obtenido de la BD
+          const idLugar = idLugarDefecto;
 
           // Insertar / Actualizar asistencia
           const queryAsistencia = `
