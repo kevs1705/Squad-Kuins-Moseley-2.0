@@ -69,8 +69,9 @@ const pagina_webRoutes = require('./src/routes/pagina_web/pagina');
 app.use(pagina_webRoutes);
 
 // Rutas para asistencia de pasantes
-const asistenciaPasantesRoutes = require('./src/routes/asistencias');
+const asistenciaPasantesRoutes = require('./src/routes/asistencia');
 app.use(asistenciaPasantesRoutes);
+
 const horarioPasantesRoutes = require('./src/routes/horario');
 app.use(horarioPasantesRoutes);
 

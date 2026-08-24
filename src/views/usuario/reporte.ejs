@@ -1,384 +1,266 @@
-<% pageTitle='Panel Unificado de Pasantías' ; pageSubtitle='Resumen de asistencias, marcas y tareas diarias' ; %>
-  <%- include('../partials/header') %>
-    <link rel="stylesheet" href="../css/reporte.css">
+<%
+  pageTitle = 'Panel de Reportes de Asistencia y Bitácora';
+  pageSubtitle = 'Resumen de asistencias, actividades y solicitudes de horas extras';
+%>
+<%- include('../partials/header') %>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mi Reporte de Asistencia y Bitácora</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <style>
+    .card-summary { background: linear-gradient(135deg, #0d6efd, #0a58ca); color: white; }
+    .badge-biometrico { background-color: #0dcaf0; color: #000; }
+  </style>
+</head>
+<body class="bg-light">
 
-    <section class="reporte-usuario-page">
+  <div class="container py-4">
+    <!-- Encabezado y Datos del Usuario -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="fw-bold mb-1">Mi Reporte de Jornadas</h2>
+        <p class="text-muted mb-0">Usuario: <strong><%= user.nombre %></strong> | CI: <%= user.ci %></p>
+      </div>
+      <div>
+        <a href="/reportes/export" class="btn btn-success me-2">
+          <i class="bi bi-file-earmark-excel"></i> Exportar a Excel
+        </a>
+        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#modalHorasExtra">
+          <i class="bi bi-clock-history"></i> Solicitar Horas Extra
+        </button>
+      </div>
+    </div>
 
-      <!-- RESUMEN Y ACCIONES RÁPIDAS -->
-      <div class="summary-grid">
-        <div class="white-card summary-info-box">
-          <div class="summary-item">
-            <span class="label">Nombre</span>
-            <span class="value">
-              <%= user.nombre %>
-            </span>
-          </div>
-          <div class="summary-item">
-            <span class="label">Horas acumuladas</span>
-            <span class="value">
-              <%= total_acumulada %>
-            </span>
-          </div>
-        </div>
-
-        <div class="white-card actions-card">
-          <div class="actions-grid">
-            <a class="btn-premium btn-export" href="/reportes/export">⬇️ Exportar Excel</a>
-            <a class="btn-premium btn-horas-extra" id="btnHorasExtra">⏱ Horas extra</a>
-            <a class="btn-premium btn-notif" href="/notificaciones">🔔 Notificaciones</a>
-            <a class="btn-premium btn-menu" href="/cuenta">🏠 Menú</a>
+    <!-- Resumen de Horas Acumuladas -->
+    <div class="row mb-4">
+      <div class="col-md-4">
+        <div class="card card-summary shadow-sm border-0">
+          <div class="card-body">
+            <h6 class="text-uppercase tracking-wide opacity-75">Total Horas Acumuladas</h6>
+            <h2 class="display-6 fw-bold mb-0"><%= total_acumulada %> hrs</h2>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- BLOQUE: REPORTE ACTIVO / NUEVO REGISTRO -->
-      <div class="white-card">
-        <div id="nuevo-reporte-header" class="nuevo-reporte-bar">
-          <div class="nuevo-reporte-text">
-            <h2>Registro de Jornada</h2>
-            <p>Crea o continúa tu reporte de actividades para el día de hoy</p>
-          </div>
-          <div class="actions">
-            <button id="btn-comenzar" class="btn-premium btn-premium-primary">▶️ Iniciar Tarea del Día</button>
-          </div>
-        </div>
-
-        <!-- PANEL DE CONTROL DE REPORTE EN CURSO -->
-        <div id="reporte-activo" class="active-report-wrap hide">
-          <div class="table-wrap">
-            <table class="table">
-              <thead class="thead">
-                <tr>
-                  <th>Fecha</th>
-                  <th>Ubicación / Obra</th>
-                  <th>Entrada / Salida</th>
-                  <th>Estado Asistencia</th>
-                  <th>Horas Reportadas</th>
-                  <th>Tarea Realizada</th>
-                  <th>Comprobante</th>
-                  <th>Observación</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr class="tr">
-                  <td class="td nowrap" id="ra-fecha">—</td>
-                  <td class="td nowrap" id="ra-hora-inicio">—</td>
-                  <td class="td nowrap" id="ra-hora-actual">--:--:--</td>
-                  <td class="td" id="ra-tarea">—</td>
-                  <td class="td" id="ra-comprobante"><span class="muted">—</span></td>
-                  <td class="td">
-                    <div class="toolbar gap-2">
-                      <button id="btn-agregar-tarea" class="btn-premium">📝 Tarea</button>
-                      <button id="btn-subir-comprobante" class="btn-premium">📎 Adjuntar</button>
-                      <button id="btn-finalizar" class="btn-premium btn-premium-danger">⏹️ Finalizar</button>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-            <input type="hidden" id="ra-id" value="">
-          </div>
-        </div>
+    <!-- Tabla de Jornadas (Asistencia + Bitácora) -->
+    <div class="card shadow-sm border-0 mb-4">
+      <div class="card-header bg-white py-3">
+        <h5 class="card-title mb-0 fw-bold"><i class="bi bi-journal-text me-2"></i>Historial de Asistencias y Bitácora</h5>
       </div>
-
-      <!-- TABLA PRINCIPAL UNIFICADA (ASISTENCIA + REPORTES) -->
-      <div class="white-card table-section-card">
-        <div class="table-controls">
-          <div>
-            <label for="page-size">Mostrar filas:</label>
-            <select id="page-size" style="max-width:8rem;">
-              <option value="10" selected>10</option>
-              <option value="25">25</option>
-              <option value="50">50</option>
-              <option value="all">Todos</option>
-            </select>
-          </div>
-          <span id="range-info"></span>
-        </div>
-
-        <div class="table-wrap">
-          <table class="table">
-            <thead class="thead">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
               <tr>
                 <th>Fecha</th>
-                <th>Entrada / Salida</th>
-                <th>Estado Asistencia</th>
-                <th>Horas Reportadas</th>
-                <th>Tarea Realizada</th>
+                <th>Lugar / Obra</th>
+                <th>Entrada</th>
+                <th>Salida</th>
+                <th>Horas Turno</th>
+                <th>Tarea / Bitácora</th>
                 <th>Comprobante</th>
-                <th>Observación</th>
+                <th class="text-center">Acción</th>
               </tr>
             </thead>
-            <tbody id="tbody-jornadas">
-              <tr>
-                <td colspan="7" class="muted">Cargando datos...</td>
-              </tr>
+            <tbody>
+              <% if (jornadas && jornadas.length > 0) { %>
+                <% jornadas.forEach(j => { %>
+                  <tr>
+                    <td><strong><%= j.fecha %></strong></td>
+                    <td>
+                      <%= j.lugar_nombre || 'N/A' %>
+                      <% if(j.lugar_tipo) { %>
+                        <br><small class="text-muted">(<%= j.lugar_tipo %>)</small>
+                      <% } %>
+                    </td>
+                    <td>
+                      <%= j.hora_entrada || '-' %>
+                      <% if(j.bio_entrada) { %>
+                        <span class="badge badge-biometrico" title="Biométrico: <%= j.bio_entrada %>"><i class="bi bi-fingerprint"></i></span>
+                      <% } %>
+                    </td>
+                    <td>
+                      <%= j.hora_salida || '-' %>
+                      <% if(j.bio_salida) { %>
+                        <span class="badge badge-biometrico" title="Biométrico: <%= j.bio_salida %>"><i class="bi bi-fingerprint"></i></span>
+                      <% } %>
+                    </td>
+                    <td>
+                      <span class="badge <%= j.horas_dia === 'En curso' ? 'bg-warning text-dark' : 'bg-secondary' %>">
+                        <%= j.horas_dia %>
+                      </span>
+                    </td>
+                    <td>
+                      <% if(j.tarea) { %>
+                        <%= j.tarea %>
+                      <% } else { %>
+                        <span class="text-muted fs-7"><em>Sin bitácora registrada</em></span>
+                      <% } %>
+                      <% if(j.observacion) { %>
+                        <br><small class="text-danger">Obs: <%= j.observacion %></small>
+                      <% } %>
+                    </td>
+                    <td>
+                      <% if(j.comprobante) { %>
+                        <a href="<%= j.comprobante %>" target="_blank" class="btn btn-sm btn-outline-info">
+                          <i class="bi bi-image"></i> Ver
+                        </a>
+                      <% } else { %>
+                        <span class="text-muted">-</span>
+                      <% } %>
+                    </td>
+                    <td class="text-center">
+                      <button class="btn btn-sm btn-primary btn-reporte" 
+                              data-asistencia="<%= j.id_asistencia %>"
+                              data-tarea="<%= j.tarea || '' %>">
+                        <i class="bi bi-pencil-square"></i> <%= j.tarea ? 'Editar' : 'Registrar' %>
+                      </button>
+                    </td>
+                  </tr>
+                <% }); %>
+              <% } else { %>
+                <tr>
+                  <td colspan="8" class="text-center py-4 text-muted">No se encontraron registros de jornadas.</td>
+                </tr>
+              <% } %>
             </tbody>
           </table>
         </div>
-
-        <div class="pagination-bar">
-          <button id="btn-prev" disabled>◀ Anterior</button>
-          <span id="page-info">Página 1 de 1</span>
-          <button id="btn-next" disabled>Siguiente ▶</button>
-        </div>
       </div>
+    </div>
+  </div>
 
-    </section>
+  <!-- MODAL: REGISTRAR / EDITAR BITÁCORA -->
+  <div class="modal fade" id="modalReporte" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="formReporte" enctype="multipart/form-data">
+          <div class="modal-header">
+            <h5 class="modal-title fw-bold">Bitácora de Trabajo</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" name="id_asistencia" id="modal_id_asistencia">
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Descripción de la Tarea / Avance</label>
+              <textarea class="form-control" name="tarea" id="modal_tarea" rows="4" required placeholder="Describe las actividades realizadas en la jornada..."></textarea>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Adjuntar Comprobante (PNG / JPG)</label>
+              <input type="file" class="form-control" name="comprobante" accept="image/png, image/jpeg">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Guardar Bitácora</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- MODAL: SOLICITAR HORAS EXTRA -->
+  <div class="modal fade" id="modalHorasExtra" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="formHorasExtra">
+          <div class="modal-header">
+            <h5 class="modal-title fw-bold">Solicitud de Horas Extra</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Fecha Solicitada</label>
+              <input type="date" class="form-control" name="fecha_solicitada" required>
+            </div>
+            <div class="row">
+              <div class="col-6 mb-3">
+                <label class="form-label fw-semibold">Hora Inicio</label>
+                <input type="time" class="form-control" name="hora_inicio" required>
+              </div>
+              <div class="col-6 mb-3">
+                <label class="form-label fw-semibold">Hora Fin</label>
+                <input type="time" class="form-control" name="hora_fin" required>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Motivo de la solicitud</label>
+              <textarea class="form-control" name="motivo" rows="3" required placeholder="Indica la razón del trabajo fuera de horario..."></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-warning">Enviar Solicitud</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 
-    <!-- REPORTE ACTIVO Y HORAS EXTRA -->
-    <script>
-      (() => {
-        const $ = (s) => document.querySelector(s);
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const modalReporte = new bootstrap.Modal(document.getElementById('modalReporte'));
 
-        const btnComenzar = $('#btn-comenzar');
-        const wrapActivo = $('#reporte-activo');
-        const fechaEl = $('#ra-fecha');
-        const horaIniEl = $('#ra-hora-inicio');
-        const horaActEl = $('#ra-hora-actual');
-        const tareaEl = $('#ra-tarea');
-        const compEl = $('#ra-comprobante');
-        const idInput = $('#ra-id');
+    // Abrir Modal de Bitácora con datos de la asistencia seleccionada
+    document.querySelectorAll('.btn-reporte').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById('modal_id_asistencia').value = btn.dataset.asistencia;
+        document.getElementById('modal_tarea').value = btn.dataset.tarea;
+        modalReporte.show();
+      });
+    });
 
-        let tick = null;
-        let serverNow = null;
+    // Enviar Guardado de Bitácora
+    document.getElementById('formReporte').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
 
-        function fmtHHMMSS(d) {
-          return [d.getHours(), d.getMinutes(), d.getSeconds()]
-            .map(v => String(v).padStart(2, '0')).join(':');
-        }
-
-        function startClock(initialNowStr) {
-          stopClock();
-          serverNow = new Date(initialNowStr.replace(' ', 'T'));
-          horaActEl.textContent = fmtHHMMSS(serverNow);
-          tick = setInterval(() => {
-            serverNow.setSeconds(serverNow.getSeconds() + 1);
-            horaActEl.textContent = fmtHHMMSS(serverNow);
-          }, 1000);
-        }
-
-        function stopClock() {
-          if (tick) clearInterval(tick);
-          tick = null;
-        }
-
-        async function loadActivo() {
-          try {
-            const r = await fetch('/reportes/active');
-            const j = await r.json();
-            if (!j.ok) return;
-
-            if (j.now) startClock(j.now);
-            else stopClock();
-
-            const actions = document.querySelector('#nuevo-reporte-header .actions');
-
-            if (j.data) {
-              const a = j.data;
-              idInput.value = a.id_reporte || '';
-              fechaEl.textContent = a.fecha || '—';
-              horaIniEl.textContent = a.hora_inicio || '—';
-              tareaEl.textContent = (a.tarea && a.tarea.trim()) ? a.tarea : '—';
-              compEl.innerHTML = a.comprobante
-                ? `<a class="pill" href="${a.comprobante}" target="_blank">📎 Ver</a>`
-                : `<span class="muted">—</span>`;
-
-              if (a.hora_inicio) {
-                wrapActivo.classList.remove('hide');
-                actions?.classList.add('hide');
-              } else {
-                wrapActivo.classList.add('hide');
-                actions?.classList.remove('hide');
-              }
-            } else {
-              wrapActivo.classList.add('hide');
-              actions?.classList.remove('hide');
-            }
-          } catch (e) {
-            console.error(e);
-          }
-        }
-
-        btnComenzar?.addEventListener('click', async () => {
-          try {
-            const r = await fetch('/reportes/start', { method: 'POST' });
-            const j = await r.json();
-            if (!j.ok) return Swal.fire('Atención', j.error || 'No se pudo iniciar el reporte', 'warning');
-            await loadActivo();
-            Swal.fire('Éxito', j.already ? 'Reporte activo en curso' : 'Reporte iniciado', 'success');
-          } catch (e) {
-            Swal.fire('Error', 'No se pudo iniciar la jornada', 'error');
-          }
+      try {
+        const res = await fetch('/reportes/guardar', {
+          method: 'POST',
+          body: formData
         });
-
-        $('#btn-agregar-tarea')?.addEventListener('click', async () => {
-          const id = idInput.value;
-          if (!id) return;
-          const { value: tarea } = await Swal.fire({
-            title: 'Descripción de Tareas',
-            input: 'textarea',
-            inputPlaceholder: 'Ingresa los avances o tareas realizadas...',
-            showCancelButton: true,
-            inputValidator: (v) => (!v || !v.trim()) && 'Debe ingresar una descripción'
-          });
-          if (!tarea) return;
-
-          const r = await fetch('/reportes/task', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id_reporte: id, tarea })
-          });
-          const j = await r.json();
-          if (j.ok) {
-            tareaEl.textContent = tarea;
-            Swal.fire('Guardado', 'Tarea registrada', 'success');
-          }
-        });
-
-        $('#btn-subir-comprobante')?.addEventListener('click', async () => {
-          const id = idInput.value;
-          if (!id) return;
-          const { value: file } = await Swal.fire({
-            title: 'Subir Comprobante',
-            input: 'file',
-            inputAttributes: { accept: 'image/png, image/jpg, image/jpeg' },
-            showCancelButton: true
-          });
-          if (!file) return;
-
-          const formData = new FormData();
-          formData.append('id_reporte', id);
-          formData.append('comprobante', file);
-
-          const r = await fetch('/reportes/comprobante', { method: 'POST', body: formData });
-          const j = await r.json();
-          if (j.ok) {
-            compEl.innerHTML = `<a class="pill" href="${j.path}" target="_blank">📎 Ver</a>`;
-            Swal.fire('Subido', 'Comprobante guardado', 'success');
-          }
-        });
-
-        $('#btn-finalizar')?.addEventListener('click', async () => {
-          const id = idInput.value;
-          if (!id) return;
-          const ok = await Swal.fire({
-            title: '¿Finalizar Reporte?',
-            text: 'Se registrará el cierre de la actividad actual',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Sí, finalizar'
-          }).then(r => r.isConfirmed);
-
-          if (!ok) return;
-          const r = await fetch('/reportes/finish', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id_reporte: id })
-          });
-          const j = await r.json();
-          if (j.ok) {
-            stopClock();
-            await Swal.fire('Finalizado', 'Jornada guardada', 'success');
-            location.reload();
-          }
-        });
-
-        loadActivo();
-      })();
-    </script>
-
-    <!-- RENDERIZADO TABLA UNIFICADA JORNADAS -->
-    <script>
-      (() => {
-        const JORNADAS = JSON.parse('<%- JSON.stringify(locals.jornadas || []) %>');
-        const $ = s => document.querySelector(s);
-
-        const escapeHTML = (str) => (str || '').replace(/[&<>"']/g, m => ({
-          '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-        }[m]));
-
-        const tbody = $('#tbody-jornadas');
-        const pageSizeS = $('#page-size');
-        const pageInfo = $('#page-info');
-        const rangeInfo = $('#range-info');
-        const btnPrev = $('#btn-prev');
-        const btnNext = $('#btn-next');
-
-        let currentPage = 1;
-        let pageSize = 10;
-
-        function getTotalPages() {
-          if (pageSize === Infinity) return 1;
-          return Math.max(1, Math.ceil(JORNADAS.length / pageSize));
+        const data = await res.json();
+        
+        if (data.ok) {
+          location.reload();
+        } else {
+          alert(data.error || 'Error al guardar la bitácora');
         }
+      } catch (err) {
+        alert('Error de conexión al servidor.');
+      }
+    });
 
-        function render() {
-          const total = JORNADAS.length;
-          const totalPages = getTotalPages();
+    // Enviar Solicitud de Horas Extra
+    document.getElementById('formHorasExtra').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const payload = Object.fromEntries(formData.entries());
 
-          if (currentPage > totalPages) currentPage = totalPages;
-          if (currentPage < 1) currentPage = 1;
-
-          let start = 0, end = total;
-          if (pageSize !== Infinity) {
-            start = (currentPage - 1) * pageSize;
-            end = Math.min(start + pageSize, total);
-          }
-
-          if (total === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" class="muted">Sin registros de jornadas.</td></tr>`;
-            return;
-          }
-
-          tbody.innerHTML = JORNADAS.slice(start, end).map(j => {
-            const fecha = escapeHTML(j.fecha || '—');
-            const lugar = escapeHTML(j.lugar_nombre || 'Sin asignación');
-            const entrada = j.hora_entrada ? j.hora_entrada : '--:--';
-            const salida = j.hora_salida ? j.hora_salida : '--:--';
-            const esBio = j.bio_entrada ? ' 📌 (Biométrico)' : '';
-            const estado = escapeHTML(j.asistencia_estado || 'SIN MARCA');
-            const acumulado = escapeHTML(j.hora_acumulada || '00:00:00');
-            const tarea = escapeHTML(j.tarea || '—');
-            const obs = escapeHTML(j.observacion || '—');
-            const comp = j.comprobante
-              ? `<a class="pill" href="${escapeHTML(j.comprobante)}" target="_blank">📎 Ver</a>`
-              : `<span class="muted">—</span>`;
-
-            return `
-        <tr>
-          <td class="nowrap"><strong>${fecha}</strong></td>
-          <td><span class="badge">${lugar}</span></td>
-          <td class="nowrap">${entrada} - ${salida}<small class="muted">${esBio}</small></td>
-          <td><span class="pill-estado ${estado.toLowerCase()}">${estado}</span></td>
-          <td class="nowrap">${acumulado}</td>
-          <td>${tarea}</td>
-          <td>${comp}</td>
-          <td class="muted">${obs}</td>
-        </tr>
-      `;
-          }).join('');
-
-          pageInfo.textContent = `Página ${currentPage} de ${totalPages}`;
-          rangeInfo.textContent = `Mostrando ${start + 1}–${end} de ${total}`;
-          btnPrev.disabled = (currentPage <= 1);
-          btnNext.disabled = (currentPage >= totalPages);
-        }
-
-        pageSizeS.addEventListener('change', () => {
-          const val = pageSizeS.value;
-          pageSize = (val === 'all') ? Infinity : parseInt(val, 10) || 10;
-          currentPage = 1;
-          render();
+      try {
+        const res = await fetch('/api/notificaciones', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
         });
+        const data = await res.json();
 
-        btnPrev.addEventListener('click', () => { if (currentPage > 1) { currentPage--; render(); } });
-        btnNext.addEventListener('click', () => { if (currentPage < getTotalPages()) { currentPage++; render(); } });
-
-        render();
-      })();
-    </script>
-
-    <%- include('../partials/footer') %>
+        if (data.ok) {
+          alert(data.msg);
+          location.reload();
+        } else {
+          alert(data.msg || 'Error al procesar la solicitud');
+        }
+      } catch (err) {
+        alert('Error conectando con el servidor.');
+      }
+    });
+  </script>
+</body>
+</html>

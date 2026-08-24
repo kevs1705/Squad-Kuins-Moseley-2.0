@@ -3,193 +3,208 @@
   pageSubtitle = 'Resumen de asistencias, marcas y tareas diarias';
 %>
 <%- include('../partials/header') %>
-<div class="container">
 
-    <h1>Mi Horario</h1>
+<link rel="stylesheet" href="/css/horario.css">
 
-    <form action="/usuario/horario" method="POST">
+<div class="horario-wrapper">
 
-        <div>
-            <label>Día</label>
+    <!-- METRICAS DE HORAS Y PASANTÍA -->
+    <%
+      const horasRequeridas = user.horas_requeridas || 280;
+      const horasPrevias = user.horas_previas || 0;
+      const horasSistema = (typeof totalHorasSistema !== 'undefined') ? totalHorasSistema : 0;
+      const totalAcumulado = horasPrevias + horasSistema;
+      const porcentaje = Math.min(100, Math.round((totalAcumulado / horasRequeridas) * 100));
+    %>
 
-            <select name="dia_semana" required>
-                <option value="">Seleccione un día</option>
-                <option value="1">Lunes</option>
-                <option value="2">Martes</option>
-                <option value="3">Miércoles</option>
-                <option value="4">Jueves</option>
-                <option value="5">Viernes</option>
-                <option value="6">Sábado</option>
-                <option value="7">Domingo</option>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="title">Meta Carrera</div>
+        <div class="value"><%= horasRequeridas %> hrs</div>
+      </div>
+      <div class="stat-card">
+        <div class="title">Horas Previas (Reconocidas)</div>
+        <div class="value"><%= horasPrevias %> hrs</div>
+      </div>
+      <div class="stat-card">
+        <div class="title">Total Acumulado</div>
+        <div class="value"><%= totalAcumulado %> / <%= horasRequeridas %> hrs</div>
+        <div class="progress-bar-container">
+      
+        </div>
+      </div>
+    </div>
+
+    <!-- TARJETA FORMULARIO: REGISTRAR DIA Y HORARIO -->
+    <div class="card-form">
+      <div class="card-title">Configurar Horario de Asistencia</div>
+
+      <form action="/usuario/horario" method="POST">
+        
+        <!-- SELECCIÓN MÚLTIPLE DE DÍAS -->
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+          <label class="form-label" style="font-weight: 600; margin-bottom: 0.5rem; display: block;">
+            Seleccione los días en los que aplica este horario:
+          </label>
+          <div class="dias-checkbox-container">
+            <label class="checkbox-day">
+              <input type="checkbox" name="dias_semana" value="1" checked> Lunes
+            </label>
+            <label class="checkbox-day">
+              <input type="checkbox" name="dias_semana" value="2" checked> Martes
+            </label>
+            <label class="checkbox-day">
+              <input type="checkbox" name="dias_semana" value="3" checked> Miércoles
+            </label>
+            <label class="checkbox-day">
+              <input type="checkbox" name="dias_semana" value="4" checked> Jueves
+            </label>
+            <label class="checkbox-day">
+              <input type="checkbox" name="dias_semana" value="5" checked> Viernes
+            </label>
+            <label class="checkbox-day">
+              <input type="checkbox" name="dias_semana" value="6"> Sábado
+            </label>
+            <label class="checkbox-day">
+              <input type="checkbox" name="dias_semana" value="7"> Domingo
+            </label>
+          </div>
+        </div>
+
+        <div class="form-grid">
+
+          <div class="form-group">
+            <label for="hora_entrada">Hora de entrada</label>
+            <!-- Valor por defecto: 08:00 AM -->
+            <input type="time" name="hora_entrada" id="hora_entrada" class="form-control" value="08:00" required>
+          </div>
+
+          <div class="form-group">
+            <label for="horas">Horas de pasantía</label>
+            <select name="horas" id="horas" class="form-select" required>
+              <option value="4" selected>4 horas</option>
+              <option value="6">6 horas</option>
+              <option value="8">8 horas</option>
             </select>
+          </div>
+
+          <div class="form-group">
+            <label for="hora_salida">Hora de salida (Calculada)</label>
+            <input type="time" name="hora_salida" id="hora_salida" class="form-control" required>
+          </div>
+
         </div>
 
-        <div>
-            <label>Hora de entrada</label>
-            <input
-                type="time"
-                name="hora_entrada"
-                id="hora_entrada"
-                required
-            >
+        <div class="total-box" style="margin-top: 1.25rem;">
+          <span>Horas calculadas por día seleccionado:</span>
+          <strong id="totalHoras">0 hrs</strong>
         </div>
 
-        <div>
-            <label>Hora de salida</label>
-            <input
-                type="time"
-                name="hora_salida"
-                id="hora_salida"
-                required
-            >
-        </div>
-
-        <div>
-            <label>Horas de pasantía</label>
-
-            <select name="horas" id="horas" required>
-                <option value="">Seleccione</option>
-                <option value="4">4 horas</option>
-                <option value="6">6 horas</option>
-                <option value="8">8 horas</option>
-            </select>
-        </div>
-
-        <p>
-            Horas calculadas:
-            <strong id="totalHoras">0</strong>
-        </p>
-
-        <button type="submit">
-            Guardar horario
+        <button type="submit" class="btn-submit">
+          Guardar Configuración de Horario
         </button>
+      </form>
+    </div>
 
-    </form>
+    <!-- TABLA DE HORARIO PERMANENTE -->
+    <div class="card-form">
+      <div class="card-title">Mi Horario Programado</div>
+      
+      <div class="table-container">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>Día</th>
+              <th>Entrada</th>
+              <th>Salida</th>
+              <th>Horas Programadas</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (horarios && horarios.length > 0) { %>
+              <% horarios.forEach(h => { %>
+                <tr>
+                  <td>
+                    <%
+                      const dias = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+                    %>
+                    <strong><%= dias[h.dia_semana] %></strong>
+                  </td>
+                  <td><%= h.hora_entrada %></td>
+                  <td><%= h.hora_salida %></td>
+                  <td>
+                    <%
+                      const inicio = h.hora_entrada.split(':');
+                      const fin = h.hora_salida.split(':');
+                      const minutos = (parseInt(fin[0]) * 60 + parseInt(fin[1])) - (parseInt(inicio[0]) * 60 + parseInt(inicio[1]));
+                      const horasCalculadas = (minutos / 60).toFixed(1);
+                    %>
+                    <span class="badge-hours"><%= horasCalculadas %> hrs</span>
+                  </td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr>
+                <td colspan="4" style="text-align: center; color: #64748b; padding: 2rem;">
+                  No tienes días asignados aún. Registra tu horario en el formulario superior.
+                </td>
+              </tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
 
 </div>
-<h2>Mi horario actual</h2>
-
-<table>
-    <thead>
-        <tr>
-            <th>Día</th>
-            <th>Entrada</th>
-            <th>Salida</th>
-            <th>Horas</th>
-        </tr>
-    </thead>
-
-    <tbody>
-
-        <% horarios.forEach(h => { %>
-
-            <tr>
-
-                <td>
-                    <%
-                    const dias = [
-                        '',
-                        'Lunes',
-                        'Martes',
-                        'Miércoles',
-                        'Jueves',
-                        'Viernes',
-                        'Sábado',
-                        'Domingo'
-                    ];
-                    %>
-
-                    <%= dias[h.dia_semana] %>
-                </td>
-
-                <td>
-                    <%= h.hora_entrada %>
-                </td>
-
-                <td>
-                    <%= h.hora_salida %>
-                </td>
-
-                <td>
-                    <%
-                        const inicio = h.hora_entrada.split(':');
-                        const fin = h.hora_salida.split(':');
-
-                        const minutos =
-                            (parseInt(fin[0]) * 60 + parseInt(fin[1])) -
-                            (parseInt(inicio[0]) * 60 + parseInt(inicio[1]));
-
-                        const horasCalculadas = minutos / 60;
-                    %>
-
-                    <%= horasCalculadas %> horas
-                </td>
-
-            </tr>
-
-        <% }) %>
-
-    </tbody>
-</table>
 
 <script>
-const entrada = document.getElementById('hora_entrada');
-const salida = document.getElementById('hora_salida');
-const total = document.getElementById('totalHoras');
+document.addEventListener('DOMContentLoaded', () => {
+  const entrada = document.getElementById('hora_entrada');
+  const salida = document.getElementById('hora_salida');
+  const selectorHoras = document.getElementById('horas');
+  const totalLabel = document.getElementById('totalHoras');
+  const form = document.querySelector('form[action="/usuario/horario"]');
 
-function calcularHoras() {
+  function calcularHoraSalida() {
+    if (!entrada.value || !selectorHoras.value) return;
 
-    if (!entrada.value || !salida.value) {
-        total.textContent = '0';
-        return;
-    }
+    const [hora, minutos] = entrada.value.split(':').map(Number);
+    const duracionHoras = parseFloat(selectorHoras.value);
 
-    const inicio = entrada.value.split(':');
-    const fin = salida.value.split(':');
+    if (isNaN(hora) || isNaN(minutos) || isNaN(duracionHoras)) return;
 
-    const minutosInicio =
-        parseInt(inicio[0]) * 60 + parseInt(inicio[1]);
+    const fechaTemp = new Date();
+    fechaTemp.setHours(hora);
+    fechaTemp.setMinutes(minutos + Math.round(duracionHoras * 60));
 
-    const minutosFin =
-        parseInt(fin[0]) * 60 + parseInt(fin[1]);
+    const hSalida = String(fechaTemp.getHours()).padStart(2, '0');
+    const mSalida = String(fechaTemp.getMinutes()).padStart(2, '0');
 
-    const diferencia = minutosFin - minutosInicio;
+    salida.value = `${hSalida}:${mSalida}`;
+    totalLabel.textContent = `${duracionHoras} hrs`;
+  }
 
-    if (diferencia <= 0) {
-        total.textContent = 'Horario inválido';
-        return;
-    }
+  // Escuchar cambios
+  entrada.addEventListener('input', calcularHoraSalida);
+  selectorHoras.addEventListener('change', calcularHoraSalida);
 
-    const horas = diferencia / 60;
+  // Asegurar que la hora de salida esté calculada al enviar el formulario
+  if (form) {
+    form.addEventListener('submit', (e) => {
+      calcularHoraSalida();
+      
+      // Verificar si hay al menos un checkbox de día seleccionado
+      const diasSeleccionados = document.querySelectorAll('input[name="dias_semana"]:checked');
+      if (diasSeleccionados.length === 0) {
+        e.preventDefault();
+        alert('Por favor, seleccione al menos un día de la semana.');
+      }
+    });
+  }
 
-    total.textContent = horas + ' horas';
-}
-
-entrada.addEventListener('change', calcularHoras);
-salida.addEventListener('change', calcularHoras);
-
-document.getElementById('horas').addEventListener('change', function () {
-
-    const entrada = document.getElementById('hora_entrada').value;
-
-    if (!entrada) return;
-
-    const [hora, minutos] = entrada.split(':').map(Number);
-
-    const horas = parseInt(this.value);
-
-    const fecha = new Date();
-    fecha.setHours(hora);
-    fecha.setMinutes(minutos + horas * 60);
-
-    const nuevaHora =
-        String(fecha.getHours()).padStart(2, '0') +
-        ':' +
-        String(fecha.getMinutes()).padStart(2, '0');
-
-    document.getElementById('hora_salida').value = nuevaHora;
-
-    calcularHoras();
+  // Ejecución inicial inmediata
+  calcularHoraSalida();
 });
 </script>
+
 <%- include('../partials/footer') %>

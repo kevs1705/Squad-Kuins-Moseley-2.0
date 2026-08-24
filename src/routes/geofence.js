@@ -121,9 +121,25 @@ router.post('/api/geofence/register', async (req, res) => {
     return res.status(401).json({ ok: false, msg: 'Sesión no iniciada.' });
   }
 
-  const { tipo } = req.body;
+  const { tipo, fechaCliente, horaCliente } = req.body;
+  
   if (tipo !== 'entrada' && tipo !== 'salida') {
     return res.status(400).json({ ok: false, msg: 'Tipo de asistencia inválido.' });
+  }
+
+  // Validar formato básico de fecha (YYYY-MM-DD) y hora (HH:MM:SS) enviados por el cliente
+  const regexFecha = /^\d{4}-\d{2}-\d{2}$/;
+  const regexHora = /^\d{2}:\d{2}:\d{2}$/;
+
+  // Si el cliente no los envía, usar fallback con fecha/hora de la región fija (ej. 'America/La_Paz')
+  let fechaUsar = fechaCliente;
+  let horaUsar = horaCliente;
+
+  if (!fechaUsar || !regexFecha.test(fechaUsar) || !horaUsar || !regexHora.test(horaUsar)) {
+    // Fallback: Calcular fecha/hora de la región con Intl.DateTimeFormat
+    const ahoraRegion = new Date();
+    fechaUsar = ahoraRegion.toLocaleDateString('sv-SE', { timeZone: 'America/La_Paz' });
+    horaUsar = ahoraRegion.toLocaleTimeString('en-GB', { timeZone: 'America/La_Paz' });
   }
 
   // Verificar que la geocerca haya sido validada en esta sesión y no haya expirado
@@ -135,47 +151,44 @@ router.post('/api/geofence/register', async (req, res) => {
   const idLugar = req.session.geofence.id_lugar;
 
   try {
-    // Buscar si ya existe una asistencia para hoy
+    // Buscar si ya existe una asistencia para la fecha del cliente
     const [existing] = await db.query(
-      'SELECT id_asistencia, hora_entrada, hora_salida FROM asistencias WHERE id_usuario = ? AND fecha = CURDATE() LIMIT 1',
-      [userId]
+      'SELECT id_asistencia, hora_entrada, hora_salida FROM asistencias WHERE id_usuario = ? AND fecha = ? LIMIT 1',
+      [userId, fechaUsar]
     );
 
     if (existing && existing.length > 0) {
       const record = existing[0];
       if (tipo === 'entrada') {
         await db.query(
-          'UPDATE asistencias SET hora_entrada = CURTIME(), id_lugar = ? WHERE id_asistencia = ?',
-          [idLugar, record.id_asistencia]
+          'UPDATE asistencias SET hora_entrada = ?, id_lugar = ? WHERE id_asistencia = ?',
+          [horaUsar, idLugar, record.id_asistencia]
         );
       } else {
         await db.query(
-          'UPDATE asistencias SET hora_salida = CURTIME(), id_lugar = ? WHERE id_asistencia = ?',
-          [idLugar, record.id_asistencia]
+          'UPDATE asistencias SET hora_salida = ?, id_lugar = ? WHERE id_asistencia = ?',
+          [horaUsar, idLugar, record.id_asistencia]
         );
       }
     } else {
-      // No existe, insertar un nuevo registro
+      // No existe registro para la fecha, insertar nuevo
       if (tipo === 'entrada') {
         await db.query(
-          'INSERT INTO asistencias (id_usuario, id_lugar, fecha, hora_entrada, estado) VALUES (?, ?, CURDATE(), CURTIME(), ?)',
-          [userId, idLugar, 'PRESENTE']
+          'INSERT INTO asistencias (id_usuario, id_lugar, fecha, hora_entrada, estado) VALUES (?, ?, ?, ?, ?)',
+          [userId, idLugar, fechaUsar, horaUsar, 'PRESENTE']
         );
       } else {
         await db.query(
-          'INSERT INTO asistencias (id_usuario, id_lugar, fecha, hora_salida, estado) VALUES (?, ?, CURDATE(), CURTIME(), ?)',
-          [userId, idLugar, 'PRESENTE']
+          'INSERT INTO asistencias (id_usuario, id_lugar, fecha, hora_salida, estado) VALUES (?, ?, ?, ?, ?)',
+          [userId, idLugar, fechaUsar, horaUsar, 'PRESENTE']
         );
       }
     }
 
-    // Obtener la hora actual registrada
-    const [[{ server_time }]] = await db.query("SELECT TIME_FORMAT(CURTIME(), '%H:%i:%s') AS server_time");
-
     return res.json({
       ok: true,
       msg: `Se registró tu ${tipo} con éxito.`,
-      hora: server_time
+      hora: horaUsar
     });
 
   } catch (error) {

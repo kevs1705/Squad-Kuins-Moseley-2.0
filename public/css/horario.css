@@ -1,0 +1,224 @@
+/* ==========================================================================
+   ESTILOS PARA EL MÓDULO DE HORARIOS Y META DE PASANTÍA
+   ========================================================================== */
+
+:root {
+  --primary-color: #0d6efd;
+  --secondary-color: #0b1f3a;
+  --bg-card: #ffffff;
+  --border-color: #e2e8f0;
+  --text-primary: #1e293b;
+  --text-muted: #64748b;
+  --radius-md: 10px;
+  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
+body {
+  background-color: #f8fafc;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--text-primary);
+}
+
+.horario-wrapper {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+/* --- TARJETAS DE PROGRESO Y CONTADORES --- */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: var(--bg-card);
+  padding: 1.25rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.stat-card .title {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.stat-card .value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--secondary-color);
+}
+
+/* Bar de Progreso */
+.progress-bar-container {
+  height: 8px;
+  background-color: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 0.75rem;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #059669);
+  transition: width 0.4s ease;
+}
+
+/* --- TARJETA DEL FORMULARIO DE CREACIÓN --- */
+.card-form {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  padding: 1.75rem;
+  margin-bottom: 2.5rem;
+}
+
+.card-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--secondary-color);
+  margin-bottom: 1.25rem;
+  border-bottom: 2px solid #f1f5f9;
+  padding-bottom: 0.75rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.25rem;
+  align-items: end;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.4rem;
+}
+
+.form-control,
+.form-select {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.95rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background-color: #fff;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.form-control:focus,
+.form-select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+}
+
+/* Caja del Total de Horas Calculadas */
+.total-box {
+  background-color: #f0fdf4;
+  border: 1px dashed #86efac;
+  border-radius: 6px;
+  padding: 0.625rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.total-box span {
+  font-size: 0.875rem;
+  color: #166534;
+  font-weight: 600;
+}
+
+.total-box strong {
+  font-size: 1.1rem;
+  color: #15803d;
+}
+
+.btn-submit {
+  background-color: var(--secondary-color);
+  color: #ffffff;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+  width: 100%;
+  margin-top: 1.25rem;
+}
+
+.btn-submit:hover {
+  background-color: #152c4a;
+}
+
+.btn-submit:active {
+  transform: scale(0.99);
+}
+
+/* --- TABLA DE HORARIO ACTUAL --- */
+.table-container {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.custom-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.custom-table thead {
+  background-color: var(--secondary-color);
+  color: #ffffff;
+}
+
+.custom-table th {
+  padding: 1rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.custom-table td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.95rem;
+}
+
+.custom-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.custom-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.badge-hours {
+  display: inline-block;
+  background-color: #e0f2fe;
+  color: #0369a1;
+  font-weight: 700;
+  padding: 0.25rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+}

@@ -1,0 +1,135 @@
+<%- include('../partials/header') %>
+
+<!-- Hoja de estilos independiente -->
+<link rel="stylesheet" href="/css/reporte_asistencia.css">
+
+<div class="asistencia-wrapper py-4">
+  
+  <!-- Header del Módulo -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold mb-1">Módulo de Asistencia</h2>
+      <p class="text-muted mb-0">
+        Usuario: <strong><%= user.nombre %></strong> | CI: <%= user.ci %>
+      </p>
+    </div>
+    <a href="/usuario/reporte" class="btn btn-outline-primary">
+      <i class="bi bi-journal-text"></i> Ir a Bitácoras y Reportes
+    </a>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <!-- Tarjeta 1: Total Acumulado -->
+    <div class="col-md-5">
+      <div class="card card-summary border-0 h-100">
+        <div class="card-body d-flex flex-column justify-content-center">
+          <h6 class="text-uppercase tracking-wide opacity-75 mb-1">Horas Totales Acumuladas</h6>
+          <h1 class="display-5 fw-bold mb-0"><%= total_acumulada %> hrs</h1>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tarjeta 2: Panel de Verificación GPS / Geocerca -->
+    <div class="col-md-7">
+      <div class="card custom-card h-100">
+        <div class="card-body d-flex flex-column justify-content-between">
+          <h5 class="fw-bold mb-2">
+            <i class="bi bi-geo-alt-fill me-2 text-danger"></i>Estado de Marcación GPS
+          </h5>
+          
+          <% if (jornadaActiva) { %>
+            <div class="alert alert-warning mb-3">
+              <i class="bi bi-play-circle-fill me-2"></i>
+              Tienes una jornada <strong>EN CURSO</strong> iniciada a las <strong><%= jornadaActiva.hora_entrada %></strong> en <strong><%= jornadaActiva.lugar_nombre %></strong>.
+            </div>
+            <a href="/geofence" class="btn btn-secondary btn-lg w-100 fw-bold">
+              <i class="bi bi-pin-map-fill me-2"></i> Verificar GPS para Marcar Salida
+            </a>
+          <% } else { %>
+            <div class="alert alert-secondary mb-3">
+              <i class="bi bi-info-circle me-2"></i>
+              No tienes ninguna jornada activa hoy. Para registrar entrada debes verificar tu posición GPS.
+            </div>
+          <a href="/geofence" class="btn btn-secondary btn-lg w-100 fw-bold">
+              <i class="bi bi-pin-map-fill me-2"></i> Verificar GPS para Marcar Entrada
+            </a>
+          <% } %>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla Histórica de Asistencias -->
+  <div class="card custom-card">
+    <div class="custom-card-header">
+      <h5 class="card-title mb-0 fw-bold">
+        <i class="bi bi-calendar-check me-2"></i>Historial de Marcaciones
+      </h5>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle custom-table-asistencia">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Obra / Lugar</th>
+              <th>Hora Entrada</th>
+              <th>Hora Salida</th>
+              <th>Duración</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (asistencias && asistencias.length > 0) { %>
+              <% asistencias.forEach(a => { %>
+                <tr>
+                  <td><strong><%= a.fecha %></strong></td>
+                  <td>
+                    <%= a.lugar_nombre || 'Sin asignación' %>
+                    <% if(a.lugar_tipo) { %>
+                      <br><small class="text-muted">(<%= a.lugar_tipo %>)</small>
+                    <% } %>
+                  </td>
+                  <td>
+                    <%= a.hora_entrada || '-' %>
+                    <% if(a.bio_entrada) { %>
+                      <span class="badge badge-biometrico" title="Huella Biométrica: <%= a.bio_entrada %>">
+                        <i class="bi bi-fingerprint"></i>
+                      </span>
+                    <% } %>
+                  </td>
+                  <td>
+                    <%= a.hora_salida || '-' %>
+                    <% if(a.bio_salida) { %>
+                      <span class="badge badge-biometrico" title="Huella Biométrica: <%= a.bio_salida %>">
+                        <i class="bi bi-fingerprint"></i>
+                      </span>
+                    <% } %>
+                  </td>
+                  <td>
+                    <span class="badge <%= a.horas_dia === 'En curso' ? 'bg-warning text-dark' : 'bg-secondary' %>">
+                      <%= a.horas_dia %>
+                    </span>
+                  </td>
+                  <td>
+                    <span class="badge <%= a.estado === 'PRESENTE' ? 'bg-success' : 'bg-danger' %>">
+                      <%= a.estado %>
+                    </span>
+                  </td>
+                </tr>
+              <% }); %>
+            <% } else { %>
+              <tr>
+                <td colspan="6" class="text-center py-4 text-muted">No se registran marcas de asistencia.</td>
+              </tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<%- include('../partials/footer') %>

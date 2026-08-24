@@ -4,7 +4,35 @@ const db = require('../config/bd');
 const { requireAuth } = require('../middleware/auth');
 const path = require('path');
 const multer = require('multer');
+const ExcelJS = require('exceljs');
 
+// ===== Multer (comprobantes) =====
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.join(process.cwd(), 'public', 'uploads', 'comprobantes'));
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname || '').toLowerCase();
+    const name = `comp_${Date.now()}_${Math.random().toString(36).slice(2)}${ext}`;
+    cb(null, name);
+  }
+});
+
+const fileFilter = (req, file, cb) => {
+  const m = (file.mimetype || '').toLowerCase();
+  if (['image/png', 'image/jpg', 'image/jpeg'].includes(m)) return cb(null, true);
+  cb(new Error('Solo se permiten imágenes PNG o JPG/JPEG'));
+};
+
+const upload = multer({
+  storage,
+  fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 } // 5 MB
+});
+
+/* ==========================================================================
+   GET: VISTA PRINCIPAL DEL USUARIO (LISTADO DE JORNADAS Y BITÁCORAS)
+   ========================================================================== */
 router.get('/usuario/reporte', requireAuth, async (req, res) => {
   const userId = req.session.user.id;
 
@@ -18,61 +46,48 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
     if (users.length === 0) return res.status(404).send('Usuario no encontrado');
     const userDB = users[0];
 
-    // 2. Total acumulado de horas reportadas
-    const [totals] = await db.query(
-      `SELECT COALESCE(SEC_TO_TIME(SUM(TIME_TO_SEC(hora_acumulada))), '00:00:00') AS total_acumulada
-       FROM reportes
-       WHERE id_usuario = ?`,
-      [userId]
-    );
+    // 2. Total acumulado de horas (Calculado desde asistencias)
+    const [totals] = await db.query(`
+      SELECT COALESCE(
+        SEC_TO_TIME(SUM(TIME_TO_SEC(TIMEDIFF(hora_salida, hora_entrada)))), 
+        '00:00:00'
+      ) AS total_acumulada
+      FROM asistencias
+      WHERE id_usuario = ? AND hora_salida IS NOT NULL
+    `, [userId]);
+
     const total_acumulada = totals[0].total_acumulada;
 
-    // 3. JORNADAS UNIFICADAS: Asistencias (App/Biométrico) + Reportes + Lugares
+    // 3. JORNADAS UNIFICADAS: Asistencias vinculadas a Reportes por FK (id_asistencia)
     const [jornadas] = await db.query(`
       SELECT 
-        COALESCE(a.fecha, r.fecha) AS fecha,
-        
-        -- Datos del Lugar/Obra
+        a.id_asistencia,
+        DATE_FORMAT(a.fecha, '%Y-%m-%d') AS fecha,
+        a.estado AS asistencia_estado,
         l.nombre AS lugar_nombre,
         l.tipo AS lugar_tipo,
         
-        -- Datos de Asistencia
-        a.id_asistencia,
-        a.estado AS asistencia_estado,
+        -- Entrada y Salida (Biométrico o Marcación Manual)
+        TIME_FORMAT(COALESCE(TIME(a.fecha_hora_biometrico_entrada), a.hora_entrada), '%H:%i') AS hora_entrada,
+        TIME_FORMAT(COALESCE(TIME(a.fecha_hora_biometrico_salida), a.hora_salida), '%H:%i') AS hora_salida,
         
-        -- Priorización de hora de entrada (Biométrico > App)
-        TIME_FORMAT(
-          COALESCE(TIME(a.fecha_hora_biometrico_entrada), a.hora_entrada), 
-          '%H:%i'
-        ) AS hora_entrada,
-        
-        -- Priorización de hora de salida (Biométrico > App)
-        TIME_FORMAT(
-          COALESCE(TIME(a.fecha_hora_biometrico_salida), a.hora_salida), 
-          '%H:%i'
-        ) AS hora_salida,
-        
-        -- Marcas crudas del biométrico por si se requiere auditoría
         TIME_FORMAT(a.fecha_hora_biometrico_entrada, '%H:%i:%s') AS bio_entrada,
         TIME_FORMAT(a.fecha_hora_biometrico_salida, '%H:%i:%s') AS bio_salida,
 
-        -- Datos de Reportes/Tareas
+        -- Horas calculadas de la asistencia
+        IF(a.hora_salida IS NOT NULL, TIME_FORMAT(TIMEDIFF(a.hora_salida, a.hora_entrada), '%H:%i'), 'En curso') AS horas_dia,
+
+        -- Datos del Reporte de la jornada
         r.id_reporte,
-        TIME_FORMAT(r.hora_inicio, '%H:%i') AS reporte_inicio,
-        TIME_FORMAT(r.hora_fin, '%H:%i') AS reporte_fin,
-        TIME_FORMAT(r.hora_acumulada, '%H:%i:%s') AS hora_acumulada,
         r.tarea,
         r.comprobante,
         r.observacion
       FROM asistencias a
-      LEFT JOIN lugares l 
-            ON a.id_lugar = l.id_lugar
-      LEFT JOIN reportes r 
-            ON a.id_usuario = r.id_usuario 
-            AND a.fecha = r.fecha
-      WHERE a.id_usuario = ? OR r.id_usuario = ?
-      ORDER BY fecha DESC, r.id_reporte DESC
-    `, [userId, userId]);
+      LEFT JOIN lugares l ON a.id_lugar = l.id_lugar
+      LEFT JOIN reportes r ON a.id_asistencia = r.id_asistencia
+      WHERE a.id_usuario = ?
+      ORDER BY a.fecha DESC, a.id_asistencia DESC
+    `, [userId]);
 
     const user = {
       id: userDB.id_usuario,
@@ -81,7 +96,6 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
       rol: userDB.rol
     };
 
-    // Renderizamos la vista unificada (pasando jornadas)
     res.render('usuario/reporte', {
       user,
       total_acumulada,
@@ -94,219 +108,103 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
   }
 });
 
+/* ==========================================================================
+   ENDPOINTS API PARA BITÁCORAS / REPORTES DE TRABAJO
+   ========================================================================== */
 
-
-// ===== Multer (comprobantes) =====
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(process.cwd(), 'public', 'uploads', 'comprobantes'));
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname || '').toLowerCase();
-    const name = `comp_${Date.now()}_${Math.random().toString(36).slice(2)}${ext}`;
-    cb(null, name);
-  }
-});
-const fileFilter = (req, file, cb) => {
-  const m = (file.mimetype || '').toLowerCase();
-  if (m === 'image/png' || m === 'image/jpg' || m === 'image/jpeg') return cb(null, true);
-  cb(new Error('Solo se permiten imágenes PNG o JPG/JPEG'));
-};
-const upload = multer({
-  storage,
-  fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 } // 5 MB
-});
-
-// ===== Helper: obtener reporte activo =====
-async function getReporteActivo(userId) {
-  // En getReporteActivo o en cualquier SELECT
+// Helper: obtener reporte de una asistencia específica
+async function getReportePorAsistencia(idAsistencia, userId) {
   const [rows] = await db.query(`
-  SELECT 
-    id_reporte, 
-    id_usuario, 
-    DATE_FORMAT(fecha, '%Y-%m-%d') AS fecha,  -- 👈 aquí
-    TIME_FORMAT(hora_inicio, '%H:%i:%s') AS hora_inicio,
-    TIME_FORMAT(hora_fin, '%H:%i:%s') AS hora_fin,
-    tarea, comprobante, observacion
-  FROM reportes
-  WHERE id_usuario = ? AND hora_fin IS NULL
-  ORDER BY creado_en DESC
-  LIMIT 1
-`, [userId]);
+    SELECT 
+      id_reporte, 
+      id_usuario, 
+      id_asistencia,
+      DATE_FORMAT(fecha, '%Y-%m-%d') AS fecha,
+      tarea, 
+      comprobante, 
+      observacion
+    FROM reportes
+    WHERE id_asistencia = ? AND id_usuario = ?
+    LIMIT 1
+  `, [idAsistencia, userId]);
 
   return rows[0] || null;
 }
 
-// ===== GET: reporte activo (JSON) =====
-router.get('/reportes/active', requireAuth, async (req, res) => {
+// POST: Registrar o Actualizar Bitácora (Tarea + Comprobante)
+router.post('/reportes/guardar', requireAuth, upload.single('comprobante'), async (req, res) => {
   try {
     const userId = req.session.user.id;
-    const activo = await getReporteActivo(userId);
-    const [[{ server_now }]] = await db.query('SELECT NOW() AS server_now');
-    return res.json({ ok: true, data: activo || null, now: server_now });
+    const { id_asistencia, tarea } = req.body;
+
+    if (!id_asistencia || !tarea) {
+      return res.status(400).json({ ok: false, error: 'Debe seleccionar una asistencia y describir la tarea.' });
+    }
+
+    const publicPath = req.file ? '/uploads/comprobantes/' + req.file.filename : null;
+
+    // Verificar si ya existe un reporte para esta asistencia
+    const reporteExistente = await getReportePorAsistencia(id_asistencia, userId);
+
+    if (reporteExistente) {
+      // Actualizar reporte existente
+      const imgFinal = publicPath || reporteExistente.comprobante;
+      await db.query(`
+        UPDATE reportes
+        SET tarea = ?, comprobante = ?
+        WHERE id_reporte = ? AND id_usuario = ?
+      `, [tarea, imgFinal, reporteExistente.id_reporte, userId]);
+
+      return res.json({ ok: true, msg: 'Bitácora actualizada con éxito' });
+    } else {
+      // Obtener la fecha de la asistencia seleccionada
+      const [[asistencia]] = await db.query(
+        'SELECT fecha FROM asistencias WHERE id_asistencia = ? AND id_usuario = ?',
+        [id_asistencia, userId]
+      );
+
+      if (!asistencia) {
+        return res.status(404).json({ ok: false, error: 'Asistencia no encontrada' });
+      }
+
+      // Crear nuevo reporte asociado a la asistencia
+      await db.query(`
+        INSERT INTO reportes (id_usuario, id_asistencia, fecha, tarea, comprobante)
+        VALUES (?, ?, ?, ?, ?)
+      `, [userId, id_asistencia, asistencia.fecha, tarea, publicPath]);
+
+      return res.json({ ok: true, msg: 'Bitácora creada con éxito' });
+    }
 
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ ok: false, error: 'Error consultando reporte activo' });
+    return res.status(500).json({ ok: false, error: 'No se pudo guardar la bitácora de trabajo' });
   }
 });
 
-// ===== POST: comenzar nuevo reporte =====
-// POST: comenzar nuevo reporte (Solo si tiene asistencia el día de hoy)
-router.post('/reportes/start', requireAuth, async (req, res) => {
-  try {
-    const userId = req.session.user.id;
-
-    // Opcional: Verificar si el usuario ya registró asistencia hoy
-    const [asistencia] = await db.query(
-      'SELECT id_asistencia FROM asistencias WHERE id_usuario = ? AND fecha = CURDATE() LIMIT 1',
-      [userId]
-    );
-
-    if (asistencia.length === 0) {
-      return res.status(400).json({
-        ok: false,
-        error: 'Debes registrar tu marca de asistencia antes de iniciar un reporte.'
-      });
-    }
-
-    // Verificar si ya hay un reporte activo
-    const activo = await getReporteActivo(userId);
-    if (activo) return res.json({ ok: true, data: activo, already: true });
-
-    // Crear nuevo reporte
-    const [result] = await db.query(`
-      INSERT INTO reportes (id_usuario, fecha, hora_inicio)
-      VALUES (?, CURDATE(), CURTIME())
-    `, [userId]);
-
-    const [rows] = await db.query(`
-      SELECT 
-        id_reporte, 
-        id_usuario, 
-        DATE_FORMAT(fecha, '%Y-%m-%d') AS fecha,
-        TIME_FORMAT(hora_inicio, '%H:%i:%s') AS hora_inicio,
-        TIME_FORMAT(hora_fin, '%H:%i:%s') AS hora_fin,
-        tarea, comprobante, observacion
-      FROM reportes
-      WHERE id_reporte = ?
-      LIMIT 1
-    `, [result.insertId]);
-
-    return res.json({ ok: true, data: rows[0] });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ ok: false, error: 'No se pudo iniciar el reporte' });
-  }
-});
-
-// ===== POST: agregar/actualizar tarea (solo descripción) =====
-router.post('/reportes/task', requireAuth, async (req, res) => {
-  try {
-    const userId = req.session.user.id;
-    const { id_reporte, tarea } = req.body;
-    if (!id_reporte || !tarea) {
-      return res.status(400).json({ ok: false, error: 'Faltan datos' });
-    }
-
-    const [info] = await db.query(`
-      UPDATE reportes
-      SET tarea = ?
-      WHERE id_reporte = ? AND id_usuario = ?
-    `, [tarea, id_reporte, userId]);
-
-    if (info.affectedRows === 0) {
-      return res.status(404).json({ ok: false, error: 'Reporte no encontrado' });
-    }
-    return res.json({ ok: true });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ ok: false, error: 'No se pudo guardar la tarea' });
-  }
-});
-
-// ===== POST: subir comprobante (PNG/JPG) =====
-router.post('/reportes/comprobante', requireAuth, upload.single('comprobante'), async (req, res) => {
-  try {
-    const userId = req.session.user.id;
-    const { id_reporte } = req.body;
-    if (!id_reporte) {
-      return res.status(400).json({ ok: false, error: 'Faltan datos' });
-    }
-    if (!req.file) {
-      return res.status(400).json({ ok: false, error: 'Archivo no recibido o inválido' });
-    }
-
-    // Ruta pública para servir el archivo
-    const publicPath = '/uploads/comprobantes/' + req.file.filename;
-
-    const [info] = await db.query(`
-      UPDATE reportes
-      SET comprobante = ?
-      WHERE id_reporte = ? AND id_usuario = ?
-    `, [publicPath, id_reporte, userId]);
-
-    if (info.affectedRows === 0) {
-      return res.status(404).json({ ok: false, error: 'Reporte no encontrado' });
-    }
-    return res.json({ ok: true, path: publicPath });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ ok: false, error: 'No se pudo subir el comprobante' });
-  }
-});
-
-// ===== POST: finalizar (registrar hora_fin y calcular hora_acumulada) =====
-router.post('/reportes/finish', requireAuth, async (req, res) => {
-  try {
-    const userId = req.session.user.id;
-    const { id_reporte } = req.body;
-    if (!id_reporte) {
-      return res.status(400).json({ ok: false, error: 'Faltan datos' });
-    }
-
-    // Set hora_fin = NOW() y calcular acumulada = hora_fin - hora_inicio
-    const [info] = await db.query(`
-      UPDATE reportes
-      SET hora_fin = CURTIME(),
-          hora_acumulada = SEC_TO_TIME(TIME_TO_SEC(TIMEDIFF(CURTIME(), hora_inicio)))
-      WHERE id_reporte = ? AND id_usuario = ? AND hora_fin IS NULL
-    `, [id_reporte, userId]);
-
-    if (info.affectedRows === 0) {
-      return res.status(404).json({ ok: false, error: 'Reporte no encontrado o ya finalizado' });
-    }
-    return res.json({ ok: true });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ ok: false, error: 'No se pudo finalizar el reporte' });
-  }
-});
-
-// Crear solicitud de horas extra
-// Requiere: req.session.user.id (requireAuth debe poblar la sesión)
+/* ==========================================================================
+   SOLICITUD DE NOTIFICACIONES / HORAS EXTRA
+   ========================================================================== */
 router.post('/api/notificaciones', requireAuth, async (req, res) => {
   try {
     const id_usuario = req.session.user.id;
     let { fecha_solicitada, hora_inicio, hora_fin, motivo } = req.body;
 
-    // Sanitización
-    fecha_solicitada = String(fecha_solicitada || '').trim().slice(0, 10); // YYYY-MM-DD
-    hora_inicio = String(hora_inicio || '').trim().slice(0, 8);       // HH:MM o HH:MM:SS
+    fecha_solicitada = String(fecha_solicitada || '').trim().slice(0, 10);
+    hora_inicio = String(hora_inicio || '').trim().slice(0, 8);
     hora_fin = String(hora_fin || '').trim().slice(0, 8);
     motivo = String(motivo || '').trim().slice(0, 2000);
 
-    // Validaciones simples
     if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha_solicitada)) {
       return res.status(400).json({ ok: false, msg: 'Fecha inválida (YYYY-MM-DD).' });
     }
     if (!/^\d{2}:\d{2}(:\d{2})?$/.test(hora_inicio) || !/^\d{2}:\d{2}(:\d{2})?$/.test(hora_fin)) {
       return res.status(400).json({ ok: false, msg: 'Hora inválida (HH:MM).' });
     }
-    // normaliza HH:MM a HH:MM:00
+
     if (hora_inicio.length === 5) hora_inicio += ':00';
     if (hora_fin.length === 5) hora_fin += ':00';
+
     if (hora_inicio >= hora_fin) {
       return res.status(400).json({ ok: false, msg: 'La hora fin debe ser mayor que la hora inicio.' });
     }
@@ -314,18 +212,15 @@ router.post('/api/notificaciones', requireAuth, async (req, res) => {
       return res.status(400).json({ ok: false, msg: 'Motivo mínimo 5 caracteres.' });
     }
 
-    // Insertar (estado=1 pendiente)
     const [result] = await db.query(
-      `INSERT INTO notificaciones
-         (id_usuario, fecha_solicitada, hora_inicio, hora_fin, motivo, estado)
+      `INSERT INTO notificaciones (id_usuario, fecha_solicitada, hora_inicio, hora_fin, motivo, estado)
        VALUES (?, ?, ?, ?, ?, 1)`,
       [id_usuario, fecha_solicitada, hora_inicio, hora_fin, motivo]
     );
 
-    // opcional: devolver la fila mínima creada
     res.json({
       ok: true,
-      msg: 'Solicitud creada',
+      msg: 'Solicitud creada con éxito',
       notificacion: {
         id_notificacion: result.insertId,
         id_usuario,
@@ -342,90 +237,63 @@ router.post('/api/notificaciones', requireAuth, async (req, res) => {
   }
 });
 
-
-
-const ExcelJS = require('exceljs');
-
+/* ==========================================================================
+   EXPORTAR ASISTENCIA Y REPORTES A EXCEL
+   ========================================================================== */
 router.get('/reportes/export', requireAuth, async (req, res) => {
   try {
     const userId = req.session.user.id;
 
-    // Traer datos del usuario (para el título del archivo/hoja)
-    const [urows] = await db.query(`
-      SELECT id_usuario, nombre
-      FROM usuarios
-      WHERE id_usuario = ?
-      LIMIT 1
-    `, [userId]);
-    if (!urows || urows.length === 0) {
-      return res.status(404).send('Usuario no encontrado');
-    }
+    const [urows] = await db.query('SELECT id_usuario, nombre FROM usuarios WHERE id_usuario = ? LIMIT 1', [userId]);
+    if (!urows || urows.length === 0) return res.status(404).send('Usuario no encontrado');
     const usuario = urows[0];
 
-    // Traer reportes SIN formatear (así controlamos fecha/hora en Excel)
+    // Consulta unificada uniendo asistencias con reportes
     const [reports] = await db.query(`
       SELECT
-        DATE_FORMAT(fecha, '%Y-%m-%d')          AS fecha,
-        TIME_FORMAT(hora_acumulada, '%H:%i:%s') AS hora_acumulada,
-        TIME_FORMAT(hora_inicio, '%H:%i:%s')    AS hora_inicio,
-        TIME_FORMAT(hora_fin, '%H:%i:%s')       AS hora_fin,
-        tarea, observacion
-      FROM reportes
-      WHERE id_usuario = ?
-      ORDER BY fecha DESC, id_reporte DESC
+        DATE_FORMAT(a.fecha, '%Y-%m-%d') AS fecha,
+        l.nombre AS lugar,
+        TIME_FORMAT(a.hora_entrada, '%H:%i:%s') AS hora_entrada,
+        TIME_FORMAT(a.hora_salida, '%H:%i:%s') AS hora_salida,
+        IF(a.hora_salida IS NOT NULL, TIME_FORMAT(TIMEDIFF(a.hora_salida, a.hora_entrada), '%H:%i:%s'), '00:00:00') AS horas_trabajadas,
+        r.tarea, 
+        r.observacion
+      FROM asistencias a
+      LEFT JOIN lugares l ON a.id_lugar = l.id_lugar
+      LEFT JOIN reportes r ON a.id_asistencia = r.id_asistencia
+      WHERE a.id_usuario = ?
+      ORDER BY a.fecha DESC
     `, [userId]);
 
-    // (Opcional) total acumulado para encabezado
     const [totals] = await db.query(`
-      SELECT COALESCE(SEC_TO_TIME(SUM(TIME_TO_SEC(hora_acumulada))), '00:00:00') AS total_acumulada
-      FROM reportes
-      WHERE id_usuario = ?
+      SELECT COALESCE(SEC_TO_TIME(SUM(TIME_TO_SEC(TIMEDIFF(hora_salida, hora_entrada)))), '00:00:00') AS total_acumulada
+      FROM asistencias
+      WHERE id_usuario = ? AND hora_salida IS NOT NULL
     `, [userId]);
     const totalAcum = (totals && totals[0]) ? totals[0].total_acumulada : '00:00:00';
 
-    // Helpers para convertir a tipos Excel
     const toExcelDate = (ymd) => {
-      if (!ymd) return null; // deja celda vacía
+      if (!ymd) return null;
       const [y, m, d] = ymd.split('-').map(Number);
       return new Date(y, (m || 1) - 1, d || 1);
     };
-    const toExcelTime = (hms) => {
-      if (!hms) return null;
-      const [h, m, s] = hms.split(':').map(x => parseInt(x || '0', 10));
-      const secs = (h * 3600) + (m * 60) + (s || 0);
-      return secs / 86400; // Excel: fracción del día
-    };
 
-    // Crear libro/hoja
     const wb = new ExcelJS.Workbook();
-    const ws = wb.addWorksheet('Reportes');
+    const ws = wb.addWorksheet('Asistencia y Bitácora');
 
-    // Título y metadatos
     ws.mergeCells('A1:G1');
-    ws.getCell('A1').value = `Reporte del estudiante: ${usuario.nombre}`;
+    ws.getCell('A1').value = `Reporte de Pasante / Estudiante: ${usuario.nombre}`;
     ws.getCell('A1').font = { bold: true, size: 14 };
-    ws.getCell('A1').alignment = { vertical: 'middle' };
 
     ws.mergeCells('A2:G2');
-    ws.getCell('A2').value = `Exportado: ${new Date().toLocaleString()}  •  Total horas acumuladas: ${totalAcum}`;
+    ws.getCell('A2').value = `Exportado el: ${new Date().toLocaleString()}  •  Total Horas Acumuladas: ${totalAcum}`;
     ws.getCell('A2').font = { italic: true, size: 11 };
-    ws.getCell('A2').alignment = { vertical: 'middle' };
 
-    // Encabezados
     ws.addRow([]);
-    ws.addRow([
-      'Fecha',
-      'Hora acumulada',
-      'Hora inicio',
-      'Hora fin',
-      'Tarea (descripción)',
-      'Observaciones'
-    ]);
+    ws.addRow(['Fecha', 'Lugar / Obra', 'Hora Entrada', 'Hora Salida', 'Horas Turno', 'Tarea (Descripción)', 'Observaciones']);
 
-    // Estilos de encabezado
-    const headerRow = ws.getRow(ws.lastRow.number);
+    const headerRow = ws.getRow(4);
     headerRow.font = { bold: true };
-    headerRow.alignment = { vertical: 'middle' };
     headerRow.eachCell((cell) => {
       cell.border = {
         top: { style: 'thin' }, left: { style: 'thin' },
@@ -433,33 +301,32 @@ router.get('/reportes/export', requireAuth, async (req, res) => {
       };
     });
 
-    // Columnas (ancho + formatos)
     ws.columns = [
       { key: 'fecha', width: 12, style: { numFmt: 'yyyy-mm-dd' } },
-      { key: 'hora_acumulada', width: 14, style: { numFmt: 'hh:mm:ss' } },
-      { key: 'hora_inicio', width: 12, style: { numFmt: 'hh:mm' } },
-      { key: 'hora_fin', width: 12, style: { numFmt: 'hh:mm' } },
+      { key: 'lugar', width: 20 },
+      { key: 'hora_entrada', width: 12 },
+      { key: 'hora_salida', width: 12 },
+      { key: 'horas_trabajadas', width: 14 },
       { key: 'tarea', width: 40 },
-      { key: 'observacion', width: 40 }
+      { key: 'observacion', width: 35 }
     ];
 
-    // Datos
     if (!reports || reports.length === 0) {
       ws.addRow(['Sin registros', null, null, null, null, null, null]);
     } else {
       for (const r of reports) {
         ws.addRow({
           fecha: toExcelDate(r.fecha),
-          hora_acumulada: toExcelTime(r.hora_acumulada),
-          hora_inicio: toExcelTime(r.hora_inicio),
-          hora_fin: toExcelTime(r.hora_fin),
-          tarea: r.tarea || '',
+          lugar: r.lugar || 'N/A',
+          hora_entrada: r.hora_entrada || '-',
+          hora_salida: r.hora_salida || '-',
+          horas_trabajadas: r.horas_trabajadas,
+          tarea: r.tarea || 'Sin bitácora',
           observacion: r.observacion || ''
         });
       }
     }
 
-    // Bordes finos para el cuerpo
     const startDataRow = headerRow.number + 1;
     for (let i = startDataRow; i <= ws.lastRow.number; i++) {
       ws.getRow(i).eachCell((cell) => {
@@ -471,17 +338,13 @@ router.get('/reportes/export', requireAuth, async (req, res) => {
       });
     }
 
-    // Freeze panes (fija filas 1-3: título, meta, encabezado)
-    ws.views = [{ state: 'frozen', ySplit: 3 }];
+    ws.views = [{ state: 'frozen', ySplit: 4 }];
 
-    // Nombre de archivo
     const safeName = String(usuario.nombre || 'usuario').replace(/[^\w\s-]/g, '').replace(/\s+/g, '_');
-    const ymd = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const ymd = new Date().toISOString().slice(0, 10);
     const filename = `reportes_${safeName}_${ymd}.xlsx`;
 
-    // Enviar descarga
-    res.setHeader('Content-Type',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     await wb.xlsx.write(res);
     res.end();
@@ -490,6 +353,5 @@ router.get('/reportes/export', requireAuth, async (req, res) => {
     res.status(500).send('No se pudo generar el Excel.');
   }
 });
-
 
 module.exports = router;

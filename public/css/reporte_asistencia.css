@@ -1,0 +1,104 @@
+/* ==========================================================================
+   ESTILOS PARA EL MÓDULO DE ASISTENCIA Y REPORTES
+   ========================================================================== */
+
+:root {
+  --primary-color: #0d6efd;
+  --secondary-color: #0b1f3a;
+  --success-color: #198754;
+  --success-dark: #146c43;
+  --bg-card: #ffffff;
+  --border-color: #e2e8f0;
+  --text-primary: #1e293b;
+  --text-muted: #64748b;
+  --radius-md: 10px;
+  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
+body {
+  background-color: #f8fafc;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--text-primary);
+}
+
+.asistencia-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+/* --- TARJETA DE RESUMEN ACUMULADO --- */
+.card-summary {
+  background: linear-gradient(135deg, var(--success-color), var(--success-dark));
+  color: #ffffff;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-summary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.tracking-wide {
+  letter-spacing: 0.05em;
+}
+
+/* --- BADGES PERSONALIZADOS --- */
+.badge-biometrico {
+  background-color: #0dcaf0;
+  color: #000000;
+  font-weight: 600;
+  padding: 0.3em 0.5em;
+  border-radius: 6px;
+  vertical-align: middle;
+}
+
+/* --- CONTENEDORES Y TARJETAS GENERICAS --- */
+.custom-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.custom-card-header {
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--border-color);
+  padding: 1rem 1.25rem;
+  border-top-left-radius: var(--radius-md);
+  border-top-right-radius: var(--radius-md);
+}
+
+/* --- ESTILOS DE TABLA --- */
+.table-responsive {
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  overflow: hidden;
+}
+
+.custom-table-asistencia {
+  margin-bottom: 0;
+}
+
+.custom-table-asistencia thead {
+  background-color: #f1f5f9;
+  color: var(--text-primary);
+}
+
+.custom-table-asistencia th {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  padding: 0.85rem 1rem;
+}
+
+.custom-table-asistencia td {
+  padding: 0.85rem 1rem;
+  font-size: 0.95rem;
+}
+
+.custom-table-asistencia tbody tr:hover {
+  background-color: #f8fafc;
+}

@@ -2,20 +2,18 @@ const express = require('express');
 const router = express.Router();
 
 const db = require('../config/bd.js');
-
 // ===============================
 // MOSTRAR HORARIO
 // ===============================
 router.get('/usuario/horario', async (req, res) => {
-
     try {
-
         if (!req.session.user) {
             return res.redirect('/login');
         }
 
-        const id_usuario = req.session.user.id_usuario;
+        const id_usuario = req.session.user.id_usuario || req.session.user.id || req.session.user.id_user;
 
+        // 1. Obtener los horarios asignados
         const [horarios] = await db.query(`
             SELECT
                 id_horario,
@@ -29,100 +27,87 @@ router.get('/usuario/horario', async (req, res) => {
             ORDER BY dia_semana
         `, [id_usuario]);
 
+        // 2. Obtener el total de horas acumuladas
+        const [resultadoHoras] = await db.query(`
+            SELECT COALESCE(SUM(TIMESTAMPDIFF(HOUR, hora_entrada, hora_salida)), 0) AS total_horas
+            FROM asistencias
+            WHERE id_usuario = ?
+        `, [id_usuario]);
+
+        const totalHorasSistema = resultadoHoras[0]?.total_horas || 0;
+
         res.render('usuario/horario', {
             user: req.session.user,
-            horarios
+            horarios,
+            totalHorasSistema
         });
 
     } catch (error) {
-
         console.error('Error cargando horario:', error);
-
         res.status(500).send('Error al cargar el horario');
     }
 });
 
-
-// ===============================
-// GUARDAR HORARIO
+// GUARDAR HORARIO (DÍAS MÚLTIPLES)
 // ===============================
 router.post('/usuario/horario', async (req, res) => {
-
     try {
-
         if (!req.session.user) {
             return res.redirect('/login');
         }
 
-        const id_usuario = req.session.user.id_usuario;
+        console.log('--- OBJETO SESIÓN USUARIO ---', req.session.user);
 
-        const {
-            dia_semana,
-            hora_entrada,
-            hora_salida,
-            horas
-        } = req.body;
+        // Extraer el ID asegurando compatibilidad con distintas nomenclaturas (id_usuario, id, id_user)
+        const id_usuario = req.session.user.id_usuario || req.session.user.id || req.session.user.id_user;
 
-        if (
-            !dia_semana ||
-            !hora_entrada ||
-            !hora_salida ||
-            !horas
-        ) {
-            return res.status(400).send('Datos incompletos');
+        if (!id_usuario) {
+            return res.status(401).send('Error de autenticación: No se encontró la clave de identificación del usuario en la sesión.');
         }
 
-        // Validar duración permitida
-        const horasPermitidas = [4, 6, 8];
-
-        if (!horasPermitidas.includes(Number(horas))) {
-            return res.status(400).send('Duración no válida');
-        }
-
-        // Calcular diferencia
-        const inicio = new Date(`1970-01-01T${hora_entrada}:00`);
-        const fin = new Date(`1970-01-01T${hora_salida}:00`);
-
-        const diferencia =
-            (fin - inicio) / (1000 * 60 * 60);
-
-        if (diferencia !== Number(horas)) {
-            return res.status(400).send(
-                'La hora de salida no coincide con la duración seleccionada'
-            );
-        }
-
-        // Insertar o actualizar
-        await db.query(`
-            INSERT INTO horarios
-            (
-                id_usuario,
-                dia_semana,
-                hora_entrada,
-                hora_salida,
-                estado
-            )
-            VALUES (?, ?, ?, ?, 'ACTIVO')
-            ON DUPLICATE KEY UPDATE
-                hora_entrada = VALUES(hora_entrada),
-                hora_salida = VALUES(hora_salida),
-                estado = 'ACTIVO',
-                actualizado_en = CURRENT_TIMESTAMP
-        `, [
-            id_usuario,
-            dia_semana,
+        let {
+            dias_semana,
             hora_entrada,
             hora_salida
-        ]);
+        } = req.body;
+
+        if (!dias_semana || !hora_entrada || !hora_salida) {
+            return res.status(400).send('Datos incompletos.');
+        }
+
+        if (!Array.isArray(dias_semana)) {
+            dias_semana = [dias_semana];
+        }
+
+        for (const dia of dias_semana) {
+            await db.query(`
+                INSERT INTO horarios
+                (
+                    id_usuario,
+                    dia_semana,
+                    hora_entrada,
+                    hora_salida,
+                    estado
+                )
+                VALUES (?, ?, ?, ?, 'ACTIVO')
+                ON DUPLICATE KEY UPDATE
+                    hora_entrada = VALUES(hora_entrada),
+                    hora_salida = VALUES(hora_salida),
+                    estado = 'ACTIVO',
+                    actualizado_en = CURRENT_TIMESTAMP
+            `, [
+                id_usuario,
+                dia,
+                hora_entrada,
+                hora_salida
+            ]);
+        }
 
         res.redirect('/usuario/horario');
 
     } catch (error) {
-
         console.error('Error guardando horario:', error);
-
-        res.status(500).send('Error al guardar horario');
+        res.status(500).send('Error al guardar el horario');
     }
 });
-
 module.exports = router;
