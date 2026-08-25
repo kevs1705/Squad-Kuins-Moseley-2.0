@@ -10,16 +10,18 @@
   <style>
     body {
       margin: 0;
-      background: #eef2f8;
+      background: #f8fafc;
       overflow-x: hidden;
       min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: #0f172a;
     }
 
     .dashboard-shell {
       display: flex;
       min-height: 100vh;
-      background: #0b1628;
-      color: #f5f7fb;
+      background: #f8fafc;
+      color: #0f172a;
       width: 100%;
     }
 
@@ -67,6 +69,7 @@
       font-size: 18px;
       font-weight: 700;
       letter-spacing: 0.3px;
+      color: #ffffff;
     }
 
     .sidebar nav {
@@ -121,6 +124,7 @@
       min-height: 100vh;
       overflow: auto;
       transition: padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      background-color: #f8fafc;
     }
 
     .sidebar.collapsed~.content {
@@ -135,11 +139,16 @@
       gap: 14px;
     }
 
+    .content-header h1 {
+      color: #0f172a !important;
+      font-weight: 800 !important;
+    }
+
     /* Botón toggle del sidebar */
     .sidebar-toggle {
-      background: rgba(15, 28, 48, 0.8);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      color: #f5f7fb;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      color: #0b6bcb;
       padding: 10px;
       border-radius: 10px;
       cursor: pointer;
@@ -147,16 +156,15 @@
       align-items: center;
       justify-content: center;
       transition: all 0.2s ease;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      backdrop-filter: blur(8px);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
       margin-right: 14px;
     }
 
     .sidebar-toggle:hover {
-      background: rgba(39, 154, 228, 0.2);
-      border-color: rgba(39, 154, 228, 0.4);
+      background: #f1f5f9;
+      border-color: #cbd5e1;
       transform: scale(1.05);
-      color: #399ae4;
+      color: #0855a3;
     }
 
     .sidebar-toggle:active {
@@ -164,7 +172,7 @@
     }
 
     .muted {
-      color: #9fb1c8;
+      color: #64748b;
     }
 
     /* ===== Tarjetas de selección de asistencia ===== */
@@ -179,25 +187,26 @@
     }
 
     .asistencia-section h2 {
-      font-size: 1.4rem;
-      font-weight: 700;
-      color: #e8ecf5;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #0f172a;
       margin: 0 0 4px;
     }
 
     .asistencia-section .asistencia-subtitle {
-      color: #8a9bb8;
-      font-size: 0.95rem;
-      margin: 0 0 24px;
+      color: #64748b;
+      font-size: 0.98rem;
+      font-weight: 500;
+      margin: 0 0 28px;
       text-align: center;
     }
 
     .asistencia-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 24px;
+      gap: 28px;
       width: 100%;
-      max-width: 700px;
+      max-width: 720px;
     }
 
     .asistencia-card {
@@ -206,11 +215,13 @@
       flex-direction: column;
       align-items: center;
       gap: 18px;
-      padding: 40px 28px 36px;
-      border-radius: 18px;
+      padding: 42px 30px 38px;
+      border-radius: 20px;
       text-decoration: none;
-      color: #f5f7fb;
-      border: 1px solid rgba(255, 255, 255, 0.06);
+      color: #0f172a;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 10px 30px rgba(11, 60, 93, 0.06);
       cursor: pointer;
       transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
                   box-shadow 0.25s,
@@ -218,70 +229,47 @@
       overflow: hidden;
     }
 
-    .asistencia-card::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: 18px;
-      opacity: 0;
-      transition: opacity 0.3s;
-    }
-
     .asistencia-card:hover {
-      transform: translateY(-6px) scale(1.02);
-      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3);
-    }
-
-    .asistencia-card:hover::before {
-      opacity: 1;
+      transform: translateY(-6px);
+      box-shadow: 0 20px 40px rgba(11, 60, 93, 0.12);
     }
 
     .asistencia-card:active {
-      transform: translateY(-2px) scale(0.99);
+      transform: translateY(-2px);
     }
 
-    /* --- Card Biométrico (azul) --- */
+    /* --- Card Biométrico --- */
     .card-biometrico {
-      background: linear-gradient(145deg, rgba(39, 100, 228, 0.12), rgba(39, 154, 228, 0.06));
-      border-color: rgba(39, 154, 228, 0.15);
+      border-color: #e2e8f0;
     }
 
     .card-biometrico:hover {
-      border-color: rgba(39, 154, 228, 0.4);
-    }
-
-    .card-biometrico::before {
-      background: radial-gradient(circle at 50% 0%, rgba(39, 154, 228, 0.15), transparent 70%);
+      border-color: #0b6bcb;
     }
 
     .card-biometrico .card-icon-circle {
-      background: linear-gradient(135deg, #1d6fd1, #399ae4);
-      box-shadow: 0 8px 24px rgba(39, 154, 228, 0.35);
+      background: linear-gradient(135deg, #0b6bcb, #0284c7);
+      box-shadow: 0 8px 24px rgba(11, 107, 203, 0.25);
     }
 
-    /* --- Card Geocerca (verde) --- */
+    /* --- Card Geocerca --- */
     .card-geocerca {
-      background: linear-gradient(145deg, rgba(34, 197, 94, 0.12), rgba(34, 197, 94, 0.06));
-      border-color: rgba(34, 197, 94, 0.15);
+      border-color: #e2e8f0;
     }
 
     .card-geocerca:hover {
-      border-color: rgba(34, 197, 94, 0.4);
-    }
-
-    .card-geocerca::before {
-      background: radial-gradient(circle at 50% 0%, rgba(34, 197, 94, 0.15), transparent 70%);
+      border-color: #10b981;
     }
 
     .card-geocerca .card-icon-circle {
-      background: linear-gradient(135deg, #16a34a, #22c55e);
-      box-shadow: 0 8px 24px rgba(34, 197, 94, 0.35);
+      background: linear-gradient(135deg, #10b981, #059669);
+      box-shadow: 0 8px 24px rgba(16, 185, 129, 0.25);
     }
 
     /* --- Ícono circular --- */
     .card-icon-circle {
-      width: 72px;
-      height: 72px;
+      width: 76px;
+      height: 76px;
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -291,13 +279,13 @@
     }
 
     .asistencia-card:hover .card-icon-circle {
-      transform: scale(1.1);
+      transform: scale(1.08);
     }
 
     .card-icon-circle svg {
-      width: 34px;
-      height: 34px;
-      stroke: #fff;
+      width: 36px;
+      height: 36px;
+      stroke: #ffffff;
       fill: none;
       stroke-width: 2;
       stroke-linecap: round;
@@ -305,39 +293,41 @@
     }
 
     .card-title {
-      font-size: 1.15rem;
-      font-weight: 700;
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #0b3c5d;
       letter-spacing: 0.2px;
     }
 
     .card-desc {
-      font-size: 0.88rem;
-      color: #8a9bb8;
+      font-size: 0.9rem;
+      color: #475569;
       text-align: center;
       line-height: 1.5;
       margin: 0;
+      font-weight: 500;
     }
 
     .card-badge {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 6px 14px;
+      padding: 6px 16px;
       border-radius: 20px;
-      font-size: 0.78rem;
-      font-weight: 600;
+      font-size: 0.82rem;
+      font-weight: 700;
       letter-spacing: 0.3px;
-      margin-top: 4px;
+      margin-top: 6px;
     }
 
     .card-biometrico .card-badge {
-      background: rgba(39, 154, 228, 0.15);
-      color: #7dc4f5;
+      background: #e0f2fe;
+      color: #0369a1;
     }
 
     .card-geocerca .card-badge {
-      background: rgba(34, 197, 94, 0.15);
-      color: #6ee7a0;
+      background: #dcfce7;
+      color: #15803d;
     }
 
     /* Responsividad */

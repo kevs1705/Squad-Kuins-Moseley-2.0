@@ -3,316 +3,292 @@
   pageSubtitle = 'Resumen de asistencias, actividades y solicitudes de horas extras';
 %>
 <%- include('../partials/header') %>
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mi Reporte de Asistencia y Bitácora</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-  <style>
-    .card-summary { background: linear-gradient(135deg, #0d6efd, #0a58ca); color: white; }
-    .badge-biometrico { background-color: #0dcaf0; color: #000; }
-  </style>
-</head>
-<body class="bg-light">
 
-  <div class="container py-4">
-    <!-- Encabezado y Datos del Usuario -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <div>
-        <h2 class="fw-bold mb-1">Mi Reporte de Jornadas</h2>
-        <p class="text-muted mb-0">Usuario: <strong><%= user.nombre %></strong> | CI: <%= user.ci %></p>
+<!-- Hoja de estilos independiente para Reportes -->
+<link rel="stylesheet" href="/css/reporte.css">
+
+<div class="reporte-wrapper py-3">
+
+  <!-- Encabezado, Resumen de Horas y Acciones -->
+  <div class="reporte-header-row">
+    <div>
+      <h2 class="reporte-header-title">Mi Reporte de Jornadas</h2>
+      <p class="reporte-header-user">
+        <i class="bi bi-person me-1"></i>Usuario: <strong><%= user.nombre %></strong> | CI: <%= user.ci %>
+      </p>
+    </div>
+    
+    <div class="reporte-header-right">
+      <!-- Ficha compacta de Horas Totales Acumuladas -->
+      <div class="card-horas-compact">
+        <div class="horas-compact-info">
+          <span class="horas-compact-label">Horas totales acumuladas</span>
+          <span class="horas-compact-val"><%= total_acumulada %> <small>hrs</small></span>
+        </div>
       </div>
-      <div>
-        <a href="/reportes/export" class="btn btn-success me-2">
-          <i class="bi bi-file-earmark-excel"></i> Exportar a Excel
+
+      <div class="reporte-actions-group">
+        <a href="/reportes/export" class="btn-excel-custom">
+          <i class="bi bi-file-earmark-excel me-1"></i> Exportar a Excel
         </a>
         <!-- Botón que activa la alerta interactiva de módulo en desarrollo -->
-        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#modalEnProceso">
-          <i class="bi bi-clock-history"></i> Solicitar Horas Extra
+        <button type="button" class="btn-horas-extra-custom" data-bs-toggle="modal" data-bs-target="#modalEnProceso">
+          <i class="bi bi-clock-history me-1"></i> Solicitar Horas Extra
         </button>
       </div>
     </div>
+  </div>
 
-    <!-- Resumen de Horas Acumuladas -->
-    <div class="row mb-4">
-      <div class="col-md-4">
-        <div class="card card-summary shadow-sm border-0">
-          <div class="card-body">
-            <h6 class="text-uppercase tracking-wide opacity-75">Total Horas Acumuladas</h6>
-            <h2 class="display-6 fw-bold mb-0"><%= total_acumulada %> hrs</h2>
-          </div>
+  <!-- Tabla de Jornadas (Asistencia + Bitácora) -->
+  <div class="card-historial-reporte">
+    <h5 class="historial-reporte-title">
+      <i class="bi bi-journal-text me-2 text-primary"></i>Historial de Asistencias y Bitácora
+    </h5>
+
+    <!-- Fila de Filtros / Controles (Primero Fecha, Segundo Búsqueda) -->
+    <div class="reporte-controls-row">
+      <div class="filter-field-group filter-date-box">
+        <label for="reporteDateFilter" class="filter-field-label">Filtrar por fecha:</label>
+        <div class="input-icon-wrapper">
+          <i class="bi bi-calendar3"></i>
+          <input type="date" id="reporteDateFilter" class="form-control" title="Filtrar por fecha">
+        </div>
+      </div>
+      <div class="filter-field-group search-input-box">
+        <label for="reporteSearch" class="filter-field-label">Búsqueda:</label>
+        <div class="input-icon-wrapper">
+          <i class="bi bi-search"></i>
+          <input type="text" id="reporteSearch" class="form-control" placeholder="Buscar por obra / lugar / tarea...">
         </div>
       </div>
     </div>
 
-    <!-- Tabla de Jornadas (Asistencia + Bitácora) -->
-    <div class="card shadow-sm border-0 mb-4">
-      <div class="card-header bg-white py-3">
-        <h5 class="card-title mb-0 fw-bold"><i class="bi bi-journal-text me-2"></i>Historial de Asistencias y Bitácora</h5>
-      </div>
-      <div class="card-body p-0">
-        <div class="table-responsive">
-          <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
+    <div class="table-reporte-wrapper">
+      <table class="table table-reporte align-middle">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Lugar / Obra</th>
+            <th>Entrada</th>
+            <th>Salida</th>
+            <th>Horas Turno</th>
+            <th>Tarea / Bitácora</th>
+            <th>Comprobante</th>
+            <th class="text-center">Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (jornadas && jornadas.length > 0) { %>
+            <% jornadas.forEach(j => { %>
               <tr>
-                <th>Fecha</th>
-                <th>Lugar / Obra</th>
-                <th>Entrada</th>
-                <th>Salida</th>
-                <th>Horas Turno</th>
-                <th>Tarea / Bitácora</th>
-                <th>Comprobante</th>
-                <th class="text-center">Acción</th>
+                <td><i class="bi bi-calendar2-event me-2 text-primary"></i><strong><%= j.fecha %></strong></td>
+                
+                <td>
+                  <strong style="color: #1e293b;"><%= j.lugar_nombre || 'N/A' %></strong>
+                  <% if(j.lugar_tipo) { %>
+                    <br><small class="text-muted">(<%= j.lugar_tipo %>)</small>
+                  <% } %>
+                </td>
+
+                <!-- HORA ENTRADA (Muestra manual y/o biométrico) -->
+                <td>
+                  <%= j.hora_entrada || '-' %>
+                  <% if(j.bio_entrada) { %>
+                    <br>
+                    <span class="badge-bio-info" title="Biométrico Entrada">
+                      <i class="bi bi-fingerprint"></i> <%= j.bio_entrada %>
+                    </span>
+                  <% } %>
+                </td>
+
+                <!-- HORA SALIDA (Muestra manual y/o biométrico) -->
+                <td>
+                  <%= j.hora_salida || '-' %>
+                  <% if(j.bio_salida) { %>
+                    <br>
+                    <span class="badge-bio-info" title="Biométrico Salida">
+                      <i class="bi bi-fingerprint"></i> <%= j.bio_salida %>
+                    </span>
+                  <% } %>
+                </td>
+
+                <!-- HORAS TRANSCURRIDAS POR FECHA -->
+                <td>
+                  <% if (j.horas_dia === 'En curso') { %>
+                    <span class="badge-turno-curso">
+                      <i class="bi bi-clock-history"></i> En curso
+                    </span>
+                  <% } else { %>
+                    <span class="badge-turno-finalizado">
+                      <i class="bi bi-stopwatch"></i> <%= j.horas_dia %>
+                    </span>
+                  <% } %>
+                </td>
+
+                <td>
+                  <% if(j.tarea) { %>
+                    <%= j.tarea %>
+                  <% } else { %>
+                    <span class="text-muted fs-7"><em>Sin bitácora registrada</em></span>
+                  <% } %>
+                  <% if(j.observacion) { %>
+                    <br><small class="text-danger">Obs: <%= j.observacion %></small>
+                  <% } %>
+                </td>
+
+                <td>
+                  <% if(j.comprobante) { %>
+                    <a href="<%= j.comprobante %>" target="_blank" class="btn-comprobante-ver">
+                      <i class="bi bi-image"></i> Ver
+                    </a>
+                  <% } else { %>
+                    <span class="text-muted">-</span>
+                  <% } %>
+                </td>
+
+                <td class="text-center">
+                  <button class="btn-reporte-action btn-reporte" 
+                          data-asistencia="<%= j.id_asistencia %>"
+                          data-tarea="<%= j.tarea || '' %>">
+                    <i class="bi bi-pencil-square me-1"></i> <%= j.tarea ? 'Editar' : 'Registrar' %>
+                  </button>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              <% if (jornadas && jornadas.length > 0) { %>
-                <% jornadas.forEach(j => { %>
-                  <tr>
-                    <td><strong><%= j.fecha %></strong></td>
-                    
-                    <td>
-                      <%= j.lugar_nombre || 'N/A' %>
-                      <% if(j.lugar_tipo) { %>
-                        <br><small class="text-muted">(<%= j.lugar_tipo %>)</small>
-                      <% } %>
-                    </td>
-
-                    <!-- HORA ENTRADA (Muestra manual y/o biométrico) -->
-                    <td>
-                      <%= j.hora_entrada || '-' %>
-                      <% if(j.bio_entrada) { %>
-                        <br>
-                        <span class="badge bg-info text-dark" title="Biométrico Entrada">
-                          <i class="bi bi-fingerprint"></i> <%= j.bio_entrada %>
-                        </span>
-                      <% } %>
-                    </td>
-
-                    <!-- HORA SALIDA (Muestra manual y/o biométrico) -->
-                    <td>
-                      <%= j.hora_salida || '-' %>
-                      <% if(j.bio_salida) { %>
-                        <br>
-                        <span class="badge bg-info text-dark" title="Biométrico Salida">
-                          <i class="bi bi-fingerprint"></i> <%= j.bio_salida %>
-                        </span>
-                      <% } %>
-                    </td>
-
-                    <!-- HORAS TRANSCURRIDAS POR FECHA -->
-                    <td>
-                      <% if (j.horas_dia === 'En curso') { %>
-                        <span class="badge bg-warning text-dark">
-                          <i class="bi bi-clock-history"></i> En curso
-                        </span>
-                      <% } else { %>
-                        <span class="badge bg-primary">
-                          <i class="bi bi-stopwatch"></i> <%= j.horas_dia %>
-                        </span>
-                      <% } %>
-                    </td>
-
-                    <td>
-                      <% if(j.tarea) { %>
-                        <%= j.tarea %>
-                      <% } else { %>
-                        <span class="text-muted fs-7"><em>Sin bitácora registrada</em></span>
-                      <% } %>
-                      <% if(j.observacion) { %>
-                        <br><small class="text-danger">Obs: <%= j.observacion %></small>
-                      <% } %>
-                    </td>
-
-                    <td>
-                      <% if(j.comprobante) { %>
-                        <a href="<%= j.comprobante %>" target="_blank" class="btn btn-sm btn-outline-info">
-                          <i class="bi bi-image"></i> Ver
-                        </a>
-                      <% } else { %>
-                        <span class="text-muted">-</span>
-                      <% } %>
-                    </td>
-
-                    <td class="text-center">
-                      <button class="btn btn-sm btn-primary btn-reporte" 
-                              data-asistencia="<%= j.id_asistencia %>"
-                              data-tarea="<%= j.tarea || '' %>">
-                        <i class="bi bi-pencil-square"></i> <%= j.tarea ? 'Editar' : 'Registrar' %>
-                      </button>
-                    </td>
-                  </tr>
-                <% }); %>
-              <% } else { %>
-                <tr>
-                  <td colspan="8" class="text-center py-4 text-muted">No se encontraron registros de jornadas.</td>
-                </tr>
-              <% } %>
-            </tbody>
-          </table>
-        </div>
-      </div>
+            <% }); %>
+          <% } else { %>
+            <tr>
+              <td colspan="8" class="text-center py-4 text-muted fw-semibold">No se encontraron registros de jornadas.</td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
     </div>
   </div>
 
-  <!-- MODAL INTERACTIVO: MÓDULO EN PROCESO -->
-  <div class="modal fade" id="modalEnProceso" tabindex="-1" aria-labelledby="modalEnProcesoLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content text-center p-3">
-        <div class="modal-body py-4">
+</div>
+
+<!-- MODAL INTERACTIVO: MÓDULO EN PROCESO -->
+<div class="modal fade" id="modalEnProceso" tabindex="-1" aria-labelledby="modalEnProcesoLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content text-center p-3">
+      <div class="modal-header border-0 pb-0 justify-content-end">
+        <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Cerrar">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      <div class="modal-body py-3">
+        <div class="mb-3">
+          <i class="bi bi-cone-stripes text-warning display-3"></i>
+        </div>
+        <h4 class="fw-bold mb-2">Módulo en Desarrollo</h4>
+        <p class="text-muted mb-0">
+          La funcionalidad para <strong>Solicitar Horas Extra</strong> se encuentra actualmente en proceso de construcción y estará disponible próximamente.
+        </p>
+      </div>
+      <div class="modal-footer justify-content-center border-0 pt-0">
+        <button type="button" class="btn btn-secondary px-4 rounded-3" data-bs-dismiss="modal">Entendido</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: REGISTRAR / EDITAR BITÁCORA -->
+<div class="modal fade" id="modalReporte" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="formReporte" enctype="multipart/form-data">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold">Bitácora de Trabajo</h5>
+          <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Cerrar">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="id_asistencia" id="modal_id_asistencia">
           <div class="mb-3">
-            <i class="bi bi-cone-stripes text-warning display-3"></i>
+            <label class="form-label fw-semibold">Descripción de la Tarea / Avance</label>
+            <textarea class="form-control" name="tarea" id="modal_tarea" rows="4" required placeholder="Describe las actividades realizadas en la jornada..."></textarea>
           </div>
-          <h4 class="fw-bold mb-2">Módulo en Desarrollo</h4>
-          <p class="text-muted mb-0">
-            La funcionalidad para <strong>Solicitar Horas Extra</strong> se encuentra actualmente en proceso de construcción y estará disponible próximamente.
-          </p>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Adjuntar Comprobante (PNG / JPG)</label>
+            <input type="file" class="form-control" name="comprobante" accept="image/png, image/jpeg">
+          </div>
         </div>
-        <div class="modal-footer justify-content-center border-0 pt-0">
-          <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Entendido</button>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary" style="background-color: #0b6bcb; border-color: #0b6bcb;">Guardar Bitácora</button>
         </div>
-      </div>
+      </form>
     </div>
   </div>
+</div>
 
-  <!-- MODAL: REGISTRAR / EDITAR BITÁCORA -->
-  <div class="modal fade" id="modalReporte" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <form id="formReporte" enctype="multipart/form-data">
-          <div class="modal-header">
-            <h5 class="modal-title fw-bold">Bitácora de Trabajo</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <input type="hidden" name="id_asistencia" id="modal_id_asistencia">
-            <div class="mb-3">
-              <label class="form-label fw-semibold">Descripción de la Tarea / Avance</label>
-              <textarea class="form-control" name="tarea" id="modal_tarea" rows="4" required placeholder="Describe las actividades realizadas en la jornada..."></textarea>
-            </div>
-            <div class="mb-3">
-              <label class="form-label fw-semibold">Adjuntar Comprobante (PNG / JPG)</label>
-              <input type="file" class="form-control" name="comprobante" accept="image/png, image/jpeg">
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-primary">Guardar Bitácora</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  const modalReporte = new bootstrap.Modal(document.getElementById('modalReporte'));
 
-  <!-- MODAL: SOLICITAR HORAS EXTRA (DESHABILITADO / GUARDADO PARA MÁS ADELANTE) -->
-  <!--
-  <div class="modal fade" id="modalHorasExtra" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <form id="formHorasExtra">
-          
-          <div class="modal-header">
-            <h5 class="modal-title fw-bold">Solicitud de Horas Extra</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <div class="mb-3">
-              <label class="form-label fw-semibold">Fecha Solicitada</label>
-              <input type="date" class="form-control" name="fecha_solicitada" required>
-            </div>
-            <div class="row">
-              <div class="col-6 mb-3">
-                <label class="form-label fw-semibold">Hora Inicio</label>
-                <input type="time" class="form-control" name="hora_inicio" required>
-              </div>
-              <div class="col-6 mb-3">
-                <label class="form-label fw-semibold">Hora Fin</label>
-                <input type="time" class="form-control" name="hora_fin" required>
-              </div>
-            </div>
-            <div class="mb-3">
-              <label class="form-label fw-semibold">Motivo de la solicitud</label>
-              <textarea class="form-control" name="motivo" rows="3" required placeholder="Indica la razón del trabajo fuera de horario..."></textarea>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-warning">Enviar Solicitud</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-  -->
+  // Abrir Modal de Bitácora con datos de la asistencia seleccionada
+  document.querySelectorAll('.btn-reporte').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById('modal_id_asistencia').value = btn.dataset.asistencia;
+      document.getElementById('modal_tarea').value = btn.dataset.tarea;
+      modalReporte.show();
+    });
+  });
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
-    const modalReporte = new bootstrap.Modal(document.getElementById('modalReporte'));
+  // Enviar Guardado de Bitácora
+  document.getElementById('formReporte').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
 
-    // Abrir Modal de Bitácora con datos de la asistencia seleccionada
-    document.querySelectorAll('.btn-reporte').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.getElementById('modal_id_asistencia').value = btn.dataset.asistencia;
-        document.getElementById('modal_tarea').value = btn.dataset.tarea;
-        modalReporte.show();
+    try {
+      const res = await fetch('/reportes/guardar', {
+        method: 'POST',
+        body: formData
       });
-    });
-
-    // Enviar Guardado de Bitácora
-    document.getElementById('formReporte').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const formData = new FormData(e.target);
-
-      try {
-        const res = await fetch('/reportes/guardar', {
-          method: 'POST',
-          body: formData
-        });
-        const data = await res.json();
-        
-        if (data.ok) {
-          location.reload();
-        } else {
-          alert(data.error || 'Error al guardar la bitácora');
-        }
-      } catch (err) {
-        alert('Error de conexión al servidor.');
+      const data = await res.json();
+      
+      if (data.ok) {
+        location.reload();
+      } else {
+        alert(data.error || 'Error al guardar la bitácora');
       }
-    });
+    } catch (err) {
+      alert('Error de conexión al servidor.');
+    }
+  });
 
-    /* 
-    ===============================================================
-    ENVÍO DE SOLICITUD DE HORAS EXTRA (TEMPORALMENTE DESHABILITADO)
-    ===============================================================
-    document.getElementById('formHorasExtra').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const formData = new FormData(e.target);
-      const payload = Object.fromEntries(formData.entries());
+  // Filtrado dinámico en la tabla de reportes
+  document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('reporteSearch');
+    const dateInput = document.getElementById('reporteDateFilter');
+    const tableRows = document.querySelectorAll('.table-reporte tbody tr');
 
-      try {
-        const res = await fetch('/api/notificaciones', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
+    function filterReporteTable() {
+      const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+      const dateTerm = dateInput ? dateInput.value : '';
 
-        if (data.ok) {
-          alert(data.msg);
-          location.reload();
+      tableRows.forEach(row => {
+        if (row.children.length <= 1) return;
+
+        const fechaText = row.cells[0] ? row.cells[0].textContent.trim() : '';
+        const obraText = row.cells[1] ? row.cells[1].textContent.toLowerCase() : '';
+        const tareaText = row.cells[5] ? row.cells[5].textContent.toLowerCase() : '';
+
+        const matchesSearch = !searchTerm || obraText.includes(searchTerm) || fechaText.toLowerCase().includes(searchTerm) || tareaText.includes(searchTerm);
+        const matchesDate = !dateTerm || fechaText.includes(dateTerm);
+
+        if (matchesSearch && matchesDate) {
+          row.style.display = '';
         } else {
-          alert(data.msg || 'Error al procesar la solicitud');
+          row.style.display = 'none';
         }
-      } catch (err) {
-        alert('Error conectando con el servidor.');
-      }
-    });
-    */
-  </script>
-</body>
-</html>
+      });
+    }
+
+    if (searchInput) searchInput.addEventListener('input', filterReporteTable);
+    if (dateInput) dateInput.addEventListener('change', filterReporteTable);
+  });
+</script>
 
 <%- include('../partials/footer') %>

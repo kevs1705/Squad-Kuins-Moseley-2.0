@@ -1,104 +1,493 @@
 /* ==========================================================================
-   ESTILOS PARA EL MÓDULO DE ASISTENCIA Y REPORTES
+   ESTILOS EXCLUSIVOS Y BLINDADOS PARA EL MÓDULO MIS JORNADAS
    ========================================================================== */
 
-:root {
-  --primary-color: #0d6efd;
-  --secondary-color: #0b1f3a;
-  --success-color: #198754;
-  --success-dark: #146c43;
-  --bg-card: #ffffff;
-  --border-color: #e2e8f0;
-  --text-primary: #1e293b;
-  --text-muted: #64748b;
-  --radius-md: 10px;
-  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-}
-
-body {
-  background-color: #f8fafc;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: var(--text-primary);
-}
-
 .asistencia-wrapper {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1.5rem;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 auto !important;
+  padding: 1.5rem 2rem !important;
+  box-sizing: border-box !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+  color: #1e293b !important;
 }
 
-/* --- TARJETA DE RESUMEN ACUMULADO --- */
-.card-summary {
-  background: linear-gradient(135deg, var(--success-color), var(--success-dark));
-  color: #ffffff;
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+/* Header del módulo */
+.asistencia-header-row {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-bottom: 1.5rem !important;
+  flex-wrap: wrap !important;
+  gap: 1rem !important;
 }
 
-.card-summary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+.asistencia-header-title {
+  font-size: 1.75rem !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  margin-bottom: 0.25rem !important;
+  line-height: 1.2 !important;
 }
 
-.tracking-wide {
-  letter-spacing: 0.05em;
+.asistencia-header-user {
+  font-size: 0.95rem !important;
+  color: #64748b !important;
+  margin-bottom: 0 !important;
 }
 
-/* --- BADGES PERSONALIZADOS --- */
-.badge-biometrico {
-  background-color: #0dcaf0;
-  color: #000000;
-  font-weight: 600;
-  padding: 0.3em 0.5em;
-  border-radius: 6px;
-  vertical-align: middle;
+.btn-bitacora-link {
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 0.5rem 1.15rem !important;
+  border-radius: 50px !important;
+  border: 1px solid #0b6bcb !important;
+  color: #0b6bcb !important;
+  background-color: #ffffff !important;
+  font-weight: 600 !important;
+  font-size: 0.88rem !important;
+  text-decoration: none !important;
+  transition: all 0.2s ease !important;
 }
 
-/* --- CONTENEDORES Y TARJETAS GENERICAS --- */
-.custom-card {
-  background: var(--bg-card);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-sm);
+.btn-bitacora-link:hover {
+  background-color: #0b6bcb !important;
+  color: #ffffff !important;
 }
 
-.custom-card-header {
-  background-color: #ffffff;
-  border-bottom: 1px solid var(--border-color);
-  padding: 1rem 1.25rem;
-  border-top-left-radius: var(--radius-md);
-  border-top-right-radius: var(--radius-md);
+/* --- FILA DE FICHAS (DISPOSICIÓN 100% ANCHO ALINEADO) --- */
+.asistencia-flex-row {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 1.5rem !important;
+  width: 100% !important;
+  margin-bottom: 1.75rem !important;
+  align-items: stretch !important;
 }
 
-/* --- ESTILOS DE TABLA --- */
-.table-responsive {
-  border-radius: 0 0 var(--radius-md) var(--radius-md);
-  overflow: hidden;
+.asistencia-col-totales {
+  flex: 1 1 340px !important;
+  min-width: 300px !important;
+  display: flex !important;
+  flex-direction: column !important;
 }
 
-.custom-table-asistencia {
-  margin-bottom: 0;
+.asistencia-col-jornada {
+  flex: 2 1 480px !important;
+  min-width: 320px !important;
+  display: flex !important;
+  flex-direction: column !important;
 }
 
-.custom-table-asistencia thead {
-  background-color: #f1f5f9;
-  color: var(--text-primary);
+/* --- TARJETA 1: HORAS TOTALES ACUMULADAS --- */
+.card-horas-totales {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  width: 100% !important;
 }
 
-.custom-table-asistencia th {
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: 600;
-  padding: 0.85rem 1rem;
+.card-horas-header {
+  background: #0b6bcb !important;
+  color: #ffffff !important;
+  padding: 0.95rem 1.5rem !important;
+  font-weight: 600 !important;
+  font-size: 0.98rem !important;
+  display: flex !important;
+  align-items: center !important;
 }
 
-.custom-table-asistencia td {
-  padding: 0.85rem 1rem;
-  font-size: 0.95rem;
+.card-horas-body {
+  padding: 2.75rem 1.75rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  flex-grow: 1 !important;
 }
 
-.custom-table-asistencia tbody tr:hover {
-  background-color: #f8fafc;
+.horas-value-text {
+  font-size: 3.15rem !important;
+  font-weight: 800 !important;
+  color: #0b6bcb !important;
+  letter-spacing: -0.5px !important;
+  margin-bottom: 0 !important;
+  line-height: 1 !important;
 }
+
+.horas-unit-text {
+  font-size: 1.5rem !important;
+  font-weight: 400 !important;
+  color: #0b6bcb !important;
+  margin-left: 0.4rem !important;
+}
+
+/* --- TARJETA 2: JORNADA DE HOY --- */
+.card-jornada-hoy {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+  padding: 1.75rem 1.75rem !important;
+  position: relative !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  height: 100% !important;
+  width: 100% !important;
+}
+
+.jornada-top-row {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: flex-start !important;
+  margin-bottom: 1rem !important;
+}
+
+.jornada-title-box {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.85rem !important;
+}
+
+.icon-calendar-circle {
+  width: 46px !important;
+  height: 46px !important;
+  border-radius: 12px !important;
+  background-color: #ebf3fe !important;
+  color: #0b6bcb !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 1.4rem !important;
+  flex-shrink: 0 !important;
+}
+
+.jornada-title-text {
+  font-size: 1.2rem !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  margin-bottom: 0.2rem !important;
+}
+
+.badge-jornada-status {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.35rem !important;
+  background-color: #f1f5f9 !important;
+  color: #64748b !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  padding: 0.25rem 0.75rem !important;
+  border-radius: 20px !important;
+}
+
+.badge-jornada-status.active {
+  background-color: #e0f2fe !important;
+  color: #0369a1 !important;
+}
+
+.jornada-watermark-icon {
+  width: 78px !important;
+  height: 78px !important;
+  border-radius: 50% !important;
+  background: radial-gradient(circle, #eaf2ff 0%, #f0f7ff 100%) !important;
+  color: #60a5fa !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 2.4rem !important;
+  opacity: 0.85 !important;
+}
+
+.jornada-gps-section {
+  margin-top: 0.5rem !important;
+}
+
+.jornada-gps-title {
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  margin-bottom: 0.35rem !important;
+}
+
+.jornada-gps-desc {
+  font-size: 0.9rem !important;
+  color: #64748b !important;
+  margin-bottom: 1.25rem !important;
+  line-height: 1.5 !important;
+}
+
+.btn-gps-action {
+  background-color: #0b6bcb !important;
+  border-color: #0b6bcb !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  font-size: 0.95rem !important;
+  padding: 0.7rem 1.35rem !important;
+  border-radius: 8px !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 2px 6px rgba(11, 107, 203, 0.25) !important;
+  text-decoration: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.btn-gps-action:hover {
+  background-color: #0855a3 !important;
+  border-color: #0855a3 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 10px rgba(11, 107, 203, 0.35) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* --- TARJETA UNIFICADA: HISTORIAL DE JORNADAS --- */
+.asistencia-wrapper .card-historial {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+  padding: 1.75rem !important;
+  width: 100% !important;
+}
+
+.historial-header-title {
+  font-size: 1.2rem !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  margin-bottom: 1.1rem !important;
+}
+
+/* Fila de Controles (Buscador y Filtro) */
+.asistencia-wrapper .historial-controls-row {
+  display: flex !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  gap: 1.5rem !important;
+  margin-bottom: 1.5rem !important;
+  flex-wrap: wrap !important;
+}
+
+.asistencia-wrapper .filter-field-group {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.65rem !important;
+}
+
+.asistencia-wrapper .filter-field-label {
+  font-size: 0.92rem !important;
+  font-weight: 700 !important;
+  color: #0b3c5d !important;
+  white-space: nowrap !important;
+  margin-bottom: 0 !important;
+}
+
+.asistencia-wrapper .input-icon-wrapper {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.asistencia-wrapper .input-icon-wrapper i {
+  position: absolute !important;
+  left: 1.1rem !important;
+  color: #0b6bcb !important;
+  font-size: 1.1rem !important;
+  pointer-events: none !important;
+  z-index: 2 !important;
+}
+
+.asistencia-wrapper .input-icon-wrapper .form-control {
+  padding-left: 2.85rem !important;
+  padding-right: 1.25rem !important;
+  border-radius: 24px !important;
+  border: 1.5px solid #cbd5e1 !important;
+  font-size: 0.93rem !important;
+  font-weight: 600 !important;
+  color: #0b3c5d !important;
+  background-color: #ffffff !important;
+  height: 44px !important;
+  box-shadow: 0 4px 14px rgba(11, 107, 203, 0.08) !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+.asistencia-wrapper .input-icon-wrapper .form-control:hover {
+  border-color: #93c5fd !important;
+  box-shadow: 0 6px 18px rgba(11, 107, 203, 0.14) !important;
+}
+
+.asistencia-wrapper .input-icon-wrapper .form-control:focus {
+  border-color: #0b6bcb !important;
+  box-shadow: 0 0 0 4px rgba(11, 107, 203, 0.18), 0 6px 18px rgba(11, 107, 203, 0.14) !important;
+  outline: none !important;
+}
+
+.asistencia-wrapper .filter-date-box .input-icon-wrapper {
+  width: 220px !important;
+}
+
+.asistencia-wrapper .search-input-box {
+  flex: 1 !important;
+  min-width: 320px !important;
+  max-width: 520px !important;
+}
+
+.asistencia-wrapper .search-input-box .input-icon-wrapper {
+  width: 100% !important;
+}
+
+/* --- TABLA DE HISTORIAL (BLANCA CON ENCABEZADO AZUL OSCURO) --- */
+.asistencia-wrapper .table-historial-wrapper {
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 10px !important;
+  overflow-x: auto !important;
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+}
+
+.asistencia-wrapper table.table-historial {
+  width: 100% !important;
+  margin-bottom: 0 !important;
+  border-collapse: collapse !important;
+  border-spacing: 0 !important;
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+}
+
+.asistencia-wrapper table.table-historial thead,
+.asistencia-wrapper table.table-historial thead tr {
+  background-color: #f0f5fc !important;
+  background: #f0f5fc !important;
+}
+
+.asistencia-wrapper table.table-historial thead th {
+  background-color: #f0f5fc !important;
+  background: #f0f5fc !important;
+  color: #0b3c5d !important; /* Azul oscuro */
+  font-size: 0.88rem !important;
+  font-weight: 700 !important;
+  padding: 0.95rem 1.1rem !important;
+  border-bottom: 2px solid #e2e8f0 !important;
+  border-top: none !important;
+  text-transform: none !important;
+  white-space: nowrap !important;
+  letter-spacing: normal !important;
+}
+
+.asistencia-wrapper table.table-historial tbody {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+}
+
+.asistencia-wrapper table.table-historial tbody tr {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.asistencia-wrapper table.table-historial tbody tr:hover {
+  background-color: #f8fafc !important;
+  background: #f8fafc !important;
+  transform: none !important;
+}
+
+.asistencia-wrapper table.table-historial tbody td {
+  padding: 0.95rem 1.1rem !important;
+  font-size: 0.9rem !important;
+  color: #334155 !important;
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  border-top: none !important;
+  border-radius: 0 !important;
+  vertical-align: middle !important;
+}
+
+.asistencia-wrapper table.table-historial tbody tr:last-child td {
+  border-bottom: none !important;
+}
+
+.obra-nombre {
+  font-weight: 700 !important;
+  color: #1e293b !important;
+}
+
+.obra-tipo {
+  font-size: 0.78rem !important;
+  color: #64748b !important;
+}
+
+.dot-indicator-cyan {
+  display: inline-block !important;
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50% !important;
+  background-color: #06b6d4 !important;
+  margin-left: 0.35rem !important;
+}
+
+.badge-estado-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.3rem !important;
+  padding: 0.3rem 0.75rem !important;
+  border-radius: 20px !important;
+  font-size: 0.82rem !important;
+  font-weight: 600 !important;
+}
+
+.badge-estado-blue {
+  background-color: #e8f1fd !important;
+  color: #0b6bcb !important;
+}
+
+.badge-estado-warning {
+  background-color: #fef3c7 !important;
+  color: #b45309 !important;
+}
+
+/* --- RESPONSIVIDAD (MÓVIL) --- */
+@media (max-width: 767.98px) {
+  .asistencia-wrapper {
+    padding: 1rem 0.75rem !important;
+  }
+  
+  .asistencia-header-title {
+    font-size: 1.4rem !important;
+  }
+
+  .asistencia-col-totales,
+  .asistencia-col-jornada {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+  }
+  
+  .horas-value-text {
+    font-size: 2.3rem !important;
+  }
+  
+  .card-horas-body {
+    padding: 1.75rem 1.25rem !important;
+  }
+
+  .btn-gps-action {
+    width: 100% !important;
+  }
+
+  .historial-controls-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .search-input-box,
+  .filter-date-box {
+    width: 100% !important;
+  }
+}
