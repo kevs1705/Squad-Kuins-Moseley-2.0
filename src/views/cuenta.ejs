@@ -151,7 +151,7 @@
   }
 
   // 2. Lista de carreras inyectada desde EJS
-  const listaCarreras = <%- JSON.stringify(typeof carreras !== 'undefined' ? carreras : []) %>;
+  const listaCarreras = "<%- JSON.stringify(typeof carreras !== 'undefined' ? carreras : []) %>";
 
   // 3. Valores iniciales del usuario
   const initial = {
