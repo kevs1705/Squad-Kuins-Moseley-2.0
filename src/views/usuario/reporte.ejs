@@ -67,68 +67,90 @@
                 <th class="text-center">Acción</th>
               </tr>
             </thead>
-            <tbody>
-              <% if (jornadas && jornadas.length > 0) { %>
-                <% jornadas.forEach(j => { %>
-                  <tr>
-                    <td><strong><%= j.fecha %></strong></td>
-                    <td>
-                      <%= j.lugar_nombre || 'N/A' %>
-                      <% if(j.lugar_tipo) { %>
-                        <br><small class="text-muted">(<%= j.lugar_tipo %>)</small>
-                      <% } %>
-                    </td>
-                    <td>
-                      <%= j.hora_entrada || '-' %>
-                      <% if(j.bio_entrada) { %>
-                        <span class="badge badge-biometrico" title="Biométrico: <%= j.bio_entrada %>"><i class="bi bi-fingerprint"></i></span>
-                      <% } %>
-                    </td>
-                    <td>
-                      <%= j.hora_salida || '-' %>
-                      <% if(j.bio_salida) { %>
-                        <span class="badge badge-biometrico" title="Biométrico: <%= j.bio_salida %>"><i class="bi bi-fingerprint"></i></span>
-                      <% } %>
-                    </td>
-                    <td>
-                      <span class="badge <%= j.horas_dia === 'En curso' ? 'bg-warning text-dark' : 'bg-secondary' %>">
-                        <%= j.horas_dia %>
-                      </span>
-                    </td>
-                    <td>
-                      <% if(j.tarea) { %>
-                        <%= j.tarea %>
-                      <% } else { %>
-                        <span class="text-muted fs-7"><em>Sin bitácora registrada</em></span>
-                      <% } %>
-                      <% if(j.observacion) { %>
-                        <br><small class="text-danger">Obs: <%= j.observacion %></small>
-                      <% } %>
-                    </td>
-                    <td>
-                      <% if(j.comprobante) { %>
-                        <a href="<%= j.comprobante %>" target="_blank" class="btn btn-sm btn-outline-info">
-                          <i class="bi bi-image"></i> Ver
-                        </a>
-                      <% } else { %>
-                        <span class="text-muted">-</span>
-                      <% } %>
-                    </td>
-                    <td class="text-center">
-                      <button class="btn btn-sm btn-primary btn-reporte" 
-                              data-asistencia="<%= j.id_asistencia %>"
-                              data-tarea="<%= j.tarea || '' %>">
-                        <i class="bi bi-pencil-square"></i> <%= j.tarea ? 'Editar' : 'Registrar' %>
-                      </button>
-                    </td>
-                  </tr>
-                <% }); %>
-              <% } else { %>
-                <tr>
-                  <td colspan="8" class="text-center py-4 text-muted">No se encontraron registros de jornadas.</td>
-                </tr>
-              <% } %>
-            </tbody>
+          <tbody>
+  <% if (jornadas && jornadas.length > 0) { %>
+    <% jornadas.forEach(j => { %>
+      <tr>
+        <td><strong><%= j.fecha %></strong></td>
+        
+        <td>
+          <%= j.lugar_nombre || 'N/A' %>
+          <% if(j.lugar_tipo) { %>
+            <br><small class="text-muted">(<%= j.lugar_tipo %>)</small>
+          <% } %>
+        </td>
+
+        <!-- HORA ENTRADA (Muestra manual y/o biométrico) -->
+        <td>
+          <%= j.hora_entrada || '-' %>
+          <% if(j.bio_entrada) { %>
+            <br>
+            <span class="badge bg-info text-dark" title="Biométrico Entrada">
+              <i class="bi bi-fingerprint"></i> <%= j.bio_entrada %>
+            </span>
+          <% } %>
+        </td>
+
+        <!-- HORA SALIDA (Muestra manual y/o biométrico) -->
+        <td>
+          <%= j.hora_salida || '-' %>
+          <% if(j.bio_salida) { %>
+            <br>
+            <span class="badge bg-info text-dark" title="Biométrico Salida">
+              <i class="bi bi-fingerprint"></i> <%= j.bio_salida %>
+            </span>
+          <% } %>
+        </td>
+
+        <!-- HORAS TRANSCURRIDAS POR FECHA -->
+        <td>
+          <% if (j.horas_dia === 'En curso') { %>
+            <span class="badge bg-warning text-dark">
+              <i class="bi bi-clock-history"></i> En curso
+            </span>
+          <% } else { %>
+            <span class="badge bg-primary">
+              <i class="bi bi-stopwatch"></i> <%= j.horas_dia %>
+            </span>
+          <% } %>
+        </td>
+
+        <td>
+          <% if(j.tarea) { %>
+            <%= j.tarea %>
+          <% } else { %>
+            <span class="text-muted fs-7"><em>Sin bitácora registrada</em></span>
+          <% } %>
+          <% if(j.observacion) { %>
+            <br><small class="text-danger">Obs: <%= j.observacion %></small>
+          <% } %>
+        </td>
+
+        <td>
+          <% if(j.comprobante) { %>
+            <a href="<%= j.comprobante %>" target="_blank" class="btn btn-sm btn-outline-info">
+              <i class="bi bi-image"></i> Ver
+            </a>
+          <% } else { %>
+            <span class="text-muted">-</span>
+          <% } %>
+        </td>
+
+        <td class="text-center">
+          <button class="btn btn-sm btn-primary btn-reporte" 
+                  data-asistencia="<%= j.id_asistencia %>"
+                  data-tarea="<%= j.tarea || '' %>">
+            <i class="bi bi-pencil-square"></i> <%= j.tarea ? 'Editar' : 'Registrar' %>
+          </button>
+        </td>
+      </tr>
+    <% }); %>
+  <% } else { %>
+    <tr>
+      <td colspan="8" class="text-center py-4 text-muted">No se encontraron registros de jornadas.</td>
+    </tr>
+  <% } %>
+</tbody>
           </table>
         </div>
       </div>

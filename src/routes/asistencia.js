@@ -22,14 +22,43 @@ router.get('/usuario/asistencia', requireAuth, async (req, res) => {
     const userDB = users[0];
 
     // 2. Horas totales acumuladas
-    const [totals] = await db.query(`
-      SELECT COALESCE(
-        SEC_TO_TIME(SUM(TIME_TO_SEC(TIMEDIFF(hora_salida, hora_entrada)))), 
-        '00:00:00'
-      ) AS total_acumulada
-      FROM asistencias
-      WHERE id_usuario = ? AND hora_salida IS NOT NULL
-    `, [userId]);
+const [totals] = await db.query(`
+  SELECT COALESCE(
+    SEC_TO_TIME(
+      SUM(
+        TIMESTAMPDIFF(
+          SECOND,
+          TIMESTAMP(
+            fecha, 
+            COALESCE(
+              NULLIF(TRIM(hora_entrada), ''), 
+              TIME(fecha_hora_biometrico_entrada)
+            )
+          ),
+          CASE 
+            WHEN hora_salida IS NOT NULL AND TRIM(hora_salida) NOT IN ('', '-') THEN 
+              TIMESTAMP(fecha, TRIM(hora_salida))
+            WHEN fecha_hora_biometrico_salida IS NOT NULL THEN 
+              fecha_hora_biometrico_salida
+            ELSE NULL
+          END
+        )
+      )
+    ), '00:00:00'
+  ) AS total_acumulada
+  FROM asistencias
+  WHERE id_usuario = ?
+    AND (
+      (hora_entrada IS NOT NULL AND TRIM(hora_entrada) NOT IN ('', '-')) OR
+      (fecha_hora_biometrico_entrada IS NOT NULL)
+    )
+    AND (
+      (hora_salida IS NOT NULL AND TRIM(hora_salida) NOT IN ('', '-')) OR
+      (fecha_hora_biometrico_salida IS NOT NULL)
+    )
+`, [userId]);
+
+   const total_acumulada = totals[0]?.total_acumulada ? String(totals[0].total_acumulada) : '00:00:00';
 
     // 3. Verificar si el usuario tiene una jornada activa hoy (entrada sin salida)
     const [jornadaActiva] = await db.query(`
@@ -67,18 +96,18 @@ router.get('/usuario/asistencia', requireAuth, async (req, res) => {
       WHERE a.id_usuario = ?
       ORDER BY a.fecha DESC, a.id_asistencia DESC
     `, [userId]);
-
-    res.render('usuario/asistencia', {
-      user: {
-        id: userDB.id_usuario,
-        nombre: userDB.nombre,
-        ci: userDB.CI,
-        rol: userDB.rol
-      },
-      total_acumulada: totals[0].total_acumulada,
-      jornadaActiva: jornadaActiva[0] || null,
-      asistencias
-    });
+// Renderizado de la vista
+res.render('usuario/asistencia', {
+  user: {
+    id: userDB.id_usuario,
+    nombre: userDB.nombre,
+    ci: userDB.CI,
+    rol: userDB.rol
+  },
+  total_acumulada, // Pasar la constante procesada directamente
+  jornadaActiva: jornadaActiva[0] || null,
+  asistencias
+});
 
   } catch (e) {
     console.error(e);

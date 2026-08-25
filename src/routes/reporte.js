@@ -47,66 +47,141 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
     const userDB = users[0];
 
     // 2. Total acumulado de horas (Calculado desde asistencias)
-    const [totals] = await db.query(`
-      SELECT COALESCE(
-        SEC_TO_TIME(SUM(TIME_TO_SEC(TIMEDIFF(hora_salida, hora_entrada)))), 
-        '00:00:00'
-      ) AS total_acumulada
-      FROM asistencias
-      WHERE id_usuario = ? AND hora_salida IS NOT NULL
-    `, [userId]);
-
-    const total_acumulada = totals[0].total_acumulada;
+  const [totals] = await db.query(`
+    SELECT COALESCE(
+      SEC_TO_TIME(
+        SUM(
+          TIMESTAMPDIFF(
+            SECOND,
+            TIMESTAMP(
+              fecha, 
+              COALESCE(
+                NULLIF(TRIM(hora_entrada), ''), 
+                TIME(fecha_hora_biometrico_entrada)
+              )
+            ),
+            CASE 
+              WHEN hora_salida IS NOT NULL AND TRIM(hora_salida) NOT IN ('', '-') THEN 
+                TIMESTAMP(fecha, TRIM(hora_salida))
+              WHEN fecha_hora_biometrico_salida IS NOT NULL THEN 
+                fecha_hora_biometrico_salida
+              ELSE NULL
+            END
+          )
+        )
+      ), '00:00:00'
+    ) AS total_acumulada
+    FROM asistencias
+    WHERE id_usuario = ?
+      AND (
+        (hora_entrada IS NOT NULL AND TRIM(hora_entrada) NOT IN ('', '-')) OR
+        (fecha_hora_biometrico_entrada IS NOT NULL)
+      )
+      AND (
+        (hora_salida IS NOT NULL AND TRIM(hora_salida) NOT IN ('', '-')) OR
+        (fecha_hora_biometrico_salida IS NOT NULL)
+      )
+  `, [userId]);
+  
+     const total_acumulada = totals[0]?.total_acumulada ? String(totals[0].total_acumulada) : '00:00:00';
+  
 
     // 3. JORNADAS UNIFICADAS: Asistencias vinculadas a Reportes por FK (id_asistencia)
-    const [jornadas] = await db.query(`
-      SELECT 
-        a.id_asistencia,
-        DATE_FORMAT(a.fecha, '%Y-%m-%d') AS fecha,
-        a.estado AS asistencia_estado,
-        l.nombre AS lugar_nombre,
-        l.tipo AS lugar_tipo,
-        
-        -- Entrada y Salida (Biométrico o Marcación Manual)
-        TIME_FORMAT(COALESCE(TIME(a.fecha_hora_biometrico_entrada), a.hora_entrada), '%H:%i') AS hora_entrada,
-        TIME_FORMAT(COALESCE(TIME(a.fecha_hora_biometrico_salida), a.hora_salida), '%H:%i') AS hora_salida,
-        
-        TIME_FORMAT(a.fecha_hora_biometrico_entrada, '%H:%i:%s') AS bio_entrada,
-        TIME_FORMAT(a.fecha_hora_biometrico_salida, '%H:%i:%s') AS bio_salida,
+   // 3. JORNADAS UNIFICADAS: Asistencias vinculadas a Reportes por FK (id_asistencia)
+const [jornadas] = await db.query(`
+  SELECT 
+    a.id_asistencia,
+    DATE_FORMAT(a.fecha, '%Y-%m-%d') AS fecha,
+    a.estado AS asistencia_estado,
+    l.nombre AS lugar_nombre,
+    l.tipo AS lugar_tipo,
+    
+    -- Hora entrada y salida manual
+    TIME_FORMAT(a.hora_entrada, '%H:%i') AS hora_entrada_f,
+    TIME_FORMAT(a.hora_salida, '%H:%i') AS hora_salida_f,
+    a.hora_entrada,
+    a.hora_salida,
+    
+    -- Hora entrada y salida biométrica
+    TIME_FORMAT(a.fecha_hora_biometrico_entrada, '%H:%i') AS bio_entrada_f,
+    TIME_FORMAT(a.fecha_hora_biometrico_salida, '%H:%i') AS bio_salida_f,
+    TIME_FORMAT(a.fecha_hora_biometrico_entrada, '%H:%i:%s') AS bio_entrada,
+    TIME_FORMAT(a.fecha_hora_biometrico_salida, '%H:%i:%s') AS bio_salida,
 
-        -- Horas calculadas de la asistencia
-        IF(a.hora_salida IS NOT NULL, TIME_FORMAT(TIMEDIFF(a.hora_salida, a.hora_entrada), '%H:%i'), 'En curso') AS horas_dia,
+    -- Datos del Reporte de la jornada
+    r.id_reporte,
+    r.tarea,
+    r.comprobante,
+    r.observacion
+  FROM asistencias a
+  LEFT JOIN lugares l ON a.id_lugar = l.id_lugar
+  LEFT JOIN reportes r ON a.id_asistencia = r.id_asistencia
+  WHERE a.id_usuario = ?
+  ORDER BY a.fecha DESC, a.id_asistencia DESC
+`, [userId]);
+        const jornadasProcesadas = jornadas.map(j => ({
+        ...j,
+        // Formateamos las horas visibles para la tabla
+        hora_entrada_vis: j.bio_entrada_f || j.hora_entrada_f || '-',
+        hora_salida_vis: j.bio_salida_f || j.hora_salida_f || '-',
+        horas_dia: calcularHorasTranscurridas(j)
+      }));
 
-        -- Datos del Reporte de la jornada
-        r.id_reporte,
-        r.tarea,
-        r.comprobante,
-        r.observacion
-      FROM asistencias a
-      LEFT JOIN lugares l ON a.id_lugar = l.id_lugar
-      LEFT JOIN reportes r ON a.id_asistencia = r.id_asistencia
-      WHERE a.id_usuario = ?
-      ORDER BY a.fecha DESC, a.id_asistencia DESC
-    `, [userId]);
+      const user = {
+        id: userDB.id_usuario,
+        nombre: userDB.nombre,
+        ci: userDB.CI,
+        rol: userDB.rol
+      };
 
-    const user = {
-      id: userDB.id_usuario,
-      nombre: userDB.nombre,
-      ci: userDB.CI,
-      rol: userDB.rol
-    };
-
-    res.render('usuario/reporte', {
-      user,
-      total_acumulada,
-      jornadas
-    });
+      res.render('usuario/reporte', {
+        user,
+        total_acumulada,
+        jornadas: jornadasProcesadas
+      });
 
   } catch (e) {
     console.error(e);
     res.status(500).send('Error consultando la base de datos');
   }
 });
+
+function calcularHorasTranscurridas(j) {
+  // Priorizar biométrico; si no existe, usar la hora manual
+  const entradaStr = j.bio_entrada || j.hora_entrada;
+  const salidaStr = j.bio_salida || j.hora_salida;
+
+  // Si no hay entrada registrada o no hay salida aún
+  if (!entradaStr || !salidaStr) {
+    return '0 hrs';
+  }
+
+  try {
+    const fechaBase = j.fecha || '1970-01-01';
+    const inicio = new Date(`${fechaBase}T${entradaStr}`);
+    const fin = new Date(`${fechaBase}T${salidaStr}`);
+
+    // Si la hora de salida es menor a la de entrada (ejemplo: turno nocturno)
+    if (fin < inicio) {
+      fin.setDate(fin.getDate() + 1);
+    }
+
+    const diffMs = fin - inicio;
+    if (isNaN(diffMs) || diffMs < 0) return '0 hrs';
+
+    const totalMinutos = Math.floor(diffMs / (1000 * 60));
+    const horas = Math.floor(totalMinutos / 60);
+    const minutos = totalMinutos % 60;
+
+    // Retorna formateado, por ejemplo: "8h 30m" o "8 hrs"
+    if (minutos === 0) {
+      return `${horas} hrs`;
+    }
+    return `${horas}h ${minutos}m`;
+  } catch (err) {
+    return '0 hrs';
+  }
+}
 
 /* ==========================================================================
    ENDPOINTS API PARA BITÁCORAS / REPORTES DE TRABAJO
