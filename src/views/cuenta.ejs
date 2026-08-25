@@ -1,179 +1,202 @@
-<%
-  extraStyles = ['/css/cuenta.css'];
-  extraScripts = ['https://cdn.jsdelivr.net/npm/sweetalert2@11'];
-  pageTitle = 'Perfil';
-  pageSubtitle = 'Información de usuario — MONSELEY';
-%>
-<%- include('partials/header', { user: typeof user !== 'undefined' ? user : null }) %>
+<% extraStyles=['/css/cuenta.css']; extraScripts=['https://cdn.jsdelivr.net/npm/sweetalert2@11']; pageTitle='Perfil' ;
+  pageSubtitle='Información de usuario — MONSELEY' ; %>
+  <%- include('partials/header', { user: typeof user !=='undefined' ? user : null }) %>
 
-<div class="cuenta-wrapper">
-  <% if (typeof error !== 'undefined' && error) { %>
-    <div class="alert alert--err"><%= error %></div>
-  <% } %>
-
-  <% if (user) { %>
-    <div class="cuenta-grid">
-      <!-- Tarjeta Izquierda (Resumen del Usuario) -->
-      <section class="cuenta-card user-summary-card">
-        <div class="avatar-container">
-          <img src="/img/perfil.png" alt="Foto de perfil" class="avatar" loading="lazy" decoding="async" />
+    <div class="cuenta-wrapper">
+      <% if (typeof error !=='undefined' && error) { %>
+        <div class="alert alert--err">
+          <%= error %>
         </div>
-        <h2 class="user-name" id="v-nombre"><%= user.nombre %></h2>
-        
-        <div class="ci-badge" aria-label="Identificador de usuario">
-          <span class="ci-tag">ID</span>
-          <span class="ci-val" id="v-ci"><%= user.CI %></span>
-        </div>
+        <% } %>
 
-        <div class="status-badge status-activo">
-          <span class="status-dot"></span>
-          <span id="v-estado-texto"><%= user.estadoTexto || 'Activo' %></span>
-        </div>
-      </section>
+          <% if (user) { %>
+            <div class="cuenta-grid">
+              <!-- Tarjeta Izquierda (Resumen del Usuario) -->
+              <section class="cuenta-card user-summary-card">
+                <div class="avatar-container">
+                  <img src="/img/perfil.png" alt="Foto de perfil" class="avatar" loading="lazy" decoding="async" />
+                </div>
+                <h2 class="user-name" id="v-nombre">
+                  <%= user.nombre %>
+                </h2>
 
-      <!-- Tarjeta Derecha (Información Personal) -->
-      <section class="cuenta-card user-info-card">
-        <div class="card-header">
-          <div class="header-icon-box">
-            <svg class="header-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-              <circle cx="12" cy="7" r="4" />
-            </svg>
-          </div>
-          <h3 class="card-header-title">Información personal</h3>
-        </div>
+                <div class="ci-badge" aria-label="Identificador de usuario">
+                  <span class="ci-tag">CI</span>
+                  <span class="ci-val" id="v-ci">
+                    <%= user.CI %>
+                  </span>
+                </div>
 
-        <div class="info-fields-grid">
-          <!-- Universidad -->
-          <div class="info-item">
-            <div class="info-icon-container">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
-                <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"/>
-              </svg>
-            </div>
-            <div class="info-text">
-              <span class="info-label">Universidad</span>
-              <span class="info-value" id="v-universidad"><%= user.universidad || '—' %></span>
-            </div>
-          </div>
+                <div class="status-badge status-activo">
+                  <span class="status-dot"></span>
+                  <span id="v-estado-texto">
+                    <%= user.estadoTexto || 'Activo' %>
+                  </span>
+                </div>
+              </section>
 
-          <!-- Carrera -->
-          <div class="info-item">
-            <div class="info-icon-container">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
-                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-              </svg>
-            </div>
-            <div class="info-text">
-              <span class="info-label">Carrera</span>
-              <span class="info-value" id="v-carrera"><%= user.carrera_nombre || user.carrera || '—' %></span>
-            </div>
-          </div>
+              <!-- Tarjeta Derecha (Información Personal) -->
+              <section class="cuenta-card user-info-card">
+                <div class="card-header">
+                  <div class="header-icon-box">
+                    <svg class="header-icon" viewBox="0 0 24 24" width="22" height="22" fill="none"
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
+                    </svg>
+                  </div>
+                  <h3 class="card-header-title">Información personal</h3>
+                </div>
 
-          <!-- Celular -->
-          <div class="info-item">
-            <div class="info-icon-container">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-              </svg>
-            </div>
-            <div class="info-text">
-              <span class="info-label">Celular</span>
-              <span class="info-value <%= user.celular ? '' : 'muted' %>" id="v-celular"><%= user.celular || '—' %></span>
-            </div>
-          </div>
+                <div class="info-fields-grid">
+                  <!-- Universidad -->
+                  <div class="info-item">
+                    <div class="info-icon-container">
+                      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                        <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5" />
+                      </svg>
+                    </div>
+                    <div class="info-text">
+                      <span class="info-label">Universidad</span>
+                      <span class="info-value" id="v-universidad">
+                        <%= user.universidad || '—' %>
+                      </span>
+                    </div>
+                  </div>
 
-          <!-- Estado -->
-          <div class="info-item">
-            <div class="info-icon-container">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-              </svg>
-            </div>
-            <div class="info-text">
-              <span class="info-label">Estado</span>
-              <span class="info-value" id="v-estado"><%= user.estadoTexto %></span>
-            </div>
-          </div>
+                  <!-- Carrera -->
+                  <div class="info-item">
+                    <div class="info-icon-container">
+                      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+                      </svg>
+                    </div>
+                    <div class="info-text">
+                      <span class="info-label">Carrera</span>
+                      <span class="info-value" id="v-carrera">
+                        <%= user.carrera_nombre || user.carrera || '—' %>
+                      </span>
+                    </div>
+                  </div>
 
-          <!-- Contraseña (Ancho completo abajo) -->
-          <div class="info-item pwd-item">
-            <div class="info-icon-container">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-              </svg>
+                  <!-- Celular -->
+                  <div class="info-item">
+                    <div class="info-icon-container">
+                      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path
+                          d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                      </svg>
+                    </div>
+                    <div class="info-text">
+                      <span class="info-label">Celular</span>
+                      <span class="info-value <%= user.celular ? '' : 'muted' %>" id="v-celular">
+                        <%= user.celular || '—' %>
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Estado -->
+                  <div class="info-item">
+                    <div class="info-icon-container">
+                      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                      </svg>
+                    </div>
+                    <div class="info-text">
+                      <span class="info-label">Estado</span>
+                      <span class="info-value" id="v-estado">
+                        <%= user.estadoTexto %>
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Contraseña (Ancho completo abajo) -->
+                  <div class="info-item pwd-item">
+                    <div class="info-icon-container">
+                      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                      </svg>
+                    </div>
+                    <div class="info-text pwd-info-text">
+                      <span class="info-label">Contraseña</span>
+                      <div class="pwd-field-container">
+                        <input id="v-password" class="pwd-display-input" type="password"
+                          value="<%= user.contrasena || '' %>" readonly>
+                        <button type="button" id="togglePwd" class="pwd-toggle-button"
+                          aria-label="Mostrar/ocultar contraseña">👁️</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
             </div>
-            <div class="info-text pwd-info-text">
-              <span class="info-label">Contraseña</span>
-              <div class="pwd-field-container">
-                <input id="v-password" class="pwd-display-input" type="password" value="<%= user.contrasena || '' %>" readonly>
-                <button type="button" id="togglePwd" class="pwd-toggle-button" aria-label="Mostrar/ocultar contraseña">👁️</button>
-              </div>
+
+            <!-- Botones de Acción (Alineados abajo a la derecha) -->
+            <div class="cuenta-actions">
+              <button type="button" class="btn-action btn-edit-profile" id="editBtn" aria-label="Editar perfil">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2"
+                  stroke-linecap="round" stroke-linejoin="round" class="btn-icon">
+                  <path d="M12 20h9" />
+                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                </svg>
+                <span>Editar Perfil</span>
+              </button>
+              <a class="btn-action btn-back-home" href="/dashboard" aria-label="Volver al inicio">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2"
+                  stroke-linecap="round" stroke-linejoin="round" class="btn-icon">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                  <polyline points="9 22 9 12 15 12 15 22" />
+                </svg>
+                <span>Inicio</span>
+              </a>
             </div>
-          </div>
-        </div>
-      </section>
+            <% } %>
     </div>
-
-    <!-- Botones de Acción (Alineados abajo a la derecha) -->
-    <div class="cuenta-actions">
-      <button type="button" class="btn-action btn-edit-profile" id="editBtn" aria-label="Editar perfil">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="btn-icon">
-          <path d="M12 20h9"/>
-          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-        </svg>
-        <span>Editar Perfil</span>
-      </button>
-      <a class="btn-action btn-back-home" href="/dashboard" aria-label="Volver al inicio">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="btn-icon">
-          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-          <polyline points="9 22 9 12 15 12 15 22"/>
-        </svg>
-        <span>Inicio</span>
-      </a>
-    </div>
-  <% } %>
-</div>
-<script id="carreras-data" type="application/json">
+    <script id="carreras-data" type="application/json">
   <%- JSON.stringify(typeof carreras !== 'undefined' ? carreras : []) %>
 </script>
-<% if (user) { %>
-<script>
-  // 1. Toggle de visualización de contraseña principal en la vista
-  {
-    const toggleBtn = document.getElementById('togglePwd');
-    const pwdInput  = document.getElementById('v-password');
-    toggleBtn?.addEventListener('click', () => {
-      pwdInput.type = (pwdInput.type === 'password') ? 'text' : 'password';
-      toggleBtn.textContent = (pwdInput.type === 'password') ? '👁️' : '🙈';
-    });
-  }
+    <% if (user) { %>
+      <script>
+        // 1. Toggle de visualización de contraseña principal en la vista
+        {
+          const toggleBtn = document.getElementById('togglePwd');
+          const pwdInput = document.getElementById('v-password');
+          toggleBtn?.addEventListener('click', () => {
+            pwdInput.type = (pwdInput.type === 'password') ? 'text' : 'password';
+            toggleBtn.textContent = (pwdInput.type === 'password') ? '👁️' : '🙈';
+          });
+        }
 
-  // 2. Lista de carreras inyectada desde EJS
-const carrerasDataRaw = document.getElementById('carreras-data').textContent;
-  const listaCarreras = JSON.parse(carrerasDataRaw);
+        // 2. Lista de carreras inyectada desde EJS
+        const carrerasDataRaw = document.getElementById('carreras-data').textContent;
+        const listaCarreras = JSON.parse(carrerasDataRaw);
 
-  // 3. Valores iniciales del usuario
-  const initial = {
-    ci: "<%= user.CI || '' %>",
-    nombre: "<%= user.nombre || '' %>",
-    universidad: "<%= user.universidad || '' %>",
-    id_carrera: "<%= user.id_carrera || '' %>",
-    celular: "<%= user.celular || '' %>"
-  };
+        // 3. Valores iniciales del usuario
+        const initial = {
+          ci: "<%= user.CI || '' %>",
+          nombre: "<%= user.nombre || '' %>",
+          universidad: "<%= user.universidad || '' %>",
+          id_carrera: "<%= user.id_carrera || '' %>",
+          celular: "<%= user.celular || '' %>"
+        };
 
-  const editBtn = document.getElementById('editBtn');
+        const editBtn = document.getElementById('editBtn');
 
-  editBtn?.addEventListener('click', async () => {
-    // Generar dinámicamente las opciones para el <select> de carreras
-    const opcionesCarreras = listaCarreras.map(c => 
-      `<option value="${c.id_carrera}">${c.nombre}</option>`
-    ).join('');
+        editBtn?.addEventListener('click', async () => {
+          // Generar dinámicamente las opciones para el <select> de carreras
+          const opcionesCarreras = listaCarreras.map(c =>
+            `<option value="${c.id_carrera}">${c.nombre}</option>`
+          ).join('');
 
-    const html = `
+          const html = `
     <style>
       .swal-form {
         display: grid;
@@ -297,109 +320,109 @@ const carrerasDataRaw = document.getElementById('carreras-data').textContent;
     </div>
     `;
 
-    const result = await Swal.fire({
-      title: 'Editar perfil',
-      html,
-      width: 'min(820px, 92vw)',
-      focusConfirm: false,
-      showCancelButton: true,
-      confirmButtonText: 'Guardar',
-      cancelButtonText: 'Cancelar',
-      didOpen: () => {
-        document.getElementById('swal-ci').value         = initial.ci;
-        document.getElementById('swal-nombre').value     = initial.nombre;
-        document.getElementById('swal-univ').value       = initial.universidad;
-        document.getElementById('swal-id-carrera').value = initial.id_carrera;
-        document.getElementById('swal-phone').value      = initial.celular;
+          const result = await Swal.fire({
+            title: 'Editar perfil',
+            html,
+            width: 'min(820px, 92vw)',
+            focusConfirm: false,
+            showCancelButton: true,
+            confirmButtonText: 'Guardar',
+            cancelButtonText: 'Cancelar',
+            didOpen: () => {
+              document.getElementById('swal-ci').value = initial.ci;
+              document.getElementById('swal-nombre').value = initial.nombre;
+              document.getElementById('swal-univ').value = initial.universidad;
+              document.getElementById('swal-id-carrera').value = initial.id_carrera;
+              document.getElementById('swal-phone').value = initial.celular;
 
-        const p1 = document.getElementById('swal-pass');
-        const p2 = document.getElementById('swal-pass2');
-        const t1 = document.getElementById('toggle-pass');
-        const t2 = document.getElementById('toggle-pass2');
+              const p1 = document.getElementById('swal-pass');
+              const p2 = document.getElementById('swal-pass2');
+              const t1 = document.getElementById('toggle-pass');
+              const t2 = document.getElementById('toggle-pass2');
 
-        t1.onclick = () => { p1.type = (p1.type === 'password' ? 'text' : 'password'); };
-        t2.onclick = () => { p2.type = (p2.type === 'password' ? 'text' : 'password'); };
-      },
-      preConfirm: () => {
-        const ci         = document.getElementById('swal-ci').value.trim();
-        const nombre     = document.getElementById('swal-nombre').value.trim();
-        const celular    = document.getElementById('swal-phone').value.trim();
-        const contrasena = document.getElementById('swal-pass').value;
-        const contrasena2= document.getElementById('swal-pass2').value;
+              t1.onclick = () => { p1.type = (p1.type === 'password' ? 'text' : 'password'); };
+              t2.onclick = () => { p2.type = (p2.type === 'password' ? 'text' : 'password'); };
+            },
+            preConfirm: () => {
+              const ci = document.getElementById('swal-ci').value.trim();
+              const nombre = document.getElementById('swal-nombre').value.trim();
+              const celular = document.getElementById('swal-phone').value.trim();
+              const contrasena = document.getElementById('swal-pass').value;
+              const contrasena2 = document.getElementById('swal-pass2').value;
 
-        if (!ci || !/^[0-9.\-]{5,32}$/.test(ci)) {
-          Swal.showValidationMessage('CI obligatorio (5–32): solo dígitos, punto o guion.');
-          return false;
-        }
-        if (!nombre || nombre.length < 2 || nombre.length > 100) {
-          Swal.showValidationMessage('Nombre: 2–100 caracteres.');
-          return false;
-        }
-        if (celular && !/^[0-9]{7,12}$/.test(celular)) {
-          Swal.showValidationMessage('Celular: 7–12 dígitos.');
-          return false;
-        }
+              if (!ci || !/^[0-9.\-]{5,32}$/.test(ci)) {
+                Swal.showValidationMessage('CI obligatorio (5–32): solo dígitos, punto o guion.');
+                return false;
+              }
+              if (!nombre || nombre.length < 2 || nombre.length > 100) {
+                Swal.showValidationMessage('Nombre: 2–100 caracteres.');
+                return false;
+              }
+              if (celular && !/^[0-9]{7,12}$/.test(celular)) {
+                Swal.showValidationMessage('Celular: 7–12 dígitos.');
+                return false;
+              }
 
-        if (contrasena || contrasena2) {
-          if (contrasena.length < 4) {
-            Swal.showValidationMessage('La contraseña debe tener mínimo 4 caracteres.');
-            return false;
+              if (contrasena || contrasena2) {
+                if (contrasena.length < 4) {
+                  Swal.showValidationMessage('La contraseña debe tener mínimo 4 caracteres.');
+                  return false;
+                }
+                if (contrasena !== contrasena2) {
+                  Swal.showValidationMessage('Las contraseñas no coinciden.');
+                  return false;
+                }
+              }
+
+              // Se reenvían universidad e id_carrera originales en el payload
+              const payload = {
+                ci,
+                nombre,
+                universidad: initial.universidad,
+                id_carrera: initial.id_carrera,
+                celular
+              };
+              if (contrasena) payload.contrasena = contrasena;
+              return payload;
+            }
+          });
+
+          if (!result.isConfirmed || !result.value) return;
+
+          try {
+            const res = await fetch('/api/cuenta/update', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify(result.value)
+            });
+
+            const data = await res.json();
+            if (!res.ok || !data.ok) throw new Error(data.msg || 'No se pudo guardar');
+
+            // Actualizar los campos editables en la interfaz gráfica
+            document.getElementById('v-ci').textContent = result.value.ci;
+            document.getElementById('v-nombre').textContent = result.value.nombre;
+
+            const celSpan = document.getElementById('v-celular');
+            celSpan.textContent = result.value.celular || '—';
+            celSpan.classList.toggle('muted', !result.value.celular);
+
+            if (result.value.contrasena) {
+              document.getElementById('v-password').value = result.value.contrasena;
+            }
+
+            // Sincronizar estado local para futuras aperturas del modal
+            initial.ci = result.value.ci;
+            initial.nombre = result.value.nombre;
+            initial.celular = result.value.celular;
+
+            await Swal.fire({ icon: 'success', title: 'Perfil actualizado', timer: 1300, showConfirmButton: false });
+          } catch (e) {
+            await Swal.fire({ icon: 'error', title: 'Error', text: e.message || 'No se pudo guardar la información' });
           }
-          if (contrasena !== contrasena2) {
-            Swal.showValidationMessage('Las contraseñas no coinciden.');
-            return false;
-          }
-        }
+        });
+      </script>
+      <% } %>
 
-        // Se reenvían universidad e id_carrera originales en el payload
-        const payload = { 
-          ci, 
-          nombre, 
-          universidad: initial.universidad, 
-          id_carrera: initial.id_carrera, 
-          celular 
-        };
-        if (contrasena) payload.contrasena = contrasena;
-        return payload;
-      }
-    });
-
-    if (!result.isConfirmed || !result.value) return;
-
-    try {
-      const res = await fetch('/api/cuenta/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(result.value)
-      });
-      
-      const data = await res.json();
-      if (!res.ok || !data.ok) throw new Error(data.msg || 'No se pudo guardar');
-
-      // Actualizar los campos editables en la interfaz gráfica
-      document.getElementById('v-ci').textContent     = result.value.ci;
-      document.getElementById('v-nombre').textContent = result.value.nombre;
-
-      const celSpan = document.getElementById('v-celular');
-      celSpan.textContent = result.value.celular || '—';
-      celSpan.classList.toggle('muted', !result.value.celular);
-
-      if (result.value.contrasena) {
-        document.getElementById('v-password').value = result.value.contrasena;
-      }
-
-      // Sincronizar estado local para futuras aperturas del modal
-      initial.ci      = result.value.ci;
-      initial.nombre  = result.value.nombre;
-      initial.celular = result.value.celular;
-
-      await Swal.fire({ icon: 'success', title: 'Perfil actualizado', timer: 1300, showConfirmButton: false });
-    } catch (e) {
-      await Swal.fire({ icon: 'error', title: 'Error', text: e.message || 'No se pudo guardar la información' });
-    }
-  });
-</script>
-<% } %>
-
-<%- include('partials/footer') %>
+        <%- include('partials/footer') %>

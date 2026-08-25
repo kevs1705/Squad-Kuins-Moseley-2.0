@@ -1,418 +1,399 @@
 /* ==========================================================================
-   ESTILOS PARA EL MÓDULO DE HORARIOS Y META DE PASANTÍA
+   ESTILOS EXCLUSIVOS Y BLINDADOS PARA EL MÓDULO MI HORARIO
    ========================================================================== */
 
-:root {
-<<<<<<< HEAD
-  --primary-color: #0d6efd;
-  --secondary-color: #1e293b;
-=======
-  --primary-color: #2563eb;
-  --primary-light: #eff6ff;
-  --secondary-color: #0f172a;
->>>>>>> 5a8690ecfdc44b241e6256e4133824cf42aabcef
-  --bg-card: #ffffff;
-  --border-color: #cbd5e1;
-  --text-dark: #000000;
-  --text-muted: #334155;
-  --radius-md: 10px;
-<<<<<<< HEAD
-  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
-=======
-  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-}
-
-body {
-  background-color: #f8fafc;
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  color: var(--text-primary);
->>>>>>> 5a8690ecfdc44b241e6256e4133824cf42aabcef
-}
-
 .horario-wrapper {
-  max-width: 1050px;
-  margin: 0 auto;
-  padding: 1.5rem;
-  color: #000000;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 auto !important;
+  padding: 1.5rem 2rem !important;
+  box-sizing: border-box !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+  color: #1e293b !important;
 }
 
-/* --- TARJETAS DE PROGRESO Y CONTADORES --- */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1.25rem;
-  margin-bottom: 2rem;
+/* Header del módulo */
+.horario-header-row {
+  margin-bottom: 1.5rem !important;
 }
 
-.stat-card {
-  background: var(--bg-card);
-  padding: 1.25rem;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-sm);
-  color: #000000;
+.horario-header-title {
+  font-size: 1.75rem !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  margin-bottom: 0.25rem !important;
+  line-height: 1.2 !important;
 }
 
-.stat-card .title {
-  font-size: 0.85rem;
-  color: #1e293b;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: 700;
-  margin-bottom: 0.5rem;
+.horario-header-user {
+  font-size: 0.95rem !important;
+  color: #64748b !important;
+  margin-bottom: 0 !important;
 }
 
-.stat-card .value {
-  font-size: 1.75rem;
-  font-weight: 800;
-  color: #000000;
+/* --- TRES FICHAS SUPERIORES (METRICAS Y PASANTÍA) --- */
+.horario-stats-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+  gap: 1.5rem !important;
+  margin-bottom: 1.75rem !important;
+  width: 100% !important;
 }
 
-/* Barra de Progreso */
-.progress-bar-container {
-  height: 9px;
-  background-color: #e2e8f0;
-  border-radius: 5px;
-  overflow: hidden;
-  margin-top: 0.75rem;
+.horario-stat-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+  padding: 1.5rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease !important;
 }
 
-.progress-bar-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #10b981, #059669);
-  transition: width 0.4s ease;
+.horario-stat-card:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05) !important;
 }
 
-/* --- TARJETA DEL FORMULARIO DE CREACIÓN --- */
-.card-form {
-  background: var(--bg-card);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-sm);
-  padding: 1.75rem;
-  margin-bottom: 2.5rem;
-  color: #000000;
+.horario-stat-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 0.75rem !important;
 }
 
-.card-title {
-  font-size: 1.25rem;
-  font-weight: 800;
-  color: #000000;
-  margin-bottom: 1.25rem;
-  border-bottom: 2px solid #e2e8f0;
-  padding-bottom: 0.75rem;
+.horario-stat-icon {
+  width: 42px !important;
+  height: 42px !important;
+  border-radius: 10px !important;
+  background-color: #ebf3fe !important;
+  color: #0b6bcb !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 1.25rem !important;
 }
 
-.card-subtitle {
-  font-size: 0.9rem;
-  color: #334155;
-  margin-top: -0.5rem;
-  margin-bottom: 1.25rem;
-  line-height: 1.4;
+.horario-stat-title {
+  font-size: 0.85rem !important;
+  color: #64748b !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  font-weight: 700 !important;
+  margin-bottom: 0 !important;
 }
 
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.25rem;
-  align-items: end;
+.horario-stat-value {
+  font-size: 2rem !important;
+  font-weight: 800 !important;
+  color: #0b6bcb !important;
+  line-height: 1.1 !important;
+  margin-bottom: 0.35rem !important;
 }
 
-.form-group {
-  display: flex;
-  flex-direction: column;
+.horario-progress-container {
+  height: 10px !important;
+  background-color: #e2e8f0 !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
+  margin-top: 0.75rem !important;
+  width: 100% !important;
 }
 
-.form-label,
-.form-group label {
-<<<<<<< HEAD
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: #000000;
-  margin-bottom: 0.4rem;
-=======
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--text-primary) !important;
-  margin-bottom: 0.5rem;
-  display: block;
->>>>>>> 5a8690ecfdc44b241e6256e4133824cf42aabcef
+.horario-progress-fill {
+  height: 100% !important;
+  background: linear-gradient(90deg, #10b981, #0b6bcb) !important;
+  border-radius: 10px !important;
+  transition: width 0.4s ease !important;
 }
 
-.form-control,
-.form-select {
-  width: 100%;
-  padding: 0.625rem 0.875rem;
-  font-size: 0.95rem;
-<<<<<<< HEAD
-  font-weight: 600;
-  color: #000000;
-  border: 1.5px solid var(--border-color);
-=======
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
->>>>>>> 5a8690ecfdc44b241e6256e4133824cf42aabcef
-  border-radius: 6px;
-  background-color: #ffffff;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  box-sizing: border-box;
+/* --- TARJETA DE FORMULARIO --- */
+.horario-wrapper .card-form {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+  padding: 1.75rem !important;
+  margin-bottom: 1.75rem !important;
+  width: 100% !important;
+  color: #1e293b !important;
 }
 
-.form-control:focus,
-.form-select:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+.horario-wrapper .card-title {
+  font-size: 1.2rem !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  margin-bottom: 0.5rem !important;
+  border-bottom: none !important;
+  padding-bottom: 0 !important;
 }
 
-/* --- ESTILOS MEJORADOS PARA SELECCIÓN DE DÍAS (CHECKBOXES) --- */
+.horario-wrapper .card-subtitle {
+  font-size: 0.9rem !important;
+  color: #64748b !important;
+  margin-bottom: 1.5rem !important;
+  line-height: 1.5 !important;
+}
+
+/* Selección de Días */
 .dias-checkbox-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.25rem;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 0.65rem !important;
+  margin-top: 0.5rem !important;
 }
 
 .checkbox-day {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.85rem;
-  background-color: #f8fafc;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--text-primary) !important;
-  user-select: none;
-  transition: all 0.2s ease;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  padding: 0.55rem 1rem !important;
+  background-color: #f8fafc !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 20px !important;
+  cursor: pointer !important;
+  font-size: 0.88rem !important;
+  font-weight: 600 !important;
+  color: #334155 !important;
+  user-select: none !important;
+  transition: all 0.2s ease !important;
 }
 
 .checkbox-day:hover {
-  background-color: #f1f5f9;
-  border-color: #cbd5e1;
+  background-color: #f1f5f9 !important;
+  border-color: #94a3b8 !important;
 }
 
 .checkbox-day input[type="checkbox"] {
-  accent-color: var(--primary-color);
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
+  accent-color: #0b6bcb !important;
+  width: 16px !important;
+  height: 16px !important;
+  cursor: pointer !important;
 }
 
-/* Efecto visual al seleccionar un día */
 .checkbox-day:has(input:checked) {
-  background-color: var(--primary-light);
-  border-color: var(--primary-color);
-  color: var(--primary-color) !important;
-  font-weight: 600;
+  background-color: #e8f1fd !important;
+  border-color: #0b6bcb !important;
+  color: #0b6bcb !important;
 }
 
-/* Checkboxes de Días */
-.dias-checkbox-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.35rem;
+/* Grilla de Entradas de Tiempo */
+.horario-wrapper .form-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
+  gap: 1.25rem !important;
+  margin-top: 1.25rem !important;
+  align-items: end !important;
 }
 
-.checkbox-day {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  background: #f8fafc;
-  border: 1.5px solid #cbd5e1;
-  padding: 0.45rem 0.85rem;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: #000000;
-  user-select: none;
-  transition: all 0.2s ease;
+.horario-wrapper .form-group {
+  display: flex !important;
+  flex-direction: column !important;
 }
 
-.checkbox-day:hover {
-  background: #e2e8f0;
+.horario-wrapper .form-group label {
+  font-size: 0.88rem !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  margin-bottom: 0.4rem !important;
+  display: block !important;
 }
 
-.checkbox-day input[type="checkbox"] {
-  cursor: pointer;
-  accent-color: #0d6efd;
-  width: 17px;
-  height: 17px;
+.horario-wrapper .form-control,
+.horario-wrapper .form-select {
+  width: 100% !important;
+  padding: 0.65rem 0.9rem !important;
+  font-size: 0.92rem !important;
+  font-weight: 600 !important;
+  color: #1e293b !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 8px !important;
+  background-color: #ffffff !important;
+  transition: border-color 0.2s, box-shadow 0.2s !important;
+  box-sizing: border-box !important;
+  height: 42px !important;
 }
 
-/* Caja del Total de Horas Calculadas */
-.total-box {
-  background-color: #f0fdf4;
-  border: 1.5px solid #86efac;
-  border-radius: 6px;
-  padding: 0.75rem 1rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  color: #000000;
+.horario-wrapper .form-control:focus,
+.horario-wrapper .form-select:focus {
+  outline: none !important;
+  border-color: #0b6bcb !important;
+  box-shadow: 0 0 0 3px rgba(11, 107, 203, 0.12) !important;
 }
 
-.total-box span {
-  font-size: 0.9rem;
-  color: #14532d;
-  font-weight: 700;
+/* Caja de Total de Horas */
+.horario-wrapper .total-box {
+  background-color: #f0fdf4 !important;
+  border: 1px solid #86efac !important;
+  border-radius: 8px !important;
+  padding: 0.85rem 1.25rem !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  color: #14532d !important;
 }
 
-.total-box strong {
-  font-size: 1.15rem;
-  color: #000000;
-  font-weight: 800;
+.horario-wrapper .total-box span {
+  font-size: 0.9rem !important;
+  color: #166534 !important;
+  font-weight: 600 !important;
 }
 
-.btn-submit {
-<<<<<<< HEAD
-  background-color: #0b1f3a;
-  color: #ffffff;
-  font-weight: 700;
-  font-size: 0.95rem;
-  padding: 0.85rem 1.5rem;
-=======
-  background-color: var(--secondary-color);
-  color: #ffffff !important;
-  font-weight: 600;
-  padding: 0.75rem 1.5rem;
->>>>>>> 5a8690ecfdc44b241e6256e4133824cf42aabcef
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.2s, transform 0.1s;
-  width: 100%;
-  margin-top: 1.25rem;
+.horario-wrapper .total-box strong {
+  font-size: 1.2rem !important;
+  color: #14532d !important;
+  font-weight: 800 !important;
 }
 
-.btn-submit:hover {
-  background-color: #1e293b;
-}
-
-.btn-submit:active {
-  transform: scale(0.99);
-}
-
-<<<<<<< HEAD
-/* --- TABLA DE HORARIO ACTUAL (LETRAS EN NEGRO) --- */
-=======
-/* --- TABLA DE HORARIO ACTUAL (REDiseñada) --- */
->>>>>>> 5a8690ecfdc44b241e6256e4133824cf42aabcef
-.table-container {
-  background: var(--bg-card);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
-}
-
-.custom-table {
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
-  color: #000000;
-}
-
-.custom-table thead {
-<<<<<<< HEAD
-  background-color: #f1f5f9;
-  border-bottom: 2px solid #cbd5e1;
-=======
-  background-color: #1e293b;
->>>>>>> 5a8690ecfdc44b241e6256e4133824cf42aabcef
-}
-
-.custom-table th {
-  padding: 1rem 1.25rem;
-<<<<<<< HEAD
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: 800;
-  color: #000000;
-=======
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-weight: 700;
-  color: #ffffff !important; /* Cabecera con texto blanco contrastado */
->>>>>>> 5a8690ecfdc44b241e6256e4133824cf42aabcef
-}
-
-.custom-table td {
-  padding: 1rem 1.25rem;
-<<<<<<< HEAD
-  border-bottom: 1px solid #e2e8f0;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #000000;
-}
-
-.custom-table td strong {
-  color: #000000;
-  font-weight: 800;
-=======
-  border-bottom: 1px solid var(--border-color);
-  font-size: 0.925rem;
-  color: var(--text-primary) !important; /* Texto oscuro para celdas */
-  vertical-align: middle;
-}
-
-.custom-table tbody tr {
-  transition: background-color 0.15s ease;
-}
-
-.custom-table tbody tr:nth-child(even) {
-  background-color: #f8fafc;
-}
-
-.custom-table tbody tr:hover {
-  background-color: #f1f5f9;
->>>>>>> 5a8690ecfdc44b241e6256e4133824cf42aabcef
-}
-
-.custom-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-/* Insignia / Badge de Horas */
-.badge-hours {
-<<<<<<< HEAD
-  display: inline-block;
-  background-color: #e2e8f0;
-  color: #000000;
-  font-weight: 800;
-  padding: 0.3rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.85rem;
-  border: 1px solid #cbd5e1;
-}
-
-/* Alerta de advertencia de horas */
-.time-warning {
+/* Alerta de Error en Horarios */
+.horario-wrapper .time-warning {
   display: none;
-  background-color: #fef2f2;
-  color: #991b1b;
-  border: 1.5px solid #f87171;
-  padding: 0.6rem 0.9rem;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  margin-top: 0.75rem;
-  font-weight: 700;
-=======
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  background-color: #dbeafe;
-  color: #1e40af !important;
-  font-weight: 700;
-  padding: 0.3rem 0.7rem;
-  border-radius: 20px;
-  font-size: 0.825rem;
-  border: 1px solid #bfdbfe;
->>>>>>> 5a8690ecfdc44b241e6256e4133824cf42aabcef
+  background-color: #fef2f2 !important;
+  color: #991b1b !important;
+  border: 1px solid #f87171 !important;
+  padding: 0.75rem 1rem !important;
+  border-radius: 8px !important;
+  font-size: 0.88rem !important;
+  margin-top: 1rem !important;
+  font-weight: 600 !important;
 }
+
+/* Botón Submit */
+.horario-wrapper .btn-submit {
+  background-color: #0b6bcb !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  font-size: 0.95rem !important;
+  padding: 0.75rem 1.5rem !important;
+  border: none !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  width: 100% !important;
+  margin-top: 1.25rem !important;
+  box-shadow: 0 2px 6px rgba(11, 107, 203, 0.25) !important;
+}
+
+.horario-wrapper .btn-submit:hover {
+  background-color: #0855a3 !important;
+  box-shadow: 0 4px 10px rgba(11, 107, 203, 0.35) !important;
+  transform: translateY(-1px) !important;
+}
+
+.horario-wrapper .btn-submit:disabled {
+  background-color: #94a3b8 !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* --- TABLA DE HORARIO PROGRAMADO (BLANCA Y AZUL OSCURO) --- */
+.horario-wrapper .table-container {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 10px !important;
+  overflow-x: auto !important;
+  margin-top: 1rem !important;
+}
+
+.horario-wrapper table.custom-table {
+  width: 100% !important;
+  table-layout: fixed !important;
+  border-collapse: collapse !important;
+  border-spacing: 0 !important;
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+}
+
+.horario-wrapper table.custom-table thead,
+.horario-wrapper table.custom-table thead tr {
+  background-color: #f0f5fc !important;
+  background: #f0f5fc !important;
+}
+
+.horario-wrapper table.custom-table thead th {
+  background-color: #f0f5fc !important;
+  background: #f0f5fc !important;
+  color: #0b3c5d !important; /* Azul oscuro */
+  font-size: 0.88rem !important;
+  font-weight: 700 !important;
+  padding: 0.95rem 1.1rem !important;
+  border-bottom: 2px solid #e2e8f0 !important;
+  border-top: none !important;
+  text-transform: none !important;
+  white-space: nowrap !important;
+  width: 25% !important;
+}
+
+.horario-wrapper table.custom-table tbody {
+  background-color: #ffffff !important;
+}
+
+.horario-wrapper table.custom-table tbody tr {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.horario-wrapper table.custom-table tbody tr:hover {
+  background-color: #f8fafc !important;
+  background: #f8fafc !important;
+}
+
+.horario-wrapper table.custom-table tbody td {
+  padding: 0.95rem 1.1rem !important;
+  font-size: 0.9rem !important;
+  color: #334155 !important;
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  border-top: none !important;
+  width: 25% !important;
+}
+
+.horario-wrapper table.custom-table tbody tr:last-child td {
+  border-bottom: none !important;
+}
+
+.badge-hours {
+  display: inline-flex !important;
+  align-items: center !important;
+  background-color: #e8f1fd !important;
+  color: #0b6bcb !important;
+  font-weight: 700 !important;
+  padding: 0.3rem 0.75rem !important;
+  border-radius: 20px !important;
+  font-size: 0.82rem !important;
+  border: 1px solid #d0e1fd !important;
+}
+
+/* --- RESPONSIVIDAD (MÓVIL) --- */
+@media (max-width: 767.98px) {
+  .horario-wrapper {
+    padding: 1rem 0.75rem !important;
+  }
+
+  .horario-header-title {
+    font-size: 1.4rem !important;
+  }
+
+  .horario-stats-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .horario-wrapper .card-form {
+    padding: 1.25rem !important;
+  }
+
+  .dias-checkbox-container {
+    gap: 0.4rem !important;
+  }
+
+  .checkbox-day {
+    padding: 0.45rem 0.75rem !important;
+    font-size: 0.82rem !important;
+  }
+}
