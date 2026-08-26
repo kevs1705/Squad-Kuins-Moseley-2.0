@@ -1,0 +1,45 @@
+<!-- Componente Reutilizable: Alerta Flotante -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1090;">
+  <div id="appToast" class="toast align-items-center text-white border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body d-flex align-items-center gap-2" id="appToastMessage">
+        <!-- El ícono y mensaje se insertan dinámicamente -->
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+  </div>
+</div>
+
+<script>
+  /**
+   * Función global para mostrar alertas reutilizables en cualquier vista.
+   * @param {string} mensaje - Texto a mostrar.
+   * @param {string} tipo - 'success' | 'error' | 'warning' | 'info'
+   * @param {number} duracion - Tiempo en ms antes de ocultarse (default: 3000ms)
+   */
+  function mostrarAlerta(mensaje, tipo = 'success', duracion = 3000) {
+    const toastEl = document.getElementById('appToast');
+    const toastMsg = document.getElementById('appToastMessage');
+    if (!toastEl || !toastMsg) return;
+
+    // Configurar color de fondo e ícono según el tipo
+    const configuraciones = {
+      success: { bg: 'bg-success', icon: 'bi-check-circle-fill' },
+      error:   { bg: 'bg-danger',  icon: 'bi-exclamation-triangle-fill' },
+      warning: { bg: 'bg-warning text-dark', icon: 'bi-exclamation-circle-fill' },
+      info:    { bg: 'bg-info text-dark',    icon: 'bi-info-circle-fill' }
+    };
+
+    const config = configuraciones[tipo] || configuraciones.success;
+
+    // Limpiar clases previas de color
+    toastEl.className = `toast align-items-center border-0 shadow-lg ${config.bg}`;
+    
+    // Insertar contenido con ícono de Bootstrap
+    toastMsg.innerHTML = `<i class="bi ${config.icon} fs-5"></i> <span>${mensaje}</span>`;
+
+    // Mostrar el Toast mediante Bootstrap JS
+    const toast = new bootstrap.Toast(toastEl, { delay: duracion });
+    toast.show();
+  }
+</script>
