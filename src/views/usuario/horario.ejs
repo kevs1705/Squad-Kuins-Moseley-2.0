@@ -1,154 +1,156 @@
 <% pageTitle='Panel de Mi Horario' ; pageSubtitle='Configuración y programación de jornadas de pasantía' ; %>
-<%- include('../partials/header') %>
+  <%- include('../partials/header') %>
 
-<link rel="stylesheet" href="/css/horario.css">
+    <link rel="stylesheet" href="/css/horario.css">
 
-<div class="horario-wrapper">
+    <div class="horario-wrapper">
 
-  <!-- Header del Módulo -->
-  <div class="horario-header-row">
-    <h2 class="horario-header-title">Mi Horario</h2>
-    <p class="horario-header-user">
-      <i class="bi bi-person me-1"></i>Usuario: <strong><%= user.nombre %></strong> | CI: <%= user.ci %>
-    </p>
-  </div>
-
-  <!-- METRICAS DE HORAS Y PASANTÍA (TRES FICHAS SUPERIORES) -->
-  <% 
-    const horasRequeridas = user.horas_requeridas || 280; 
-    const horasPrevias = user.horas_previas || 0; 
-    const horasSistema = (typeof totalHorasSistema !== 'undefined') ? totalHorasSistema : 0; 
-    const totalAcumulado = horasPrevias + horasSistema; 
-    const porcentaje = Math.min(100, Math.round((totalAcumulado / horasRequeridas) * 100)); 
-  %>
-
-  <div class="horario-stats-grid">
-    <div class="horario-stat-card">
-      <div class="horario-stat-header">
-        <div class="horario-stat-title">Meta Carrera</div>
-        <div class="horario-stat-icon"><i class="bi bi-trophy-fill"></i></div>
-      </div>
-      <div class="horario-stat-value">
-        <%= horasRequeridas %> <span style="font-size: 1.1rem; font-weight: 500;">hrs</span>
-      </div>
-    </div>
-
-    <div class="horario-stat-card">
-      <div class="horario-stat-header">
-        <div class="horario-stat-title">Total Acumulado</div>
-        <div class="horario-stat-icon"><i class="bi bi-pie-chart-fill"></i></div>
-      </div>
-      <div class="horario-stat-value">
-        <%= totalAcumulado %> / <%= horasRequeridas %> <span style="font-size: 1.1rem; font-weight: 500;">hrs</span>
-      </div>
-      <div class="horario-progress-container">
-        <div class="horario-progress-fill" style="width: <%= porcentaje %>%;"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- TARJETA FORMULARIO: REGISTRAR HORARIO -->
-  <div class="card-form">
-    <div class="card-title">
-      <i class="bi bi-clock-history me-2 text-primary"></i>Configurar Horario de Asistencia
-    </div>
-
-    <p class="card-subtitle">
-      Establece los días y las horas de tu jornada de pasantía. Puedes seleccionar duraciones habituales (4h, 6h, 8h) o <strong>escribir directamente tu hora de salida</strong> si tienes choque de materias universitarias.
-    </p>
-
-    <form action="/usuario/horario" method="POST" id="formHorario">
-
-      <!-- SELECCIÓN MÚLTIPLE DE DÍAS -->
-      <div class="form-group mb-3">
-        <label class="form-label fw-bold mb-2 text-dark">
-          Seleccione los días en los que aplica este horario:
-        </label>
-        <div class="dias-checkbox-container">
-          <label class="checkbox-day">
-            <input type="checkbox" name="dias_semana" value="1"> Lunes
-          </label>
-          <label class="checkbox-day">
-            <input type="checkbox" name="dias_semana" value="2"> Martes
-          </label>
-          <label class="checkbox-day">
-            <input type="checkbox" name="dias_semana" value="3"> Miércoles
-          </label>
-          <label class="checkbox-day">
-            <input type="checkbox" name="dias_semana" value="4"> Jueves
-          </label>
-          <label class="checkbox-day">
-            <input type="checkbox" name="dias_semana" value="5"> Viernes
-          </label>
-          <label class="checkbox-day">
-            <input type="checkbox" name="dias_semana" value="6"> Sábado
-          </label>
-        </div>
+      <!-- Header del Módulo -->
+      <div class="horario-header-row">
+        <h2 class="horario-header-title">Mi Horario</h2>
+        <p class="horario-header-user">
+          <i class="bi bi-person me-1"></i>Usuario: <strong>
+            <%= user.nombre %>
+          </strong> | CI: <%= user.ci %>
+        </p>
       </div>
 
-      <div class="form-grid">
+      <!-- METRICAS DE HORAS Y PASANTÍA (TRES FICHAS SUPERIORES) -->
+      <% const horasRequeridas=user.horas_requeridas || 280; const horasPrevias=user.horas_previas || 0; const
+        horasSistema=(typeof totalHorasSistema !=='undefined' ) ? totalHorasSistema : 0; const
+        totalAcumulado=horasPrevias + horasSistema; const porcentaje=Math.min(100, Math.round((totalAcumulado /
+        horasRequeridas) * 100)); %>
 
-        <div class="form-group">
-          <label for="hora_entrada">Hora de entrada</label>
-          <input type="time" name="hora_entrada" id="hora_entrada" class="form-control" value="08:00" required>
+        <div class="horario-stats-grid">
+          <div class="horario-stat-card">
+            <div class="horario-stat-header">
+              <div class="horario-stat-title">Meta Carrera</div>
+
+            </div>
+            <div class="horario-stat-value">
+              <%= horasRequeridas %> <span style="font-size: 1.1rem; font-weight: 500;">hrs</span>
+            </div>
+          </div>
+
+          <div class="horario-stat-card">
+            <div class="horario-stat-header">
+              <div class="horario-stat-title">Total Acumulado</div>
+
+            </div>
+            <div class="horario-stat-value">
+              <%= totalAcumulado %> / <%= horasRequeridas %> <span
+                    style="font-size: 1.1rem; font-weight: 500;">hrs</span>
+            </div>
+            <div class="horario-progress-container">
+              <div class="horario-progress-fill" style="width: <%= porcentaje %>%;"></div>
+            </div>
+          </div>
         </div>
 
-        <div class="form-group">
-          <label for="horas">Horas de pasantía</label>
-          <select name="horas" id="horas" class="form-select">
-            <option value="4" selected>4 horas</option>
-            <option value="6">6 horas</option>
-            <option value="8">8 horas</option>
-            <option value="custom">Personalizado (Manual)</option>
-          </select>
+        <!-- TARJETA FORMULARIO: REGISTRAR HORARIO -->
+        <div class="card-form">
+          <div class="card-title">
+            <i class="bi bi-clock-history me-2 text-primary"></i>Configurar Horario de Asistencia
+          </div>
+
+          <p class="card-subtitle">
+            Establece los días y las horas de tu jornada de pasantía. Puedes seleccionar duraciones habituales (4h, 6h,
+            8h) o <strong>escribir directamente tu hora de salida</strong> si tienes choque de materias universitarias.
+          </p>
+
+          <form action="/usuario/horario" method="POST" id="formHorario">
+
+            <!-- SELECCIÓN MÚLTIPLE DE DÍAS -->
+            <div class="form-group mb-3">
+              <label class="form-label fw-bold mb-2 text-dark">
+                Seleccione los días en los que aplica este horario:
+              </label>
+              <div class="dias-checkbox-container">
+                <label class="checkbox-day">
+                  <input type="checkbox" name="dias_semana" value="1"> Lunes
+                </label>
+                <label class="checkbox-day">
+                  <input type="checkbox" name="dias_semana" value="2"> Martes
+                </label>
+                <label class="checkbox-day">
+                  <input type="checkbox" name="dias_semana" value="3"> Miércoles
+                </label>
+                <label class="checkbox-day">
+                  <input type="checkbox" name="dias_semana" value="4"> Jueves
+                </label>
+                <label class="checkbox-day">
+                  <input type="checkbox" name="dias_semana" value="5"> Viernes
+                </label>
+                <label class="checkbox-day">
+                  <input type="checkbox" name="dias_semana" value="6"> Sábado
+                </label>
+              </div>
+            </div>
+
+            <div class="form-grid">
+
+              <div class="form-group">
+                <label for="hora_entrada">Hora de entrada</label>
+                <input type="time" name="hora_entrada" id="hora_entrada" class="form-control" value="08:00" required>
+              </div>
+
+              <div class="form-group">
+                <label for="horas">Horas de pasantía</label>
+                <select name="horas" id="horas" class="form-select">
+                  <option value="4" selected>4 horas</option>
+                  <option value="6">6 horas</option>
+                  <option value="8">8 horas</option>
+                  <option value="custom">Personalizado (Manual)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="hora_salida">Hora de salida (Editable)</label>
+                <input type="time" name="hora_salida" id="hora_salida" class="form-control" value="12:00" required>
+              </div>
+
+            </div>
+
+            <!-- ALERTA DE ERROR EN HORARIOS -->
+            <div id="alertaHorario" class="time-warning">
+              ⚠️ La hora de salida debe ser posterior a la hora de entrada.
+            </div>
+
+            <div class="total-box mt-3">
+              <span>Horas calculadas por día seleccionado:</span>
+              <strong id="totalHoras">4.0 hrs</strong>
+            </div>
+
+            <button type="submit" class="btn-submit" id="btnGuardar">
+              <i class="bi bi-check-circle me-1"></i> Guardar Configuración de Horario
+            </button>
+          </form>
         </div>
 
-        <div class="form-group">
-          <label for="hora_salida">Hora de salida (Editable)</label>
-          <input type="time" name="hora_salida" id="hora_salida" class="form-control" value="12:00" required>
-        </div>
+        <!-- TABLA DE HORARIO PERMANENTE -->
+        <div class="card-form">
+          <div class="card-title">
+            <i class="bi bi-calendar-week me-2 text-primary"></i>Mi Horario Programado
+          </div>
 
-      </div>
-
-      <!-- ALERTA DE ERROR EN HORARIOS -->
-      <div id="alertaHorario" class="time-warning">
-        ⚠️ La hora de salida debe ser posterior a la hora de entrada.
-      </div>
-
-      <div class="total-box mt-3">
-        <span>Horas calculadas por día seleccionado:</span>
-        <strong id="totalHoras">4.0 hrs</strong>
-      </div>
-
-      <button type="submit" class="btn-submit" id="btnGuardar">
-        <i class="bi bi-check-circle me-1"></i> Guardar Configuración de Horario
-      </button>
-    </form>
-  </div>
-
-  <!-- TABLA DE HORARIO PERMANENTE -->
-  <div class="card-form">
-    <div class="card-title">
-      <i class="bi bi-calendar-week me-2 text-primary"></i>Mi Horario Programado
-    </div>
-
-    <div class="table-container">
-      <table class="custom-table align-middle">
-        <thead>
-          <tr>
-            <th>Día</th>
-            <th>Entrada</th>
-            <th>Salida</th>
-            <th>Horas Programadas</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% const dias = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']; %>
-          <% if (horarios && horarios.length > 0) { %>
-            <% horarios.forEach(h => { %>
-              <tr>
-                <td>
-                  <i class="bi bi-calendar-check me-2 text-primary"></i><strong><%= dias[h.dia_semana] || ('Día ' + h.dia_semana) %></strong>
+          <div class="table-container">
+            <table class="custom-table align-middle">
+              <thead>
+                <tr>
+                  <th>Día</th>
+                  <th>Entrada</th>
+                  <th>Salida</th>
+                  <th>Horas Programadas</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% const dias=['', 'Lunes' , 'Martes' , 'Miércoles' , 'Jueves' , 'Viernes' , 'Sábado' , 'Domingo' ]; %>
+                  <% if (horarios && horarios.length> 0) { %>
+                    <% horarios.forEach(h=> { %>
+                      <tr>
+                        <td>
+                          <i class="bi bi-calendar-check me-2 text-primary"></i><strong>
+                            <%= dias[h.dia_semana] || ('Día ' + h.dia_semana) %></strong>
                 </td>
                 <td>
                   <%= h.hora_entrada %>
@@ -158,157 +160,156 @@
                 </td>
                 <td>
                   <% 
-                    const inicio = h.hora_entrada.split(':'); 
-                    const fin = h.hora_salida.split(':'); 
-                    const minutos = (parseInt(fin[0]) * 60 + parseInt(fin[1])) - (parseInt(inicio[0]) * 60 + parseInt(inicio[1])); 
-                    const horasDec = (minutos / 60).toFixed(1);
-                  %>
-                  <span class="badge-hours">
-                    <i class="bi bi-clock me-1"></i><%= horasDec %> hrs
-                  </span>
-                </td>
-              </tr>
-            <% }) %>
-          <% } else { %>
-            <tr>
-              <td colspan="4" class="text-center text-muted py-4 fw-semibold">
-                No tienes días asignados aún. Registra tu horario en el formulario superior.
-              </td>
-            </tr>
-          <% } %>
-        </tbody>
-      </table>
+                    const inicio = h.hora_entrada.split(' :'); const fin=h.hora_salida.split(':'); const
+                              minutos=(parseInt(fin[0]) * 60 + parseInt(fin[1])) - (parseInt(inicio[0]) * 60 +
+                              parseInt(inicio[1])); const horasDec=(minutos / 60).toFixed(1); %>
+                              <span class="badge-hours">
+                                <i class="bi bi-clock me-1"></i>
+                                <%= horasDec %> hrs
+                              </span>
+                        </td>
+                      </tr>
+                      <% }) %>
+                        <% } else { %>
+                          <tr>
+                            <td colspan="4" class="text-center text-muted py-4 fw-semibold">
+                              No tienes días asignados aún. Registra tu horario en el formulario superior.
+                            </td>
+                          </tr>
+                          <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
     </div>
-  </div>
 
-</div>
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const entrada = document.getElementById('hora_entrada');
+        const salida = document.getElementById('hora_salida');
+        const selectorHoras = document.getElementById('horas');
+        const totalLabel = document.getElementById('totalHoras');
+        const alertaHorario = document.getElementById('alertaHorario');
+        const form = document.getElementById('formHorario');
+        const btnGuardar = document.getElementById('btnGuardar');
 
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const entrada = document.getElementById('hora_entrada');
-    const salida = document.getElementById('hora_salida');
-    const selectorHoras = document.getElementById('horas');
-    const totalLabel = document.getElementById('totalHoras');
-    const alertaHorario = document.getElementById('alertaHorario');
-    const form = document.getElementById('formHorario');
-    const btnGuardar = document.getElementById('btnGuardar');
+        // Calcula la hora de salida a partir de una duración elegida en el selector (4, 6, 8)
+        function calcularDesdePreset() {
+          if (!entrada.value) return;
+          if (selectorHoras.value === 'custom') {
+            calcularDesdeSalida();
+            return;
+          }
 
-    // Calcula la hora de salida a partir de una duración elegida en el selector (4, 6, 8)
-    function calcularDesdePreset() {
-      if (!entrada.value) return;
-      if (selectorHoras.value === 'custom') {
-        calcularDesdeSalida();
-        return;
-      }
+          const [hora, minutos] = entrada.value.split(':').map(Number);
+          const duracionHoras = parseFloat(selectorHoras.value);
 
-      const [hora, minutos] = entrada.value.split(':').map(Number);
-      const duracionHoras = parseFloat(selectorHoras.value);
+          if (isNaN(hora) || isNaN(minutos) || isNaN(duracionHoras)) return;
 
-      if (isNaN(hora) || isNaN(minutos) || isNaN(duracionHoras)) return;
+          const totalMin = (hora * 60 + minutos) + Math.round(duracionHoras * 60);
+          const hSalida = Math.floor((totalMin / 60) % 24);
+          const mSalida = Math.round(totalMin % 60);
 
-      const totalMin = (hora * 60 + minutos) + Math.round(duracionHoras * 60);
-      const hSalida = Math.floor((totalMin / 60) % 24);
-      const mSalida = Math.round(totalMin % 60);
-
-      salida.value = `${String(hSalida).padStart(2, '0')}:${String(mSalida).padStart(2, '0')}`;
-      validarYActualizarEtiqueta();
-    }
-
-    // Calcula las horas cuando el usuario escribe o edita directamente la salida
-    function calcularDesdeSalida() {
-      if (!entrada.value || !salida.value) return;
-
-      const [hEntrada, mEntrada] = entrada.value.split(':').map(Number);
-      const [hSalida, mSalida] = salida.value.split(':').map(Number);
-
-      const minEntrada = hEntrada * 60 + mEntrada;
-      const minSalida = hSalida * 60 + mSalida;
-      const diffMinutos = minSalida - minEntrada;
-
-      if (diffMinutos > 0) {
-        const horasDecimales = (diffMinutos / 60);
-        const valorEntero = horasDecimales.toString();
-        const opcionesExistentes = ['4', '6', '8'];
-
-        if (opcionesExistentes.includes(valorEntero)) {
-          selectorHoras.value = valorEntero;
-        } else {
-          selectorHoras.value = 'custom';
+          salida.value = `${String(hSalida).padStart(2, '0')}:${String(mSalida).padStart(2, '0')}`;
+          validarYActualizarEtiqueta();
         }
-      }
 
-      validarYActualizarEtiqueta();
-    }
+        // Calcula las horas cuando el usuario escribe o edita directamente la salida
+        function calcularDesdeSalida() {
+          if (!entrada.value || !salida.value) return;
 
-    // Valida y actualiza el texto resumen
-    function validarYActualizarEtiqueta() {
-      if (!entrada.value || !salida.value) return;
+          const [hEntrada, mEntrada] = entrada.value.split(':').map(Number);
+          const [hSalida, mSalida] = salida.value.split(':').map(Number);
 
-      const [hEntrada, mEntrada] = entrada.value.split(':').map(Number);
-      const [hSalida, mSalida] = salida.value.split(':').map(Number);
+          const minEntrada = hEntrada * 60 + mEntrada;
+          const minSalida = hSalida * 60 + mSalida;
+          const diffMinutos = minSalida - minEntrada;
 
-      const minEntrada = hEntrada * 60 + mEntrada;
-      const minSalida = hSalida * 60 + mSalida;
-      const diffMinutos = minSalida - minEntrada;
+          if (diffMinutos > 0) {
+            const horasDecimales = (diffMinutos / 60);
+            const valorEntero = horasDecimales.toString();
+            const opcionesExistentes = ['4', '6', '8'];
 
-      if (diffMinutos <= 0) {
-        if (alertaHorario) alertaHorario.style.display = 'block';
-        totalLabel.textContent = 'Horario inválido';
-        totalLabel.style.color = '#dc2626';
-        if (btnGuardar) btnGuardar.disabled = true;
-      } else {
-        if (alertaHorario) alertaHorario.style.display = 'none';
-        const horasDec = (diffMinutos / 60).toFixed(1);
-        totalLabel.textContent = `${horasDec} hrs`;
-        totalLabel.style.color = '#000000';
-        if (btnGuardar) btnGuardar.disabled = false;
-      }
-    }
+            if (opcionesExistentes.includes(valorEntero)) {
+              selectorHoras.value = valorEntero;
+            } else {
+              selectorHoras.value = 'custom';
+            }
+          }
 
-    // Listeners
-    selectorHoras.addEventListener('change', () => {
-      if (selectorHoras.value !== 'custom') {
+          validarYActualizarEtiqueta();
+        }
+
+        // Valida y actualiza el texto resumen
+        function validarYActualizarEtiqueta() {
+          if (!entrada.value || !salida.value) return;
+
+          const [hEntrada, mEntrada] = entrada.value.split(':').map(Number);
+          const [hSalida, mSalida] = salida.value.split(':').map(Number);
+
+          const minEntrada = hEntrada * 60 + mEntrada;
+          const minSalida = hSalida * 60 + mSalida;
+          const diffMinutos = minSalida - minEntrada;
+
+          if (diffMinutos <= 0) {
+            if (alertaHorario) alertaHorario.style.display = 'block';
+            totalLabel.textContent = 'Horario inválido';
+            totalLabel.style.color = '#dc2626';
+            if (btnGuardar) btnGuardar.disabled = true;
+          } else {
+            if (alertaHorario) alertaHorario.style.display = 'none';
+            const horasDec = (diffMinutos / 60).toFixed(1);
+            totalLabel.textContent = `${horasDec} hrs`;
+            totalLabel.style.color = '#000000';
+            if (btnGuardar) btnGuardar.disabled = false;
+          }
+        }
+
+        // Listeners
+        selectorHoras.addEventListener('change', () => {
+          if (selectorHoras.value !== 'custom') {
+            calcularDesdePreset();
+          } else {
+            calcularDesdeSalida();
+          }
+        });
+
+        entrada.addEventListener('input', () => {
+          if (selectorHoras.value !== 'custom') {
+            calcularDesdePreset();
+          } else {
+            calcularDesdeSalida();
+          }
+        });
+
+        salida.addEventListener('input', calcularDesdeSalida);
+
+        // Validación al enviar
+        if (form) {
+          form.addEventListener('submit', (e) => {
+            const diasSeleccionados = document.querySelectorAll('input[name="dias_semana"]:checked');
+            if (diasSeleccionados.length === 0) {
+              e.preventDefault();
+              alert('Por favor, seleccione al menos un día de la semana.');
+              return;
+            }
+
+            const [hEntrada, mEntrada] = entrada.value.split(':').map(Number);
+            const [hSalida, mSalida] = salida.value.split(':').map(Number);
+            const diffMinutos = (hSalida * 60 + mSalida) - (hEntrada * 60 + mEntrada);
+
+            if (diffMinutos <= 0) {
+              e.preventDefault();
+              alert('La hora de salida debe ser posterior a la hora de entrada.');
+              return;
+            }
+          });
+        }
+
+        // Inicializar
         calcularDesdePreset();
-      } else {
-        calcularDesdeSalida();
-      }
-    });
-
-    entrada.addEventListener('input', () => {
-      if (selectorHoras.value !== 'custom') {
-        calcularDesdePreset();
-      } else {
-        calcularDesdeSalida();
-      }
-    });
-
-    salida.addEventListener('input', calcularDesdeSalida);
-
-    // Validación al enviar
-    if (form) {
-      form.addEventListener('submit', (e) => {
-        const diasSeleccionados = document.querySelectorAll('input[name="dias_semana"]:checked');
-        if (diasSeleccionados.length === 0) {
-          e.preventDefault();
-          alert('Por favor, seleccione al menos un día de la semana.');
-          return;
-        }
-
-        const [hEntrada, mEntrada] = entrada.value.split(':').map(Number);
-        const [hSalida, mSalida] = salida.value.split(':').map(Number);
-        const diffMinutos = (hSalida * 60 + mSalida) - (hEntrada * 60 + mEntrada);
-
-        if (diffMinutos <= 0) {
-          e.preventDefault();
-          alert('La hora de salida debe ser posterior a la hora de entrada.');
-          return;
-        }
       });
-    }
+    </script>
 
-    // Inicializar
-    calcularDesdePreset();
-  });
-</script>
-
-<%- include('../partials/footer') %>
+    <%- include('../partials/footer') %>

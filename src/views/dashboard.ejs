@@ -25,29 +25,28 @@
       width: 100%;
     }
 
-    /* Sidebar flotante */
+    /* Sidebar estándar */
     .sidebar {
       position: fixed;
-      top: 16px;
-      bottom: 16px;
-      left: 16px;
+      top: 0;
+      bottom: 0;
+      left: 0;
       width: 260px;
-      background: rgba(9, 17, 33, 0.85);
+      height: 100vh;
+      background: #081426;
       padding: 24px 18px;
       display: flex;
       flex-direction: column;
       gap: 20px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      border-radius: 16px;
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.15);
+      border: none;
+      border-radius: 0;
       transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s;
       z-index: 100;
     }
 
     .sidebar.collapsed {
-      transform: translateX(-300px);
+      transform: translateX(-280px);
       opacity: 0;
       pointer-events: none;
     }
@@ -117,26 +116,32 @@
     /* Area de contenido */
     .content {
       flex: 1;
-      padding: 32px 32px 32px 292px;
+      padding: 0 !important;
+      margin-left: 260px;
       display: flex;
       flex-direction: column;
-      gap: 18px;
       min-height: 100vh;
       overflow: auto;
-      transition: padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       background-color: #f8fafc;
     }
 
     .sidebar.collapsed~.content {
-      padding-left: 32px;
+      margin-left: 0 !important;
+      padding-left: 0 !important;
     }
 
     .content-header {
+      background-color: #ffffff !important;
+      border-bottom: 1px solid #e2e8f0 !important;
+      padding: 24px 32px !important;
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
       gap: 14px;
+      width: 100%;
+      box-sizing: border-box;
     }
 
     .content-header h1 {
@@ -334,14 +339,15 @@
     @media (max-width: 960px) {
       .sidebar {
         position: fixed;
-        top: 16px;
-        bottom: 16px;
-        left: 16px;
-        height: calc(100vh - 32px);
-        margin: 0;
-        z-index: 1000;
-        transform: translateX(-320px);
+        top: 0;
+        bottom: 0;
+        left: 0;
+        height: 100vh;
         width: 280px;
+        margin: 0;
+        border-radius: 0;
+        z-index: 1000;
+        transform: translateX(-280px);
         opacity: 0;
         pointer-events: none;
       }
@@ -353,8 +359,13 @@
       }
 
       .content {
-        padding: 18px !important;
+        margin-left: 0 !important;
+        padding: 0 !important;
         min-height: auto;
+      }
+
+      .content-header {
+        padding: 16px 20px !important;
       }
 
       .asistencia-grid {
