@@ -478,7 +478,29 @@ body.reportes-admin-page .input-icon-wrap::before {
   -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>') no-repeat center / contain;
   mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>') no-repeat center / contain;
   pointer-events: none;
+  z-index: 2;
 }
+
+body.reportes-admin-page .input-icon-wrap.icon-user::before {
+  -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>') no-repeat center / contain;
+  mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>') no-repeat center / contain;
+}
+
+body.reportes-admin-page .input-icon-wrap.icon-calendar::before {
+  -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>') no-repeat center / contain;
+  mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>') no-repeat center / contain;
+}
+
+body.reportes-admin-page .input-icon-wrap select.select {
+  padding-left: 42px !important;
+}
+
+body.reportes-admin-page input[type="date"].form-control,
+body.reportes-admin-page .input-icon-wrap input[type="date"] {
+  padding-left: 42px !important;
+  font-family: inherit;
+}
+
  
 /* Select */
 body.reportes-admin-page select.select {
@@ -595,6 +617,174 @@ body.reportes-admin-page .btn-bell::before {
   mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>') no-repeat center / contain;
 }
  
+/* ---------- Autocompletado de Usuario ---------- */
+body.reportes-admin-page .autocomplete-container {
+  position: relative;
+  width: 100%;
+}
+
+body.reportes-admin-page .autocomplete-input-wrap {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+body.reportes-admin-page .autocomplete-input-wrap input {
+  width: 100%;
+  height: 46px;
+  background-color: #F9FAFB !important;
+  border: 1px solid #D1D5DB !important;
+  color: var(--color-text) !important;
+  border-radius: 10px !important;
+  padding: 10px 40px 10px 42px !important;
+  font-size: 14px !important;
+  outline: none !important;
+  transition: all 0.2s ease !important;
+}
+
+body.reportes-admin-page .autocomplete-input-wrap input:focus {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 3px rgba(15, 95, 166, 0.15) !important;
+  background-color: #FFFFFF !important;
+}
+
+body.reportes-admin-page .autocomplete-clear-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #E2E8F0;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #64748B;
+  font-size: 12px;
+  line-height: 1;
+  transition: all 0.15s ease;
+  z-index: 3;
+}
+
+body.reportes-admin-page .autocomplete-clear-btn:hover {
+  background: #CBD5E1;
+  color: #0F172A;
+}
+
+body.reportes-admin-page .autocomplete-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: #FFFFFF;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  max-height: 280px;
+  overflow-y: auto;
+  z-index: 1000;
+  display: none;
+  padding: 6px 0;
+}
+
+body.reportes-admin-page .autocomplete-dropdown.show {
+  display: block;
+  animation: fadeInDown 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+body.reportes-admin-page .autocomplete-item {
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  border-bottom: 1px solid #F8FAFC;
+}
+
+body.reportes-admin-page .autocomplete-item:last-child {
+  border-bottom: none;
+}
+
+body.reportes-admin-page .autocomplete-item:hover,
+body.reportes-admin-page .autocomplete-item.active {
+  background-color: #F0F7FF;
+}
+
+body.reportes-admin-page .autocomplete-item.selected {
+  background-color: #EBF5FF;
+}
+
+body.reportes-admin-page .user-avatar-initials {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background-color: #E2F0FD;
+  color: var(--color-primary);
+  font-weight: 700;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+body.reportes-admin-page .user-item-info {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  min-width: 0;
+  gap: 2px;
+}
+
+body.reportes-admin-page .user-item-name {
+  font-weight: 600;
+  font-size: 13.5px;
+  color: #0F172A;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+body.reportes-admin-page .user-item-sub {
+  font-size: 11.5px;
+  color: #64748B;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+body.reportes-admin-page .user-item-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 6px;
+  background-color: #DEF7EC;
+  color: #03543F;
+  border-radius: 4px;
+}
+
+body.reportes-admin-page .autocomplete-highlight {
+  color: var(--color-primary);
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+body.reportes-admin-page .autocomplete-empty {
+  padding: 18px 14px;
+  text-align: center;
+  color: #94A3B8;
+  font-size: 13px;
+}
+
 /* Fila de abajo de los botones de filtro */
 body.reportes-admin-page .filters-bottom-row {
   display: flex;
@@ -603,6 +793,7 @@ body.reportes-admin-page .filters-bottom-row {
   border-top: 1px solid var(--color-border);
   padding-top: 16px;
 }
+
  
  
 /* ---------- Tabla de Reportes ---------- */
@@ -634,11 +825,50 @@ body.reportes-admin-page .table th {
   color: #334155 !important;
   font-weight: 700 !important;
   font-size: 13px !important;
-  padding: 18px 24px !important;
+  padding: 14px 20px !important;
   border: none !important;
   border-bottom: 1px solid var(--color-border) !important;
   text-transform: none !important;
   white-space: nowrap !important;
+  vertical-align: middle !important;
+}
+
+body.reportes-admin-page .th-filter-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+body.reportes-admin-page .th-filter-select {
+  height: 32px;
+  padding: 4px 28px 4px 10px;
+  border-radius: 8px;
+  border: 1px solid #CBD5E1;
+  background-color: #FFFFFF;
+  color: #1E293B;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%230F5FA6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 13px;
+  max-width: 190px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+body.reportes-admin-page .th-filter-select:hover {
+  border-color: var(--color-primary);
+  background-color: #F8FAFC;
+}
+
+body.reportes-admin-page .th-filter-select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(15, 95, 166, 0.15);
 }
  
 /* Indicadores de ordenación en th */
