@@ -95,7 +95,7 @@
 .card-horas-header {
   background: #0b6bcb !important;
   color: #ffffff !important;
-  padding: 0.95rem 1.5rem !important;
+  padding: 0.75rem 1.5rem !important;
   font-weight: 600 !important;
   font-size: 0.98rem !important;
   display: flex !important;
@@ -103,7 +103,7 @@
 }
 
 .card-horas-body {
-  padding: 2.75rem 1.75rem !important;
+  padding: 1.35rem 1.5rem !important;
   display: flex !important;
   align-items: center !important;
   justify-content: flex-start !important;
@@ -132,7 +132,7 @@
   border: 1px solid #e2e8f0 !important;
   border-radius: 14px !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
-  padding: 1.75rem 1.75rem !important;
+  padding: 1.15rem 1.5rem !important;
   position: relative !important;
   overflow: hidden !important;
   display: flex !important;
@@ -146,7 +146,7 @@
   display: flex !important;
   justify-content: space-between !important;
   align-items: flex-start !important;
-  margin-bottom: 1rem !important;
+  margin-bottom: 0.4rem !important;
 }
 
 .jornada-title-box {
@@ -481,13 +481,60 @@
     width: 100% !important;
   }
 
-  .historial-controls-row {
-    flex-direction: column !important;
-    align-items: stretch !important;
+  .asistencia-wrapper .card-historial {
+    padding: 1.25rem 0.85rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
   }
 
-  .search-input-box,
-  .filter-date-box {
+  .asistencia-wrapper .historial-controls-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 1rem !important;
     width: 100% !important;
+  }
+
+  .asistencia-wrapper .filter-field-group {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.4rem !important;
+    width: 100% !important;
+  }
+
+  .asistencia-wrapper .filter-field-label {
+    width: 100% !important;
+    margin-bottom: 0.1rem !important;
+  }
+
+  .asistencia-wrapper .search-input-box,
+  .asistencia-wrapper .filter-date-box {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    flex: 1 1 100% !important;
+  }
+
+  .asistencia-wrapper .filter-date-box .input-icon-wrapper,
+  .asistencia-wrapper .search-input-box .input-icon-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .asistencia-wrapper .input-icon-wrapper .form-control {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .asistencia-wrapper .table-historial-wrapper {
+    overflow-x: auto !important;
+    width: 100% !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .asistencia-wrapper table.table-historial {
+    min-width: 620px !important;
   }
 }
