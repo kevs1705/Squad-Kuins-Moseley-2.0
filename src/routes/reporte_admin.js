@@ -3,29 +3,54 @@ const router = express.Router();
 const db = require('../config/bd');
 const ExcelJS = require('exceljs');
 
+// Helper para formatear segundos a HH:MM:SS sin límite de 838 horas
+function formatSecondsToHHMMSS(totalSecs) {
+  const s = parseInt(totalSecs, 10);
+  if (!s || isNaN(s) || s <= 0) return '00:00:00';
+  const hours = Math.floor(s / 3600);
+  const minutes = Math.floor((s % 3600) / 60);
+  const seconds = Math.floor(s % 60);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+}
+
+// Helper para formatear segundos a HH:MM (duración del día)
+function formatSecondsToHHMM(totalSecs) {
+  const s = parseInt(totalSecs, 10);
+  if (isNaN(s) || s < 0) return '00:00';
+  const hours = Math.floor(s / 3600);
+  const minutes = Math.floor((s % 3600) / 60);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${pad(hours)}:${pad(minutes)}`;
+}
 
 // Middleware de autorización para el rol de administrador
 function requireAdmin(req, res, next) {
-  if (req.session.user.rol !== 1) return res.status(403).send('No autorizado');
+  if (!req.session.user || req.session.user.rol !== 1) return res.status(403).send('No autorizado');
   next();
 }
 
 /* ==========================================================================
    VISTA: RENDERIZAR PANEL ADMINISTRATIVO DE REPORTES
    ========================================================================== */
-/* ==========================================
-   VISTA: Admin - Reportes
-   ========================================== */
 router.get('/admin/reportes', requireAdmin, async (req, res) => {
   try {
-    // 1. Consultar usuarios para el <select>
-    const [usuarios] = await db.query('SELECT id_usuario, nombre, CI FROM usuarios ORDER BY nombre ASC');
+    // 1. Consultar usuarios para el autocompletado y filtros
+    const [usuarios] = await db.query(
+      'SELECT id_usuario, nombre, CI, universidad, carrera FROM usuarios ORDER BY nombre ASC'
+    );
 
-    // 2. Pasar 'usuarios' a la vista
+    // 2. Consultar obras y lugares para el filtro
+    const [lugares] = await db.query(
+      'SELECT id_lugar, nombre, tipo FROM lugares ORDER BY nombre ASC'
+    );
+
+    // 3. Pasar 'usuarios' y 'lugares' a la vista
     res.render('reporte_admin', {
       filtroCI: '',
       user: req.session.user,
-      usuarios: usuarios || [] // Se pasa la lista de usuarios
+      usuarios: usuarios || [],
+      lugares: lugares || []
     });
   } catch (e) {
     console.error(e);
@@ -39,8 +64,10 @@ router.get('/admin/reportes', requireAdmin, async (req, res) => {
 router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
   try {
     const ci = (req.query.ci || '').trim();
-    const id_usuario = req.query.id_usuario || '';
-    const fecha = req.query.fecha || '';
+    const id_usuario = req.query.id_usuario ? parseInt(req.query.id_usuario, 10) : null;
+    const id_lugar = req.query.id_lugar ? parseInt(req.query.id_lugar, 10) : null;
+    const nombre = (req.query.nombre || req.query.q || '').trim();
+    const fecha = (req.query.fecha || '').trim();
     const page = Math.max(parseInt(req.query.page || '1', 10), 1);
     let size = Math.max(parseInt(req.query.size || '25', 10), 1);
     size = Math.min(size, 200);
@@ -56,6 +83,13 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
     if (id_usuario) {
       where.push('u.id_usuario = ?');
       params.push(id_usuario);
+    } else if (nombre) {
+      where.push('u.nombre LIKE ?');
+      params.push(`%${nombre}%`);
+    }
+    if (id_lugar) {
+      where.push('a.id_lugar = ?');
+      params.push(id_lugar);
     }
     if (fecha) {
       where.push('a.fecha = ?');
@@ -74,10 +108,63 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
     );
     const total = countRows[0]?.total || 0;
 
+    // Total de horas acumuladas calculadas en segundos para el filtro actual
+    const [totalsRows] = await db.query(
+      `SELECT COALESCE(
+         SUM(
+           TIMESTAMPDIFF(
+             SECOND,
+             TIMESTAMP(
+               a.fecha, 
+               COALESCE(
+                 NULLIF(TRIM(a.hora_entrada), ''), 
+                 TIME(a.fecha_hora_biometrico_entrada)
+               )
+             ),
+             CASE 
+               WHEN a.hora_salida IS NOT NULL AND TRIM(a.hora_salida) NOT IN ('', '-') THEN 
+                 TIMESTAMP(a.fecha, TRIM(a.hora_salida))
+               WHEN a.fecha_hora_biometrico_salida IS NOT NULL THEN 
+                 a.fecha_hora_biometrico_salida
+               ELSE NULL
+             END
+           )
+         ), 0
+       ) AS total_segundos
+       FROM asistencias a
+       INNER JOIN usuarios u ON u.id_usuario = a.id_usuario
+       ${whereSQL}
+       AND (
+         (a.hora_entrada IS NOT NULL AND TRIM(a.hora_entrada) NOT IN ('', '-')) OR
+         (a.fecha_hora_biometrico_entrada IS NOT NULL)
+       )
+       AND (
+         (a.hora_salida IS NOT NULL AND TRIM(a.hora_salida) NOT IN ('', '-')) OR
+         (a.fecha_hora_biometrico_salida IS NOT NULL)
+       )`,
+      params
+    );
+
+    const totalSegundos = totalsRows[0]?.total_segundos || 0;
+    const totalAcumulada = formatSecondsToHHMMSS(totalSegundos);
+
+    // Consulta de información del usuario si está seleccionado
+    let usuarioInfo = null;
+    if (id_usuario) {
+      const [uRows] = await db.query(
+        'SELECT id_usuario, nombre, CI, universidad, carrera FROM usuarios WHERE id_usuario = ? LIMIT 1',
+        [id_usuario]
+      );
+      if (uRows.length > 0) {
+        usuarioInfo = uRows[0];
+      }
+    }
+
     // Consulta unificada: Asistencia + Lugar + Bitácora (Reporte)
     const [rows] = await db.query(
       `SELECT
          a.id_asistencia,
+         u.id_usuario,
          u.nombre AS usuario_nombre,
          u.CI AS usuario_ci,
          DATE_FORMAT(a.fecha, '%Y-%m-%d') AS fecha,
@@ -88,8 +175,23 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
          TIME_FORMAT(COALESCE(TIME(a.fecha_hora_biometrico_entrada), a.hora_entrada), '%H:%i') AS hora_entrada,
          TIME_FORMAT(COALESCE(TIME(a.fecha_hora_biometrico_salida), a.hora_salida), '%H:%i') AS hora_salida,
          
-         -- Cálculo de tiempo trabajado
-         IF(a.hora_salida IS NOT NULL, TIME_FORMAT(TIMEDIFF(a.hora_salida, a.hora_entrada), '%H:%i'), 'En curso') AS horas_dia,
+         -- Duración en segundos si hay salida registrada
+         CASE 
+           WHEN (a.hora_salida IS NOT NULL AND TRIM(a.hora_salida) NOT IN ('', '-')) OR a.fecha_hora_biometrico_salida IS NOT NULL THEN
+             TIMESTAMPDIFF(
+               SECOND,
+               TIMESTAMP(
+                 a.fecha, 
+                 COALESCE(NULLIF(TRIM(a.hora_entrada), ''), TIME(a.fecha_hora_biometrico_entrada))
+               ),
+               CASE 
+                 WHEN a.hora_salida IS NOT NULL AND TRIM(a.hora_salida) NOT IN ('', '-') THEN TIMESTAMP(a.fecha, TRIM(a.hora_salida))
+                 WHEN a.fecha_hora_biometrico_salida IS NOT NULL THEN a.fecha_hora_biometrico_salida
+                 ELSE NULL
+               END
+             )
+           ELSE NULL
+         END AS duracion_segundos,
          
          a.estado AS asistencia_estado,
          
@@ -108,16 +210,23 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
       [...params, size, offset]
     );
 
+    const formattedRows = rows.map((r) => ({
+      ...r,
+      horas_dia: r.duracion_segundos != null ? formatSecondsToHHMM(r.duracion_segundos) : 'En curso'
+    }));
+
     res.json({
       ok: true,
-      data: rows,
+      data: formattedRows,
       page,
       size,
       total,
-      totalPages: Math.max(1, Math.ceil(total / size))
+      totalPages: Math.max(1, Math.ceil(total / size)),
+      total_acumulada: totalAcumulada,
+      usuario_info: usuarioInfo
     });
   } catch (e) {
-    console.error(e);
+    console.error('Error en /api/admin/reportes:', e);
     res.status(500).json({ ok: false, error: 'Error al consultar asistencias y reportes' });
   }
 });
@@ -151,7 +260,10 @@ router.post('/api/admin/reportes/:id_asistencia', requireAdmin, async (req, res)
 router.get('/admin/reportes/export', requireAdmin, async (req, res) => {
   try {
     const ci = (req.query.ci || '').trim();
-    const fecha = req.query.fecha || '';
+    const id_usuario = req.query.id_usuario ? parseInt(req.query.id_usuario, 10) : null;
+    const id_lugar = req.query.id_lugar ? parseInt(req.query.id_lugar, 10) : null;
+    const nombre = (req.query.nombre || req.query.q || '').trim();
+    const fecha = (req.query.fecha || '').trim();
 
     const where = [];
     const params = [];
@@ -159,11 +271,44 @@ router.get('/admin/reportes/export', requireAdmin, async (req, res) => {
       where.push('u.CI LIKE ?');
       params.push(`%${ci}%`);
     }
+    if (id_usuario) {
+      where.push('u.id_usuario = ?');
+      params.push(id_usuario);
+    } else if (nombre) {
+      where.push('u.nombre LIKE ?');
+      params.push(`%${nombre}%`);
+    }
+    if (id_lugar) {
+      where.push('a.id_lugar = ?');
+      params.push(id_lugar);
+    }
     if (fecha) {
       where.push('a.fecha = ?');
       params.push(fecha);
     }
     const whereSQL = where.length ? `WHERE ${where.join(' AND ')}` : '';
+
+    let userTitle = 'Reporte General de Asistencias y Bitácoras';
+    let fileSuffix = 'general';
+    if (id_usuario) {
+      const [uRows] = await db.query('SELECT nombre, CI FROM usuarios WHERE id_usuario = ? LIMIT 1', [id_usuario]);
+      if (uRows.length > 0) {
+        userTitle = `Reporte de Asistencias y Bitácoras - ${uRows[0].nombre} (CI: ${uRows[0].CI})`;
+        fileSuffix = uRows[0].nombre.replace(/\s+/g, '_').toLowerCase();
+      }
+    } else if (id_lugar) {
+      const [lRows] = await db.query('SELECT nombre FROM lugares WHERE id_lugar = ? LIMIT 1', [id_lugar]);
+      if (lRows.length > 0) {
+        userTitle = `Reporte General - Obra/Lugar: ${lRows[0].nombre}`;
+        fileSuffix = `lugar_${lRows[0].nombre.replace(/\s+/g, '_').toLowerCase()}`;
+      }
+    } else if (ci) {
+      userTitle = `Reporte General - Filtro CI: ${ci}`;
+      fileSuffix = `ci_${ci}`;
+    } else if (nombre) {
+      userTitle = `Reporte General - Filtro Nombre: ${nombre}`;
+      fileSuffix = `usuario_${nombre.replace(/\s+/g, '_').toLowerCase()}`;
+    }
 
     const [reports] = await db.query(
       `SELECT
@@ -171,9 +316,24 @@ router.get('/admin/reportes/export', requireAdmin, async (req, res) => {
          u.CI,
          DATE_FORMAT(a.fecha, '%Y-%m-%d') AS fecha,
          l.nombre AS lugar,
-         TIME_FORMAT(a.hora_entrada, '%H:%i:%s') AS hora_entrada,
-         TIME_FORMAT(a.hora_salida, '%H:%i:%s') AS hora_salida,
-         IF(a.hora_salida IS NOT NULL, TIME_FORMAT(TIMEDIFF(a.hora_salida, a.hora_entrada), '%H:%i:%s'), '00:00:00') AS horas_trabajadas,
+         TIME_FORMAT(COALESCE(TIME(a.fecha_hora_biometrico_entrada), a.hora_entrada), '%H:%i:%s') AS hora_entrada,
+         TIME_FORMAT(COALESCE(TIME(a.fecha_hora_biometrico_salida), a.hora_salida), '%H:%i:%s') AS hora_salida,
+         CASE 
+           WHEN (a.hora_salida IS NOT NULL AND TRIM(a.hora_salida) NOT IN ('', '-')) OR a.fecha_hora_biometrico_salida IS NOT NULL THEN
+             TIMESTAMPDIFF(
+               SECOND,
+               TIMESTAMP(
+                 a.fecha, 
+                 COALESCE(NULLIF(TRIM(a.hora_entrada), ''), TIME(a.fecha_hora_biometrico_entrada))
+               ),
+               CASE 
+                 WHEN a.hora_salida IS NOT NULL AND TRIM(a.hora_salida) NOT IN ('', '-') THEN TIMESTAMP(a.fecha, TRIM(a.hora_salida))
+                 WHEN a.fecha_hora_biometrico_salida IS NOT NULL THEN a.fecha_hora_biometrico_salida
+                 ELSE NULL
+               END
+             )
+           ELSE NULL
+         END AS duracion_segundos,
          r.tarea, 
          COALESCE(r.observacion, a.observacion) AS observacion
        FROM asistencias a
@@ -181,49 +341,83 @@ router.get('/admin/reportes/export', requireAdmin, async (req, res) => {
        LEFT JOIN lugares l ON l.id_lugar = a.id_lugar
        LEFT JOIN reportes r ON r.id_asistencia = a.id_asistencia
        ${whereSQL}
-       ORDER BY a.fecha DESC`,
+       ORDER BY a.fecha DESC, a.id_asistencia DESC`,
       params
     );
 
-    const [tRow] = await db.query(
+    const [totalsRows] = await db.query(
       `SELECT COALESCE(
-         SEC_TO_TIME(SUM(TIME_TO_SEC(TIMEDIFF(a.hora_salida, a.hora_entrada)))), '00:00:00'
-       ) AS total_acumulada
+         SUM(
+           TIMESTAMPDIFF(
+             SECOND,
+             TIMESTAMP(
+               a.fecha, 
+               COALESCE(
+                 NULLIF(TRIM(a.hora_entrada), ''), 
+                 TIME(a.fecha_hora_biometrico_entrada)
+               )
+             ),
+             CASE 
+               WHEN a.hora_salida IS NOT NULL AND TRIM(a.hora_salida) NOT IN ('', '-') THEN 
+                 TIMESTAMP(a.fecha, TRIM(a.hora_salida))
+               WHEN a.fecha_hora_biometrico_salida IS NOT NULL THEN 
+                 a.fecha_hora_biometrico_salida
+               ELSE NULL
+             END
+           )
+         ), 0
+       ) AS total_segundos
        FROM asistencias a
        INNER JOIN usuarios u ON u.id_usuario = a.id_usuario
-       ${whereSQL} AND a.hora_salida IS NOT NULL`,
+       ${whereSQL}
+       AND (
+         (a.hora_entrada IS NOT NULL AND TRIM(a.hora_entrada) NOT IN ('', '-')) OR
+         (a.fecha_hora_biometrico_entrada IS NOT NULL)
+       )
+       AND (
+         (a.hora_salida IS NOT NULL AND TRIM(a.hora_salida) NOT IN ('', '-')) OR
+         (a.fecha_hora_biometrico_salida IS NOT NULL)
+       )`,
       params
     );
 
-    const totalAcum = tRow?.[0]?.total_acumulada || '00:00:00';
+    const totalSegundos = totalsRows[0]?.total_segundos || 0;
+    const totalAcum = formatSecondsToHHMMSS(totalSegundos);
 
     const wb = new ExcelJS.Workbook();
-    const ws = wb.addWorksheet('Reporte General');
+    const ws = wb.addWorksheet('Reporte Asistencias');
 
-    ws.mergeCells('A1:H1');
-    ws.getCell('A1').value = ci ? `Reporte General - CI Filtro: ${ci}` : 'Reporte General de Asistencias y Bitácoras';
-    ws.getCell('A1').font = { bold: true, size: 14 };
+    ws.mergeCells('A1:I1');
+    ws.getCell('A1').value = userTitle;
+    ws.getCell('A1').font = { bold: true, size: 14, color: { argb: 'FF0F5FA6' } };
+    ws.getCell('A1').alignment = { vertical: 'middle' };
 
-    ws.mergeCells('A2:H2');
-    ws.getCell('A2').value = `Generado el: ${new Date().toLocaleString()}  •  Horas Totales Acumuladas: ${totalAcum}`;
-    ws.getCell('A2').font = { italic: true, size: 11 };
+    ws.mergeCells('A2:I2');
+    ws.getCell('A2').value = `Generado el: ${new Date().toLocaleString()}  •  Horas Totales Acumuladas: ${totalAcum}  •  Total Registros: ${reports.length}`;
+    ws.getCell('A2').font = { italic: true, size: 11, color: { argb: 'FF475569' } };
+    ws.getCell('A2').alignment = { vertical: 'middle' };
 
     ws.addRow([]);
     ws.addRow(['Usuario', 'CI', 'Fecha', 'Lugar / Obra', 'Hora Entrada', 'Hora Salida', 'Duración', 'Tarea (Bitácora)', 'Observación Admin']);
     
     const headerRow = ws.getRow(4);
-    headerRow.font = { bold: true };
+    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    headerRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF081426' }
+    };
 
     ws.columns = [
-      { key: 'nombre', width: 25 },
+      { key: 'nombre', width: 26 },
       { key: 'ci', width: 14 },
-      { key: 'fecha', width: 12 },
-      { key: 'lugar', width: 20 },
+      { key: 'fecha', width: 14 },
+      { key: 'lugar', width: 22 },
       { key: 'hora_entrada', width: 14 },
       { key: 'hora_salida', width: 14 },
       { key: 'horas_trabajadas', width: 14 },
-      { key: 'tarea', width: 35 },
-      { key: 'observacion', width: 30 }
+      { key: 'tarea', width: 38 },
+      { key: 'observacion', width: 32 }
     ];
 
     if (!reports.length) {
@@ -237,7 +431,7 @@ router.get('/admin/reportes/export', requireAdmin, async (req, res) => {
           lugar: r.lugar || 'N/A',
           hora_entrada: r.hora_entrada || '-',
           hora_salida: r.hora_salida || '-',
-          horas_trabajadas: r.horas_trabajadas,
+          horas_trabajadas: r.duracion_segundos != null ? formatSecondsToHHMMSS(r.duracion_segundos) : 'En curso',
           tarea: r.tarea || 'Sin bitácora registrada',
           observacion: r.observacion || ''
         });
@@ -246,10 +440,13 @@ router.get('/admin/reportes/export', requireAdmin, async (req, res) => {
 
     const startRow = 5;
     for (let i = startRow; i <= ws.lastRow.number; i++) {
-      ws.getRow(i).eachCell((cell) => {
+      const row = ws.getRow(i);
+      row.eachCell((cell) => {
         cell.border = {
-          top: { style: 'thin' }, left: { style: 'thin' },
-          bottom: { style: 'thin' }, right: { style: 'thin' }
+          top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+          left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+          bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+          right: { style: 'thin', color: { argb: 'FFE2E8F0' } }
         };
         cell.alignment = { vertical: 'middle', wrapText: true };
       });
@@ -257,7 +454,7 @@ router.get('/admin/reportes/export', requireAdmin, async (req, res) => {
 
     ws.views = [{ state: 'frozen', ySplit: 4 }];
 
-    const filename = `reporte_admin_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    const filename = `reporte_admin_${fileSuffix}_${new Date().toISOString().slice(0, 10)}.xlsx`;
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     await wb.xlsx.write(res);

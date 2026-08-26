@@ -5,7 +5,7 @@ const Zkteco = require('zkteco-js-with-restart');
 
 const BIOMETRICO_IP = process.env.BIOMETRICO_IP || '192.168.0.250';
 const BIOMETRICO_PORT = Number(process.env.BIOMETRICO_PORT) || 4370;
-const ID_LUGAR_DEFECTO = 1; // ID de lugar por defecto en la tabla lugares
+const ID_LUGAR_DEFECTO = 3; // ID de lugar por defecto en la tabla lugares
 
 // Función para formatear fechas a YYYY-MM-DD y YYYY-MM-DD HH:mm:ss
 function formatearFecha(fechaObj) {
@@ -33,8 +33,8 @@ async function sincronizarBiometricoCompleto() {
   try {
     console.log('1. Cargando catálogo de carreras y lugares...');
     const [carrerasBD] = await db.query('SELECT id_carrera, nombre, siglas FROM carreras');
-    const [lugaresBD] = await db.query("SELECT id_lugar, nombre FROM lugares WHERE estado = 'ACTIVO' LIMIT 1");
-    const idLugarDefecto = lugaresBD.length > 0 ? lugaresBD[0].id_lugar : 2;
+    const [lugaresBD] = await db.query('SELECT id_lugar, nombre FROM lugares WHERE id_lugar = ? LIMIT 1', [ID_LUGAR_DEFECTO]);
+    const idLugarDefecto = lugaresBD.length > 0 ? lugaresBD[0].id_lugar : ID_LUGAR_DEFECTO;
 
     const mapCarrerasBySigla = new Map();
     carrerasBD.forEach(c => {
@@ -152,18 +152,26 @@ async function sincronizarBiometricoCompleto() {
     const marcasBio = responseAttendances.data || [];
     console.log(`   --> Total de marcas extraídas del K14: ${marcasBio.length}`);
 
-    let marcasProcesadas = 0;
-    let marcasOmitidas = 0;
+    // Filtrar únicamente las marcas correspondientes al año 2026
+    const marcasBio2026 = marcasBio.filter(m => {
+      const rawTime = m.record_time ?? m.recordTime ?? m.timestamp ?? m.time;
+      const d = new Date(rawTime);
+      return !isNaN(d.getTime()) && d.getFullYear() === 2026;
+    });
+    console.log(`   --> Total de marcas del año 2026 a procesar: ${marcasBio2026.length}`);
 
-    if (marcasBio.length > 0) {
+    let marcasProcesadas = 0;
+    let marcasOmitidas = marcasBio.length - marcasBio2026.length;
+
+    if (marcasBio2026.length > 0) {
       // Ordenar marcas de más antigua a más reciente
-      marcasBio.sort((a, b) => {
+      marcasBio2026.sort((a, b) => {
         const timeA = new Date(a.record_time || a.recordTime || a.timestamp).getTime();
         const timeB = new Date(b.record_time || b.recordTime || b.timestamp).getTime();
         return timeA - timeB;
       });
 
-      for (const marca of marcasBio) {
+      for (const marca of marcasBio2026) {
         try {
           const rawId = String(marca.user_id ?? marca.userId ?? marca.deviceUserId ?? marca.uid).trim();
 
@@ -191,15 +199,15 @@ async function sincronizarBiometricoCompleto() {
           const rawTime = marca.record_time ?? marca.recordTime ?? marca.timestamp ?? marca.time;
           const fechaHoraObj = new Date(rawTime);
 
-          if (isNaN(fechaHoraObj.getTime())) {
-            console.log(`   ⚠️ Fecha inválida para el usuario ${rawId}:`, rawTime);
+          if (isNaN(fechaHoraObj.getTime()) || fechaHoraObj.getFullYear() !== 2026) {
+            console.log(`   ⚠️ Fecha no válida/fuera de 2026 para el usuario ${rawId}:`, rawTime);
             marcasOmitidas++;
             continue;
           }
 
           const { fecha, fechaHoraSql } = formatearFecha(fechaHoraObj);
 
-          // Asignar idLugarDefecto obtenido de la BD
+          // Asignar idLugarDefecto (3)
           const idLugar = idLugarDefecto;
 
           // Insertar / Actualizar asistencia
@@ -212,6 +220,7 @@ async function sincronizarBiometricoCompleto() {
               estado
             ) VALUES (?, ?, ?, ?, 'PRESENTE')
             ON DUPLICATE KEY UPDATE
+              id_lugar = VALUES(id_lugar),
               fecha_hora_biometrico_salida = IF(
                 fecha_hora_biometrico_entrada IS NOT NULL AND VALUES(fecha_hora_biometrico_entrada) > fecha_hora_biometrico_entrada,
                 VALUES(fecha_hora_biometrico_entrada),
