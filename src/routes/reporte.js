@@ -216,23 +216,32 @@ router.post('/reportes/guardar', requireAuth, upload.single('comprobante'), asyn
       return res.status(400).json({ ok: false, error: 'Debe seleccionar una asistencia y describir la tarea.' });
     }
 
+    // Ruta de la imagen cargada por Multer (si existe)
     const publicPath = req.file ? '/uploads/comprobantes/' + req.file.filename : null;
 
-    // Verificar si ya existe un reporte para esta asistencia
-    const reporteExistente = await getReportePorAsistencia(id_asistencia, userId);
+    // Verificar si ya existe un reporte registrado para esta asistencia
+    const [reportes] = await db.query(
+      'SELECT id_reporte, comprobante FROM reportes WHERE id_asistencia = ? AND id_usuario = ? LIMIT 1',
+      [id_asistencia, userId]
+    );
+
+    const reporteExistente = reportes.length > 0 ? reportes[0] : null;
 
     if (reporteExistente) {
-      // Actualizar reporte existente
-      const imgFinal = publicPath || reporteExistente.comprobante;
+      // Si subió nueva imagen usa publicPath, de lo contrario conserva la imagen previa
+      const imgFinal = publicPath !== null ? publicPath : reporteExistente.comprobante;
+
       await db.query(`
         UPDATE reportes
-        SET tarea = ?, comprobante = ?
+        SET tarea = ?, 
+            comprobante = ?, 
+            actualizado_en = CURRENT_TIMESTAMP
         WHERE id_reporte = ? AND id_usuario = ?
       `, [tarea, imgFinal, reporteExistente.id_reporte, userId]);
 
       return res.json({ ok: true, msg: 'Bitácora actualizada con éxito' });
     } else {
-      // Obtener la fecha de la asistencia seleccionada
+      // Obtener la fecha correspondiente a la asistencia seleccionada
       const [[asistencia]] = await db.query(
         'SELECT fecha FROM asistencias WHERE id_asistencia = ? AND id_usuario = ?',
         [id_asistencia, userId]
@@ -242,7 +251,7 @@ router.post('/reportes/guardar', requireAuth, upload.single('comprobante'), asyn
         return res.status(404).json({ ok: false, error: 'Asistencia no encontrada' });
       }
 
-      // Crear nuevo reporte asociado a la asistencia
+      // Inserción respetando el esquema (creado_en y actualizado_en toman DEFAULT)
       await db.query(`
         INSERT INTO reportes (id_usuario, id_asistencia, fecha, tarea, comprobante)
         VALUES (?, ?, ?, ?, ?)
@@ -252,10 +261,11 @@ router.post('/reportes/guardar', requireAuth, upload.single('comprobante'), asyn
     }
 
   } catch (err) {
-    console.error(err);
+    console.error('Error al guardar reporte:', err);
     return res.status(500).json({ ok: false, error: 'No se pudo guardar la bitácora de trabajo' });
   }
 });
+
 
 /* ==========================================================================
    SOLICITUD DE NOTIFICACIONES / HORAS EXTRA
