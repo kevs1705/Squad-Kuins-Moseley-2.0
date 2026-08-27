@@ -250,171 +250,104 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-  const CLOUD_NAME = '<%= (typeof cloudinaryCloudName !== "undefined" && cloudinaryCloudName) ? cloudinaryCloudName : "sjgf9nkd" %>';
-  const UPLOAD_PRESET = '<%= (typeof cloudinaryUploadPreset !== "undefined" && cloudinaryUploadPreset) ? cloudinaryUploadPreset : "pasantes_preset" %>';
+  <!-- ========================================================================= -->
+  <!-- INICIO: INCLUSIÓN DEL COMPONENTE DE ALERTA REUTILIZABLE -->
+  <!-- ========================================================================= -->
+  <%- include('../partials/toast-alert') %>
+  <!-- ========================================================================= -->
+  <!-- FIN: INCLUSIÓN DEL COMPONENTE DE ALERTA REUTILIZABLE -->
+  <!-- ========================================================================= -->
 
-  const modalReporte = new bootstrap.Modal(document.getElementById('modalReporte'));
-  const fileInput = document.getElementById('modal_comprobante');
-  const previewNewContainer = document.getElementById('preview_new_container');
-  const previewNewImg = document.getElementById('preview_new_img');
-  const previewExistingContainer = document.getElementById('preview_existing_container');
-  const previewExistingLink = document.getElementById('preview_existing_link');
-  const uploadFeedback = document.getElementById('upload_feedback');
-  const uploadFeedbackText = document.getElementById('upload_feedback_text');
-  const btnGuardar = document.getElementById('btnGuardarReporte');
+  <!-- 2. Script Oficial de Bootstrap (SIEMPRE PRIMERO) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-  // Previsualización en vivo al seleccionar una imagen
-  fileInput.addEventListener('change', () => {
-    const file = fileInput.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        previewNewImg.src = e.target.result;
-        previewNewContainer.style.display = 'block';
-      };
-      reader.readAsDataURL(file);
-    } else {
-      previewNewContainer.style.display = 'none';
-      previewNewImg.src = '';
-    }
-  });
+  <!-- 3. Tu lógica JavaScript -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Inicializar el Modal de Bootstrap de forma segura
+      const modalEl = document.getElementById('modalReporte');
+      const modalReporte = new bootstrap.Modal(modalEl);
+      const formReporte = document.getElementById('formReporte');
 
-  // Función para subir la imagen a Cloudinary directo desde el cliente
-  const uploadImage = async (file) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', UPLOAD_PRESET);
+      // Abrir Modal de Bitácora
+      document.querySelectorAll('.btn-reporte').forEach(btn => {
+        btn.addEventListener('click', () => {
+          formReporte.reset();
 
-    const res = await fetch(
-      `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
-      {
-        method: 'POST',
-        body: formData,
-      }
-    );
+          document.getElementById('modal_id_asistencia').value = btn.dataset.asistencia;
+          document.getElementById('modal_tarea').value = btn.dataset.tarea;
+          
+          modalReporte.show();
+        });
+      });
 
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.error?.message || 'Error al subir imagen a Cloudinary');
-    }
+      // Enviar Formulario AJAX
+      formReporte.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(formReporte);
 
-    const data = await res.json();
-    return data.secure_url; // URL pública de la imagen guardada
-  };
+        try {
+          const res = await fetch('/reportes/guardar', {
+            method: 'POST',
+            body: formData
+          });
+          const data = await res.json();
 
-  // Abrir Modal de Bitácora con datos de la asistencia seleccionada
-  document.querySelectorAll('.btn-reporte').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.getElementById('modal_id_asistencia').value = btn.dataset.asistencia;
-      document.getElementById('modal_tarea').value = btn.dataset.tarea;
-      fileInput.value = '';
-      previewNewContainer.style.display = 'none';
-      previewNewImg.src = '';
-      uploadFeedback.style.display = 'none';
-      btnGuardar.disabled = false;
+          if (data.ok) {
+            // Cierra el modal
+            modalReporte.hide();
 
-      const comprobanteActual = btn.dataset.comprobante;
-      if (comprobanteActual && comprobanteActual.trim() !== '') {
-        previewExistingLink.href = comprobanteActual;
-        previewExistingContainer.style.display = 'block';
-      } else {
-        previewExistingContainer.style.display = 'none';
-      }
+            // Muestra la alerta toast
+            mostrarAlerta(data.msg || 'Bitácora guardada correctamente', 'success');
 
-      modalReporte.show();
+            // Recarga tras 1.5s
+            setTimeout(() => {
+              location.reload();
+            }, 1500);
+
+          } else {
+            mostrarAlerta(data.error || 'Error al guardar la bitácora', 'error');
+          }
+        } catch (err) {
+          console.error(err);
+          mostrarAlerta('Error de conexión al servidor.', 'error');
+        }
+      });
     });
-  });
-
-  // Enviar Guardado de Bitácora
-  document.getElementById('formReporte').addEventListener('submit', async (e) => {
+     
+  /* 
+  ===============================================================
+  ENVÍO DE SOLICITUD DE HORAS EXTRA (TEMPORALMENTE DESHABILITADO)
+  ===============================================================
+  document.getElementById('formHorasExtra').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const id_asistencia = document.getElementById('modal_id_asistencia').value;
-    const tarea = document.getElementById('modal_tarea').value.trim();
-
-    if (!id_asistencia || !tarea) {
-      alert('Por favor complete la descripción de la tarea.');
-      return;
-    }
-
-    let comprobanteUrl = null;
+    const formData = new FormData(e.target);
+    const payload = Object.fromEntries(formData.entries());
 
     try {
-      btnGuardar.disabled = true;
-
-      // 1. Si el usuario seleccionó un archivo nuevo, subirlo a Cloudinary primero
-      if (fileInput.files && fileInput.files[0]) {
-        uploadFeedback.style.display = 'flex';
-        uploadFeedbackText.textContent = 'Subiendo comprobante a Cloudinary...';
-        
-        comprobanteUrl = await uploadImage(fileInput.files[0]);
-      }
-
-      // 2. Guardar en base de datos
-      uploadFeedback.style.display = 'flex';
-      uploadFeedbackText.textContent = 'Guardando bitácora de trabajo...';
-
-      const res = await fetch('/reportes/guardar', {
+      const res = await fetch('/api/notificaciones', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          id_asistencia,
-          tarea,
-          comprobante: comprobanteUrl
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       });
 
       const data = await res.json();
-      
+
       if (data.ok) {
+        mostrarAlerta(data.msg, 'success');
         location.reload();
       } else {
-        alert(data.error || data.msg || 'Error al guardar la bitácora');
-        btnGuardar.disabled = false;
-        uploadFeedback.style.display = 'none';
+        mostrarAlerta(data.msg || 'Error al procesar la solicitud', 'error');
       }
     } catch (err) {
-      console.error(err);
-      alert('Error: ' + (err.message || 'Error de conexión con el servidor.'));
-      btnGuardar.disabled = false;
-      uploadFeedback.style.display = 'none';
+      mostrarAlerta('Error conectando con el servidor.', 'error');
     }
   });
-
-  // Filtrado dinámico en la tabla de reportes
-  document.addEventListener('DOMContentLoaded', () => {
-    const searchInput = document.getElementById('reporteSearch');
-    const dateInput = document.getElementById('reporteDateFilter');
-    const tableRows = document.querySelectorAll('.table-reporte tbody tr');
-
-    function filterReporteTable() {
-      const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
-      const dateTerm = dateInput ? dateInput.value : '';
-
-      tableRows.forEach(row => {
-        if (row.children.length <= 1) return;
-
-        const fechaText = row.cells[0] ? row.cells[0].textContent.trim() : '';
-        const obraText = row.cells[1] ? row.cells[1].textContent.toLowerCase() : '';
-        const tareaText = row.cells[5] ? row.cells[5].textContent.toLowerCase() : '';
-
-        const matchesSearch = !searchTerm || obraText.includes(searchTerm) || fechaText.toLowerCase().includes(searchTerm) || tareaText.includes(searchTerm);
-        const matchesDate = !dateTerm || fechaText.includes(dateTerm);
-
-        if (matchesSearch && matchesDate) {
-          row.style.display = '';
-        } else {
-          row.style.display = 'none';
-        }
-      });
-    }
-
-    if (searchInput) searchInput.addEventListener('input', filterReporteTable);
-    if (dateInput) dateInput.addEventListener('change', filterReporteTable);
-  });
-</script>
-
+  */
+  </script>
+</body>
+</html>
 <%- include('../partials/footer') %>
+
+
+
