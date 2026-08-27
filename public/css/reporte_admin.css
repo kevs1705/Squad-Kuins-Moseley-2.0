@@ -834,20 +834,22 @@ body.reportes-admin-page .table th {
 }
 
 body.reportes-admin-page .th-filter-wrapper {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 140px;
 }
 
 body.reportes-admin-page .th-filter-select {
-  height: 32px;
-  padding: 4px 28px 4px 10px;
-  border-radius: 8px;
+  height: 28px;
+  padding: 2px 24px 2px 8px;
+  border-radius: 6px;
   border: 1px solid #CBD5E1;
   background-color: #FFFFFF;
   color: #1E293B;
-  font-size: 12.5px;
-  font-weight: 600;
+  font-size: 11.5px;
+  font-weight: 500;
   cursor: pointer;
   outline: none;
   transition: all 0.2s ease;
@@ -855,10 +857,11 @@ body.reportes-admin-page .th-filter-select {
   -webkit-appearance: none;
   background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%230F5FA6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>');
   background-repeat: no-repeat;
-  background-position: right 8px center;
-  background-size: 13px;
-  max-width: 190px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  background-position: right 6px center;
+  background-size: 12px;
+  width: 100%;
+  max-width: 155px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 body.reportes-admin-page .th-filter-select:hover {
@@ -868,7 +871,7 @@ body.reportes-admin-page .th-filter-select:hover {
 
 body.reportes-admin-page .th-filter-select:focus {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(15, 95, 166, 0.15);
+  box-shadow: 0 0 0 2px rgba(15, 95, 166, 0.15);
 }
  
 /* Indicadores de ordenación en th */
