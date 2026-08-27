@@ -156,9 +156,11 @@
                   <span>Lugar / Obra</span>
                   <select id="filterLugar" class="th-filter-select" title="Filtrar por obra / lugar">
                     <option value="">Todas las obras</option>
-                    <% (lugares || []).forEach(l => { %>
-                      <option value="<%= l.id_lugar %>"><%= l.nombre %></option>
-                    <% }) %>
+                    <% (lugares || []).forEach(l=> { %>
+                      <option value="<%= l.id_lugar %>">
+                        <%= l.nombre %>
+                      </option>
+                      <% }) %>
                   </select>
                 </div>
               </th>
@@ -185,22 +187,40 @@
       </div>
     </div>
 
-    <!-- MODAL: EDITAR OBSERVACIÓN -->
+    <!-- MODAL: EDITAR HORAS Y OBSERVACIÓN -->
     <div class="modal-backdrop" id="modalObsBackdrop">
       <div class="modal" id="modalObs">
-        <h3>Añadir / Modificar Observación</h3>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px;">
+          <div>
+            <h3 style="margin: 0 0 4px 0;">Editar Registro de Jornada</h3>
+            <p id="modalSubInfo" style="margin: 0; font-size: 13px; color: var(--color-text-muted);">Ajustar marcaciones
+              de horas y observaciones</p>
+          </div>
+          <button type="button" id="btnXModal"
+            style="background: none; border: none; font-size: 22px; cursor: pointer; color: var(--color-text-muted); line-height: 1; padding: 2px 6px;">&times;</button>
+        </div>
         <form id="formObs">
           <input type="hidden" id="obs_id_asistencia">
+          <div class="form-grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 16px;">
+            <label>
+              Hora Entrada:
+              <input type="time" id="edit_hora_entrada" name="hora_entrada" required>
+            </label>
+            <label>
+              Hora Salida:
+              <input type="time" id="edit_hora_salida" name="hora_salida">
+            </label>
+          </div>
           <div class="form-grid" style="grid-template-columns: 1fr;">
             <label>
               Observaciones del Administrador:
-              <textarea id="obs_texto" rows="4"
+              <textarea id="obs_texto" rows="3"
                 placeholder="Ingresa justificativos, observaciones o correcciones de la jornada..."></textarea>
             </label>
           </div>
-          <div class="modal-actions">
+          <div class="modal-actions" style="margin-top: 20px;">
             <button type="button" class="btn btn-secondary" id="btnCerrarModal">Cancelar</button>
-            <button type="submit" class="btn btn-primary">Guardar Observación</button>
+            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
           </div>
         </form>
       </div>
@@ -346,12 +366,22 @@
         }
       });
 
-      // Manejo de Modal de Observación
+      // Manejo de Modal de Edición de Jornada (Horas y Observación)
       const modalBackdrop = document.getElementById('modalObsBackdrop');
 
-      function abrirModalObs(idAsistencia, obsActual) {
+      function abrirModalEditar(idAsistencia, horaEntrada, horaSalida, obsActual, usuarioNombre, fecha) {
         document.getElementById('obs_id_asistencia').value = idAsistencia;
+        document.getElementById('edit_hora_entrada').value = (horaEntrada && horaEntrada !== '-') ? horaEntrada : '';
+        document.getElementById('edit_hora_salida').value = (horaSalida && horaSalida !== '-') ? horaSalida : '';
         document.getElementById('obs_texto').value = obsActual || '';
+
+        const subInfo = document.getElementById('modalSubInfo');
+        if (subInfo) {
+          const userStr = usuarioNombre ? `${escapeHTML(usuarioNombre)} · ` : '';
+          const fechaStr = fecha ? `Fecha: ${escapeHTML(fecha)}` : '';
+          subInfo.innerHTML = userStr || fechaStr ? `${userStr}${fechaStr}` : 'Ajustar marcaciones de horas y observaciones';
+        }
+
         modalBackdrop.style.display = 'flex';
       }
 
@@ -359,7 +389,8 @@
         modalBackdrop.style.display = 'none';
       }
 
-      document.getElementById('btnCerrarModal').addEventListener('click', cerrarModalObs);
+      document.getElementById('btnCerrarModal')?.addEventListener('click', cerrarModalObs);
+      document.getElementById('btnXModal')?.addEventListener('click', cerrarModalObs);
       modalBackdrop.addEventListener('click', (e) => {
         if (e.target === modalBackdrop) cerrarModalObs();
       });
@@ -541,8 +572,8 @@
           </div>
         </td>
         <td style="text-align: center;">
-          <button class="btn-edit-row" type="button" onclick="abrirModalObs(${item.id_asistencia}, '${obsSegura}')">
-            Obs
+          <button class="btn-edit-row" type="button" onclick="abrirModalEditar(${item.id_asistencia}, '${item.hora_entrada || ''}', '${item.hora_salida || ''}', '${obsSegura}', '${(item.usuario_nombre || '').replace(/'/g, "\\'")}', '${item.fecha || ''}')">
+            Editar
           </button>
         </td>
       `;
@@ -627,17 +658,19 @@
         paginador.appendChild(btnNext);
       }
 
-      // Guardar Observación
+      // Guardar Horas y Observación
       document.getElementById('formObs').addEventListener('submit', async (e) => {
         e.preventDefault();
         const id = document.getElementById('obs_id_asistencia').value;
+        const hora_entrada = document.getElementById('edit_hora_entrada').value;
+        const hora_salida = document.getElementById('edit_hora_salida').value;
         const observacion = document.getElementById('obs_texto').value.trim();
 
         try {
           const res = await fetch(`/api/admin/reportes/${id}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ observacion })
+            body: JSON.stringify({ hora_entrada, hora_salida, observacion })
           });
           const data = await res.json();
 
@@ -646,13 +679,13 @@
             Swal.fire({
               icon: 'success',
               title: 'Guardado',
-              text: 'Observación actualizada correctamente',
+              text: 'Jornada y horas actualizadas correctamente',
               timer: 1500,
               showConfirmButton: false
             });
             fetchReportes(currentPage);
           } else {
-            Swal.fire('Error', data.msg || 'No se pudo guardar la observación', 'error');
+            Swal.fire('Error', data.msg || 'No se pudo guardar la información', 'error');
           }
         } catch (err) {
           console.error(err);

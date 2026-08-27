@@ -149,7 +149,8 @@
                 <td class="text-center">
                   <button class="btn-reporte-action btn-reporte" 
                           data-asistencia="<%= j.id_asistencia %>"
-                          data-tarea="<%= j.tarea || '' %>">
+                          data-tarea="<%= j.tarea || '' %>"
+                          data-comprobante="<%= j.comprobante || '' %>">
                     <i class="bi bi-pencil-square me-1"></i> <%= j.tarea ? 'Editar' : 'Registrar' %>
                   </button>
                 </td>
@@ -196,7 +197,7 @@
 <div class="modal fade" id="modalReporte" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
-      <form id="formReporte" enctype="multipart/form-data">
+      <form id="formReporte">
         <div class="modal-header">
           <h5 class="modal-title fw-bold">Bitácora de Trabajo</h5>
           <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Cerrar">
@@ -205,18 +206,44 @@
         </div>
         <div class="modal-body">
           <input type="hidden" name="id_asistencia" id="modal_id_asistencia">
+          
           <div class="mb-3">
-            <label class="form-label fw-semibold">Descripción de la Tarea / Avance</label>
+            <label class="form-label fw-semibold">Descripción de la Tarea / Avance <span class="text-danger">*</span></label>
             <textarea class="form-control" name="tarea" id="modal_tarea" rows="4" required placeholder="Describe las actividades realizadas en la jornada..."></textarea>
           </div>
+
+          <!-- Comprobante existente si aplica -->
+          <div id="preview_existing_container" class="mb-3 p-2 bg-light rounded border" style="display: none;">
+            <div class="d-flex align-items-center justify-content-between">
+              <span class="text-muted fs-7"><i class="bi bi-image me-1"></i> Comprobante actual guardado:</span>
+              <a href="#" id="preview_existing_link" target="_blank" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 12px;">
+                <i class="bi bi-box-arrow-up-right me-1"></i> Ver imagen
+              </a>
+            </div>
+          </div>
+
           <div class="mb-3">
-            <label class="form-label fw-semibold">Adjuntar Comprobante (PNG / JPG)</label>
-            <input type="file" class="form-control" name="comprobante" accept="image/png, image/jpeg">
+            <label class="form-label fw-semibold">Adjuntar Comprobante (PNG / JPG / WEBP)</label>
+            <input type="file" class="form-control" id="modal_comprobante" accept="image/png, image/jpeg, image/jpg, image/webp">
+            <small class="text-muted">Las imágenes se subirán automáticamente a Cloudinary.</small>
+          </div>
+
+          <!-- Previsualización de nueva imagen seleccionada -->
+          <div id="preview_new_container" class="mb-3 text-center" style="display: none;">
+            <img id="preview_new_img" src="" alt="Previsualización" class="img-fluid rounded border shadow-sm" style="max-height: 180px; object-fit: contain;">
+          </div>
+
+          <!-- Estado de carga / spinner -->
+          <div id="upload_feedback" class="alert alert-info py-2 px-3 align-items-center gap-2 mb-0" style="display: none; font-size: 0.875rem;">
+            <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+            <span id="upload_feedback_text">Subiendo imagen a Cloudinary...</span>
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn btn-primary" style="background-color: #0b6bcb; border-color: #0b6bcb;">Guardar Bitácora</button>
+          <button type="submit" id="btnGuardarReporte" class="btn btn-primary" style="background-color: #0b6bcb; border-color: #0b6bcb;">
+            <i class="bi bi-check2-circle me-1"></i> Guardar Bitácora
+          </button>
         </div>
       </form>
     </div>
@@ -225,13 +252,77 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+  const CLOUD_NAME = '<%= (typeof cloudinaryCloudName !== "undefined" && cloudinaryCloudName) ? cloudinaryCloudName : "sjgf9nkd" %>';
+  const UPLOAD_PRESET = '<%= (typeof cloudinaryUploadPreset !== "undefined" && cloudinaryUploadPreset) ? cloudinaryUploadPreset : "pasantes_preset" %>';
+
   const modalReporte = new bootstrap.Modal(document.getElementById('modalReporte'));
+  const fileInput = document.getElementById('modal_comprobante');
+  const previewNewContainer = document.getElementById('preview_new_container');
+  const previewNewImg = document.getElementById('preview_new_img');
+  const previewExistingContainer = document.getElementById('preview_existing_container');
+  const previewExistingLink = document.getElementById('preview_existing_link');
+  const uploadFeedback = document.getElementById('upload_feedback');
+  const uploadFeedbackText = document.getElementById('upload_feedback_text');
+  const btnGuardar = document.getElementById('btnGuardarReporte');
+
+  // Previsualización en vivo al seleccionar una imagen
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        previewNewImg.src = e.target.result;
+        previewNewContainer.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    } else {
+      previewNewContainer.style.display = 'none';
+      previewNewImg.src = '';
+    }
+  });
+
+  // Función para subir la imagen a Cloudinary directo desde el cliente
+  const uploadImage = async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', UPLOAD_PRESET);
+
+    const res = await fetch(
+      `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+      {
+        method: 'POST',
+        body: formData,
+      }
+    );
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error?.message || 'Error al subir imagen a Cloudinary');
+    }
+
+    const data = await res.json();
+    return data.secure_url; // URL pública de la imagen guardada
+  };
 
   // Abrir Modal de Bitácora con datos de la asistencia seleccionada
   document.querySelectorAll('.btn-reporte').forEach(btn => {
     btn.addEventListener('click', () => {
       document.getElementById('modal_id_asistencia').value = btn.dataset.asistencia;
       document.getElementById('modal_tarea').value = btn.dataset.tarea;
+      fileInput.value = '';
+      previewNewContainer.style.display = 'none';
+      previewNewImg.src = '';
+      uploadFeedback.style.display = 'none';
+      btnGuardar.disabled = false;
+
+      const comprobanteActual = btn.dataset.comprobante;
+      if (comprobanteActual && comprobanteActual.trim() !== '') {
+        previewExistingLink.href = comprobanteActual;
+        previewExistingContainer.style.display = 'block';
+      } else {
+        previewExistingContainer.style.display = 'none';
+      }
+
       modalReporte.show();
     });
   });
@@ -239,22 +330,57 @@
   // Enviar Guardado de Bitácora
   document.getElementById('formReporte').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const formData = new FormData(e.target);
+    const id_asistencia = document.getElementById('modal_id_asistencia').value;
+    const tarea = document.getElementById('modal_tarea').value.trim();
+
+    if (!id_asistencia || !tarea) {
+      alert('Por favor complete la descripción de la tarea.');
+      return;
+    }
+
+    let comprobanteUrl = null;
 
     try {
+      btnGuardar.disabled = true;
+
+      // 1. Si el usuario seleccionó un archivo nuevo, subirlo a Cloudinary primero
+      if (fileInput.files && fileInput.files[0]) {
+        uploadFeedback.style.display = 'flex';
+        uploadFeedbackText.textContent = 'Subiendo comprobante a Cloudinary...';
+        
+        comprobanteUrl = await uploadImage(fileInput.files[0]);
+      }
+
+      // 2. Guardar en base de datos
+      uploadFeedback.style.display = 'flex';
+      uploadFeedbackText.textContent = 'Guardando bitácora de trabajo...';
+
       const res = await fetch('/reportes/guardar', {
         method: 'POST',
-        body: formData
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          id_asistencia,
+          tarea,
+          comprobante: comprobanteUrl
+        })
       });
+
       const data = await res.json();
       
       if (data.ok) {
         location.reload();
       } else {
-        alert(data.error || 'Error al guardar la bitácora');
+        alert(data.error || data.msg || 'Error al guardar la bitácora');
+        btnGuardar.disabled = false;
+        uploadFeedback.style.display = 'none';
       }
     } catch (err) {
-      alert('Error de conexión al servidor.');
+      console.error(err);
+      alert('Error: ' + (err.message || 'Error de conexión con el servidor.'));
+      btnGuardar.disabled = false;
+      uploadFeedback.style.display = 'none';
     }
   });
 

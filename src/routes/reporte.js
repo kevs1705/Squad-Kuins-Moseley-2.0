@@ -137,7 +137,9 @@ const [jornadas] = await db.query(`
       res.render('usuario/reporte', {
         user,
         total_acumulada,
-        jornadas: jornadasProcesadas
+        jornadas: jornadasProcesadas,
+        cloudinaryCloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || process.env.CLOUDINARY_CLOUD_NAME || 'sjgf9nkd',
+        cloudinaryUploadPreset: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || process.env.CLOUDINARY_UPLOAD_PRESET || 'pasantes_preset'
       });
 
   } catch (e) {
@@ -206,31 +208,46 @@ async function getReportePorAsistencia(idAsistencia, userId) {
   return rows[0] || null;
 }
 
-// POST: Registrar o Actualizar Bitácora (Tarea + Comprobante)
-router.post('/reportes/guardar', requireAuth, upload.single('comprobante'), async (req, res) => {
+// Helper middleware para manejar opcionalmente multipart o json
+const handleUploadOptional = (req, res, next) => {
+  if (req.is('multipart/form-data')) {
+    upload.single('comprobante')(req, res, (err) => {
+      if (err) return res.status(400).json({ ok: false, error: err.message });
+      next();
+    });
+  } else {
+    next();
+  }
+};
+
+// POST: Registrar o Actualizar Bitácora (Tarea + Comprobante Cloudinary/Local)
+router.post('/reportes/guardar', requireAuth, handleUploadOptional, async (req, res) => {
   try {
     const userId = req.session.user.id;
-    const { id_asistencia, tarea } = req.body;
+    const { id_asistencia, tarea, comprobante } = req.body;
 
     if (!id_asistencia || !tarea) {
       return res.status(400).json({ ok: false, error: 'Debe seleccionar una asistencia y describir la tarea.' });
     }
 
-    const publicPath = req.file ? '/uploads/comprobantes/' + req.file.filename : null;
+    // URL de Cloudinary enviada desde el cliente o fallback de Multer
+    const comprobanteUrl = (typeof comprobante === 'string' && comprobante.trim()) 
+      ? comprobante.trim() 
+      : (req.file ? '/uploads/comprobantes/' + req.file.filename : null);
 
     // Verificar si ya existe un reporte para esta asistencia
     const reporteExistente = await getReportePorAsistencia(id_asistencia, userId);
 
     if (reporteExistente) {
-      // Actualizar reporte existente
-      const imgFinal = publicPath || reporteExistente.comprobante;
+      // Actualizar reporte existente: si se proporcionó nueva imagen se actualiza, si no se preserva la anterior
+      const imgFinal = comprobanteUrl || reporteExistente.comprobante;
       await db.query(`
         UPDATE reportes
         SET tarea = ?, comprobante = ?
         WHERE id_reporte = ? AND id_usuario = ?
       `, [tarea, imgFinal, reporteExistente.id_reporte, userId]);
 
-      return res.json({ ok: true, msg: 'Bitácora actualizada con éxito' });
+      return res.json({ ok: true, msg: 'Bitácora actualizada con éxito', comprobante: imgFinal });
     } else {
       // Obtener la fecha de la asistencia seleccionada
       const [[asistencia]] = await db.query(
@@ -246,9 +263,9 @@ router.post('/reportes/guardar', requireAuth, upload.single('comprobante'), asyn
       await db.query(`
         INSERT INTO reportes (id_usuario, id_asistencia, fecha, tarea, comprobante)
         VALUES (?, ?, ?, ?, ?)
-      `, [userId, id_asistencia, asistencia.fecha, tarea, publicPath]);
+      `, [userId, id_asistencia, asistencia.fecha, tarea, comprobanteUrl]);
 
-      return res.json({ ok: true, msg: 'Bitácora creada con éxito' });
+      return res.json({ ok: true, msg: 'Bitácora creada con éxito', comprobante: comprobanteUrl });
     }
 
   } catch (err) {
