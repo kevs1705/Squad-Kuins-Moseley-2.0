@@ -6,15 +6,15 @@
 /* ---------- Variables de tema ---------- */
 :root{
   /* Paleta */
-  --bg:#091121;
-  --bg2:#050a14;
-  --panel:#121c2d;
-  --panel-hi:#1b2940;
-  --border:#21304a;
-  --text:#f1f5f9;
-  --title:#ffffff;
-  --muted:#94a3b8;
-  --brand:#279ae4;
+  --bg:#f8fafc;
+  --bg2:#ffffff;
+  --panel:#ffffff;
+  --panel-hi:#f1f5f9;
+  --border:#e2e8f0;
+  --text:#0f172a;
+  --title:#0f172a;
+  --muted:#64748b;
+  --brand:#0b6bcb;
 
   --red:#ef4444;     --red-2:#7f1d1d;
   --orange:#f59e0b;  --orange-2:#7c2d12;

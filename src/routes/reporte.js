@@ -94,27 +94,13 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
       ORDER BY a.fecha DESC, a.id_asistencia DESC
     `, [userId]);
 
-    const jornadasProcesadas = jornadas.map(j => ({
-      ...j,
-      hora_entrada_vis: j.hora_entrada_f || '-',
-      hora_salida_vis: j.hora_salida_f || '-',
-      horas_dia: calcularHorasTranscurridas(j)
-    }));
-
-    const user = {
-      id: userDB.id_usuario,
-      nombre: userDB.nombre,
-      ci: userDB.CI,
-      rol: userDB.rol
-    };
-
-    res.render('usuario/reporte', {
-      user,
-      total_acumulada,
-      jornadas: jornadasProcesadas,
-      cloudinaryCloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || process.env.CLOUDINARY_CLOUD_NAME || 'sjgf9nkd',
-      cloudinaryUploadPreset: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || process.env.CLOUDINARY_UPLOAD_PRESET || 'pasantes_preset'
-    });
+      res.render('usuario/reporte', {
+        user,
+        total_acumulada,
+        jornadas: jornadasProcesadas,
+        cloudinaryCloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || process.env.CLOUDINARY_CLOUD_NAME || 'sjgf9nkd',
+        cloudinaryUploadPreset: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || process.env.CLOUDINARY_UPLOAD_PRESET || 'pasantes_preset'
+      });
 
   } catch (e) {
     console.error(e);
@@ -181,33 +167,54 @@ async function getReportePorAsistencia(idAsistencia, userId) {
   return rows[0] || null;
 }
 
-// POST: Registrar o Actualizar Bitácora (Tarea + Comprobante)
-router.post('/reportes/guardar', requireAuth, upload.single('comprobante'), async (req, res) => {
+// Helper middleware para manejar opcionalmente multipart o json
+const handleUploadOptional = (req, res, next) => {
+  if (req.is('multipart/form-data')) {
+    upload.single('comprobante')(req, res, (err) => {
+      if (err) return res.status(400).json({ ok: false, error: err.message });
+      next();
+    });
+  } else {
+    next();
+  }
+};
+
+// POST: Registrar o Actualizar Bitácora (Tarea + Comprobante Cloudinary/Local)
+router.post('/reportes/guardar', requireAuth, handleUploadOptional, async (req, res) => {
   try {
     const userId = req.session.user.id;
-    const { id_asistencia, tarea } = req.body;
+    const { id_asistencia, tarea, comprobante } = req.body;
 
     if (!id_asistencia || !tarea) {
       return res.status(400).json({ ok: false, error: 'Debe seleccionar una asistencia y describir la tarea.' });
     }
 
+    // Ruta de la imagen cargada por Multer (si existe)
     const publicPath = req.file ? '/uploads/comprobantes/' + req.file.filename : null;
 
-    // Verificar si ya existe un reporte para esta asistencia
-    const reporteExistente = await getReportePorAsistencia(id_asistencia, userId);
+    // Verificar si ya existe un reporte registrado para esta asistencia
+    const [reportes] = await db.query(
+      'SELECT id_reporte, comprobante FROM reportes WHERE id_asistencia = ? AND id_usuario = ? LIMIT 1',
+      [id_asistencia, userId]
+    );
+
+    const reporteExistente = reportes.length > 0 ? reportes[0] : null;
 
     if (reporteExistente) {
-      // Actualizar reporte existente
-      const imgFinal = publicPath || reporteExistente.comprobante;
+      // Si subió nueva imagen usa publicPath, de lo contrario conserva la imagen previa
+      const imgFinal = publicPath !== null ? publicPath : reporteExistente.comprobante;
+
       await db.query(`
         UPDATE reportes
-        SET tarea = ?, comprobante = ?
+        SET tarea = ?, 
+            comprobante = ?, 
+            actualizado_en = CURRENT_TIMESTAMP
         WHERE id_reporte = ? AND id_usuario = ?
       `, [tarea, imgFinal, reporteExistente.id_reporte, userId]);
 
-      return res.json({ ok: true, msg: 'Bitácora actualizada con éxito' });
+      return res.json({ ok: true, msg: 'Bitácora actualizada con éxito', comprobante: imgFinal });
     } else {
-      // Obtener la fecha de la asistencia seleccionada
+      // Obtener la fecha correspondiente a la asistencia seleccionada
       const [[asistencia]] = await db.query(
         'SELECT fecha FROM asistencias WHERE id_asistencia = ? AND id_usuario = ?',
         [id_asistencia, userId]
@@ -217,20 +224,21 @@ router.post('/reportes/guardar', requireAuth, upload.single('comprobante'), asyn
         return res.status(404).json({ ok: false, error: 'Asistencia no encontrada' });
       }
 
-      // Crear nuevo reporte asociado a la asistencia
+      // Inserción respetando el esquema (creado_en y actualizado_en toman DEFAULT)
       await db.query(`
         INSERT INTO reportes (id_usuario, id_asistencia, fecha, tarea, comprobante)
         VALUES (?, ?, ?, ?, ?)
-      `, [userId, id_asistencia, asistencia.fecha, tarea, publicPath]);
+      `, [userId, id_asistencia, asistencia.fecha, tarea, comprobanteUrl]);
 
-      return res.json({ ok: true, msg: 'Bitácora creada con éxito' });
+      return res.json({ ok: true, msg: 'Bitácora creada con éxito', comprobante: comprobanteUrl });
     }
 
   } catch (err) {
-    console.error(err);
+    console.error('Error al guardar reporte:', err);
     return res.status(500).json({ ok: false, error: 'No se pudo guardar la bitácora de trabajo' });
   }
 });
+
 
 /* ==========================================================================
    SOLICITUD DE NOTIFICACIONES / HORAS EXTRA

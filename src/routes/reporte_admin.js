@@ -172,8 +172,8 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
          l.tipo AS lugar_tipo,
          
          -- Horarios reales/biométricos de entrada y salida
-         TIME_FORMAT(COALESCE(TIME(a.fecha_hora_biometrico_entrada), a.hora_entrada), '%H:%i') AS hora_entrada,
-         TIME_FORMAT(COALESCE(TIME(a.fecha_hora_biometrico_salida), a.hora_salida), '%H:%i') AS hora_salida,
+         TIME_FORMAT(COALESCE(NULLIF(TRIM(a.hora_entrada), ''), TIME(a.fecha_hora_biometrico_entrada)), '%H:%i') AS hora_entrada,
+         TIME_FORMAT(COALESCE(NULLIF(TRIM(a.hora_salida), ''), TIME(a.fecha_hora_biometrico_salida)), '%H:%i') AS hora_salida,
          
          -- Duración en segundos si hay salida registrada
          CASE 
@@ -232,12 +232,12 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
 });
 
 /* ==========================================================================
-   API: ACTUALIZAR OBSERVACIÓN DEL ADMIN EN LA ASISTENCIA / BITÁCORA
+   API: ACTUALIZAR HORAS Y OBSERVACIÓN DEL ADMIN EN LA ASISTENCIA / BITÁCORA
    ========================================================================== */
 router.post('/api/admin/reportes/:id_asistencia', requireAdmin, async (req, res) => {
   try {
     const id_asistencia = parseInt(req.params.id_asistencia, 10);
-    const { observacion } = req.body || {};
+    const { observacion, hora_entrada, hora_salida } = req.body || {};
 
     if (!id_asistencia) return res.status(400).json({ ok: false, msg: 'ID de asistencia no válido' });
 
@@ -245,25 +245,23 @@ router.post('/api/admin/reportes/:id_asistencia', requireAdmin, async (req, res)
     const valSalida = hora_salida && hora_salida.trim() && hora_salida.trim() !== '-' ? hora_salida.trim() : null;
     const valObs = observacion && observacion.trim() ? observacion.trim() : null;
 
-    // Actualizar horas y observación en la tabla asistencias unificando campos
+    // Actualizar horas y observación en la tabla asistencias
     await db.query(
       `UPDATE asistencias 
        SET hora_entrada = ?, 
            hora_salida = ?, 
-           observacion = ?,
-           fecha_hora_biometrico_entrada = IF(? IS NOT NULL, TIMESTAMP(fecha, ?), NULL),
-           fecha_hora_biometrico_salida = IF(? IS NOT NULL, TIMESTAMP(fecha, ?), NULL)
+           observacion = ? 
        WHERE id_asistencia = ?`,
-      [valEntrada, valSalida, valObs, valEntrada, valEntrada, valSalida, valSalida, id_asistencia]
+      [valEntrada, valSalida, valObs, id_asistencia]
     );
 
     // Si existe bitácora vinculada, actualizarla también
-    await db.query('UPDATE reportes SET observacion = ? WHERE id_asistencia = ?', [observacion || null, id_asistencia]);
+    await db.query('UPDATE reportes SET observacion = ? WHERE id_asistencia = ?', [valObs, id_asistencia]);
 
-    res.json({ ok: true, msg: 'Observación actualizada correctamente' });
+    res.json({ ok: true, msg: 'Jornada y horas actualizadas correctamente' });
   } catch (e) {
     console.error(e);
-    res.status(500).json({ ok: false, msg: 'Error interno al actualizar la observación' });
+    res.status(500).json({ ok: false, msg: 'Error interno al actualizar la jornada' });
   }
 });
 
@@ -329,8 +327,8 @@ router.get('/admin/reportes/export', requireAdmin, async (req, res) => {
          u.CI,
          DATE_FORMAT(a.fecha, '%Y-%m-%d') AS fecha,
          l.nombre AS lugar,
-         TIME_FORMAT(COALESCE(TIME(a.fecha_hora_biometrico_entrada), a.hora_entrada), '%H:%i:%s') AS hora_entrada,
-         TIME_FORMAT(COALESCE(TIME(a.fecha_hora_biometrico_salida), a.hora_salida), '%H:%i:%s') AS hora_salida,
+         TIME_FORMAT(COALESCE(NULLIF(TRIM(a.hora_entrada), ''), TIME(a.fecha_hora_biometrico_entrada)), '%H:%i:%s') AS hora_entrada,
+         TIME_FORMAT(COALESCE(NULLIF(TRIM(a.hora_salida), ''), TIME(a.fecha_hora_biometrico_salida)), '%H:%i:%s') AS hora_salida,
          CASE 
            WHEN (a.hora_salida IS NOT NULL AND TRIM(a.hora_salida) NOT IN ('', '-')) OR a.fecha_hora_biometrico_salida IS NOT NULL THEN
              TIMESTAMPDIFF(

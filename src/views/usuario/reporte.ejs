@@ -149,7 +149,8 @@
                 <td class="text-center">
                   <button class="btn-reporte-action btn-reporte" 
                           data-asistencia="<%= j.id_asistencia %>"
-                          data-tarea="<%= j.tarea || '' %>">
+                          data-tarea="<%= j.tarea || '' %>"
+                          data-comprobante="<%= j.comprobante || '' %>">
                     <i class="bi bi-pencil-square me-1"></i> <%= j.tarea ? 'Editar' : 'Registrar' %>
                   </button>
                 </td>
@@ -196,7 +197,7 @@
 <div class="modal fade" id="modalReporte" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
-      <form id="formReporte" enctype="multipart/form-data">
+      <form id="formReporte">
         <div class="modal-header">
           <h5 class="modal-title fw-bold">Bitácora de Trabajo</h5>
           <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Cerrar">
@@ -205,90 +206,148 @@
         </div>
         <div class="modal-body">
           <input type="hidden" name="id_asistencia" id="modal_id_asistencia">
+          
           <div class="mb-3">
-            <label class="form-label fw-semibold">Descripción de la Tarea / Avance</label>
+            <label class="form-label fw-semibold">Descripción de la Tarea / Avance <span class="text-danger">*</span></label>
             <textarea class="form-control" name="tarea" id="modal_tarea" rows="4" required placeholder="Describe las actividades realizadas en la jornada..."></textarea>
           </div>
+
+          <!-- Comprobante existente si aplica -->
+          <div id="preview_existing_container" class="mb-3 p-2 bg-light rounded border" style="display: none;">
+            <div class="d-flex align-items-center justify-content-between">
+              <span class="text-muted fs-7"><i class="bi bi-image me-1"></i> Comprobante actual guardado:</span>
+              <a href="#" id="preview_existing_link" target="_blank" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 12px;">
+                <i class="bi bi-box-arrow-up-right me-1"></i> Ver imagen
+              </a>
+            </div>
+          </div>
+
           <div class="mb-3">
-            <label class="form-label fw-semibold">Adjuntar Comprobante (PNG / JPG)</label>
-            <input type="file" class="form-control" name="comprobante" accept="image/png, image/jpeg">
+            <label class="form-label fw-semibold">Adjuntar Comprobante (PNG / JPG / WEBP)</label>
+            <input type="file" class="form-control" id="modal_comprobante" accept="image/png, image/jpeg, image/jpg, image/webp">
+            <small class="text-muted">Las imágenes se subirán automáticamente a Cloudinary.</small>
+          </div>
+
+          <!-- Previsualización de nueva imagen seleccionada -->
+          <div id="preview_new_container" class="mb-3 text-center" style="display: none;">
+            <img id="preview_new_img" src="" alt="Previsualización" class="img-fluid rounded border shadow-sm" style="max-height: 180px; object-fit: contain;">
+          </div>
+
+          <!-- Estado de carga / spinner -->
+          <div id="upload_feedback" class="alert alert-info py-2 px-3 align-items-center gap-2 mb-0" style="display: none; font-size: 0.875rem;">
+            <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+            <span id="upload_feedback_text">Subiendo imagen a Cloudinary...</span>
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn btn-primary" style="background-color: #0b6bcb; border-color: #0b6bcb;">Guardar Bitácora</button>
+          <button type="submit" id="btnGuardarReporte" class="btn btn-primary" style="background-color: #0b6bcb; border-color: #0b6bcb;">
+            <i class="bi bi-check2-circle me-1"></i> Guardar Bitácora
+          </button>
         </div>
       </form>
     </div>
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-  const modalReporte = new bootstrap.Modal(document.getElementById('modalReporte'));
+  <!-- ========================================================================= -->
+  <!-- INICIO: INCLUSIÓN DEL COMPONENTE DE ALERTA REUTILIZABLE -->
+  <!-- ========================================================================= -->
+  <%- include('../partials/toast-alert') %>
+  <!-- ========================================================================= -->
+  <!-- FIN: INCLUSIÓN DEL COMPONENTE DE ALERTA REUTILIZABLE -->
+  <!-- ========================================================================= -->
 
-  // Abrir Modal de Bitácora con datos de la asistencia seleccionada
-  document.querySelectorAll('.btn-reporte').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.getElementById('modal_id_asistencia').value = btn.dataset.asistencia;
-      document.getElementById('modal_tarea').value = btn.dataset.tarea;
-      modalReporte.show();
-    });
-  });
+  <!-- 2. Script Oficial de Bootstrap (SIEMPRE PRIMERO) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-  // Enviar Guardado de Bitácora
-  document.getElementById('formReporte').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
+  <!-- 3. Tu lógica JavaScript -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Inicializar el Modal de Bootstrap de forma segura
+      const modalEl = document.getElementById('modalReporte');
+      const modalReporte = new bootstrap.Modal(modalEl);
+      const formReporte = document.getElementById('formReporte');
 
-    try {
-      const res = await fetch('/reportes/guardar', {
-        method: 'POST',
-        body: formData
+      // Abrir Modal de Bitácora
+      document.querySelectorAll('.btn-reporte').forEach(btn => {
+        btn.addEventListener('click', () => {
+          formReporte.reset();
+
+          document.getElementById('modal_id_asistencia').value = btn.dataset.asistencia;
+          document.getElementById('modal_tarea').value = btn.dataset.tarea;
+          
+          modalReporte.show();
+        });
       });
-      const data = await res.json();
-      
-      if (data.ok) {
-        location.reload();
-      } else {
-        alert(data.error || 'Error al guardar la bitácora');
-      }
-    } catch (err) {
-      alert('Error de conexión al servidor.');
-    }
-  });
 
-  // Filtrado dinámico en la tabla de reportes
-  document.addEventListener('DOMContentLoaded', () => {
-    const searchInput = document.getElementById('reporteSearch');
-    const dateInput = document.getElementById('reporteDateFilter');
-    const tableRows = document.querySelectorAll('.table-reporte tbody tr');
+      // Enviar Formulario AJAX
+      formReporte.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(formReporte);
 
-    function filterReporteTable() {
-      const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
-      const dateTerm = dateInput ? dateInput.value : '';
+        try {
+          const res = await fetch('/reportes/guardar', {
+            method: 'POST',
+            body: formData
+          });
+          const data = await res.json();
 
-      tableRows.forEach(row => {
-        if (row.children.length <= 1) return;
+          if (data.ok) {
+            // Cierra el modal
+            modalReporte.hide();
 
-        const fechaText = row.cells[0] ? row.cells[0].textContent.trim() : '';
-        const obraText = row.cells[1] ? row.cells[1].textContent.toLowerCase() : '';
-        const tareaText = row.cells[5] ? row.cells[5].textContent.toLowerCase() : '';
+            // Muestra la alerta toast
+            mostrarAlerta(data.msg || 'Bitácora guardada correctamente', 'success');
 
-        const matchesSearch = !searchTerm || obraText.includes(searchTerm) || fechaText.toLowerCase().includes(searchTerm) || tareaText.includes(searchTerm);
-        const matchesDate = !dateTerm || fechaText.includes(dateTerm);
+            // Recarga tras 1.5s
+            setTimeout(() => {
+              location.reload();
+            }, 1500);
 
-        if (matchesSearch && matchesDate) {
-          row.style.display = '';
-        } else {
-          row.style.display = 'none';
+          } else {
+            mostrarAlerta(data.error || 'Error al guardar la bitácora', 'error');
+          }
+        } catch (err) {
+          console.error(err);
+          mostrarAlerta('Error de conexión al servidor.', 'error');
         }
       });
+    });
+     
+  /* 
+  ===============================================================
+  ENVÍO DE SOLICITUD DE HORAS EXTRA (TEMPORALMENTE DESHABILITADO)
+  ===============================================================
+  document.getElementById('formHorasExtra').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const payload = Object.fromEntries(formData.entries());
+
+    try {
+      const res = await fetch('/api/notificaciones', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+
+      if (data.ok) {
+        mostrarAlerta(data.msg, 'success');
+        location.reload();
+      } else {
+        mostrarAlerta(data.msg || 'Error al procesar la solicitud', 'error');
+      }
+    } catch (err) {
+      mostrarAlerta('Error conectando con el servidor.', 'error');
     }
-
-    if (searchInput) searchInput.addEventListener('input', filterReporteTable);
-    if (dateInput) dateInput.addEventListener('change', filterReporteTable);
   });
-</script>
-
+  */
+  </script>
+</body>
+</html>
 <%- include('../partials/footer') %>
+
+
+

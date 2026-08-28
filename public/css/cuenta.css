@@ -312,7 +312,9 @@ body,
   border: 1px solid #E9D5FF !important;
   border-radius: 8px !important;
   overflow: hidden !important;
-  margin-bottom: 18px !important;
+  margin-bottom: 10px !important;
+  width: 140px !important;
+  box-sizing: border-box !important;
 }
 
 .ci-tag {
@@ -323,6 +325,8 @@ body,
   padding: 4px 8px !important;
   text-transform: uppercase !important;
   letter-spacing: 0.5px !important;
+  min-width: 36px !important;
+  text-align: center !important;
 }
 
 .ci-val {
@@ -330,17 +334,56 @@ body,
   font-size: 13px !important;
   font-weight: 600 !important;
   padding: 4px 10px !important;
+  flex-grow: 1 !important;
+  text-align: center !important;
+}
+
+/* ID Badge */
+.id-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  background-color: #E0F2FE !important;
+  border: 1px solid #BAE6FD !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  margin-bottom: 14px !important;
+  width: 140px !important;
+  box-sizing: border-box !important;
+}
+
+.id-tag {
+  background-color: #0B6BCB !important;
+  color: #FFFFFF !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  padding: 4px 8px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  min-width: 36px !important;
+  text-align: center !important;
+}
+
+.id-val {
+  color: #0369A1 !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  padding: 4px 10px !important;
+  flex-grow: 1 !important;
+  text-align: center !important;
 }
 
 /* Status Badge Activo */
 .status-badge {
   display: inline-flex !important;
   align-items: center !important;
+  justify-content: center !important;
   gap: 8px !important;
   padding: 6px 16px !important;
   border-radius: 20px !important;
   font-size: 13px !important;
   font-weight: 600 !important;
+  width: 140px !important;
+  box-sizing: border-box !important;
 }
 
 .status-activo {
@@ -469,7 +512,7 @@ body,
   align-items: center !important;
   gap: 8px !important;
   flex-grow: 1 !important;
-  min-width: 250px !important;
+  min-width: 0 !important;
 }
 
 .pwd-display-input {
@@ -599,7 +642,22 @@ footer.muted {
 
 /* ---------- Responsividad ---------- */
 @media (max-width: 960px) {
-  /* Sidebar en versión móvil: conserva posicionamiento del header.ejs pero ajusta look a full screen vertical */
+  /* Anular padding y márgenes asimétricos */
+  html, body, .dashboard-shell {
+    overflow-x: hidden !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  body .content {
+    margin-left: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+
   .sidebar {
     top: 0 !important;
     bottom: 0 !important;
@@ -618,20 +676,48 @@ footer.muted {
     pointer-events: all !important;
   }
   
-  .content {
-    margin-left: 0 !important;
-  }
-  
   .content-header {
-    padding: 20px 24px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 16px 20px !important;
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+    box-sizing: border-box !important;
+    border-radius: 0 !important;
   }
   
   .cuenta-wrapper {
-    padding: 24px 20px !important;
+    padding: 20px 16px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    margin: 0 auto !important;
   }
   
   .cuenta-grid {
-    grid-template-columns: 1fr !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    gap: 20px !important;
+    margin: 0 auto !important;
+  }
+
+  .cuenta-card,
+  .user-summary-card,
+  .user-info-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    margin: 0 auto !important;
+  }
+
+  .user-summary-card {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
   }
   
   footer.muted {
@@ -640,31 +726,84 @@ footer.muted {
 }
 
 @media (max-width: 640px) {
+  body .content {
+    padding: 0 !important;
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
   .content-header {
     padding: 16px 16px !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
   
   .cuenta-wrapper {
-    padding: 16px !important;
+    padding: 16px 16px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    margin: 0 auto !important;
   }
   
   .cuenta-card {
-    padding: 20px !important;
+    padding: 20px 16px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    margin: 0 auto !important;
   }
   
   .info-fields-grid {
     grid-template-columns: 1fr !important;
-    gap: 16px !important;
+    gap: 14px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .info-item {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .pwd-info-text {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .pwd-field-container {
+    min-width: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .pwd-display-input {
+    min-width: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
   
   .cuenta-actions {
     flex-direction: column !important;
     align-items: stretch !important;
     gap: 12px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
   
   .btn-action {
     justify-content: center !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
   
   footer.muted {
