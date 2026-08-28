@@ -22,57 +22,41 @@ router.get('/usuario/asistencia', requireAuth, async (req, res) => {
     const userDB = users[0];
 
     // 2. Horas totales acumuladas
-const [totals] = await db.query(`
-  SELECT COALESCE(
-    SEC_TO_TIME(
-      SUM(
-        TIMESTAMPDIFF(
-          SECOND,
-          TIMESTAMP(
-            fecha, 
-            COALESCE(
-              NULLIF(TRIM(hora_entrada), ''), 
-              TIME(fecha_hora_biometrico_entrada)
+    const [totals] = await db.query(`
+      SELECT COALESCE(
+        SEC_TO_TIME(
+          SUM(
+            TIMESTAMPDIFF(
+              SECOND,
+              TIMESTAMP(fecha, COALESCE(NULLIF(TRIM(hora_entrada), ''), TIME(fecha_hora_biometrico_entrada))),
+              TIMESTAMP(fecha, COALESCE(NULLIF(TRIM(hora_salida), ''), TIME(fecha_hora_biometrico_salida)))
             )
-          ),
-          CASE 
-            WHEN hora_salida IS NOT NULL AND TRIM(hora_salida) NOT IN ('', '-') THEN 
-              TIMESTAMP(fecha, TRIM(hora_salida))
-            WHEN fecha_hora_biometrico_salida IS NOT NULL THEN 
-              fecha_hora_biometrico_salida
-            ELSE NULL
-          END
-        )
-      )
-    ), '00:00:00'
-  ) AS total_acumulada
-  FROM asistencias
-  WHERE id_usuario = ?
-    AND (
-      (hora_entrada IS NOT NULL AND TRIM(hora_entrada) NOT IN ('', '-')) OR
-      (fecha_hora_biometrico_entrada IS NOT NULL)
-    )
-    AND (
-      (hora_salida IS NOT NULL AND TRIM(hora_salida) NOT IN ('', '-')) OR
-      (fecha_hora_biometrico_salida IS NOT NULL)
-    )
-`, [userId]);
+          )
+        ), '00:00:00'
+      ) AS total_acumulada
+      FROM asistencias
+      WHERE id_usuario = ?
+        AND COALESCE(NULLIF(TRIM(hora_entrada), ''), TIME(fecha_hora_biometrico_entrada)) IS NOT NULL
+        AND COALESCE(NULLIF(TRIM(hora_salida), ''), TIME(fecha_hora_biometrico_salida)) IS NOT NULL
+    `, [userId]);
 
-   const total_acumulada = totals[0]?.total_acumulada ? String(totals[0].total_acumulada) : '00:00:00';
+    const total_acumulada = totals[0]?.total_acumulada ? String(totals[0].total_acumulada) : '00:00:00';
 
     // 3. Verificar si el usuario tiene una jornada activa hoy (entrada sin salida)
     const [jornadaActiva] = await db.query(`
       SELECT 
         a.id_asistencia, 
         l.nombre AS lugar_nombre,
-        TIME_FORMAT(a.hora_entrada, '%H:%i') AS hora_entrada
+        TIME_FORMAT(COALESCE(NULLIF(TRIM(a.hora_entrada), ''), TIME(a.fecha_hora_biometrico_entrada)), '%H:%i') AS hora_entrada
       FROM asistencias a
       LEFT JOIN lugares l ON a.id_lugar = l.id_lugar
-      WHERE a.id_usuario = ? AND a.fecha = CURDATE() AND a.hora_salida IS NULL
+      WHERE a.id_usuario = ? 
+        AND a.fecha = CURDATE() 
+        AND COALESCE(NULLIF(TRIM(a.hora_salida), ''), TIME(a.fecha_hora_biometrico_salida)) IS NULL
       LIMIT 1
     `, [userId]);
 
-    // 4. Historial completo de asistencias
+    // 4. Historial completo de asistencias unificado
     const [asistencias] = await db.query(`
       SELECT 
         a.id_asistencia,
@@ -80,16 +64,17 @@ const [totals] = await db.query(`
         l.nombre AS lugar_nombre,
         l.tipo AS lugar_tipo,
         
-        -- Entrada (Prioridad Biométrico > App)
-        TIME_FORMAT(COALESCE(TIME(a.fecha_hora_biometrico_entrada), a.hora_entrada), '%H:%i') AS hora_entrada,
+        -- Entrada y Salida unificadas
+        TIME_FORMAT(COALESCE(NULLIF(TRIM(a.hora_entrada), ''), TIME(a.fecha_hora_biometrico_entrada)), '%H:%i') AS hora_entrada,
+        TIME_FORMAT(COALESCE(NULLIF(TRIM(a.hora_salida), ''), TIME(a.fecha_hora_biometrico_salida)), '%H:%i') AS hora_salida,
         
-        -- Salida (Prioridad Biométrico > App)
-        TIME_FORMAT(COALESCE(TIME(a.fecha_hora_biometrico_salida), a.hora_salida), '%H:%i') AS hora_salida,
-        
-        TIME_FORMAT(a.fecha_hora_biometrico_entrada, '%H:%i:%s') AS bio_entrada,
-        TIME_FORMAT(a.fecha_hora_biometrico_salida, '%H:%i:%s') AS bio_salida,
+        TIME_FORMAT(COALESCE(NULLIF(TRIM(a.hora_entrada), ''), TIME(a.fecha_hora_biometrico_entrada)), '%H:%i:%s') AS bio_entrada,
+        TIME_FORMAT(COALESCE(NULLIF(TRIM(a.hora_salida), ''), TIME(a.fecha_hora_biometrico_salida)), '%H:%i:%s') AS bio_salida,
 
-        IF(a.hora_salida IS NOT NULL, TIME_FORMAT(TIMEDIFF(a.hora_salida, a.hora_entrada), '%H:%i'), 'En curso') AS horas_dia,
+        IF(COALESCE(NULLIF(TRIM(a.hora_salida), ''), TIME(a.fecha_hora_biometrico_salida)) IS NOT NULL, 
+           TIME_FORMAT(TIMEDIFF(COALESCE(NULLIF(TRIM(a.hora_salida), ''), TIME(a.fecha_hora_biometrico_salida)), COALESCE(NULLIF(TRIM(a.hora_entrada), ''), TIME(a.fecha_hora_biometrico_entrada))), '%H:%i'), 
+           'En curso'
+        ) AS horas_dia,
         a.estado
       FROM asistencias a
       LEFT JOIN lugares l ON a.id_lugar = l.id_lugar

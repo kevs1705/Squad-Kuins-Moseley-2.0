@@ -410,7 +410,7 @@ router.get('/admin/reportes/export', requireAdmin, async (req, res) => {
 
     ws.addRow([]);
     ws.addRow(['Usuario', 'CI', 'Fecha', 'Lugar / Obra', 'Hora Entrada', 'Hora Salida', 'Duración', 'Tarea (Bitácora)', 'Observación Admin']);
-    
+
     const headerRow = ws.getRow(4);
     headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
     headerRow.fill = {
