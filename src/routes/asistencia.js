@@ -24,23 +24,21 @@ router.get('/usuario/asistencia', requireAuth, async (req, res) => {
     // 2. Horas totales acumuladas
     const [totals] = await db.query(`
       SELECT COALESCE(
-        SEC_TO_TIME(
-          SUM(
-            TIMESTAMPDIFF(
-              SECOND,
-              TIMESTAMP(fecha, COALESCE(NULLIF(TRIM(hora_entrada), ''), TIME(fecha_hora_biometrico_entrada))),
-              TIMESTAMP(fecha, COALESCE(NULLIF(TRIM(hora_salida), ''), TIME(fecha_hora_biometrico_salida)))
-            )
+        SUM(
+          TIMESTAMPDIFF(
+            SECOND,
+            TIMESTAMP(fecha, COALESCE(NULLIF(TRIM(hora_entrada), ''), TIME(fecha_hora_biometrico_entrada))),
+            TIMESTAMP(fecha, COALESCE(NULLIF(TRIM(hora_salida), ''), TIME(fecha_hora_biometrico_salida)))
           )
-        ), '00:00:00'
-      ) AS total_acumulada
+        ), 0
+      ) AS total_segundos
       FROM asistencias
       WHERE id_usuario = ?
         AND COALESCE(NULLIF(TRIM(hora_entrada), ''), TIME(fecha_hora_biometrico_entrada)) IS NOT NULL
         AND COALESCE(NULLIF(TRIM(hora_salida), ''), TIME(fecha_hora_biometrico_salida)) IS NOT NULL
     `, [userId]);
 
-    const total_acumulada = totals[0]?.total_acumulada ? String(totals[0].total_acumulada) : '00:00:00';
+    const total_acumulada = formatSecondsToHHMMSS(totals[0]?.total_segundos || 0);
 
     // 3. Verificar si el usuario tiene una jornada activa hoy (entrada sin salida)
     const [jornadaActiva] = await db.query(`
@@ -99,5 +97,13 @@ res.render('usuario/asistencia', {
     res.status(500).send('Error consultando el módulo de asistencia');
   }
 });
+
+function formatSecondsToHHMMSS(totalSeconds) {
+  const s = Math.max(0, Math.floor(Number(totalSeconds) || 0));
+  const hours = Math.floor(s / 3600);
+  const minutes = Math.floor((s % 3600) / 60);
+  const seconds = s % 60;
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
 
 module.exports = router;

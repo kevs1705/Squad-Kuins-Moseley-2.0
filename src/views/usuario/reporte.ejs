@@ -1,353 +1,489 @@
-<%
-  pageTitle = 'Panel de Reportes de Asistencia y Bitácora';
-  pageSubtitle = 'Resumen de asistencias, actividades y solicitudes de horas extras';
-%>
-<%- include('../partials/header') %>
+<% pageTitle='Panel de Reportes de Asistencia y Bitácora' ;
+  pageSubtitle='Resumen de asistencias, actividades y solicitudes de horas extras' ; %>
+  <%- include('../partials/header') %>
 
-<!-- Hoja de estilos independiente para Reportes -->
-<link rel="stylesheet" href="/css/reporte.css">
+    <!-- Hoja de estilos independiente para Reportes -->
+    <link rel="stylesheet" href="/css/reporte.css">
 
-<div class="reporte-wrapper py-3">
+    <div class="reporte-wrapper py-3">
 
-  <!-- Encabezado, Resumen de Horas y Acciones -->
-  <div class="reporte-header-row">
-    <div>
-      <h2 class="reporte-header-title">Mi Reporte de Jornadas</h2>
-      <p class="reporte-header-user">
-        <i class="bi bi-person me-1"></i>Usuario: <strong><%= user.nombre %></strong> | CI: <%= user.ci %>
-      </p>
-    </div>
-    
-    <div class="reporte-header-right">
-      <!-- Ficha compacta de Horas Totales Acumuladas -->
-      <div class="card-horas-compact">
-        <div class="horas-compact-info">
-          <span class="horas-compact-label">Horas totales acumuladas</span>
-          <span class="horas-compact-val"><%= total_acumulada %> <small>hrs</small></span>
+      <!-- Encabezado, Resumen de Horas y Acciones -->
+      <div class="reporte-header-row">
+        <div>
+          <h2 class="reporte-header-title">Mi Reporte de Jornadas</h2>
+          <p class="reporte-header-user">
+            <i class="bi bi-person me-1"></i>Usuario: <strong>
+              <%= user.nombre %>
+            </strong> | CI: <%= user.ci %>
+          </p>
         </div>
-      </div>
 
-      <div class="reporte-actions-group">
-        <a href="/reportes/export" class="btn-excel-custom">
-          <i class="bi bi-file-earmark-excel me-1"></i> Exportar a Excel
-        </a>
-        <!-- Botón que activa la alerta interactiva de módulo en desarrollo -->
-        <button type="button" class="btn-horas-extra-custom" data-bs-toggle="modal" data-bs-target="#modalEnProceso">
-          <i class="bi bi-clock-history me-1"></i> Solicitar Horas Extra
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Tabla de Jornadas (Asistencia + Bitácora) -->
-  <div class="card-historial-reporte">
-    <h5 class="historial-reporte-title">
-      <i class="bi bi-journal-text me-2 text-primary"></i>Historial de Asistencias y Bitácora
-    </h5>
-
-    <!-- Fila de Filtros / Controles (Primero Fecha, Segundo Búsqueda) -->
-    <div class="reporte-controls-row">
-      <div class="filter-field-group filter-date-box">
-        <label for="reporteDateFilter" class="filter-field-label">Filtrar por fecha:</label>
-        <div class="input-icon-wrapper">
-          <i class="bi bi-calendar3"></i>
-          <input type="date" id="reporteDateFilter" class="form-control" title="Filtrar por fecha">
-        </div>
-      </div>
-      <div class="filter-field-group search-input-box">
-        <label for="reporteSearch" class="filter-field-label">Búsqueda:</label>
-        <div class="input-icon-wrapper">
-          <i class="bi bi-search"></i>
-          <input type="text" id="reporteSearch" class="form-control" placeholder="Buscar por obra / lugar / tarea...">
-        </div>
-      </div>
-    </div>
-
-    <div class="table-reporte-wrapper">
-      <table class="table table-reporte align-middle">
-        <thead>
-          <tr>
-            <th>Fecha</th>
-            <th>Lugar / Obra</th>
-            <th>Entrada</th>
-            <th>Salida</th>
-            <th>Horas Turno</th>
-            <th>Tarea / Bitácora</th>
-            <th>Comprobante</th>
-            <th class="text-center">Acción</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% if (jornadas && jornadas.length > 0) { %>
-            <% jornadas.forEach(j => { %>
-              <tr>
-                <td><i class="bi bi-calendar2-event me-2 text-primary"></i><strong><%= j.fecha %></strong></td>
-                
-                <td>
-                  <strong style="color: #1e293b;"><%= j.lugar_nombre || 'N/A' %></strong>
-                  <% if(j.lugar_tipo) { %>
-                    <br><small class="text-muted">(<%= j.lugar_tipo %>)</small>
-                  <% } %>
-                </td>
-
-                <!-- HORA ENTRADA (Muestra manual y/o biométrico) -->
-                <td>
-                  <%= j.hora_entrada || '-' %>
-                  <% if(j.bio_entrada) { %>
-                    <br>
-                    <span class="badge-bio-info" title="Biométrico Entrada">
-                      <i class="bi bi-fingerprint"></i> <%= j.bio_entrada %>
-                    </span>
-                  <% } %>
-                </td>
-
-                <!-- HORA SALIDA (Muestra manual y/o biométrico) -->
-                <td>
-                  <%= j.hora_salida || '-' %>
-                  <% if(j.bio_salida) { %>
-                    <br>
-                    <span class="badge-bio-info" title="Biométrico Salida">
-                      <i class="bi bi-fingerprint"></i> <%= j.bio_salida %>
-                    </span>
-                  <% } %>
-                </td>
-
-                <!-- HORAS TRANSCURRIDAS POR FECHA -->
-                <td>
-                  <% if (j.horas_dia === 'En curso') { %>
-                    <span class="badge-turno-curso">
-                      <i class="bi bi-clock-history"></i> En curso
-                    </span>
-                  <% } else { %>
-                    <span class="badge-turno-finalizado">
-                      <i class="bi bi-stopwatch"></i> <%= j.horas_dia %>
-                    </span>
-                  <% } %>
-                </td>
-
-                <td>
-                  <% if(j.tarea) { %>
-                    <%= j.tarea %>
-                  <% } else { %>
-                    <span class="text-muted fs-7"><em>Sin bitácora registrada</em></span>
-                  <% } %>
-                  <% if(j.observacion) { %>
-                    <br><small class="text-danger">Obs: <%= j.observacion %></small>
-                  <% } %>
-                </td>
-
-                <td>
-                  <% if(j.comprobante) { %>
-                    <a href="<%= j.comprobante %>" target="_blank" class="btn-comprobante-ver">
-                      <i class="bi bi-image"></i> Ver
-                    </a>
-                  <% } else { %>
-                    <span class="text-muted">-</span>
-                  <% } %>
-                </td>
-
-                <td class="text-center">
-                  <button class="btn-reporte-action btn-reporte" 
-                          data-asistencia="<%= j.id_asistencia %>"
-                          data-tarea="<%= j.tarea || '' %>"
-                          data-comprobante="<%= j.comprobante || '' %>">
-                    <i class="bi bi-pencil-square me-1"></i> <%= j.tarea ? 'Editar' : 'Registrar' %>
-                  </button>
-                </td>
-              </tr>
-            <% }); %>
-          <% } else { %>
-            <tr>
-              <td colspan="8" class="text-center py-4 text-muted fw-semibold">No se encontraron registros de jornadas.</td>
-            </tr>
-          <% } %>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-</div>
-
-<!-- MODAL INTERACTIVO: MÓDULO EN PROCESO -->
-<div class="modal fade" id="modalEnProceso" tabindex="-1" aria-labelledby="modalEnProcesoLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content text-center p-3">
-      <div class="modal-header border-0 pb-0 justify-content-end">
-        <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Cerrar">
-          <i class="bi bi-x-lg"></i>
-        </button>
-      </div>
-      <div class="modal-body py-3">
-        <div class="mb-3">
-          <i class="bi bi-cone-stripes text-warning display-3"></i>
-        </div>
-        <h4 class="fw-bold mb-2">Módulo en Desarrollo</h4>
-        <p class="text-muted mb-0">
-          La funcionalidad para <strong>Solicitar Horas Extra</strong> se encuentra actualmente en proceso de construcción y estará disponible próximamente.
-        </p>
-      </div>
-      <div class="modal-footer justify-content-center border-0 pt-0">
-        <button type="button" class="btn btn-secondary px-4 rounded-3" data-bs-dismiss="modal">Entendido</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL: REGISTRAR / EDITAR BITÁCORA -->
-<div class="modal fade" id="modalReporte" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <form id="formReporte">
-        <div class="modal-header">
-          <h5 class="modal-title fw-bold">Bitácora de Trabajo</h5>
-          <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Cerrar">
-            <i class="bi bi-x-lg"></i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <input type="hidden" name="id_asistencia" id="modal_id_asistencia">
-          
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Descripción de la Tarea / Avance <span class="text-danger">*</span></label>
-            <textarea class="form-control" name="tarea" id="modal_tarea" rows="4" required placeholder="Describe las actividades realizadas en la jornada..."></textarea>
-          </div>
-
-          <!-- Comprobante existente si aplica -->
-          <div id="preview_existing_container" class="mb-3 p-2 bg-light rounded border" style="display: none;">
-            <div class="d-flex align-items-center justify-content-between">
-              <span class="text-muted fs-7"><i class="bi bi-image me-1"></i> Comprobante actual guardado:</span>
-              <a href="#" id="preview_existing_link" target="_blank" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 12px;">
-                <i class="bi bi-box-arrow-up-right me-1"></i> Ver imagen
-              </a>
+        <div class="reporte-header-right">
+          <!-- Ficha compacta de Horas Totales Acumuladas -->
+          <div class="card-horas-compact">
+            <div class="horas-compact-info">
+              <span class="horas-compact-label">Horas totales acumuladas</span>
+              <span class="horas-compact-val">
+                <%= total_acumulada %> <small>hrs</small>
+              </span>
             </div>
           </div>
 
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Adjuntar Comprobante (PNG / JPG / WEBP)</label>
-            <input type="file" class="form-control" id="modal_comprobante" accept="image/png, image/jpeg, image/jpg, image/webp">
-            <small class="text-muted">Las imágenes se subirán automáticamente a Cloudinary.</small>
-          </div>
-
-          <!-- Previsualización de nueva imagen seleccionada -->
-          <div id="preview_new_container" class="mb-3 text-center" style="display: none;">
-            <img id="preview_new_img" src="" alt="Previsualización" class="img-fluid rounded border shadow-sm" style="max-height: 180px; object-fit: contain;">
-          </div>
-
-          <!-- Estado de carga / spinner -->
-          <div id="upload_feedback" class="alert alert-info py-2 px-3 align-items-center gap-2 mb-0" style="display: none; font-size: 0.875rem;">
-            <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
-            <span id="upload_feedback_text">Subiendo imagen a Cloudinary...</span>
+          <div class="reporte-actions-group">
+            <a href="/reportes/export" class="btn-excel-custom">
+              <i class="bi bi-file-earmark-excel me-1"></i> Exportar a Excel
+            </a>
+            <!-- Botón que activa la alerta interactiva de módulo en desarrollo -->
+            <button type="button" class="btn-horas-extra-custom" data-bs-toggle="modal"
+              data-bs-target="#modalEnProceso">
+              <i class="bi bi-clock-history me-1"></i> Solicitar Horas Extra
+            </button>
           </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" id="btnGuardarReporte" class="btn btn-primary" style="background-color: #0b6bcb; border-color: #0b6bcb;">
-            <i class="bi bi-check2-circle me-1"></i> Guardar Bitácora
-          </button>
+      </div>
+
+      <!-- Tabla de Jornadas (Asistencia + Bitácora) -->
+      <div class="card-historial-reporte">
+        <h5 class="historial-reporte-title">
+          <i class="bi bi-journal-text me-2 text-primary"></i>Historial de Asistencias y Bitácora
+        </h5>
+
+        <!-- Fila de Filtros / Controles (Primero Fecha, Segundo Búsqueda) -->
+        <div class="reporte-controls-row">
+          <div class="filter-field-group filter-date-box">
+            <label for="reporteDateFilter" class="filter-field-label">Filtrar por fecha:</label>
+            <div class="input-icon-wrapper">
+              <i class="bi bi-calendar3"></i>
+              <input type="date" id="reporteDateFilter" class="form-control" title="Filtrar por fecha">
+            </div>
+          </div>
+          <div class="filter-field-group search-input-box">
+            <label for="reporteSearch" class="filter-field-label">Búsqueda:</label>
+            <div class="input-icon-wrapper">
+              <i class="bi bi-search"></i>
+              <input type="text" id="reporteSearch" class="form-control"
+                placeholder="Buscar por obra / lugar / tarea...">
+            </div>
+          </div>
         </div>
-      </form>
+
+        <div class="table-reporte-wrapper">
+          <table class="table table-reporte align-middle">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Lugar / Obra</th>
+                <th>Entrada</th>
+                <th>Salida</th>
+                <th>Horas Turno</th>
+                <th>Tarea / Bitácora</th>
+                <th>Comprobante</th>
+                <th class="text-center">Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (jornadas && jornadas.length> 0) { %>
+                <% jornadas.forEach(j=> { %>
+                  <tr>
+                    <td><i class="bi bi-calendar2-event me-2 text-primary"></i><strong>
+                        <%= j.fecha %>
+                      </strong></td>
+
+                    <td>
+                      <strong style="color: #1e293b;">
+                        <%= j.lugar_nombre || 'N/A' %>
+                      </strong>
+                      <% if(j.lugar_tipo) { %>
+                        <br><small class="text-muted">(<%= j.lugar_tipo %>)</small>
+                        <% } %>
+                    </td>
+
+                    <!-- HORA ENTRADA (Muestra manual y/o biométrico) -->
+                    <td>
+                      <%= j.hora_entrada || '-' %>
+                        <% if(j.bio_entrada) { %>
+                          <br>
+                          <span class="badge-bio-info" title="Biométrico Entrada">
+                            <i class="bi bi-fingerprint"></i>
+                            <%= j.bio_entrada %>
+                          </span>
+                          <% } %>
+                    </td>
+
+                    <!-- HORA SALIDA (Muestra manual y/o biométrico) -->
+                    <td>
+                      <%= j.hora_salida || '-' %>
+                        <% if(j.bio_salida) { %>
+                          <br>
+                          <span class="badge-bio-info" title="Biométrico Salida">
+                            <i class="bi bi-fingerprint"></i>
+                            <%= j.bio_salida %>
+                          </span>
+                          <% } %>
+                    </td>
+
+                    <!-- HORAS TRANSCURRIDAS POR FECHA -->
+                    <td>
+                      <% if (j.horas_dia==='En curso' ) { %>
+                        <span class="badge-turno-curso">
+                          <i class="bi bi-clock-history"></i> En curso
+                        </span>
+                        <% } else { %>
+                          <span class="badge-turno-finalizado">
+                            <i class="bi bi-stopwatch"></i>
+                            <%= j.horas_dia %>
+                          </span>
+                          <% } %>
+                    </td>
+
+                    <td>
+                      <% if(j.tarea) { %>
+                        <%= j.tarea %>
+                          <% } else { %>
+                            <span class="text-muted fs-7"><em>Sin bitácora registrada</em></span>
+                            <% } %>
+                              <% if(j.observacion) { %>
+                                <br><small class="text-danger">Obs: <%= j.observacion %></small>
+                                <% } %>
+                    </td>
+
+                    <td>
+                      <% if(j.comprobante) { %>
+                        <a href="<%= j.comprobante %>" target="_blank" class="btn-comprobante-ver">
+                          <i class="bi bi-image"></i> Ver
+                        </a>
+                        <% } else { %>
+                          <span class="text-muted">-</span>
+                          <% } %>
+                    </td>
+
+                    <td class="text-center">
+                      <button class="btn-reporte-action btn-reporte" data-asistencia="<%= j.id_asistencia %>"
+                        data-tarea="<%= j.tarea || '' %>" data-comprobante="<%= j.comprobante || '' %>">
+                        <i class="bi bi-pencil-square me-1"></i>
+                        <%= j.tarea ? 'Editar' : 'Registrar' %>
+                      </button>
+                    </td>
+                  </tr>
+                  <% }); %>
+                    <% } else { %>
+                      <tr>
+                        <td colspan="8" class="text-center py-4 text-muted fw-semibold">No se encontraron registros de
+                          jornadas.</td>
+                      </tr>
+                      <% } %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
-  </div>
-</div>
 
-  <!-- ========================================================================= -->
-  <!-- INICIO: INCLUSIÓN DEL COMPONENTE DE ALERTA REUTILIZABLE -->
-  <!-- ========================================================================= -->
-  <%- include('../partials/toast-alert') %>
-  <!-- ========================================================================= -->
-  <!-- FIN: INCLUSIÓN DEL COMPONENTE DE ALERTA REUTILIZABLE -->
-  <!-- ========================================================================= -->
+    <!-- MODAL INTERACTIVO: MÓDULO EN PROCESO -->
+    <div class="modal fade" id="modalEnProceso" tabindex="-1" aria-labelledby="modalEnProcesoLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-center p-3">
+          <div class="modal-header border-0 pb-0 justify-content-end">
+            <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Cerrar">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+          <div class="modal-body py-3">
+            <div class="mb-3">
+              <i class="bi bi-cone-stripes text-warning display-3"></i>
+            </div>
+            <h4 class="fw-bold mb-2">Módulo en Desarrollo</h4>
+            <p class="text-muted mb-0">
+              La funcionalidad para <strong>Solicitar Horas Extra</strong> se encuentra actualmente en proceso de
+              construcción y estará disponible próximamente.
+            </p>
+          </div>
+          <div class="modal-footer justify-content-center border-0 pt-0">
+            <button type="button" class="btn btn-secondary px-4 rounded-3" data-bs-dismiss="modal">Entendido</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
-  <!-- 2. Script Oficial de Bootstrap (SIEMPRE PRIMERO) -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- MODAL: REGISTRAR / EDITAR BITÁCORA -->
+    <div class="modal fade" id="modalReporte" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <form id="formReporte">
+            <div class="modal-header">
+              <h5 class="modal-title fw-bold">Bitácora de Trabajo</h5>
+              <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Cerrar">
+                <i class="bi bi-x-lg"></i>
+              </button>
+            </div>
+            <div class="modal-body">
+              <input type="hidden" name="id_asistencia" id="modal_id_asistencia">
 
-  <!-- 3. Tu lógica JavaScript -->
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      // Inicializar el Modal de Bootstrap de forma segura
-      const modalEl = document.getElementById('modalReporte');
-      const modalReporte = new bootstrap.Modal(modalEl);
-      const formReporte = document.getElementById('formReporte');
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Descripción de la Tarea / Avance <span
+                    class="text-danger">*</span></label>
+                <textarea class="form-control" name="tarea" id="modal_tarea" rows="4" required
+                  placeholder="Describe las actividades realizadas en la jornada..."></textarea>
+              </div>
 
-      // Abrir Modal de Bitácora
-      document.querySelectorAll('.btn-reporte').forEach(btn => {
-        btn.addEventListener('click', () => {
-          formReporte.reset();
+              <!-- Comprobante existente si aplica -->
+              <div id="preview_existing_container" class="mb-3 p-2 bg-light rounded border" style="display: none;">
+                <div class="d-flex align-items-center justify-content-between">
+                  <span class="text-muted fs-7"><i class="bi bi-image me-1"></i> Comprobante guardado:</span>
+                  <a href="#" id="preview_existing_link" target="_blank"
+                    class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 12px;">
+                    <i class="bi bi-box-arrow-up-right me-1"></i> Ver comprobante actual
+                  </a>
+                </div>
+              </div>
 
-          document.getElementById('modal_id_asistencia').value = btn.dataset.asistencia;
-          document.getElementById('modal_tarea').value = btn.dataset.tarea;
-          
-          modalReporte.show();
-        });
-      });
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Adjuntar Comprobante (PNG / JPG / WEBP)</label>
+                <input type="file" name="comprobante" class="form-control" id="modal_comprobante"
+                  accept="image/png, image/jpeg, image/jpg, image/webp">
+                <small class="text-muted">Las imágenes se subirán automáticamente a Cloudinary.</small>
+              </div>
 
-      // Enviar Formulario AJAX
-      formReporte.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const formData = new FormData(formReporte);
+              <!-- Previsualización de nueva imagen seleccionada -->
+              <div id="preview_new_container" class="mb-3 text-center" style="display: none;">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <small class="text-muted fw-semibold">Previsualización de nueva imagen:</small>
+                  <button type="button" id="btn_quitar_img" class="btn btn-sm btn-link text-danger p-0"
+                    style="font-size: 12px;">Quitar</button>
+                </div>
+                <img id="preview_new_img" src="" alt="Previsualización" class="img-fluid rounded border shadow-sm"
+                  style="max-height: 180px; object-fit: contain;">
+              </div>
 
-        try {
-          const res = await fetch('/reportes/guardar', {
-            method: 'POST',
-            body: formData
+              <!-- Estado de carga / spinner -->
+              <div id="upload_feedback" class="alert alert-info py-2 px-3 align-items-center gap-2 mb-0"
+                style="display: none; font-size: 0.875rem;">
+                <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                <span id="upload_feedback_text">Subiendo imagen a Cloudinary...</span>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button type="submit" id="btnGuardarReporte" class="btn btn-primary"
+                style="background-color: #0b6bcb; border-color: #0b6bcb;">
+                <i class="bi bi-check2-circle me-1"></i> Guardar Bitácora
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- INICIO: INCLUSIÓN DEL COMPONENTE DE ALERTA REUTILIZABLE -->
+    <!-- ========================================================================= -->
+    <%- include('../partials/toast-alert') %>
+      <!-- ========================================================================= -->
+      <!-- FIN: INCLUSIÓN DEL COMPONENTE DE ALERTA REUTILIZABLE -->
+      <!-- ========================================================================= -->
+
+      <!-- 2. Script Oficial de Bootstrap -->
+      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+      <!-- 3. Lógica JavaScript de la Vista -->
+      <script>
+        document.addEventListener('DOMContentLoaded', () => {
+          const modalEl = document.getElementById('modalReporte');
+          const modalReporte = new bootstrap.Modal(modalEl);
+          const formReporte = document.getElementById('formReporte');
+          const fileInput = document.getElementById('modal_comprobante');
+          const previewNewContainer = document.getElementById('preview_new_container');
+          const previewNewImg = document.getElementById('preview_new_img');
+          const btnQuitarImg = document.getElementById('btn_quitar_img');
+          const previewExistingContainer = document.getElementById('preview_existing_container');
+          const previewExistingLink = document.getElementById('preview_existing_link');
+          const uploadFeedback = document.getElementById('upload_feedback');
+          const uploadFeedbackText = document.getElementById('upload_feedback_text');
+          const btnGuardar = document.getElementById('btnGuardarReporte');
+
+          // Helper para previsualizar imagen seleccionada
+          fileInput.addEventListener('change', () => {
+            if (fileInput.files && fileInput.files[0]) {
+              const file = fileInput.files[0];
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                previewNewImg.src = e.target.result;
+                previewNewContainer.style.display = 'block';
+              };
+              reader.readAsDataURL(file);
+            } else {
+              limpiarPreviewNueva();
+            }
           });
-          const data = await res.json();
 
-          if (data.ok) {
-            // Cierra el modal
-            modalReporte.hide();
-
-            // Muestra la alerta toast
-            mostrarAlerta(data.msg || 'Bitácora guardada correctamente', 'success');
-
-            // Recarga tras 1.5s
-            setTimeout(() => {
-              location.reload();
-            }, 1500);
-
-          } else {
-            mostrarAlerta(data.error || 'Error al guardar la bitácora', 'error');
+          function limpiarPreviewNueva() {
+            fileInput.value = '';
+            previewNewImg.src = '';
+            previewNewContainer.style.display = 'none';
           }
-        } catch (err) {
-          console.error(err);
-          mostrarAlerta('Error de conexión al servidor.', 'error');
-        }
-      });
-    });
-     
-  /* 
-  ===============================================================
-  ENVÍO DE SOLICITUD DE HORAS EXTRA (TEMPORALMENTE DESHABILITADO)
-  ===============================================================
-  document.getElementById('formHorasExtra').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const payload = Object.fromEntries(formData.entries());
 
-    try {
-      const res = await fetch('/api/notificaciones', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+          if (btnQuitarImg) {
+            btnQuitarImg.addEventListener('click', limpiarPreviewNueva);
+          }
 
-      const data = await res.json();
+          // Abrir Modal de Bitácora
+          document.querySelectorAll('.btn-reporte').forEach(btn => {
+            btn.addEventListener('click', () => {
+              formReporte.reset();
+              limpiarPreviewNueva();
+              uploadFeedback.style.display = 'none';
 
-      if (data.ok) {
-        mostrarAlerta(data.msg, 'success');
-        location.reload();
-      } else {
-        mostrarAlerta(data.msg || 'Error al procesar la solicitud', 'error');
-      }
-    } catch (err) {
-      mostrarAlerta('Error conectando con el servidor.', 'error');
-    }
-  });
-  */
-  </script>
-</body>
-</html>
-<%- include('../partials/footer') %>
+              const asistenciaId = btn.dataset.asistencia;
+              const tareaTexto = btn.dataset.tarea || '';
+              const comprobanteActual = btn.dataset.comprobante || '';
 
+              document.getElementById('modal_id_asistencia').value = asistenciaId;
+              document.getElementById('modal_tarea').value = tareaTexto;
 
+              if (comprobanteActual && comprobanteActual.trim() !== '') {
+                previewExistingContainer.style.display = 'block';
+                previewExistingLink.href = comprobanteActual.trim();
+              } else {
+                previewExistingContainer.style.display = 'none';
+                previewExistingLink.href = '#';
+              }
 
+              modalReporte.show();
+            });
+          });
+
+          // Función para subir a Cloudinary directamente desde el navegador
+          async function subirACloudinary(file) {
+            const cloudName = '<%= cloudinaryCloudName %>';
+            const uploadPreset = '<%= cloudinaryUploadPreset %>';
+
+            if (!cloudName || !uploadPreset) return null;
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('upload_preset', uploadPreset);
+
+            const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+              method: 'POST',
+              body: formData
+            });
+
+            if (!res.ok) {
+              const errorData = await res.json().catch(() => ({}));
+              throw new Error(errorData.error?.message || 'Error en Cloudinary');
+            }
+
+            const data = await res.json();
+            return data.secure_url || data.url;
+          }
+
+          // Enviar Formulario
+          formReporte.addEventListener('submit',
+            async (e) => {
+              e.preventDefault();
+              const id_asistencia = document.getElementById('modal_id_asistencia').value;
+              const tarea = document.getElementById('modal_tarea').value.trim();
+              const file = fileInput.files && fileInput.files[0];
+
+              if (!id_asistencia || !tarea) {
+                mostrarAlerta('Por favor completa la descripción de la tarea.', 'warning');
+                return;
+              }
+
+              try {
+                btnGuardar.disabled = true;
+                let comprobanteUrl = null;
+
+                // 1. Si se seleccionó archivo, subir a Cloudinary
+                if (file) {
+                  uploadFeedback.style.display = 'flex';
+                  uploadFeedbackText.textContent = 'Subiendo comprobante a Cloudinary...';
+
+                  try {
+                    comprobanteUrl = await subirACloudinary(file);
+                  } catch (cloudErr) {
+                    console.warn('Fallo en Cloudinary, intentando subida directa por servidor:', cloudErr);
+                  }
+                }
+
+                // 2. Guardar en backend
+                uploadFeedback.style.display = 'flex';
+                uploadFeedbackText.textContent = 'Guardando bitácora en el sistema...';
+
+                let res;
+                if (comprobanteUrl) {
+                  // Se subió a Cloudinary exitosamente
+                  res = await fetch('/reportes/guardar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id_asistencia, tarea, comprobante: comprobanteUrl })
+                  });
+                } else {
+                  // Fallback con FormData (Multer local si Cloudinary no respondió)
+                  const fd = new FormData();
+                  fd.append('id_asistencia', id_asistencia);
+                  fd.append('tarea', tarea);
+                  if (file) {
+                    fd.append('comprobante', file);
+                  }
+                  res = await fetch('/reportes/guardar', {
+                    method: 'POST',
+                    body: fd
+                  });
+                }
+
+                const data = await res.json();
+
+                if (data.ok) {
+                  modalReporte.hide();
+                  mostrarAlerta(data.msg || 'Bitácora guardada correctamente', 'success');
+                  setTimeout(() => {
+                    location.reload();
+                  }, 1000);
+                } else {
+                  mostrarAlerta(data.error || 'Error al guardar la bitácora', 'error');
+                }
+              } catch (err) {
+                console.error(err);
+                mostrarAlerta('Error de conexión al procesar la bitácora: ' + err.message, 'error');
+              } finally {
+                btnGuardar.disabled = false;
+                uploadFeedback.style.display = 'none';
+              }
+            });
+        });
+
+        /*
+        ===============================================================
+        ENVÍO DE SOLICITUD DE HORAS EXTRA (TEMPORALMENTE DESHABILITADO)
+        ===============================================================
+        document.getElementById('formHorasExtra').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const formData = new FormData(e.target);
+          const payload = Object.fromEntries(formData.entries());
+      
+          try {
+            const res = await fetch('/api/notificaciones', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+      
+            const data = await res.json();
+      
+            if (data.ok) {
+              mostrarAlerta(data.msg, 'success');
+              location.reload();
+            } else {
+              mostrarAlerta(data.msg || 'Error al procesar la solicitud', 'error');
+            }
+          } catch (err) {
+            mostrarAlerta('Error conectando con el servidor.', 'error');
+          }
+        });
+        */
+      </script>
+      </body>
+
+      </html>
+      <%- include('../partials/footer') %>

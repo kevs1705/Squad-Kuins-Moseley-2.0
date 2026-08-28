@@ -245,14 +245,16 @@ router.post('/api/admin/reportes/:id_asistencia', requireAdmin, async (req, res)
     const valSalida = hora_salida && hora_salida.trim() && hora_salida.trim() !== '-' ? hora_salida.trim() : null;
     const valObs = observacion && observacion.trim() ? observacion.trim() : null;
 
-    // Actualizar horas y observación en la tabla asistencias
+    // Actualizar horas y observación en la tabla asistencias unificando campos
     await db.query(
       `UPDATE asistencias 
        SET hora_entrada = ?, 
            hora_salida = ?, 
-           observacion = ? 
+           observacion = ?,
+           fecha_hora_biometrico_entrada = IF(? IS NOT NULL, TIMESTAMP(fecha, ?), NULL),
+           fecha_hora_biometrico_salida = IF(? IS NOT NULL, TIMESTAMP(fecha, ?), NULL)
        WHERE id_asistencia = ?`,
-      [valEntrada, valSalida, valObs, id_asistencia]
+      [valEntrada, valSalida, valObs, valEntrada, valEntrada, valSalida, valSalida, id_asistencia]
     );
 
     // Si existe bitácora vinculada, actualizarla también

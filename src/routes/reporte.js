@@ -49,23 +49,22 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
     // 2. Total acumulado de horas (Calculado desde asistencias unificadas)
     const [totals] = await db.query(`
       SELECT COALESCE(
-        SEC_TO_TIME(
-          SUM(
-            TIMESTAMPDIFF(
-              SECOND,
-              TIMESTAMP(fecha, COALESCE(NULLIF(TRIM(hora_entrada), ''), TIME(fecha_hora_biometrico_entrada))),
-              TIMESTAMP(fecha, COALESCE(NULLIF(TRIM(hora_salida), ''), TIME(fecha_hora_biometrico_salida)))
-            )
+        SUM(
+          TIMESTAMPDIFF(
+            SECOND,
+            TIMESTAMP(fecha, COALESCE(NULLIF(TRIM(hora_entrada), ''), TIME(fecha_hora_biometrico_entrada))),
+            TIMESTAMP(fecha, COALESCE(NULLIF(TRIM(hora_salida), ''), TIME(fecha_hora_biometrico_salida)))
           )
-        ), '00:00:00'
-      ) AS total_acumulada
+        ), 0
+      ) AS total_segundos
       FROM asistencias
       WHERE id_usuario = ?
         AND COALESCE(NULLIF(TRIM(hora_entrada), ''), TIME(fecha_hora_biometrico_entrada)) IS NOT NULL
         AND COALESCE(NULLIF(TRIM(hora_salida), ''), TIME(fecha_hora_biometrico_salida)) IS NOT NULL
     `, [userId]);
 
-    const total_acumulada = totals[0]?.total_acumulada ? String(totals[0].total_acumulada) : '00:00:00';
+    const totalSegundos = totals[0]?.total_segundos || 0;
+    const total_acumulada = formatSecondsToHHMMSS(totalSegundos);
 
     // 3. JORNADAS UNIFICADAS: Asistencias vinculadas a Reportes por FK (id_asistencia)
     const [jornadas] = await db.query(`
@@ -93,14 +92,27 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
       WHERE a.id_usuario = ?
       ORDER BY a.fecha DESC, a.id_asistencia DESC
     `, [userId]);
+    const jornadasProcesadas = jornadas.map(j => ({
+      ...j,
+      hora_entrada_vis: j.hora_entrada_f || '-',
+      hora_salida_vis: j.hora_salida_f || '-',
+      horas_dia: calcularHorasTranscurridas(j)
+    }));
 
-      res.render('usuario/reporte', {
-        user,
-        total_acumulada,
-        jornadas: jornadasProcesadas,
-        cloudinaryCloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || process.env.CLOUDINARY_CLOUD_NAME || 'sjgf9nkd',
-        cloudinaryUploadPreset: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || process.env.CLOUDINARY_UPLOAD_PRESET || 'pasantes_preset'
-      });
+    const user = {
+      id: userDB.id_usuario,
+      nombre: userDB.nombre,
+      ci: userDB.CI,
+      rol: userDB.rol
+    };
+
+    res.render('usuario/reporte', {
+      user,
+      total_acumulada,
+      jornadas: jornadasProcesadas,
+      cloudinaryCloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || process.env.CLOUDINARY_CLOUD_NAME || 'sjgf9nkd',
+      cloudinaryUploadPreset: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || process.env.CLOUDINARY_UPLOAD_PRESET || 'pasantes_preset'
+    });
 
   } catch (e) {
     console.error(e);
@@ -142,6 +154,14 @@ function calcularHorasTranscurridas(j) {
   } catch (err) {
     return '0 hrs';
   }
+}
+
+function formatSecondsToHHMMSS(totalSeconds) {
+  const s = Math.max(0, Math.floor(Number(totalSeconds) || 0));
+  const hours = Math.floor(s / 3600);
+  const minutes = Math.floor((s % 3600) / 60);
+  const seconds = s % 60;
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
 /* ==========================================================================
@@ -189,8 +209,11 @@ router.post('/reportes/guardar', requireAuth, handleUploadOptional, async (req, 
       return res.status(400).json({ ok: false, error: 'Debe seleccionar una asistencia y describir la tarea.' });
     }
 
-    // Ruta de la imagen cargada por Multer (si existe)
+    // Ruta de la imagen cargada por Multer o enviada desde Cloudinary
     const publicPath = req.file ? '/uploads/comprobantes/' + req.file.filename : null;
+    const comprobanteUrl = (comprobante && typeof comprobante === 'string' && comprobante.trim() !== '') 
+      ? comprobante.trim() 
+      : publicPath;
 
     // Verificar si ya existe un reporte registrado para esta asistencia
     const [reportes] = await db.query(
@@ -201,8 +224,8 @@ router.post('/reportes/guardar', requireAuth, handleUploadOptional, async (req, 
     const reporteExistente = reportes.length > 0 ? reportes[0] : null;
 
     if (reporteExistente) {
-      // Si subió nueva imagen usa publicPath, de lo contrario conserva la imagen previa
-      const imgFinal = publicPath !== null ? publicPath : reporteExistente.comprobante;
+      // Si subió nueva imagen usa comprobanteUrl, de lo contrario conserva la imagen previa
+      const imgFinal = comprobanteUrl !== null ? comprobanteUrl : reporteExistente.comprobante;
 
       await db.query(`
         UPDATE reportes
@@ -224,7 +247,7 @@ router.post('/reportes/guardar', requireAuth, handleUploadOptional, async (req, 
         return res.status(404).json({ ok: false, error: 'Asistencia no encontrada' });
       }
 
-      // Inserción respetando el esquema (creado_en y actualizado_en toman DEFAULT)
+      // Inserción respetando el esquema
       await db.query(`
         INSERT INTO reportes (id_usuario, id_asistencia, fecha, tarea, comprobante)
         VALUES (?, ?, ?, ?, ?)
@@ -327,22 +350,20 @@ router.get('/reportes/export', requireAuth, async (req, res) => {
 
     const [totals] = await db.query(`
       SELECT COALESCE(
-        SEC_TO_TIME(
-          SUM(
-            TIMESTAMPDIFF(
-              SECOND,
-              TIMESTAMP(fecha, COALESCE(NULLIF(TRIM(hora_entrada), ''), TIME(fecha_hora_biometrico_entrada))),
-              TIMESTAMP(fecha, COALESCE(NULLIF(TRIM(hora_salida), ''), TIME(fecha_hora_biometrico_salida)))
-            )
+        SUM(
+          TIMESTAMPDIFF(
+            SECOND,
+            TIMESTAMP(fecha, COALESCE(NULLIF(TRIM(hora_entrada), ''), TIME(fecha_hora_biometrico_entrada))),
+            TIMESTAMP(fecha, COALESCE(NULLIF(TRIM(hora_salida), ''), TIME(fecha_hora_biometrico_salida)))
           )
-        ), '00:00:00'
-      ) AS total_acumulada
+        ), 0
+      ) AS total_segundos
       FROM asistencias
       WHERE id_usuario = ? 
         AND COALESCE(NULLIF(TRIM(hora_entrada), ''), TIME(fecha_hora_biometrico_entrada)) IS NOT NULL
         AND COALESCE(NULLIF(TRIM(hora_salida), ''), TIME(fecha_hora_biometrico_salida)) IS NOT NULL
     `, [userId]);
-    const totalAcum = (totals && totals[0]) ? totals[0].total_acumulada : '00:00:00';
+    const totalAcum = formatSecondsToHHMMSS(totals[0]?.total_segundos || 0);
 
     const toExcelDate = (ymd) => {
       if (!ymd) return null;
