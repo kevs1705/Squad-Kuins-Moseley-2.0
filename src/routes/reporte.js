@@ -46,99 +46,75 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
     if (users.length === 0) return res.status(404).send('Usuario no encontrado');
     const userDB = users[0];
 
-    // 2. Total acumulado de horas (Calculado desde asistencias)
-  const [totals] = await db.query(`
-    SELECT COALESCE(
-      SEC_TO_TIME(
-        SUM(
-          TIMESTAMPDIFF(
-            SECOND,
-            TIMESTAMP(
-              fecha, 
-              COALESCE(
-                NULLIF(TRIM(hora_entrada), ''), 
-                TIME(fecha_hora_biometrico_entrada)
-              )
-            ),
-            CASE 
-              WHEN hora_salida IS NOT NULL AND TRIM(hora_salida) NOT IN ('', '-') THEN 
-                TIMESTAMP(fecha, TRIM(hora_salida))
-              WHEN fecha_hora_biometrico_salida IS NOT NULL THEN 
-                fecha_hora_biometrico_salida
-              ELSE NULL
-            END
+    // 2. Total acumulado de horas (Calculado desde asistencias unificadas)
+    const [totals] = await db.query(`
+      SELECT COALESCE(
+        SEC_TO_TIME(
+          SUM(
+            TIMESTAMPDIFF(
+              SECOND,
+              TIMESTAMP(fecha, COALESCE(NULLIF(TRIM(hora_entrada), ''), TIME(fecha_hora_biometrico_entrada))),
+              TIMESTAMP(fecha, COALESCE(NULLIF(TRIM(hora_salida), ''), TIME(fecha_hora_biometrico_salida)))
+            )
           )
-        )
-      ), '00:00:00'
-    ) AS total_acumulada
-    FROM asistencias
-    WHERE id_usuario = ?
-      AND (
-        (hora_entrada IS NOT NULL AND TRIM(hora_entrada) NOT IN ('', '-')) OR
-        (fecha_hora_biometrico_entrada IS NOT NULL)
-      )
-      AND (
-        (hora_salida IS NOT NULL AND TRIM(hora_salida) NOT IN ('', '-')) OR
-        (fecha_hora_biometrico_salida IS NOT NULL)
-      )
-  `, [userId]);
-  
-     const total_acumulada = totals[0]?.total_acumulada ? String(totals[0].total_acumulada) : '00:00:00';
-  
+        ), '00:00:00'
+      ) AS total_acumulada
+      FROM asistencias
+      WHERE id_usuario = ?
+        AND COALESCE(NULLIF(TRIM(hora_entrada), ''), TIME(fecha_hora_biometrico_entrada)) IS NOT NULL
+        AND COALESCE(NULLIF(TRIM(hora_salida), ''), TIME(fecha_hora_biometrico_salida)) IS NOT NULL
+    `, [userId]);
+
+    const total_acumulada = totals[0]?.total_acumulada ? String(totals[0].total_acumulada) : '00:00:00';
 
     // 3. JORNADAS UNIFICADAS: Asistencias vinculadas a Reportes por FK (id_asistencia)
-   // 3. JORNADAS UNIFICADAS: Asistencias vinculadas a Reportes por FK (id_asistencia)
-const [jornadas] = await db.query(`
-  SELECT 
-    a.id_asistencia,
-    DATE_FORMAT(a.fecha, '%Y-%m-%d') AS fecha,
-    a.estado AS asistencia_estado,
-    l.nombre AS lugar_nombre,
-    l.tipo AS lugar_tipo,
-    
-    -- Hora entrada y salida manual
-    TIME_FORMAT(a.hora_entrada, '%H:%i') AS hora_entrada_f,
-    TIME_FORMAT(a.hora_salida, '%H:%i') AS hora_salida_f,
-    a.hora_entrada,
-    a.hora_salida,
-    
-    -- Hora entrada y salida biométrica
-    TIME_FORMAT(a.fecha_hora_biometrico_entrada, '%H:%i') AS bio_entrada_f,
-    TIME_FORMAT(a.fecha_hora_biometrico_salida, '%H:%i') AS bio_salida_f,
-    TIME_FORMAT(a.fecha_hora_biometrico_entrada, '%H:%i:%s') AS bio_entrada,
-    TIME_FORMAT(a.fecha_hora_biometrico_salida, '%H:%i:%s') AS bio_salida,
+    const [jornadas] = await db.query(`
+      SELECT 
+        a.id_asistencia,
+        DATE_FORMAT(a.fecha, '%Y-%m-%d') AS fecha,
+        a.estado AS asistencia_estado,
+        l.nombre AS lugar_nombre,
+        l.tipo AS lugar_tipo,
+        
+        -- Horas unificadas
+        TIME_FORMAT(COALESCE(NULLIF(TRIM(a.hora_entrada), ''), TIME(a.fecha_hora_biometrico_entrada)), '%H:%i') AS hora_entrada_f,
+        TIME_FORMAT(COALESCE(NULLIF(TRIM(a.hora_salida), ''), TIME(a.fecha_hora_biometrico_salida)), '%H:%i') AS hora_salida_f,
+        COALESCE(NULLIF(TRIM(a.hora_entrada), ''), TIME(a.fecha_hora_biometrico_entrada)) AS hora_entrada,
+        COALESCE(NULLIF(TRIM(a.hora_salida), ''), TIME(a.fecha_hora_biometrico_salida)) AS hora_salida,
 
-    -- Datos del Reporte de la jornada
-    r.id_reporte,
-    r.tarea,
-    r.comprobante,
-    r.observacion
-  FROM asistencias a
-  LEFT JOIN lugares l ON a.id_lugar = l.id_lugar
-  LEFT JOIN reportes r ON a.id_asistencia = r.id_asistencia
-  WHERE a.id_usuario = ?
-  ORDER BY a.fecha DESC, a.id_asistencia DESC
-`, [userId]);
-        const jornadasProcesadas = jornadas.map(j => ({
-        ...j,
-        // Formateamos las horas visibles para la tabla
-        hora_entrada_vis: j.bio_entrada_f || j.hora_entrada_f || '-',
-        hora_salida_vis: j.bio_salida_f || j.hora_salida_f || '-',
-        horas_dia: calcularHorasTranscurridas(j)
-      }));
+        -- Datos del Reporte de la jornada
+        r.id_reporte,
+        r.tarea,
+        r.comprobante,
+        r.observacion
+      FROM asistencias a
+      LEFT JOIN lugares l ON a.id_lugar = l.id_lugar
+      LEFT JOIN reportes r ON a.id_asistencia = r.id_asistencia
+      WHERE a.id_usuario = ?
+      ORDER BY a.fecha DESC, a.id_asistencia DESC
+    `, [userId]);
 
-      const user = {
-        id: userDB.id_usuario,
-        nombre: userDB.nombre,
-        ci: userDB.CI,
-        rol: userDB.rol
-      };
+    const jornadasProcesadas = jornadas.map(j => ({
+      ...j,
+      hora_entrada_vis: j.hora_entrada_f || '-',
+      hora_salida_vis: j.hora_salida_f || '-',
+      horas_dia: calcularHorasTranscurridas(j)
+    }));
 
-      res.render('usuario/reporte', {
-        user,
-        total_acumulada,
-        jornadas: jornadasProcesadas
-      });
+    const user = {
+      id: userDB.id_usuario,
+      nombre: userDB.nombre,
+      ci: userDB.CI,
+      rol: userDB.rol
+    };
+
+    res.render('usuario/reporte', {
+      user,
+      total_acumulada,
+      jornadas: jornadasProcesadas,
+      cloudinaryCloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || process.env.CLOUDINARY_CLOUD_NAME || 'sjgf9nkd',
+      cloudinaryUploadPreset: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || process.env.CLOUDINARY_UPLOAD_PRESET || 'pasantes_preset'
+    });
 
   } catch (e) {
     console.error(e);
@@ -147,9 +123,8 @@ const [jornadas] = await db.query(`
 });
 
 function calcularHorasTranscurridas(j) {
-  // Priorizar biométrico; si no existe, usar la hora manual
-  const entradaStr = j.bio_entrada || j.hora_entrada;
-  const salidaStr = j.bio_salida || j.hora_salida;
+  const entradaStr = j.hora_entrada;
+  const salidaStr = j.hora_salida;
 
   // Si no hay entrada registrada o no hay salida aún
   if (!entradaStr || !salidaStr) {
@@ -328,9 +303,11 @@ router.get('/reportes/export', requireAuth, async (req, res) => {
       SELECT
         DATE_FORMAT(a.fecha, '%Y-%m-%d') AS fecha,
         l.nombre AS lugar,
-        TIME_FORMAT(a.hora_entrada, '%H:%i:%s') AS hora_entrada,
-        TIME_FORMAT(a.hora_salida, '%H:%i:%s') AS hora_salida,
-        IF(a.hora_salida IS NOT NULL, TIME_FORMAT(TIMEDIFF(a.hora_salida, a.hora_entrada), '%H:%i:%s'), '00:00:00') AS horas_trabajadas,
+        TIME_FORMAT(COALESCE(NULLIF(TRIM(a.hora_entrada), ''), TIME(a.fecha_hora_biometrico_entrada)), '%H:%i:%s') AS hora_entrada,
+        TIME_FORMAT(COALESCE(NULLIF(TRIM(a.hora_salida), ''), TIME(a.fecha_hora_biometrico_salida)), '%H:%i:%s') AS hora_salida,
+        IF(COALESCE(NULLIF(TRIM(a.hora_salida), ''), TIME(a.fecha_hora_biometrico_salida)) IS NOT NULL, 
+           TIME_FORMAT(TIMEDIFF(COALESCE(NULLIF(TRIM(a.hora_salida), ''), TIME(a.fecha_hora_biometrico_salida)), COALESCE(NULLIF(TRIM(a.hora_entrada), ''), TIME(a.fecha_hora_biometrico_entrada))), '%H:%i:%s'), 
+           '00:00:00') AS horas_trabajadas,
         r.tarea, 
         r.observacion
       FROM asistencias a
@@ -341,9 +318,21 @@ router.get('/reportes/export', requireAuth, async (req, res) => {
     `, [userId]);
 
     const [totals] = await db.query(`
-      SELECT COALESCE(SEC_TO_TIME(SUM(TIME_TO_SEC(TIMEDIFF(hora_salida, hora_entrada)))), '00:00:00') AS total_acumulada
+      SELECT COALESCE(
+        SEC_TO_TIME(
+          SUM(
+            TIMESTAMPDIFF(
+              SECOND,
+              TIMESTAMP(fecha, COALESCE(NULLIF(TRIM(hora_entrada), ''), TIME(fecha_hora_biometrico_entrada))),
+              TIMESTAMP(fecha, COALESCE(NULLIF(TRIM(hora_salida), ''), TIME(fecha_hora_biometrico_salida)))
+            )
+          )
+        ), '00:00:00'
+      ) AS total_acumulada
       FROM asistencias
-      WHERE id_usuario = ? AND hora_salida IS NOT NULL
+      WHERE id_usuario = ? 
+        AND COALESCE(NULLIF(TRIM(hora_entrada), ''), TIME(fecha_hora_biometrico_entrada)) IS NOT NULL
+        AND COALESCE(NULLIF(TRIM(hora_salida), ''), TIME(fecha_hora_biometrico_salida)) IS NOT NULL
     `, [userId]);
     const totalAcum = (totals && totals[0]) ? totals[0].total_acumulada : '00:00:00';
 

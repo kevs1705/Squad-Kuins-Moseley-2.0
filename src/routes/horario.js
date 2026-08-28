@@ -29,9 +29,19 @@ router.get('/usuario/horario', async (req, res) => {
 
         // 2. Obtener el total de horas acumuladas
         const [resultadoHoras] = await db.query(`
-            SELECT COALESCE(SUM(TIMESTAMPDIFF(HOUR, hora_entrada, hora_salida)), 0) AS total_horas
+            SELECT COALESCE(
+              SUM(
+                TIMESTAMPDIFF(
+                  HOUR, 
+                  TIMESTAMP(fecha, COALESCE(NULLIF(TRIM(hora_entrada), ''), TIME(fecha_hora_biometrico_entrada))), 
+                  TIMESTAMP(fecha, COALESCE(NULLIF(TRIM(hora_salida), ''), TIME(fecha_hora_biometrico_salida)))
+                )
+              ), 0
+            ) AS total_horas
             FROM asistencias
             WHERE id_usuario = ?
+              AND COALESCE(NULLIF(TRIM(hora_entrada), ''), TIME(fecha_hora_biometrico_entrada)) IS NOT NULL
+              AND COALESCE(NULLIF(TRIM(hora_salida), ''), TIME(fecha_hora_biometrico_salida)) IS NOT NULL
         `, [id_usuario]);
 
         const totalHorasSistema = resultadoHoras[0]?.total_horas || 0;

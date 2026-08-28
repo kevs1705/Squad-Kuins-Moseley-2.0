@@ -241,8 +241,21 @@ router.post('/api/admin/reportes/:id_asistencia', requireAdmin, async (req, res)
 
     if (!id_asistencia) return res.status(400).json({ ok: false, msg: 'ID de asistencia no válido' });
 
-    // Actualizar observación en la tabla asistencias
-    await db.query('UPDATE asistencias SET observacion = ? WHERE id_asistencia = ?', [observacion || null, id_asistencia]);
+    const valEntrada = hora_entrada && hora_entrada.trim() ? hora_entrada.trim() : null;
+    const valSalida = hora_salida && hora_salida.trim() && hora_salida.trim() !== '-' ? hora_salida.trim() : null;
+    const valObs = observacion && observacion.trim() ? observacion.trim() : null;
+
+    // Actualizar horas y observación en la tabla asistencias unificando campos
+    await db.query(
+      `UPDATE asistencias 
+       SET hora_entrada = ?, 
+           hora_salida = ?, 
+           observacion = ?,
+           fecha_hora_biometrico_entrada = IF(? IS NOT NULL, TIMESTAMP(fecha, ?), NULL),
+           fecha_hora_biometrico_salida = IF(? IS NOT NULL, TIMESTAMP(fecha, ?), NULL)
+       WHERE id_asistencia = ?`,
+      [valEntrada, valSalida, valObs, valEntrada, valEntrada, valSalida, valSalida, id_asistencia]
+    );
 
     // Si existe bitácora vinculada, actualizarla también
     await db.query('UPDATE reportes SET observacion = ? WHERE id_asistencia = ?', [observacion || null, id_asistencia]);
@@ -399,7 +412,7 @@ router.get('/admin/reportes/export', requireAdmin, async (req, res) => {
 
     ws.addRow([]);
     ws.addRow(['Usuario', 'CI', 'Fecha', 'Lugar / Obra', 'Hora Entrada', 'Hora Salida', 'Duración', 'Tarea (Bitácora)', 'Observación Admin']);
-    
+
     const headerRow = ws.getRow(4);
     headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
     headerRow.fill = {

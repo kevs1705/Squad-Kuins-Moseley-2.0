@@ -206,21 +206,31 @@ async function sincronizarBiometricoCompleto() {
           }
 
           const { fecha, fechaHoraSql } = formatearFecha(fechaHoraObj);
+          const horaStr = fechaHoraSql.split(' ')[1] || '00:00:00';
 
-          // Asignar idLugarDefecto (3)
+          // Asignar idLugarDefecto (3 - Oficina / Biométrico)
           const idLugar = idLugarDefecto;
 
-          // Insertar / Actualizar asistencia
+          // Insertar / Actualizar asistencia unificando hora_entrada y hora_salida
           const queryAsistencia = `
             INSERT INTO asistencias (
               id_usuario, 
               id_lugar, 
               fecha, 
+              hora_entrada,
               fecha_hora_biometrico_entrada, 
               estado
-            ) VALUES (?, ?, ?, ?, 'PRESENTE')
+            ) VALUES (?, ?, ?, ?, ?, 'PRESENTE')
             ON DUPLICATE KEY UPDATE
               id_lugar = VALUES(id_lugar),
+              hora_entrada = COALESCE(hora_entrada, VALUES(hora_entrada)),
+              hora_salida = IF(
+                (hora_entrada IS NOT NULL AND VALUES(hora_entrada) > hora_entrada) OR
+                (fecha_hora_biometrico_entrada IS NOT NULL AND VALUES(fecha_hora_biometrico_entrada) > fecha_hora_biometrico_entrada),
+                VALUES(hora_entrada),
+                hora_salida
+              ),
+              fecha_hora_biometrico_entrada = COALESCE(fecha_hora_biometrico_entrada, VALUES(fecha_hora_biometrico_entrada)),
               fecha_hora_biometrico_salida = IF(
                 fecha_hora_biometrico_entrada IS NOT NULL AND VALUES(fecha_hora_biometrico_entrada) > fecha_hora_biometrico_entrada,
                 VALUES(fecha_hora_biometrico_entrada),
@@ -228,7 +238,7 @@ async function sincronizarBiometricoCompleto() {
               );
           `;
 
-          await db.query(queryAsistencia, [idUsuarioBD, idLugar, fecha, fechaHoraSql]);
+          await db.query(queryAsistencia, [idUsuarioBD, idLugar, fecha, horaStr, fechaHoraSql]);
           marcasProcesadas++;
 
         } catch (errReg) {
