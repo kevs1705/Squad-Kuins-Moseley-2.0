@@ -33,15 +33,16 @@ router.get('/usuario/horario', async (req, res) => {
               SUM(
                 TIMESTAMPDIFF(
                   HOUR, 
-                  TIMESTAMP(fecha, COALESCE(NULLIF(TRIM(hora_entrada), ''), TIME(fecha_hora_biometrico_entrada))), 
-                  TIMESTAMP(fecha, COALESCE(NULLIF(TRIM(hora_salida), ''), TIME(fecha_hora_biometrico_salida)))
+                  TIMESTAMP(fecha, hora_entrada), 
+                  TIMESTAMP(fecha, hora_salida)
                 )
               ), 0
             ) AS total_horas
             FROM asistencias
             WHERE id_usuario = ?
-              AND COALESCE(NULLIF(TRIM(hora_entrada), ''), TIME(fecha_hora_biometrico_entrada)) IS NOT NULL
-              AND COALESCE(NULLIF(TRIM(hora_salida), ''), TIME(fecha_hora_biometrico_salida)) IS NOT NULL
+              AND estado != 'ANULADO'
+              AND hora_entrada IS NOT NULL
+              AND hora_salida IS NOT NULL
         `, [id_usuario]);
 
         const totalHorasSistema = resultadoHoras[0]?.total_horas || 0;

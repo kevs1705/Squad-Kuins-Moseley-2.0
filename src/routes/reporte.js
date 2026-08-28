@@ -52,15 +52,16 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
         SUM(
           TIMESTAMPDIFF(
             SECOND,
-            TIMESTAMP(fecha, COALESCE(NULLIF(TRIM(hora_entrada), ''), TIME(fecha_hora_biometrico_entrada))),
-            TIMESTAMP(fecha, COALESCE(NULLIF(TRIM(hora_salida), ''), TIME(fecha_hora_biometrico_salida)))
+            TIMESTAMP(fecha, hora_entrada),
+            TIMESTAMP(fecha, hora_salida)
           )
         ), 0
       ) AS total_segundos
       FROM asistencias
       WHERE id_usuario = ?
-        AND COALESCE(NULLIF(TRIM(hora_entrada), ''), TIME(fecha_hora_biometrico_entrada)) IS NOT NULL
-        AND COALESCE(NULLIF(TRIM(hora_salida), ''), TIME(fecha_hora_biometrico_salida)) IS NOT NULL
+        AND estado != 'ANULADO'
+        AND hora_entrada IS NOT NULL
+        AND hora_salida IS NOT NULL
     `, [userId]);
 
     const totalSegundos = totals[0]?.total_segundos || 0;
@@ -76,10 +77,10 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
         l.tipo AS lugar_tipo,
         
         -- Horas unificadas
-        TIME_FORMAT(COALESCE(NULLIF(TRIM(a.hora_entrada), ''), TIME(a.fecha_hora_biometrico_entrada)), '%H:%i') AS hora_entrada_f,
-        TIME_FORMAT(COALESCE(NULLIF(TRIM(a.hora_salida), ''), TIME(a.fecha_hora_biometrico_salida)), '%H:%i') AS hora_salida_f,
-        COALESCE(NULLIF(TRIM(a.hora_entrada), ''), TIME(a.fecha_hora_biometrico_entrada)) AS hora_entrada,
-        COALESCE(NULLIF(TRIM(a.hora_salida), ''), TIME(a.fecha_hora_biometrico_salida)) AS hora_salida,
+        TIME_FORMAT(a.hora_entrada, '%H:%i') AS hora_entrada_f,
+        TIME_FORMAT(a.hora_salida, '%H:%i') AS hora_salida_f,
+        a.hora_entrada,
+        a.hora_salida,
 
         -- Datos del Reporte de la jornada
         r.id_reporte,
@@ -90,6 +91,7 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
       LEFT JOIN lugares l ON a.id_lugar = l.id_lugar
       LEFT JOIN reportes r ON a.id_asistencia = r.id_asistencia
       WHERE a.id_usuario = ?
+        AND a.estado != 'ANULADO'
       ORDER BY a.fecha DESC, a.id_asistencia DESC
     `, [userId]);
     const jornadasProcesadas = jornadas.map(j => ({
@@ -334,10 +336,10 @@ router.get('/reportes/export', requireAuth, async (req, res) => {
       SELECT
         DATE_FORMAT(a.fecha, '%Y-%m-%d') AS fecha,
         l.nombre AS lugar,
-        TIME_FORMAT(COALESCE(NULLIF(TRIM(a.hora_entrada), ''), TIME(a.fecha_hora_biometrico_entrada)), '%H:%i:%s') AS hora_entrada,
-        TIME_FORMAT(COALESCE(NULLIF(TRIM(a.hora_salida), ''), TIME(a.fecha_hora_biometrico_salida)), '%H:%i:%s') AS hora_salida,
-        IF(COALESCE(NULLIF(TRIM(a.hora_salida), ''), TIME(a.fecha_hora_biometrico_salida)) IS NOT NULL, 
-           TIME_FORMAT(TIMEDIFF(COALESCE(NULLIF(TRIM(a.hora_salida), ''), TIME(a.fecha_hora_biometrico_salida)), COALESCE(NULLIF(TRIM(a.hora_entrada), ''), TIME(a.fecha_hora_biometrico_entrada))), '%H:%i:%s'), 
+        TIME_FORMAT(a.hora_entrada, '%H:%i:%s') AS hora_entrada,
+        TIME_FORMAT(a.hora_salida, '%H:%i:%s') AS hora_salida,
+        IF(a.hora_salida IS NOT NULL AND a.hora_entrada IS NOT NULL, 
+           TIME_FORMAT(TIMEDIFF(a.hora_salida, a.hora_entrada), '%H:%i:%s'), 
            '00:00:00') AS horas_trabajadas,
         r.tarea, 
         r.observacion
@@ -345,6 +347,7 @@ router.get('/reportes/export', requireAuth, async (req, res) => {
       LEFT JOIN lugares l ON a.id_lugar = l.id_lugar
       LEFT JOIN reportes r ON a.id_asistencia = r.id_asistencia
       WHERE a.id_usuario = ?
+        AND a.estado != 'ANULADO'
       ORDER BY a.fecha DESC
     `, [userId]);
 
@@ -353,15 +356,16 @@ router.get('/reportes/export', requireAuth, async (req, res) => {
         SUM(
           TIMESTAMPDIFF(
             SECOND,
-            TIMESTAMP(fecha, COALESCE(NULLIF(TRIM(hora_entrada), ''), TIME(fecha_hora_biometrico_entrada))),
-            TIMESTAMP(fecha, COALESCE(NULLIF(TRIM(hora_salida), ''), TIME(fecha_hora_biometrico_salida)))
+            TIMESTAMP(fecha, hora_entrada),
+            TIMESTAMP(fecha, hora_salida)
           )
         ), 0
       ) AS total_segundos
       FROM asistencias
       WHERE id_usuario = ? 
-        AND COALESCE(NULLIF(TRIM(hora_entrada), ''), TIME(fecha_hora_biometrico_entrada)) IS NOT NULL
-        AND COALESCE(NULLIF(TRIM(hora_salida), ''), TIME(fecha_hora_biometrico_salida)) IS NOT NULL
+        AND estado != 'ANULADO'
+        AND hora_entrada IS NOT NULL
+        AND hora_salida IS NOT NULL
     `, [userId]);
     const totalAcum = formatSecondsToHHMMSS(totals[0]?.total_segundos || 0);
 

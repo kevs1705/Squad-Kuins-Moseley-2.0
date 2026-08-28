@@ -122,20 +122,12 @@
                 </td>
                 <td>
                   <%= a.hora_entrada || '-' %>
-                  <% if(a.bio_entrada) { %>
-                    <span class="dot-indicator-cyan" title="Huella Biométrica: <%= a.bio_entrada %>"></span>
-                  <% } %>
                 </td>
                 <td>
                   <%= a.hora_salida || '-' %>
-                  <% if(a.bio_salida) { %>
-                    <span class="dot-indicator-cyan" title="Huella Biométrica: <%= a.bio_salida %>"></span>
-                  <% } %>
                 </td>
                 <% 
-                  const tieneSalida = (a.hora_salida && a.hora_salida !== '-') || 
-                                      (a.bio_salida && a.bio_salida !== '-') || 
-                                      (a.fecha_hora_biometrico_salida && a.fecha_hora_biometrico_salida !== '-');
+                  const tieneSalida = a.hora_salida && a.hora_salida !== '-';
                 %>
                 <td>
                   <%= tieneSalida ? (a.horas_dia !== 'En curso' ? a.horas_dia : 'Finalizado') : 'En curso' %>

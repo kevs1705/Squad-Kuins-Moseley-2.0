@@ -571,9 +571,12 @@
             ${item.observacion ? escapeHTML(item.observacion) : 'Sin observaciones'}
           </div>
         </td>
-        <td style="text-align: center;">
+        <td style="text-align: center; white-space: nowrap;">
           <button class="btn-edit-row" type="button" onclick="abrirModalEditar(${item.id_asistencia}, '${item.hora_entrada || ''}', '${item.hora_salida || ''}', '${obsSegura}', '${(item.usuario_nombre || '').replace(/'/g, "\\'")}', '${item.fecha || ''}')">
             Editar
+          </button>
+          <button type="button" onclick="anularJornada(${item.id_asistencia}, '${(item.usuario_nombre || '').replace(/'/g, "\\'")}', '${item.fecha || ''}')" title="Anular jornada" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; padding:4px 8px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; margin-left:4px;">
+            &times;
           </button>
         </td>
       `;
@@ -692,6 +695,34 @@
           Swal.fire('Error', 'Error de conexión con el servidor', 'error');
         }
       });
+
+      async function anularJornada(id, usuario, fecha) {
+        const result = await Swal.fire({
+          title: '¿Anular esta jornada?',
+          html: `¿Estás seguro de anular la asistencia de <b>${escapeHTML(usuario)}</b> del <b>${fecha}</b>?<br><small style="color: #64748b;">El biométrico no la volverá a insertar.</small>`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#dc2626',
+          cancelButtonColor: '#64748b',
+          confirmButtonText: 'Sí, anular',
+          cancelButtonText: 'Cancelar'
+        });
+
+        if (result.isConfirmed) {
+          try {
+            const res = await fetch(`/api/admin/reportes/${id}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (data.ok) {
+              Swal.fire({ icon: 'success', title: 'Anulada', text: data.msg, timer: 1500, showConfirmButton: false });
+              fetchReportes(currentPage);
+            } else {
+              Swal.fire({ icon: 'error', title: 'Error', text: data.msg || 'No se pudo anular' });
+            }
+          } catch (e) {
+            Swal.fire({ icon: 'error', title: 'Error', text: 'Error de conexión con el servidor' });
+          }
+        }
+      }
 
       // Evento de cambio en el filtro de Obras/Lugares en la tabla
       document.getElementById('filterLugar')?.addEventListener('change', () => {

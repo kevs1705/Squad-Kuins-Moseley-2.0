@@ -211,35 +211,47 @@ async function sincronizarBiometricoCompleto() {
           // Asignar idLugarDefecto (3 - Oficina / Biométrico)
           const idLugar = idLugarDefecto;
 
-          // Insertar / Actualizar asistencia unificando hora_entrada y hora_salida
-          const queryAsistencia = `
-            INSERT INTO asistencias (
-              id_usuario, 
-              id_lugar, 
-              fecha, 
-              hora_entrada,
-              fecha_hora_biometrico_entrada, 
-              estado
-            ) VALUES (?, ?, ?, ?, ?, 'PRESENTE')
-            ON DUPLICATE KEY UPDATE
-              id_lugar = VALUES(id_lugar),
-              hora_entrada = COALESCE(hora_entrada, VALUES(hora_entrada)),
-              hora_salida = IF(
-                (hora_entrada IS NOT NULL AND VALUES(hora_entrada) > hora_entrada) OR
-                (fecha_hora_biometrico_entrada IS NOT NULL AND VALUES(fecha_hora_biometrico_entrada) > fecha_hora_biometrico_entrada),
-                VALUES(hora_entrada),
-                hora_salida
-              ),
-              fecha_hora_biometrico_entrada = COALESCE(fecha_hora_biometrico_entrada, VALUES(fecha_hora_biometrico_entrada)),
-              fecha_hora_biometrico_salida = IF(
-                fecha_hora_biometrico_entrada IS NOT NULL AND VALUES(fecha_hora_biometrico_entrada) > fecha_hora_biometrico_entrada,
-                VALUES(fecha_hora_biometrico_entrada),
-                fecha_hora_biometrico_salida
-              );
-          `;
+          // 2. Verificar si ya existe un registro de asistencia para este usuario y fecha
+          const [asistenciaExistente] = await db.query(
+            'SELECT id_asistencia, hora_entrada, hora_salida, estado FROM asistencias WHERE id_usuario = ? AND fecha = ? LIMIT 1',
+            [idUsuarioBD, fecha]
+          );
 
-          await db.query(queryAsistencia, [idUsuarioBD, idLugar, fecha, horaStr, fechaHoraSql]);
-          marcasProcesadas++;
+          if (asistenciaExistente.length > 0) {
+            const asis = asistenciaExistente[0];
+
+            // 🛡️ CANDADO DE PROTECCIÓN: Si el admin editó o anuló esta fila, NO TOCAR
+            if (asis.estado === 'EDITADO_ADMIN' || asis.estado === 'ANULADO') {
+              marcasOmitidas++;
+              continue;
+            }
+
+            // Si es un registro normal PRESENTE:
+            if (!asis.hora_entrada) {
+              // Si no tenía entrada, asignar esta marca como entrada
+              await db.query(
+                'UPDATE asistencias SET hora_entrada = ?, id_lugar = ? WHERE id_asistencia = ?',
+                [horaStr, idLugar, asis.id_asistencia]
+              );
+            } else if (horaStr > asis.hora_entrada) {
+              // Si la nueva marca es posterior a la entrada, registrar o actualizar la salida
+              if (!asis.hora_salida || horaStr > asis.hora_salida) {
+                await db.query(
+                  'UPDATE asistencias SET hora_salida = ?, id_lugar = ? WHERE id_asistencia = ?',
+                  [horaStr, idLugar, asis.id_asistencia]
+                );
+              }
+            }
+            marcasProcesadas++;
+
+          } else {
+            // No existe asistencia para este día: Insertar nueva asistencia con hora_entrada
+            await db.query(
+              'INSERT INTO asistencias (id_usuario, id_lugar, fecha, hora_entrada, estado) VALUES (?, ?, ?, ?, ?)',
+              [idUsuarioBD, idLugar, fecha, horaStr, 'PRESENTE']
+            );
+            marcasProcesadas++;
+          }
 
         } catch (errReg) {
           console.error(`   ❌ Error SQL insertando marca de usuario ${marca.user_id}: ${errReg.message}`);

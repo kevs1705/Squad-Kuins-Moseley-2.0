@@ -27,15 +27,16 @@ router.get('/usuario/asistencia', requireAuth, async (req, res) => {
         SUM(
           TIMESTAMPDIFF(
             SECOND,
-            TIMESTAMP(fecha, COALESCE(NULLIF(TRIM(hora_entrada), ''), TIME(fecha_hora_biometrico_entrada))),
-            TIMESTAMP(fecha, COALESCE(NULLIF(TRIM(hora_salida), ''), TIME(fecha_hora_biometrico_salida)))
+            TIMESTAMP(fecha, hora_entrada),
+            TIMESTAMP(fecha, hora_salida)
           )
         ), 0
       ) AS total_segundos
       FROM asistencias
       WHERE id_usuario = ?
-        AND COALESCE(NULLIF(TRIM(hora_entrada), ''), TIME(fecha_hora_biometrico_entrada)) IS NOT NULL
-        AND COALESCE(NULLIF(TRIM(hora_salida), ''), TIME(fecha_hora_biometrico_salida)) IS NOT NULL
+        AND estado != 'ANULADO'
+        AND hora_entrada IS NOT NULL
+        AND hora_salida IS NOT NULL
     `, [userId]);
 
     const total_acumulada = formatSecondsToHHMMSS(totals[0]?.total_segundos || 0);
@@ -45,12 +46,14 @@ router.get('/usuario/asistencia', requireAuth, async (req, res) => {
       SELECT 
         a.id_asistencia, 
         l.nombre AS lugar_nombre,
-        TIME_FORMAT(COALESCE(NULLIF(TRIM(a.hora_entrada), ''), TIME(a.fecha_hora_biometrico_entrada)), '%H:%i') AS hora_entrada
+        TIME_FORMAT(a.hora_entrada, '%H:%i') AS hora_entrada
       FROM asistencias a
       LEFT JOIN lugares l ON a.id_lugar = l.id_lugar
       WHERE a.id_usuario = ? 
         AND a.fecha = CURDATE() 
-        AND COALESCE(NULLIF(TRIM(a.hora_salida), ''), TIME(a.fecha_hora_biometrico_salida)) IS NULL
+        AND a.estado != 'ANULADO'
+        AND a.hora_entrada IS NOT NULL
+        AND a.hora_salida IS NULL
       LIMIT 1
     `, [userId]);
 
@@ -63,20 +66,18 @@ router.get('/usuario/asistencia', requireAuth, async (req, res) => {
         l.tipo AS lugar_tipo,
         
         -- Entrada y Salida unificadas
-        TIME_FORMAT(COALESCE(NULLIF(TRIM(a.hora_entrada), ''), TIME(a.fecha_hora_biometrico_entrada)), '%H:%i') AS hora_entrada,
-        TIME_FORMAT(COALESCE(NULLIF(TRIM(a.hora_salida), ''), TIME(a.fecha_hora_biometrico_salida)), '%H:%i') AS hora_salida,
-        
-        TIME_FORMAT(COALESCE(NULLIF(TRIM(a.hora_entrada), ''), TIME(a.fecha_hora_biometrico_entrada)), '%H:%i:%s') AS bio_entrada,
-        TIME_FORMAT(COALESCE(NULLIF(TRIM(a.hora_salida), ''), TIME(a.fecha_hora_biometrico_salida)), '%H:%i:%s') AS bio_salida,
+        TIME_FORMAT(a.hora_entrada, '%H:%i') AS hora_entrada,
+        TIME_FORMAT(a.hora_salida, '%H:%i') AS hora_salida,
 
-        IF(COALESCE(NULLIF(TRIM(a.hora_salida), ''), TIME(a.fecha_hora_biometrico_salida)) IS NOT NULL, 
-           TIME_FORMAT(TIMEDIFF(COALESCE(NULLIF(TRIM(a.hora_salida), ''), TIME(a.fecha_hora_biometrico_salida)), COALESCE(NULLIF(TRIM(a.hora_entrada), ''), TIME(a.fecha_hora_biometrico_entrada))), '%H:%i'), 
+        IF(a.hora_salida IS NOT NULL AND a.hora_entrada IS NOT NULL, 
+           TIME_FORMAT(TIMEDIFF(a.hora_salida, a.hora_entrada), '%H:%i'), 
            'En curso'
         ) AS horas_dia,
         a.estado
       FROM asistencias a
       LEFT JOIN lugares l ON a.id_lugar = l.id_lugar
       WHERE a.id_usuario = ?
+        AND a.estado != 'ANULADO'
       ORDER BY a.fecha DESC, a.id_asistencia DESC
     `, [userId]);
 // Renderizado de la vista

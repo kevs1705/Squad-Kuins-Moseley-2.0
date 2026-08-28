@@ -73,7 +73,7 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
     size = Math.min(size, 200);
 
     const offset = (page - 1) * size;
-    const where = [];
+    const where = ["a.estado != 'ANULADO'"];
     const params = [];
 
     if (ci) {
@@ -81,7 +81,7 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
       params.push(`%${ci}%`);
     }
     if (id_usuario) {
-      where.push('u.id_usuario = ?');
+      where.push('a.id_usuario = ?');
       params.push(id_usuario);
     } else if (nombre) {
       where.push('u.nombre LIKE ?');
@@ -114,34 +114,15 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
          SUM(
            TIMESTAMPDIFF(
              SECOND,
-             TIMESTAMP(
-               a.fecha, 
-               COALESCE(
-                 NULLIF(TRIM(a.hora_entrada), ''), 
-                 TIME(a.fecha_hora_biometrico_entrada)
-               )
-             ),
-             CASE 
-               WHEN a.hora_salida IS NOT NULL AND TRIM(a.hora_salida) NOT IN ('', '-') THEN 
-                 TIMESTAMP(a.fecha, TRIM(a.hora_salida))
-               WHEN a.fecha_hora_biometrico_salida IS NOT NULL THEN 
-                 a.fecha_hora_biometrico_salida
-               ELSE NULL
-             END
+             TIMESTAMP(a.fecha, a.hora_entrada),
+             TIMESTAMP(a.fecha, a.hora_salida)
            )
          ), 0
        ) AS total_segundos
        FROM asistencias a
        INNER JOIN usuarios u ON u.id_usuario = a.id_usuario
        ${whereSQL}
-       AND (
-         (a.hora_entrada IS NOT NULL AND TRIM(a.hora_entrada) NOT IN ('', '-')) OR
-         (a.fecha_hora_biometrico_entrada IS NOT NULL)
-       )
-       AND (
-         (a.hora_salida IS NOT NULL AND TRIM(a.hora_salida) NOT IN ('', '-')) OR
-         (a.fecha_hora_biometrico_salida IS NOT NULL)
-       )`,
+       AND a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL`,
       params
     );
 
@@ -171,27 +152,15 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
          l.nombre AS lugar_nombre,
          l.tipo AS lugar_tipo,
          
-         -- Horarios reales/biométricos de entrada y salida
-         TIME_FORMAT(COALESCE(NULLIF(TRIM(a.hora_entrada), ''), TIME(a.fecha_hora_biometrico_entrada)), '%H:%i') AS hora_entrada,
-         TIME_FORMAT(COALESCE(NULLIF(TRIM(a.hora_salida), ''), TIME(a.fecha_hora_biometrico_salida)), '%H:%i') AS hora_salida,
+         -- Horarios de entrada y salida
+         TIME_FORMAT(a.hora_entrada, '%H:%i') AS hora_entrada,
+         TIME_FORMAT(a.hora_salida, '%H:%i') AS hora_salida,
          
          -- Duración en segundos si hay salida registrada
-         CASE 
-           WHEN (a.hora_salida IS NOT NULL AND TRIM(a.hora_salida) NOT IN ('', '-')) OR a.fecha_hora_biometrico_salida IS NOT NULL THEN
-             TIMESTAMPDIFF(
-               SECOND,
-               TIMESTAMP(
-                 a.fecha, 
-                 COALESCE(NULLIF(TRIM(a.hora_entrada), ''), TIME(a.fecha_hora_biometrico_entrada))
-               ),
-               CASE 
-                 WHEN a.hora_salida IS NOT NULL AND TRIM(a.hora_salida) NOT IN ('', '-') THEN TIMESTAMP(a.fecha, TRIM(a.hora_salida))
-                 WHEN a.fecha_hora_biometrico_salida IS NOT NULL THEN a.fecha_hora_biometrico_salida
-                 ELSE NULL
-               END
-             )
-           ELSE NULL
-         END AS duracion_segundos,
+         IF(a.hora_salida IS NOT NULL AND a.hora_entrada IS NOT NULL,
+            TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)),
+            NULL
+         ) AS duracion_segundos,
          
          a.estado AS asistencia_estado,
          
@@ -245,16 +214,15 @@ router.post('/api/admin/reportes/:id_asistencia', requireAdmin, async (req, res)
     const valSalida = hora_salida && hora_salida.trim() && hora_salida.trim() !== '-' ? hora_salida.trim() : null;
     const valObs = observacion && observacion.trim() ? observacion.trim() : null;
 
-    // Actualizar horas y observación en la tabla asistencias unificando campos
+    // Actualizar horas y observación en la tabla asistencias activando candado EDITADO_ADMIN
     await db.query(
       `UPDATE asistencias 
        SET hora_entrada = ?, 
            hora_salida = ?, 
            observacion = ?,
-           fecha_hora_biometrico_entrada = IF(? IS NOT NULL, TIMESTAMP(fecha, ?), NULL),
-           fecha_hora_biometrico_salida = IF(? IS NOT NULL, TIMESTAMP(fecha, ?), NULL)
+           estado = 'EDITADO_ADMIN'
        WHERE id_asistencia = ?`,
-      [valEntrada, valSalida, valObs, valEntrada, valEntrada, valSalida, valSalida, id_asistencia]
+      [valEntrada, valSalida, valObs, id_asistencia]
     );
 
     // Si existe bitácora vinculada, actualizarla también
@@ -264,6 +232,23 @@ router.post('/api/admin/reportes/:id_asistencia', requireAdmin, async (req, res)
   } catch (e) {
     console.error(e);
     res.status(500).json({ ok: false, msg: 'Error interno al actualizar la jornada' });
+  }
+});
+
+/* ==========================================================================
+   API: ANULAR / ELIMINAR ASISTENCIA (CANDADO ANULADO)
+   ========================================================================== */
+router.delete('/api/admin/reportes/:id_asistencia', requireAdmin, async (req, res) => {
+  try {
+    const id_asistencia = parseInt(req.params.id_asistencia, 10);
+    if (!id_asistencia) return res.status(400).json({ ok: false, msg: 'ID de asistencia no válido' });
+
+    await db.query("UPDATE asistencias SET estado = 'ANULADO' WHERE id_asistencia = ?", [id_asistencia]);
+
+    res.json({ ok: true, msg: 'Jornada anulada correctamente' });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ ok: false, msg: 'Error al anular la jornada' });
   }
 });
 
@@ -278,14 +263,14 @@ router.get('/admin/reportes/export', requireAdmin, async (req, res) => {
     const nombre = (req.query.nombre || req.query.q || '').trim();
     const fecha = (req.query.fecha || '').trim();
 
-    const where = [];
+    const where = ["a.estado != 'ANULADO'"];
     const params = [];
     if (ci) {
       where.push('u.CI LIKE ?');
       params.push(`%${ci}%`);
     }
     if (id_usuario) {
-      where.push('u.id_usuario = ?');
+      where.push('a.id_usuario = ?');
       params.push(id_usuario);
     } else if (nombre) {
       where.push('u.nombre LIKE ?');
@@ -307,7 +292,7 @@ router.get('/admin/reportes/export', requireAdmin, async (req, res) => {
       const [uRows] = await db.query('SELECT nombre, CI FROM usuarios WHERE id_usuario = ? LIMIT 1', [id_usuario]);
       if (uRows.length > 0) {
         userTitle = `Reporte de Asistencias y Bitácoras - ${uRows[0].nombre} (CI: ${uRows[0].CI})`;
-        fileSuffix = uRows[0].nombre.replace(/\s+/g, '_').toLowerCase();
+        fileSuffix = `usuario_${uRows[0].CI}`;
       }
     } else if (id_lugar) {
       const [lRows] = await db.query('SELECT nombre FROM lugares WHERE id_lugar = ? LIMIT 1', [id_lugar]);
@@ -329,24 +314,12 @@ router.get('/admin/reportes/export', requireAdmin, async (req, res) => {
          u.CI,
          DATE_FORMAT(a.fecha, '%Y-%m-%d') AS fecha,
          l.nombre AS lugar,
-         TIME_FORMAT(COALESCE(NULLIF(TRIM(a.hora_entrada), ''), TIME(a.fecha_hora_biometrico_entrada)), '%H:%i:%s') AS hora_entrada,
-         TIME_FORMAT(COALESCE(NULLIF(TRIM(a.hora_salida), ''), TIME(a.fecha_hora_biometrico_salida)), '%H:%i:%s') AS hora_salida,
-         CASE 
-           WHEN (a.hora_salida IS NOT NULL AND TRIM(a.hora_salida) NOT IN ('', '-')) OR a.fecha_hora_biometrico_salida IS NOT NULL THEN
-             TIMESTAMPDIFF(
-               SECOND,
-               TIMESTAMP(
-                 a.fecha, 
-                 COALESCE(NULLIF(TRIM(a.hora_entrada), ''), TIME(a.fecha_hora_biometrico_entrada))
-               ),
-               CASE 
-                 WHEN a.hora_salida IS NOT NULL AND TRIM(a.hora_salida) NOT IN ('', '-') THEN TIMESTAMP(a.fecha, TRIM(a.hora_salida))
-                 WHEN a.fecha_hora_biometrico_salida IS NOT NULL THEN a.fecha_hora_biometrico_salida
-                 ELSE NULL
-               END
-             )
-           ELSE NULL
-         END AS duracion_segundos,
+         TIME_FORMAT(a.hora_entrada, '%H:%i:%s') AS hora_entrada,
+         TIME_FORMAT(a.hora_salida, '%H:%i:%s') AS hora_salida,
+         IF(a.hora_salida IS NOT NULL AND a.hora_entrada IS NOT NULL,
+            TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)),
+            NULL
+         ) AS duracion_segundos,
          r.tarea, 
          COALESCE(r.observacion, a.observacion) AS observacion
        FROM asistencias a
@@ -363,34 +336,15 @@ router.get('/admin/reportes/export', requireAdmin, async (req, res) => {
          SUM(
            TIMESTAMPDIFF(
              SECOND,
-             TIMESTAMP(
-               a.fecha, 
-               COALESCE(
-                 NULLIF(TRIM(a.hora_entrada), ''), 
-                 TIME(a.fecha_hora_biometrico_entrada)
-               )
-             ),
-             CASE 
-               WHEN a.hora_salida IS NOT NULL AND TRIM(a.hora_salida) NOT IN ('', '-') THEN 
-                 TIMESTAMP(a.fecha, TRIM(a.hora_salida))
-               WHEN a.fecha_hora_biometrico_salida IS NOT NULL THEN 
-                 a.fecha_hora_biometrico_salida
-               ELSE NULL
-             END
+             TIMESTAMP(a.fecha, a.hora_entrada),
+             TIMESTAMP(a.fecha, a.hora_salida)
            )
          ), 0
        ) AS total_segundos
        FROM asistencias a
        INNER JOIN usuarios u ON u.id_usuario = a.id_usuario
        ${whereSQL}
-       AND (
-         (a.hora_entrada IS NOT NULL AND TRIM(a.hora_entrada) NOT IN ('', '-')) OR
-         (a.fecha_hora_biometrico_entrada IS NOT NULL)
-       )
-       AND (
-         (a.hora_salida IS NOT NULL AND TRIM(a.hora_salida) NOT IN ('', '-')) OR
-         (a.fecha_hora_biometrico_salida IS NOT NULL)
-       )`,
+       AND a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL`,
       params
     );
 

@@ -98,28 +98,14 @@
                         <% } %>
                     </td>
 
-                    <!-- HORA ENTRADA (Muestra manual y/o biométrico) -->
+                    <!-- HORA ENTRADA -->
                     <td>
-                      <%= j.hora_entrada || '-' %>
-                        <% if(j.bio_entrada) { %>
-                          <br>
-                          <span class="badge-bio-info" title="Biométrico Entrada">
-                            <i class="bi bi-fingerprint"></i>
-                            <%= j.bio_entrada %>
-                          </span>
-                          <% } %>
+                      <%= j.hora_entrada_vis || j.hora_entrada || '-' %>
                     </td>
 
-                    <!-- HORA SALIDA (Muestra manual y/o biométrico) -->
+                    <!-- HORA SALIDA -->
                     <td>
-                      <%= j.hora_salida || '-' %>
-                        <% if(j.bio_salida) { %>
-                          <br>
-                          <span class="badge-bio-info" title="Biométrico Salida">
-                            <i class="bi bi-fingerprint"></i>
-                            <%= j.bio_salida %>
-                          </span>
-                          <% } %>
+                      <%= j.hora_salida_vis || j.hora_salida || '-' %>
                     </td>
 
                     <!-- HORAS TRANSCURRIDAS POR FECHA -->

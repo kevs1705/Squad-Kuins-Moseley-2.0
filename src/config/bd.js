@@ -37,24 +37,4 @@ const pool = mysql.createPool({
     : undefined,
 });
 
-// Auto-migración y unificación de datos históricos en asistencias
-(async () => {
-  try {
-    const [res] = await pool.query(`
-      UPDATE asistencias
-      SET 
-        hora_entrada = COALESCE(NULLIF(TRIM(hora_entrada), ''), TIME(fecha_hora_biometrico_entrada)),
-        hora_salida = COALESCE(NULLIF(TRIM(hora_salida), ''), TIME(fecha_hora_biometrico_salida))
-      WHERE (NULLIF(TRIM(hora_entrada), '') IS NULL AND fecha_hora_biometrico_entrada IS NOT NULL)
-         OR (NULLIF(TRIM(hora_salida), '') IS NULL AND fecha_hora_biometrico_salida IS NOT NULL);
-    `);
-    if (res && res.changedRows > 0) {
-      console.log(`✅ [BD Auto-Sync] Se unificaron ${res.changedRows} registros históricos de asistencias.`);
-    }
-  } catch (err) {
-    // Si la tabla no existe aún o hay algún error menor, no bloquear
-    console.error('⚠️ [BD Auto-Sync] Aviso en sincronización inicial:', err.message);
-  }
-})();
-
 module.exports = pool;
