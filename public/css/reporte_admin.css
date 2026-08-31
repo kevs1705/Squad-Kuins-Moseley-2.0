@@ -1193,21 +1193,819 @@ body.reportes-admin-page .modal-actions button {
   padding: 0 20px;
   font-size: 13px;
 }
- 
- 
+
+/* ---------- Estilos de Modales Premium (Detalle & Horario) ---------- */
+body.reportes-admin-page .modal-header-custom {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 16px;
+  margin-bottom: 18px;
+}
+
+body.reportes-admin-page .modal-badge-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  margin-bottom: 4px;
+}
+
+body.reportes-admin-page .modal-close-btn {
+  background: #F1F5F9;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  font-size: 18px;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: all 0.2s ease;
+}
+
+body.reportes-admin-page .modal-close-btn:hover {
+  background: #E2E8F0;
+  color: #0F172A;
+  transform: scale(1.05);
+}
+
+/* Ficha de datos resumidos en Detalle */
+body.reportes-admin-page .detalle-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+  background: #F8FAFC;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+}
+
+body.reportes-admin-page .detalle-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+body.reportes-admin-page .detalle-summary-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+body.reportes-admin-page .detalle-summary-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0F172A;
+}
+
+body.reportes-admin-page .detalle-summary-value.text-primary {
+  color: var(--color-primary);
+}
+
+body.reportes-admin-page .detalle-summary-value.text-teal {
+  color: #0D9488;
+}
+
+/* Secciones del Modal de Detalle */
+body.reportes-admin-page .detalle-section {
+  margin-bottom: 16px;
+}
+
+body.reportes-admin-page .detalle-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+  margin-bottom: 8px;
+}
+
+body.reportes-admin-page .detalle-content-box {
+  background: #FFFFFF;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: #1E293B;
+  min-height: 48px;
+}
+
+body.reportes-admin-page .detalle-content-box.is-empty {
+  color: #94A3B8;
+  font-style: italic;
+  background: #F8FAFC;
+}
+
+body.reportes-admin-page .detalle-content-box.obs-box.has-warning {
+  border-color: #FCA5A5;
+  background: #FEF2F2;
+  color: #B91C1C;
+  font-weight: 500;
+}
+
+/* Contenedor de Comprobante Fotográfico */
+body.reportes-admin-page .detalle-comprobante-wrapper {
+  margin-top: 4px;
+}
+
+body.reportes-admin-page .comprobante-preview-card {
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+body.reportes-admin-page .comprobante-img {
+  max-width: 100%;
+  max-height: 280px;
+  object-fit: contain;
+  display: block;
+  transition: transform 0.2s ease;
+  cursor: pointer;
+}
+
+body.reportes-admin-page .comprobante-img:hover {
+  transform: scale(1.02);
+}
+
+body.reportes-admin-page .comprobante-preview-footer {
+  width: 100%;
+  padding: 10px 14px;
+  background: #F8FAFC;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  justify-content: flex-end;
+}
+
+body.reportes-admin-page .detalle-empty-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+  background: #F8FAFC;
+  border: 1px dashed #CBD5E1;
+  border-radius: 10px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+/* ---------- Modal de Horario Semanal ---------- */
+body.reportes-admin-page .horario-table-wrap {
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+body.reportes-admin-page .horario-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+body.reportes-admin-page .horario-table th {
+  background: #F8FAFC;
+  color: #475569;
+  font-weight: 700;
+  font-size: 12.5px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+body.reportes-admin-page .horario-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #F1F5F9;
+  font-size: 13px;
+  color: #1E293B;
+  vertical-align: middle;
+}
+
+body.reportes-admin-page .horario-table tr:last-child td {
+  border-bottom: none;
+}
+
+body.reportes-admin-page .horario-footer-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #EEF2FF;
+  border: 1px solid #C7D2FE;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-top: 14px;
+}
+
+body.reportes-admin-page .horario-total-badge {
+  font-size: 14px;
+  font-weight: 700;
+  color: #4338CA;
+  background: #FFFFFF;
+  padding: 4px 12px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+body.reportes-admin-page .horario-empty-card {
+  padding: 28px 20px;
+  text-align: center;
+  background: #F8FAFC;
+  border: 1px dashed #CBD5E1;
+  border-radius: 12px;
+}
+
+/* ---------- Marcaciones (Llegada y Salida) en la Tabla ---------- */
+body.reportes-admin-page .badge-time-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 90px;
+}
+
+body.reportes-admin-page .badge-time-in {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-primary);
+  background: #EFF6FF;
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid #DBEAFE;
+}
+
+body.reportes-admin-page .badge-time-out {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #0D9488;
+  background: #F0FDFA;
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid #CCFBF1;
+}
+
+/* Botón interactivo de Bitácora & Comprobante en Tabla */
+body.reportes-admin-page .btn-bitacora-modal {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  border-radius: 9px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+body.reportes-admin-page .btn-bitacora-modal:hover {
+  background: #F0F7FF;
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(15, 95, 166, 0.1);
+}
+
+body.reportes-admin-page .btn-bitacora-modal.has-obs {
+  border-color: #FCA5A5;
+  background: #FFF5F5;
+}
+
+body.reportes-admin-page .btn-bitacora-modal.has-obs:hover {
+  border-color: #EF4444;
+  background: #FEF2F2;
+}
+
+body.reportes-admin-page .btn-bitacora-title {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+body.reportes-admin-page .btn-bitacora-modal.has-obs .btn-bitacora-title {
+  color: #DC2626;
+}
+
+body.reportes-admin-page .btn-bitacora-badges {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+body.reportes-admin-page .badge-indicador {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: #E2E8F0;
+  color: #475569;
+}
+
+body.reportes-admin-page .badge-indicador.badge-foto {
+  background: #EDE9FE;
+  color: #6D28D9;
+}
+
+body.reportes-admin-page .badge-indicador.badge-obs {
+  background: #FEE2E2;
+  color: #DC2626;
+}
+
+/* Acciones en Tabla */
+body.reportes-admin-page .actions-group-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+body.reportes-admin-page .btn-action-horario {
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid #818CF8;
+  background-color: #EEF2FF;
+  color: #4338CA;
+  font-weight: 600;
+  font-size: 12.5px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+
+body.reportes-admin-page .btn-action-horario:hover {
+  background-color: #4338CA;
+  color: #FFFFFF;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(67, 56, 202, 0.2);
+}
+
+body.reportes-admin-page .btn-anular-row {
+  background: #FEE2E2;
+  color: #B91C1C;
+  border: 1px solid #FCA5A5;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+body.reportes-admin-page .btn-anular-row:hover {
+  background: #EF4444;
+  color: #FFFFFF;
+  border-color: #DC2626;
+  transform: scale(1.08);
+}
+
+/* ---------- Top Dashboard: Columna Izquierda (KPIs) + Columna Derecha (Estadísticas) ---------- */
+body.reportes-admin-page .reportes-dashboard-top {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 20px;
+  align-items: stretch;
+  margin-bottom: 20px;
+}
+
+body.reportes-admin-page .kpi-column-left {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+body.reportes-admin-page .kpi-column-left .stat-card {
+  margin: 0;
+  padding: 16px 20px;
+  background-color: var(--bg-card);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-light);
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+body.reportes-admin-page .kpi-column-left .stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -6px rgba(0, 0, 0, 0.06);
+}
+
+body.reportes-admin-page .kpi-column-left .stat-card-user {
+  border-left: 4px solid var(--color-primary);
+}
+
+/* Columna Derecha: Panel de Estadísticas */
+body.reportes-admin-page .stats-panel-right {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+body.reportes-admin-page .stats-panel-card {
+  background-color: var(--bg-card);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-light);
+  border: 1px solid var(--color-border);
+  padding: 20px 24px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+body.reportes-admin-page .stats-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 16px;
+}
+
+body.reportes-admin-page .stats-panel-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+body.reportes-admin-page .stats-panel-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: #EFF6FF;
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+body.reportes-admin-page .stats-panel-title {
+  margin: 0;
+  font-size: 16.5px;
+  font-weight: 700;
+  color: #081426;
+}
+
+body.reportes-admin-page .stats-panel-subtitle {
+  margin: 2px 0 0 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+/* Pestañas de Navegación del Panel de Estadísticas */
+body.reportes-admin-page .stats-tabs-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+body.reportes-admin-page .stats-tab-btn {
+  background: #F1F5F9;
+  border: 1px solid #CBD5E1;
+  color: #475569;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+
+body.reportes-admin-page .stats-tab-btn:hover {
+  background: #E2E8F0;
+  color: #0F172A;
+}
+
+body.reportes-admin-page .stats-tab-btn.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(15, 95, 166, 0.25);
+}
+
+/* Panes de Contenido */
+body.reportes-admin-page .stats-tab-pane {
+  display: none;
+}
+
+body.reportes-admin-page .stats-tab-pane.active {
+  display: block;
+  animation: fadeIn 0.2s ease;
+}
+
+/* Barra de Controles de Gráficos */
+body.reportes-admin-page .chart-controls-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+body.reportes-admin-page .chart-type-toggle {
+  display: flex;
+  background: #F1F5F9;
+  padding: 3px;
+  border-radius: 8px;
+  border: 1px solid #E2E8F0;
+  gap: 4px;
+}
+
+body.reportes-admin-page .btn-chart-toggle {
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #64748B;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+body.reportes-admin-page .btn-chart-toggle:hover {
+  color: #0F172A;
+}
+
+body.reportes-admin-page .btn-chart-toggle.active {
+  background: #FFFFFF;
+  color: var(--color-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+body.reportes-admin-page .chart-badge-pill {
+  background: #EFF6FF;
+  border: 1px solid #DBEAFE;
+  color: var(--color-primary);
+  font-size: 11.5px;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Ranking de Usuarios (Global) */
+body.reportes-admin-page .ranking-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+body.reportes-admin-page .ranking-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 10px;
+}
+
+body.reportes-admin-page .ranking-user-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+body.reportes-admin-page .ranking-user-item:hover {
+  background: #F0F7FF;
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(15, 95, 166, 0.08);
+}
+
+body.reportes-admin-page .ranking-badge {
+  font-size: 13px;
+  font-weight: 700;
+  color: #64748B;
+  min-width: 22px;
+  text-align: center;
+}
+
+body.reportes-admin-page .ranking-badge.top-rank {
+  font-size: 16px;
+}
+
+body.reportes-admin-page .ranking-user-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+body.reportes-admin-page .ranking-user-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+body.reportes-admin-page .ranking-user-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0F172A;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+body.reportes-admin-page .ranking-user-ci {
+  font-size: 11px;
+  color: #64748B;
+  font-weight: 500;
+}
+
+body.reportes-admin-page .progress-bar-bg {
+  width: 100%;
+  height: 6px;
+  background: #E2E8F0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+body.reportes-admin-page .progress-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+body.reportes-admin-page .progress-bar-fill.progress-blue {
+  background: linear-gradient(90deg, #3B82F6, #0F5FA6);
+}
+
+body.reportes-admin-page .progress-bar-fill.progress-teal {
+  background: linear-gradient(90deg, #14B8A6, #0D9488);
+}
+
+body.reportes-admin-page .ranking-user-hours {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+body.reportes-admin-page .ranking-hours-val {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+body.reportes-admin-page .ranking-days-sub {
+  font-size: 11px;
+  color: #64748B;
+}
+
+/* Estadísticas de Usuario Individual */
+body.reportes-admin-page .user-stats-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+body.reportes-admin-page .user-mini-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+body.reportes-admin-page .user-mini-stat-card {
+  background: #F8FAFC;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+body.reportes-admin-page .user-mini-stat-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+body.reportes-admin-page .user-mini-stat-val {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0F172A;
+}
+
+body.reportes-admin-page .user-mini-stat-sub {
+  font-size: 11px;
+  color: #64748B;
+}
+
+/* Obras del Usuario */
+body.reportes-admin-page .user-places-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+body.reportes-admin-page .user-places-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+body.reportes-admin-page .user-places-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+body.reportes-admin-page .user-stat-place-item {
+  background: #F8FAFC;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+body.reportes-admin-page .user-stat-place-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+body.reportes-admin-page .user-stat-place-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #0F172A;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+body.reportes-admin-page .user-stat-place-val {
+  font-size: 12px;
+  color: #475569;
+  flex-shrink: 0;
+}
+
 /* ---------- Ajustes Responsivos ---------- */
 @media (max-width: 1100px) {
-  body.reportes-admin-page .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
+  body.reportes-admin-page .reportes-dashboard-top {
+    grid-template-columns: 1fr;
+    gap: 16px;
   }
 }
  
 @media (max-width: 768px) {
-  body.reportes-admin-page .stats-grid {
+  body.reportes-admin-page .user-mini-stats-grid {
     grid-template-columns: 1fr;
-    gap: 12px;
   }
- 
+
   body.reportes-admin-page .filters-form-row {
     flex-direction: column;
     align-items: stretch;
@@ -1251,5 +2049,10 @@ body.reportes-admin-page .modal-actions button {
     flex-direction: column;
     gap: 16px;
     align-items: center;
+  }
+
+  body.reportes-admin-page .actions-group-inline {
+    flex-direction: column;
+    gap: 4px;
   }
 }

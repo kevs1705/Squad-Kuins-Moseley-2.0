@@ -3,6 +3,7 @@
   <%- include('partials/header') %>
     <link rel="stylesheet" href="/css/reporte_admin.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 
     <script>
       document.body.classList.add('reportes-admin-page');
@@ -27,61 +28,121 @@
       })();
     </script>
 
-    <!-- KPI Stats Cards -->
-    <div class="stats-grid">
-      <!-- Card 1: Total Registros -->
-      <div class="stat-card">
-        <div class="stat-icon-wrapper">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-            stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round"
-              d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-          </svg>
+    <!-- Dashboard Top: Columna Izquierda (3 Cards con usuario primero) + Columna Derecha (Panel de Estadísticas con Doble Pestaña) -->
+    <div class="reportes-dashboard-top">
+      <!-- Columna Izquierda: Tarjetas de Información -->
+      <div class="kpi-column-left">
+        <!-- Card 1: Usuario Seleccionado (PRIMERO) -->
+        <div class="stat-card stat-card-user" id="cardUserContainer">
+          <div class="stat-icon-wrapper" id="stat-user-avatar-wrap">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+            </svg>
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">Usuario Seleccionado</span>
+            <div class="stat-value-row">
+              <span class="stat-value" id="stat-user" title="Todos los usuarios">Todos los usuarios</span>
+            </div>
+            <div id="stat-user-sub-details" style="font-size: 12px; color: var(--color-text-muted); display: none; margin-top: 2px;">
+              <!-- Carrera y Universidad dinámicas -->
+            </div>
+            <div style="margin-top: 4px;">
+              <span class="stat-badge" id="stat-user-badge">Global</span>
+            </div>
+          </div>
         </div>
-        <div class="stat-info">
-          <span class="stat-label">Registros encontrados</span>
-          <div class="stat-value-row">
-            <span class="stat-value" id="stat-records">0</span>
-            <span class="stat-badge" id="stat-records-badge">Jornadas</span>
+
+        <!-- Card 2: Horas Acumuladas -->
+        <div class="stat-card">
+          <div class="stat-icon-wrapper">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            </svg>
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">Horas acumuladas</span>
+            <div class="stat-value-row">
+              <span class="stat-value" id="stat-hours">00:00:00</span>
+              <span class="stat-badge">HH:MM:SS</span>
+            </div>
+            <span class="stat-subtext" id="stat-hours-decimal" style="font-size: 11.5px; color: var(--color-text-muted); font-weight: 500;">0.0 horas totales</span>
+          </div>
+        </div>
+
+        <!-- Card 3: Total Registros / Jornadas -->
+        <div class="stat-card">
+          <div class="stat-icon-wrapper">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+            </svg>
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">Registros encontrados</span>
+            <div class="stat-value-row">
+              <span class="stat-value" id="stat-records">0</span>
+              <span class="stat-badge" id="stat-records-badge">Jornadas</span>
+            </div>
+            <span class="stat-subtext" style="font-size: 11.5px; color: var(--color-text-muted); font-weight: 500;">Asistencias en el filtro</span>
           </div>
         </div>
       </div>
 
-      <!-- Card 2: Horas Acumuladas -->
-      <div class="stat-card">
-        <div class="stat-icon-wrapper">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-            stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-          </svg>
-        </div>
-        <div class="stat-info">
-          <span class="stat-label">Horas acumuladas</span>
-          <div class="stat-value-row">
-            <span class="stat-value" id="stat-hours">00:00:00</span>
-            <span class="stat-badge">HH:MM:SS</span>
-          </div>
-        </div>
-      </div>
+      <!-- Columna Derecha: Panel de Estadísticas Dinámico con Doble Pestaña -->
+      <div class="stats-panel-right">
+        <div class="stats-panel-card">
+          <div class="stats-panel-header">
+            <div class="stats-panel-title-wrap">
+              <div class="stats-panel-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+              </div>
+              <div>
+                <h3 class="stats-panel-title" id="statsPanelTitle">Análisis y Estadísticas</h3>
+                <p class="stats-panel-subtitle" id="statsPanelSubtitle">Horas por semanas, días y rendimiento</p>
+              </div>
+            </div>
 
-      <!-- Card 3: Usuario Seleccionado -->
-      <div class="stat-card">
-        <div class="stat-icon-wrapper">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-            stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round"
-              d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-          </svg>
-        </div>
-        <div class="stat-info">
-          <span class="stat-label">Usuario Seleccionado</span>
-          <div class="stat-value-row">
-            <span class="stat-value" id="stat-user"
-              style="font-size: 19px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
-              title="Todos los usuarios">Todos los usuarios</span>
+            <!-- Navegación de Doble Pestaña -->
+            <div class="stats-tabs-nav">
+              <button type="button" class="stats-tab-btn active" id="tabBtnGraficos" onclick="cambiarPestanaStats('graficos')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                Gráficos (Semanas/Días)
+              </button>
+              <button type="button" class="stats-tab-btn" id="tabBtnRanking" onclick="cambiarPestanaStats('ranking')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.45 1-1 1H7c-.55 0-1-.45-1-1v-2.34c0-.55.45-1 1-1h2c.55 0 1 .45 1 1z"/><path d="M18 14.66V17c0 .55-.45 1-1 1h-2c-.55 0-1-.45-1-1v-2.34c0-.55.45-1 1-1h2c.55 0 1 .45 1 1z"/><path d="M14 9.66V17c0 .55-.45 1-1 1h-2c-.55 0-1-.45-1-1V9.66c0-.55.45-1 1-1h2c.55 0 1 .45 1 1z"/></svg>
+                <span id="tabTitleRanking">Ranking & Resumen</span>
+              </button>
+            </div>
           </div>
-          <div>
-            <span class="stat-badge" id="stat-user-badge">Global</span>
+
+          <!-- Pestaña 1: Gráficos de Semanas / Días -->
+          <div class="stats-tab-pane active" id="paneGraficos">
+            <div class="chart-controls-bar">
+              <div class="chart-type-toggle">
+                <button type="button" class="btn-chart-toggle active" id="btnChartSemanal" onclick="cambiarModoGrafico('semanal')">
+                  📅 Por Semanas
+                </button>
+                <button type="button" class="btn-chart-toggle" id="btnChartDiario" onclick="cambiarModoGrafico('diario')">
+                  📆 Por Día (Lun - Dom)
+                </button>
+              </div>
+              <div class="chart-summary-badge" id="chartSummaryBadge">
+                <!-- Resumen de horas -->
+              </div>
+            </div>
+
+            <div class="chart-container-wrap" style="position: relative; height: 185px; width: 100%;">
+              <canvas id="statsChartCanvas"></canvas>
+            </div>
+          </div>
+
+          <!-- Pestaña 2: Ranking o Desglose del Usuario -->
+          <div class="stats-tab-pane" id="paneRanking">
+            <div class="stats-panel-body" id="statsPanelBody">
+              <!-- Renderizado dinámicamente vía JavaScript -->
+            </div>
           </div>
         </div>
       </div>
@@ -166,10 +227,8 @@
               </th>
               <th>Marcaciones</th>
               <th>Duración</th>
-              <th>Bitácora / Tarea</th>
-              <th>Comprobante</th>
-              <th>Observación Admin</th>
-              <th style="text-align: center;">Acción</th>
+              <th style="text-align: center;">Bitácora &amp; Comprobante</th>
+              <th style="text-align: center;">Acciones</th>
             </tr>
           </thead>
           <tbody id="tablaReportes">
@@ -187,19 +246,140 @@
       </div>
     </div>
 
-    <!-- MODAL: EDITAR HORAS Y OBSERVACIÓN -->
+    <!-- MODAL 1: DETALLE DE JORNADA (BITÁCORA, COMPROBANTE Y OBSERVACIÓN) -->
+    <div class="modal-backdrop" id="modalDetalleBackdrop">
+      <div class="modal" id="modalDetalle" style="max-width: 680px; max-height: 90vh; overflow-y: auto;">
+        <div class="modal-header-custom">
+          <div>
+            <div class="modal-badge-tag" style="background: #E0F2FE; color: #0369A1;">Detalle de Registro</div>
+            <h3 id="det_usuario_nombre" style="margin: 4px 0 2px 0;">Nombre del Pasante</h3>
+            <p id="det_sub_info" style="margin: 0; font-size: 13px; color: var(--color-text-muted);">CI: 0000000 ·
+              Fecha: 2026-00-00</p>
+          </div>
+          <button type="button" class="modal-close-btn" id="btnXCerrarDetalle">&times;</button>
+        </div>
+
+        <!-- Ficha de Datos Resumidos de la Jornada -->
+        <div class="detalle-summary-grid">
+          <div class="detalle-summary-item">
+            <span class="detalle-summary-label">Lugar / Obra</span>
+            <span class="detalle-summary-value" id="det_lugar_nombre">-</span>
+          </div>
+          <div class="detalle-summary-item">
+            <span class="detalle-summary-label">Hora Llegada (Entrada)</span>
+            <span class="detalle-summary-value text-primary" id="det_hora_entrada">-</span>
+          </div>
+          <div class="detalle-summary-item">
+            <span class="detalle-summary-label">Hora Salida</span>
+            <span class="detalle-summary-value text-teal" id="det_hora_salida">-</span>
+          </div>
+          <div class="detalle-summary-item">
+            <span class="detalle-summary-label">Duración Total</span>
+            <span class="detalle-summary-value" id="det_duracion">-</span>
+          </div>
+        </div>
+
+        <!-- Sección de Bitácora / Tarea -->
+        <div class="detalle-section">
+          <div class="detalle-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="16" y1="13" x2="8" y2="13" />
+              <line x1="16" y1="17" x2="8" y2="17" />
+              <polyline points="10 9 9 9 8 9" />
+            </svg>
+            Bitácora de Actividades / Tarea
+          </div>
+          <div class="detalle-content-box" id="det_tarea_box">
+            Sin bitácora registrada para esta jornada.
+          </div>
+        </div>
+
+        <!-- Sección de Comprobante Fotográfico -->
+        <div class="detalle-section">
+          <div class="detalle-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+              <circle cx="8.5" cy="8.5" r="1.5" />
+              <polyline points="21 15 16 10 5 21" />
+            </svg>
+            Comprobante de Asistencia
+          </div>
+          <div id="det_comprobante_container" class="detalle-comprobante-wrapper">
+            <!-- Renderizado dinámicamente -->
+          </div>
+        </div>
+
+        <!-- Sección de Observación del Administrador -->
+        <div class="detalle-section">
+          <div class="detalle-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            Observación del Administrador
+          </div>
+          <div class="detalle-content-box obs-box" id="det_obs_box">
+            Sin observaciones registradas.
+          </div>
+        </div>
+
+        <div class="modal-actions" style="margin-top: 20px;">
+          <button type="button" class="btn btn-secondary" id="btnCerrarDetalle">Cerrar</button>
+          <button type="button" class="btn btn-primary" id="btnEditarDesdeDetalle">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+              style="margin-right: 4px;">
+              <path d="M12 20h9" />
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+            </svg>
+            Editar Horas / Observación
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 2: HORARIO PROGRAMADO DEL USUARIO -->
+    <div class="modal-backdrop" id="modalHorarioBackdrop">
+      <div class="modal" id="modalHorario" style="max-width: 620px; max-height: 90vh; overflow-y: auto;">
+        <div class="modal-header-custom">
+          <div>
+            <div class="modal-badge-tag" style="background: #EEF2FF; color: #4338CA;">Horario Semanal</div>
+            <h3 id="horario_usuario_nombre" style="margin: 4px 0 2px 0;">Horario del Pasante</h3>
+            <p id="horario_usuario_sub" style="margin: 0; font-size: 13px; color: var(--color-text-muted);">Consultando
+              horario...</p>
+          </div>
+          <button type="button" class="modal-close-btn" id="btnXCerrarHorario">&times;</button>
+        </div>
+
+        <div id="horario_body_content" style="margin-top: 16px;">
+          <!-- Tabla de horarios generada vía JavaScript -->
+        </div>
+
+        <div class="modal-actions" style="margin-top: 20px;">
+          <button type="button" class="btn btn-secondary" id="btnCerrarHorario">Cerrar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 3: EDITAR HORAS Y OBSERVACIÓN -->
     <div class="modal-backdrop" id="modalObsBackdrop">
       <div class="modal" id="modalObs">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px;">
+        <div class="modal-header-custom">
           <div>
-            <h3 style="margin: 0 0 4px 0;">Editar Registro de Jornada</h3>
+            <div class="modal-badge-tag" style="background: #FEF3C7; color: #B45309;">Ajuste Administrativo</div>
+            <h3 style="margin: 4px 0 2px 0;">Editar Registro de Jornada</h3>
             <p id="modalSubInfo" style="margin: 0; font-size: 13px; color: var(--color-text-muted);">Ajustar marcaciones
               de horas y observaciones</p>
           </div>
-          <button type="button" id="btnXModal"
-            style="background: none; border: none; font-size: 22px; cursor: pointer; color: var(--color-text-muted); line-height: 1; padding: 2px 6px;">&times;</button>
+          <button type="button" class="modal-close-btn" id="btnXModal">&times;</button>
         </div>
-        <form id="formObs">
+        <form id="formObs" style="margin-top: 16px;">
           <input type="hidden" id="obs_id_asistencia">
           <div class="form-grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 16px;">
             <label>
@@ -366,7 +546,9 @@
         }
       });
 
-      // Manejo de Modal de Edición de Jornada (Horas y Observación)
+      // =========================================================================
+      // 1. MODAL DE EDICIÓN DE JORNADA (HORAS Y OBSERVACIÓN)
+      // =========================================================================
       const modalBackdrop = document.getElementById('modalObsBackdrop');
 
       function abrirModalEditar(idAsistencia, horaEntrada, horaSalida, obsActual, usuarioNombre, fecha) {
@@ -394,6 +576,594 @@
       modalBackdrop.addEventListener('click', (e) => {
         if (e.target === modalBackdrop) cerrarModalObs();
       });
+
+      // =========================================================================
+      // 2. MODAL DE DETALLE DE JORNADA (BITÁCORA, COMPROBANTE Y OBSERVACIÓN)
+      // =========================================================================
+      const modalDetalleBackdrop = document.getElementById('modalDetalleBackdrop');
+      let currentDetalleData = null;
+
+      function abrirModalDetalle(data) {
+        currentDetalleData = data;
+        document.getElementById('det_usuario_nombre').textContent = data.usuario_nombre || 'Usuario';
+        document.getElementById('det_sub_info').textContent = `CI: ${data.usuario_ci || 'N/A'} · Fecha: ${data.fecha || 'N/A'}`;
+        document.getElementById('det_lugar_nombre').textContent = data.lugar_nombre ? `${data.lugar_nombre} ${data.lugar_tipo ? '(' + data.lugar_tipo + ')' : ''}` : 'N/A';
+        document.getElementById('det_hora_entrada').textContent = data.hora_entrada || '-';
+        document.getElementById('det_hora_salida').textContent = data.hora_salida || '-';
+        document.getElementById('det_duracion').textContent = data.horas_dia || '-';
+
+        // Tarea / Bitácora
+        const tareaBox = document.getElementById('det_tarea_box');
+        if (data.tarea && data.tarea.trim()) {
+          tareaBox.innerHTML = escapeHTML(data.tarea).replace(/\n/g, '<br>');
+          tareaBox.classList.remove('is-empty');
+        } else {
+          tareaBox.innerHTML = '<em>No se registró bitácora para esta jornada.</em>';
+          tareaBox.classList.add('is-empty');
+        }
+
+        // Comprobante Fotográfico
+        const compContainer = document.getElementById('det_comprobante_container');
+        if (data.comprobante && data.comprobante.trim()) {
+          compContainer.innerHTML = `
+            <div class="comprobante-preview-card">
+              <a href="${escapeHTML(data.comprobante)}" target="_blank" title="Ver imagen completa">
+                <img src="${escapeHTML(data.comprobante)}" alt="Comprobante de Asistencia" class="comprobante-img" onerror="this.parentElement.innerHTML='<span style=\\'color:#94a3b8; font-size:13px;\\'>No se pudo cargar la imagen</span>'">
+              </a>
+              <div class="comprobante-preview-footer">
+                <a href="${escapeHTML(data.comprobante)}" target="_blank" class="btn btn-outline-primary" style="height:32px; padding:4px 14px; font-size:12px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                  Ver en Pantalla Completa
+                </a>
+              </div>
+            </div>
+          `;
+        } else {
+          compContainer.innerHTML = `
+            <div class="detalle-empty-box">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              <span>Sin comprobante fotográfico adjunto</span>
+            </div>
+          `;
+        }
+
+        // Observación del Admin
+        const obsBox = document.getElementById('det_obs_box');
+        if (data.observacion && data.observacion.trim()) {
+          obsBox.innerHTML = escapeHTML(data.observacion).replace(/\n/g, '<br>');
+          obsBox.classList.add('has-warning');
+          obsBox.classList.remove('is-empty');
+        } else {
+          obsBox.innerHTML = '<em>Sin observaciones del administrador.</em>';
+          obsBox.classList.remove('has-warning');
+          obsBox.classList.add('is-empty');
+        }
+
+        modalDetalleBackdrop.style.display = 'flex';
+      }
+
+      function cerrarModalDetalle() {
+        modalDetalleBackdrop.style.display = 'none';
+      }
+
+      document.getElementById('btnCerrarDetalle')?.addEventListener('click', cerrarModalDetalle);
+      document.getElementById('btnXCerrarDetalle')?.addEventListener('click', cerrarModalDetalle);
+      modalDetalleBackdrop.addEventListener('click', (e) => {
+        if (e.target === modalDetalleBackdrop) cerrarModalDetalle();
+      });
+
+      document.getElementById('btnEditarDesdeDetalle')?.addEventListener('click', () => {
+        if (!currentDetalleData) return;
+        cerrarModalDetalle();
+        abrirModalEditar(
+          currentDetalleData.id_asistencia,
+          currentDetalleData.hora_entrada,
+          currentDetalleData.hora_salida,
+          currentDetalleData.observacion,
+          currentDetalleData.usuario_nombre,
+          currentDetalleData.fecha
+        );
+      });
+
+      // =========================================================================
+      // 3. MODAL DE HORARIO DEL USUARIO
+      // =========================================================================
+      const modalHorarioBackdrop = document.getElementById('modalHorarioBackdrop');
+
+      async function abrirModalHorario(idUsuario, nombreUsuario, ciUsuario) {
+        if (!idUsuario) return;
+        const nombreEl = document.getElementById('horario_usuario_nombre');
+        const subEl = document.getElementById('horario_usuario_sub');
+        const bodyEl = document.getElementById('horario_body_content');
+
+        nombreEl.textContent = nombreUsuario || 'Usuario';
+        subEl.textContent = `CI: ${ciUsuario || ''} · Consultando horario asignado...`;
+        bodyEl.innerHTML = `
+          <div style="text-align:center; padding: 32px 16px; color: var(--color-text-muted);">
+            <div style="font-weight: 500; font-size: 14px;">Cargando horario programado...</div>
+          </div>
+        `;
+
+        modalHorarioBackdrop.style.display = 'flex';
+
+        try {
+          const res = await fetch(`/api/admin/usuarios/${idUsuario}/horario`);
+          const data = await res.json();
+          if (!data.ok) throw new Error(data.msg || 'Error al obtener horario');
+
+          if (data.usuario) {
+            const carrera = data.usuario.carrera ? ` · ${escapeHTML(data.usuario.carrera)}` : '';
+            const uni = data.usuario.universidad ? ` (${escapeHTML(data.usuario.universidad)})` : '';
+            subEl.textContent = `CI: ${data.usuario.CI || ciUsuario || 'N/A'}${carrera}${uni}`;
+          }
+
+          if (!data.horarios || data.horarios.length === 0) {
+            bodyEl.innerHTML = `
+              <div class="horario-empty-card">
+                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <div style="font-weight: 600; color: var(--color-text); margin-top: 6px;">Este usuario no tiene horario programado</div>
+                <div style="font-size: 13px; color: var(--color-text-muted); margin-top: 2px;">No se encontraron días ni horas activas asignadas para este pasante.</div>
+              </div>
+            `;
+            return;
+          }
+
+          let rowsHTML = '';
+          data.horarios.forEach(h => {
+            rowsHTML += `
+              <tr>
+                <td><strong style="color: var(--color-text); font-size: 13.5px;">${escapeHTML(h.dia_nombre)}</strong></td>
+                <td><span class="badge-time-in"><b>E:</b> ${escapeHTML(h.hora_entrada || '-')}</span></td>
+                <td><span class="badge-time-out"><b>S:</b> ${escapeHTML(h.hora_salida || '-')}</span></td>
+                <td><span class="hours-pill" style="font-size: 12px; padding: 3px 8px;">${escapeHTML(h.horas_dia || '-')}</span></td>
+                <td style="text-align: center;"><span class="badge-active" style="font-size: 10.5px;">Activo</span></td>
+              </tr>
+            `;
+          });
+
+          bodyEl.innerHTML = `
+            <div class="horario-table-wrap">
+              <table class="horario-table">
+                <thead>
+                  <tr>
+                    <th>Día</th>
+                    <th>Entrada Programada</th>
+                    <th>Salida Programada</th>
+                    <th>Horas / Día</th>
+                    <th style="text-align: center;">Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${rowsHTML}
+                </tbody>
+              </table>
+            </div>
+
+            <div class="horario-footer-summary">
+              <span style="font-size: 13px; color: var(--color-text-muted); font-weight: 500;">Total Horas Programadas Semanalmente:</span>
+              <span class="horario-total-badge">${escapeHTML(data.total_horas_semanales || '0 hrs/sem')}</span>
+            </div>
+          `;
+        } catch (e) {
+          console.error(e);
+          bodyEl.innerHTML = `
+            <div class="horario-empty-card" style="border-color: #fecaca; background: #fff5f5;">
+              <div style="color: #dc2626; font-weight: 600;">No se pudo cargar el horario</div>
+              <div style="font-size: 13px; color: #991b1b;">Ocurrió un error al consultar el horario del usuario.</div>
+            </div>
+          `;
+        }
+      }
+
+      function cerrarModalHorario() {
+        modalHorarioBackdrop.style.display = 'none';
+      }
+
+      document.getElementById('btnCerrarHorario')?.addEventListener('click', cerrarModalHorario);
+      document.getElementById('btnXCerrarHorario')?.addEventListener('click', cerrarModalHorario);
+      modalHorarioBackdrop.addEventListener('click', (e) => {
+        if (e.target === modalHorarioBackdrop) cerrarModalHorario();
+      });
+
+      // =========================================================================
+      // 4. CARGA DE REPORTES Y PANEL DINÁMICO DE ESTADÍSTICAS
+      // =========================================================================
+      let statsChartInstance = null;
+      let currentStatsData = null;
+      let currentModoGrafico = 'semanal'; // 'semanal' | 'diario'
+      let currentPestanaStats = 'graficos'; // 'graficos' | 'ranking'
+
+      function cambiarPestanaStats(pestana) {
+        currentPestanaStats = pestana;
+        document.getElementById('tabBtnGraficos')?.classList.toggle('active', pestana === 'graficos');
+        document.getElementById('tabBtnRanking')?.classList.toggle('active', pestana === 'ranking');
+        document.getElementById('paneGraficos')?.classList.toggle('active', pestana === 'graficos');
+        document.getElementById('paneRanking')?.classList.toggle('active', pestana === 'ranking');
+
+        if (pestana === 'graficos' && statsChartInstance) {
+          setTimeout(() => statsChartInstance.resize(), 50);
+        }
+      }
+
+      function cambiarModoGrafico(modo) {
+        currentModoGrafico = modo;
+        document.getElementById('btnChartSemanal')?.classList.toggle('active', modo === 'semanal');
+        document.getElementById('btnChartDiario')?.classList.toggle('active', modo === 'diario');
+        renderChart();
+      }
+
+      function renderChart() {
+        if (!currentStatsData) return;
+        const canvas = document.getElementById('statsChartCanvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+
+        if (statsChartInstance) {
+          statsChartInstance.destroy();
+          statsChartInstance = null;
+        }
+
+        const badgeEl = document.getElementById('chartSummaryBadge');
+
+        if (currentModoGrafico === 'semanal') {
+          const series = currentStatsData.series_semanal || [];
+          if (series.length === 0) {
+            if (badgeEl) badgeEl.innerHTML = '<span style="color:#94a3b8; font-size:12px;">Sin datos semanales</span>';
+            return;
+          }
+
+          const labels = series.map(s => s.semana_label || s.semana_inicio);
+          const horasData = series.map(s => s.horas);
+          const totalSemanasHoras = horasData.reduce((a, b) => a + b, 0).toFixed(1);
+
+          if (badgeEl) {
+            badgeEl.innerHTML = `<span class="chart-badge-pill"><strong>${totalSemanasHoras} hrs</strong> registradas en ${series.length} semanas</span>`;
+          }
+
+          statsChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels,
+              datasets: [
+                {
+                  type: 'line',
+                  label: 'Tendencia (hrs)',
+                  data: horasData,
+                  borderColor: '#0D9488',
+                  backgroundColor: 'rgba(13, 148, 136, 0.08)',
+                  borderWidth: 2.5,
+                  tension: 0.35,
+                  pointBackgroundColor: '#0D9488',
+                  pointRadius: 4,
+                  pointHoverRadius: 6,
+                  yAxisID: 'y'
+                },
+                {
+                  type: 'bar',
+                  label: 'Horas Semanales',
+                  data: horasData,
+                  backgroundColor: 'rgba(15, 95, 166, 0.78)',
+                  hoverBackgroundColor: '#0F5FA6',
+                  borderRadius: 6,
+                  borderSkipped: false,
+                  yAxisID: 'y'
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  position: 'top',
+                  labels: { boxWidth: 12, font: { size: 11.5, weight: '600' }, color: '#334155' }
+                },
+                tooltip: {
+                  callbacks: {
+                    label: (context) => ` ${context.dataset.label}: ${context.raw} hrs`
+                  }
+                }
+              },
+              scales: {
+                x: {
+                  grid: { display: false },
+                  ticks: { font: { size: 11 }, color: '#64748B' }
+                },
+                y: {
+                  beginAtZero: true,
+                  grid: { color: '#F1F5F9' },
+                  ticks: { font: { size: 11 }, color: '#64748B', callback: (v) => `${v}h` }
+                }
+              }
+            }
+          });
+        } else {
+          // Modo Diario (Lunes a Domingo)
+          const series = currentStatsData.series_dias_semana || [];
+          const labels = series.map(d => d.dia_nombre);
+          const horasTotales = series.map(d => d.total_horas);
+          const horasPromedio = series.map(d => d.promedio_horas);
+
+          const sumTotal = horasTotales.reduce((a, b) => a + b, 0).toFixed(1);
+          if (badgeEl) {
+            badgeEl.innerHTML = `<span class="chart-badge-pill"><strong>${sumTotal} hrs</strong> por días de la semana</span>`;
+          }
+
+          statsChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels,
+              datasets: [
+                {
+                  label: 'Horas Totales',
+                  data: horasTotales,
+                  backgroundColor: 'rgba(99, 102, 241, 0.78)',
+                  hoverBackgroundColor: '#4F46E5',
+                  borderRadius: 6,
+                  borderSkipped: false,
+                  yAxisID: 'y'
+                },
+                {
+                  type: 'line',
+                  label: 'Promedio Horas / Día',
+                  data: horasPromedio,
+                  borderColor: '#0D9488',
+                  backgroundColor: 'transparent',
+                  borderWidth: 2.5,
+                  pointBackgroundColor: '#0D9488',
+                  pointRadius: 4,
+                  yAxisID: 'y1'
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  position: 'top',
+                  labels: { boxWidth: 12, font: { size: 11.5, weight: '600' }, color: '#334155' }
+                },
+                tooltip: {
+                  callbacks: {
+                    label: (context) => ` ${context.dataset.label}: ${context.raw} hrs`
+                  }
+                }
+              },
+              scales: {
+                x: {
+                  grid: { display: false },
+                  ticks: { font: { size: 11 }, color: '#64748B' }
+                },
+                y: {
+                  beginAtZero: true,
+                  position: 'left',
+                  grid: { color: '#F1F5F9' },
+                  ticks: { font: { size: 11 }, color: '#64748B', callback: (v) => `${v}h` }
+                },
+                y1: {
+                  beginAtZero: true,
+                  position: 'right',
+                  grid: { display: false },
+                  ticks: { font: { size: 10 }, color: '#0D9488', callback: (v) => `${v}h prom` }
+                }
+              }
+            }
+          });
+        }
+      }
+
+      // Renderizar el panel lateral derecho de estadísticas (Global vs Por Usuario)
+      function renderStatsPanel(stats, usuarioInfo, isSpecificUser) {
+        currentStatsData = stats;
+        const titleEl = document.getElementById('statsPanelTitle');
+        const subEl = document.getElementById('statsPanelSubtitle');
+        const tabRankingTitle = document.getElementById('tabTitleRanking');
+        const bodyEl = document.getElementById('statsPanelBody');
+        const userExtraEl = document.getElementById('stat-user-sub-details');
+
+        if (!stats) return;
+
+        // Renderizar gráfico interactivo en la Pestaña 1
+        renderChart();
+
+        if (stats.tipo === 'usuario' && (usuarioInfo || isSpecificUser)) {
+          const uNom = usuarioInfo ? usuarioInfo.nombre : (document.getElementById('stat-user').textContent || 'Usuario');
+          const carrera = usuarioInfo && usuarioInfo.carrera ? usuarioInfo.carrera : '';
+          const uni = usuarioInfo && usuarioInfo.universidad ? usuarioInfo.universidad : '';
+
+          if (carrera || uni) {
+            userExtraEl.innerHTML = `<span>${escapeHTML(carrera)}${uni ? ' · ' + escapeHTML(uni) : ''}</span>`;
+            userExtraEl.style.display = 'block';
+          } else {
+            userExtraEl.style.display = 'none';
+          }
+
+          titleEl.textContent = `Estadísticas de: ${uNom}`;
+          subEl.textContent = `Horas por semanas/días, promedio y obras donde asistió`;
+          if (tabRankingTitle) tabRankingTitle.textContent = 'Métricas & Obras';
+
+          // Lugares / Obras breakdown
+          let lugaresHTML = '';
+          if (stats.lugares_desglose && stats.lugares_desglose.length > 0) {
+            stats.lugares_desglose.forEach(l => {
+              lugaresHTML += `
+                <div class="user-stat-place-item">
+                  <div class="user-stat-place-header">
+                    <span class="user-stat-place-name">📍 ${escapeHTML(l.lugar_nombre)} ${l.lugar_tipo ? '<small style="color:var(--color-text-muted);">(' + escapeHTML(l.lugar_tipo) + ')</small>' : ''}</span>
+                    <span class="user-stat-place-val"><strong>${escapeHTML(l.horas_decimal)} hrs</strong> (${l.total_dias} ${l.total_dias === 1 ? 'jornada' : 'jornadas'})</span>
+                  </div>
+                  <div class="progress-bar-bg">
+                    <div class="progress-bar-fill progress-teal" style="width: ${l.porcentaje}%;"></div>
+                  </div>
+                </div>
+              `;
+            });
+          } else {
+            lugaresHTML = `<div style="color: var(--color-text-muted); font-size: 13px; font-style: italic;">No hay registros de obras para este usuario.</div>`;
+          }
+
+          bodyEl.innerHTML = `
+            <div class="user-stats-container">
+              <!-- Mini Cards de Métricas del Usuario -->
+              <div class="user-mini-stats-grid">
+                <div class="user-mini-stat-card">
+                  <div class="user-mini-stat-label">Jornadas Asistidas</div>
+                  <div class="user-mini-stat-val text-primary">${stats.total_asistencias} <small style="font-size: 11.5px; font-weight: 500; color: var(--color-text-muted);">días</small></div>
+                  <div class="user-mini-stat-sub">${stats.asistencias_finalizadas} completadas · ${stats.asistencias_en_curso} en curso</div>
+                </div>
+
+                <div class="user-mini-stat-card">
+                  <div class="user-mini-stat-label">Promedio Diario</div>
+                  <div class="user-mini-stat-val text-teal">${stats.promedio_horas_dia}</div>
+                  <div class="user-mini-stat-sub">Por jornada registrada</div>
+                </div>
+
+                <div class="user-mini-stat-card">
+                  <div class="user-mini-stat-label">Bitácoras Entregadas</div>
+                  <div class="user-mini-stat-val" style="color: #7C3AED;">${stats.bitacoras_completadas} <small style="font-size: 11px; color: var(--color-text-muted);">/ ${stats.total_asistencias}</small></div>
+                  <div class="user-mini-stat-sub">${stats.comprobantes_subidos} con comprobante</div>
+                </div>
+              </div>
+
+              <!-- Distribución de Horas por Obra / Lugar -->
+              <div class="user-places-section">
+                <div class="user-places-title">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  Horas Asistidas por Lugar / Obra
+                </div>
+                <div class="user-places-list">
+                  ${lugaresHTML}
+                </div>
+              </div>
+            </div>
+          `;
+        } else {
+          // MODO GLOBAL: Ranking de Pasantes
+          userExtraEl.style.display = 'none';
+          titleEl.textContent = 'Análisis y Estadísticas Globales';
+          subEl.textContent = 'Visualización de horas por semanas, días y ranking de pasantes';
+          if (tabRankingTitle) tabRankingTitle.textContent = 'Ranking Pasantes';
+
+          let rowsHTML = '';
+          if (stats.top_usuarios && stats.top_usuarios.length > 0) {
+            stats.top_usuarios.forEach(u => {
+              const medal = u.ranking === 1 ? '🥇' : u.ranking === 2 ? '🥈' : u.ranking === 3 ? '🥉' : `#${u.ranking}`;
+              rowsHTML += `
+                <div class="ranking-user-item" onclick="seleccionarUsuarioDesdeRanking(${u.id_usuario}, '${escapeHTML(u.nombre)}', '${escapeHTML(u.CI)}')" title="Clic para ver detalle de ${escapeHTML(u.nombre)}">
+                  <div class="ranking-badge ${u.ranking <= 3 ? 'top-rank' : ''}">${medal}</div>
+                  <div class="user-avatar-initials" style="width: 28px; height: 28px; font-size: 11px;">${getInitials(u.nombre)}</div>
+                  <div class="ranking-user-info">
+                    <div class="ranking-user-name-row">
+                      <span class="ranking-user-name">${escapeHTML(u.nombre)}</span>
+                      <span class="ranking-user-ci">CI: ${escapeHTML(u.CI)}</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                      <div class="progress-bar-fill progress-blue" style="width: ${u.porcentaje_relativo}%;"></div>
+                    </div>
+                  </div>
+                  <div class="ranking-user-hours">
+                    <span class="ranking-hours-val">${escapeHTML(u.horas_decimal)} <small>hrs</small></span>
+                    <span class="ranking-days-sub">${u.total_dias} ${u.total_dias === 1 ? 'jornada' : 'jornadas'}</span>
+                  </div>
+                </div>
+              `;
+            });
+          } else {
+            rowsHTML = `<div style="color: var(--color-text-muted); font-size: 13px; text-align: center; padding: 20px;">No hay datos de pasantes registrados.</div>`;
+          }
+
+          bodyEl.innerHTML = `
+            <div class="ranking-container">
+              <div class="ranking-list">
+                ${rowsHTML}
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      function seleccionarUsuarioDesdeRanking(idUsuario, nombre, ci) {
+        hiddenUserId.value = idUsuario;
+        autoInput.value = `${nombre} (${ci})`;
+        btnClearUser.style.display = 'flex';
+        document.getElementById('filterCI').value = '';
+        fetchReportes(1);
+      }
+
+      // Función principal para cargar reportes y estadísticas
+      async function fetchReportes(page = 1) {
+        currentPage = page;
+        const ci = document.getElementById('filterCI').value.trim();
+        const id_usuario = hiddenUserId.value;
+        const id_lugar = document.getElementById('filterLugar')?.value || '';
+        const nombreBusqueda = !id_usuario ? autoInput.value.trim() : '';
+        const fecha = document.getElementById('filterFecha').value;
+
+        const params = new URLSearchParams({
+          page,
+          size: pageSize,
+          ci,
+          id_usuario,
+          id_lugar,
+          nombre: nombreBusqueda,
+          fecha
+        });
+
+        try {
+          const res = await fetch(`/api/admin/reportes?${params}`);
+          const data = await res.json();
+
+          if (!data.ok) throw new Error(data.error || 'Error al obtener datos');
+
+          // 1. Actualizar KPIs de la Columna Izquierda
+          document.getElementById('stat-records').textContent = data.total.toLocaleString();
+          document.getElementById('stat-hours').textContent = data.total_acumulada || '00:00:00';
+          const decimalEl = document.getElementById('stat-hours-decimal');
+          if (decimalEl) {
+            decimalEl.textContent = `${data.total_horas_decimal || '0.0'} horas acumuladas`;
+          }
+
+          // 2. Actualizar KPI del Usuario
+          const statUser = document.getElementById('stat-user');
+          const statUserBadge = document.getElementById('stat-user-badge');
+
+          const isSpecificUser = Boolean(data.usuario_info || id_usuario || nombreBusqueda || ci);
+
+          if (data.usuario_info) {
+            statUser.textContent = data.usuario_info.nombre;
+            statUser.title = data.usuario_info.nombre;
+            statUserBadge.textContent = `CI: ${data.usuario_info.CI}`;
+          } else if (nombreBusqueda) {
+            statUser.textContent = `Búsqueda: "${nombreBusqueda}"`;
+            statUser.title = nombreBusqueda;
+            statUserBadge.textContent = 'Filtro Nombre';
+          } else if (ci) {
+            statUser.textContent = `Filtro CI: ${ci}`;
+            statUser.title = `Filtro CI: ${ci}`;
+            statUserBadge.textContent = 'Filtro Cédula';
+          } else {
+            statUser.textContent = 'Todos los usuarios';
+            statUser.title = 'Todos los usuarios';
+            statUserBadge.textContent = 'Global';
+          }
+
+          // 3. Renderizar Panel Lateral Derecho de Estadísticas
+          renderStatsPanel(data.stats, data.usuario_info, isSpecificUser);
+
+          // 4. Renderizar Encabezados, Tabla y Paginador
+          renderThead(isSpecificUser);
+          renderTabla(data.data, isSpecificUser);
+          renderPaginador(data.page, data.totalPages, data.total, data.size);
+        } catch (err) {
+          console.error('Error al cargar reportes:', err);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error de Carga',
+            text: 'No se pudieron cargar los registros de asistencias y horas.'
+          });
+        }
+      }
 
       // Renderizar dinámicamente encabezados de la tabla
       function renderThead(isSpecificUser) {
@@ -424,12 +1194,10 @@
                 </select>
               </div>
             </th>
-            <th>Marcaciones</th>
+            <th>Marcaciones (Llegada / Salida)</th>
             <th>Duración</th>
-            <th>Bitácora / Tarea</th>
-            <th>Comprobante</th>
-            <th>Observación Admin</th>
-            <th style="text-align: center;">Acción</th>
+            <th style="text-align: center;">Bitácora &amp; Comprobante</th>
+            <th style="text-align: center;">Acciones</th>
           </tr>
         `;
 
@@ -440,77 +1208,20 @@
         }
       }
 
-      // Función principal para cargar reportes y estadísticas
-      async function fetchReportes(page = 1) {
-        currentPage = page;
-        const ci = document.getElementById('filterCI').value.trim();
-        const id_usuario = hiddenUserId.value;
-        const id_lugar = document.getElementById('filterLugar')?.value || '';
-        const nombreBusqueda = !id_usuario ? autoInput.value.trim() : '';
-        const fecha = document.getElementById('filterFecha').value;
+      // Mapa en memoria para acceder rápidamente a los datos de la fila
+      let rowsDataMap = {};
 
-        const params = new URLSearchParams({
-          page,
-          size: pageSize,
-          ci,
-          id_usuario,
-          id_lugar,
-          nombre: nombreBusqueda,
-          fecha
-        });
-
-        try {
-          const res = await fetch(`/api/admin/reportes?${params}`);
-          const data = await res.json();
-
-          if (!data.ok) throw new Error(data.error || 'Error al obtener datos');
-
-          // 1. Actualizar KPIs
-          document.getElementById('stat-records').textContent = data.total.toLocaleString();
-          document.getElementById('stat-hours').textContent = data.total_acumulada || '00:00:00';
-
-          // 2. Actualizar KPI del Usuario
-          const statUser = document.getElementById('stat-user');
-          const statUserBadge = document.getElementById('stat-user-badge');
-
-          const isSpecificUser = Boolean(data.usuario_info || id_usuario || nombreBusqueda || ci);
-
-          if (data.usuario_info) {
-            statUser.textContent = data.usuario_info.nombre;
-            statUser.title = data.usuario_info.nombre;
-            statUserBadge.textContent = `CI: ${data.usuario_info.CI}`;
-          } else if (nombreBusqueda) {
-            statUser.textContent = `Búsqueda: "${nombreBusqueda}"`;
-            statUser.title = nombreBusqueda;
-            statUserBadge.textContent = 'Filtro Nombre';
-          } else if (ci) {
-            statUser.textContent = `Filtro CI: ${ci}`;
-            statUser.title = `Filtro CI: ${ci}`;
-            statUserBadge.textContent = 'Filtro Cédula';
-          } else {
-            statUser.textContent = 'Todos los usuarios';
-            statUser.title = 'Todos los usuarios';
-            statUserBadge.textContent = 'Global';
-          }
-
-          // 3. Renderizar Encabezados, Tabla y Paginador
-          renderThead(isSpecificUser);
-          renderTabla(data.data, isSpecificUser);
-          renderPaginador(data.page, data.totalPages, data.total, data.size);
-        } catch (err) {
-          console.error(err);
-          Swal.fire({
-            icon: 'error',
-            title: 'Error de Carga',
-            text: 'No se pudieron cargar los registros de asistencias y horas.'
-          });
-        }
+      function triggerModalDetalle(idAsistencia) {
+        const item = rowsDataMap[idAsistencia];
+        if (item) abrirModalDetalle(item);
       }
 
+      // Renderizar filas de la tabla
       function renderTabla(lista, isSpecificUser = false) {
         const tbody = document.getElementById('tablaReportes');
         tbody.innerHTML = '';
-        const colspan = isSpecificUser ? 8 : 10;
+        rowsDataMap = {};
+        const colspan = isSpecificUser ? 6 : 8;
 
         if (!lista || lista.length === 0) {
           tbody.innerHTML = `
@@ -528,6 +1239,7 @@
         }
 
         lista.forEach(item => {
+          rowsDataMap[item.id_asistencia] = item;
           const tr = document.createElement('tr');
           const obsSegura = (item.observacion || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
@@ -537,20 +1249,39 @@
                 <span>${escapeHTML(item.usuario_nombre)}</span>
               </div>
             </td>
-            <td><strong style="color: var(--color-text-muted);">${escapeHTML(item.usuario_ci)}</strong></td>
+            <td><strong style="color: var(--color-text-muted); font-size: 13px;">${escapeHTML(item.usuario_ci)}</strong></td>
           `;
+
+          // Indicadores para el botón de Bitácora & Comprobante
+          let badgesHTML = '';
+          if (item.tarea) {
+            badgesHTML += `<span class="badge-indicador" title="Tiene bitácora de tareas"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg> Tarea</span>`;
+          }
+          if (item.comprobante) {
+            badgesHTML += `<span class="badge-indicador badge-foto" title="Tiene foto de comprobante"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> Foto</span>`;
+          }
+          if (item.observacion) {
+            badgesHTML += `<span class="badge-indicador badge-obs" title="Tiene observación del administrador"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Obs</span>`;
+          }
+          if (!badgesHTML) {
+            badgesHTML = `<span style="font-size: 11.5px; color: var(--color-text-muted);">Sin bitácora</span>`;
+          }
 
           tr.innerHTML = `
         ${userTds}
-        <td><span style="font-weight: 500;">${item.fecha}</span></td>
+        <td><span style="font-weight: 500; font-size: 13px;">${item.fecha}</span></td>
         <td>
-          <span style="font-weight: 600; color: var(--color-text);">${escapeHTML(item.lugar_nombre || 'N/A')}</span>
+          <span style="font-weight: 600; color: var(--color-text); font-size: 13.5px;">${escapeHTML(item.lugar_nombre || 'N/A')}</span>
           ${item.lugar_tipo ? `<br><small style="color: var(--color-text-muted); font-size: 11px;">(${escapeHTML(item.lugar_tipo)})</small>` : ''}
         </td>
         <td>
-          <div style="font-size: 12px; line-height: 1.4;">
-            <div><strong style="color: var(--color-primary);">E:</strong> ${item.hora_entrada || '-'}</div>
-            <div><strong style="color: #0D9488;">S:</strong> ${item.hora_salida || '-'}</div>
+          <div class="badge-time-group">
+            <span class="badge-time-in" title="Hora de llegada (Entrada)">
+              <b>E:</b> ${item.hora_entrada || '-'}
+            </span>
+            <span class="badge-time-out" title="Hora de salida">
+              <b>S:</b> ${item.hora_salida || '-'}
+            </span>
           </div>
         </td>
         <td>
@@ -558,26 +1289,30 @@
             ${item.horas_dia}
           </span>
         </td>
-        <td>
-          <div style="max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHTML(item.tarea || '')}">
-            ${item.tarea ? escapeHTML(item.tarea) : '<em style="color: var(--color-text-muted); font-size: 12px;">Sin bitácora</em>'}
-          </div>
-        </td>
-        <td>
-          ${item.comprobante ? `<a href="${item.comprobante}" target="_blank" class="pill">Ver Foto</a>` : '<span style="color: var(--color-text-muted); font-size: 12px;">-</span>'}
-        </td>
-        <td>
-          <div style="max-width: 180px; font-size: 12px; color: ${item.observacion ? '#DC2626; font-weight: 600;' : 'var(--color-text-muted);'}" class="text-truncate" title="${escapeHTML(item.observacion || '')}">
-            ${item.observacion ? escapeHTML(item.observacion) : 'Sin observaciones'}
-          </div>
+        <td style="text-align: center;">
+          <button class="btn-bitacora-modal ${item.observacion ? 'has-obs' : ''}" type="button" onclick="triggerModalDetalle(${item.id_asistencia})" title="Ver Bitácora, Comprobante y Observación">
+            <span class="btn-bitacora-title">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              Ver Detalle
+            </span>
+            <div class="btn-bitacora-badges">
+              ${badgesHTML}
+            </div>
+          </button>
         </td>
         <td style="text-align: center; white-space: nowrap;">
-          <button class="btn-edit-row" type="button" onclick="abrirModalEditar(${item.id_asistencia}, '${item.hora_entrada || ''}', '${item.hora_salida || ''}', '${obsSegura}', '${(item.usuario_nombre || '').replace(/'/g, "\\'")}', '${item.fecha || ''}')">
-            Editar
-          </button>
-          <button type="button" onclick="anularJornada(${item.id_asistencia}, '${(item.usuario_nombre || '').replace(/'/g, "\\'")}', '${item.fecha || ''}')" title="Anular jornada" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; padding:4px 8px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; margin-left:4px;">
-            &times;
-          </button>
+          <div class="actions-group-inline">
+            <button class="btn-action-horario" type="button" onclick="abrirModalHorario(${item.id_usuario}, '${(item.usuario_nombre || '').replace(/'/g, "\\'")}', '${escapeHTML(item.usuario_ci || '')}')" title="Ver horario programado del pasante">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              Horario
+            </button>
+            <button class="btn-edit-row" type="button" onclick="abrirModalEditar(${item.id_asistencia}, '${item.hora_entrada || ''}', '${item.hora_salida || ''}', '${obsSegura}', '${(item.usuario_nombre || '').replace(/'/g, "\\'")}', '${item.fecha || ''}')" title="Editar horas u observación">
+              Editar
+            </button>
+            <button type="button" class="btn-anular-row" onclick="anularJornada(${item.id_asistencia}, '${(item.usuario_nombre || '').replace(/'/g, "\\'")}', '${item.fecha || ''}')" title="Anular jornada">
+              &times;
+            </button>
+          </div>
         </td>
       `;
           tbody.appendChild(tr);
