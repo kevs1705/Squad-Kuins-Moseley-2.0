@@ -64,18 +64,6 @@
   margin-bottom: 0.75rem !important;
 }
 
-.horario-stat-icon {
-  width: 42px !important;
-  height: 42px !important;
-  border-radius: 10px !important;
-  background-color: #ebf3fe !important;
-  color: #0b6bcb !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  font-size: 1.25rem !important;
-}
-
 .horario-stat-title {
   font-size: 0.85rem !important;
   color: #64748b !important;
@@ -109,15 +97,36 @@
   transition: width 0.4s ease !important;
 }
 
-/* --- TARJETA DE FORMULARIO --- */
+/* --- CONTENEDOR PRINCIPAL EN 2 COLUMNAS --- */
+.horario-two-columns {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: flex-start !important;
+  gap: 1.5rem !important;
+  width: 100% !important;
+}
+
+.horario-col-form {
+  flex: 0 0 380px !important;
+  max-width: 380px !important;
+  width: 100% !important;
+}
+
+.horario-col-tabla {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+/* Tarjeta contenedora dentro de cada columna */
 .horario-wrapper .card-form {
   background: #ffffff !important;
   border: 1px solid #e2e8f0 !important;
   border-radius: 14px !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
   padding: 1.75rem !important;
-  margin-bottom: 1.75rem !important;
   width: 100% !important;
+  box-sizing: border-box !important;
   color: #1e293b !important;
 }
 
@@ -131,30 +140,30 @@
 }
 
 .horario-wrapper .card-subtitle {
-  font-size: 0.9rem !important;
+  font-size: 0.88rem !important;
   color: #64748b !important;
-  margin-bottom: 1.5rem !important;
-  line-height: 1.5 !important;
+  margin-bottom: 1.25rem !important;
+  line-height: 1.4 !important;
 }
 
 /* Selección de Días */
 .dias-checkbox-container {
   display: flex !important;
   flex-wrap: wrap !important;
-  gap: 0.65rem !important;
+  gap: 0.5rem !important;
   margin-top: 0.5rem !important;
 }
 
 .checkbox-day {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 0.5rem !important;
-  padding: 0.55rem 1rem !important;
+  gap: 0.35rem !important;
+  padding: 0.45rem 0.75rem !important;
   background-color: #f8fafc !important;
   border: 1px solid #cbd5e1 !important;
   border-radius: 20px !important;
   cursor: pointer !important;
-  font-size: 0.88rem !important;
+  font-size: 0.82rem !important;
   font-weight: 600 !important;
   color: #334155 !important;
   user-select: none !important;
@@ -168,8 +177,8 @@
 
 .checkbox-day input[type="checkbox"] {
   accent-color: #0b6bcb !important;
-  width: 16px !important;
-  height: 16px !important;
+  width: 15px !important;
+  height: 15px !important;
   cursor: pointer !important;
 }
 
@@ -179,13 +188,12 @@
   color: #0b6bcb !important;
 }
 
-/* Grilla de Entradas de Tiempo */
+/* Grilla del formulario (Organizada de forma vertical para la columna izquierda) */
 .horario-wrapper .form-grid {
-  display: grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
-  gap: 1.25rem !important;
-  margin-top: 1.25rem !important;
-  align-items: end !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 1rem !important;
+  margin-top: 1rem !important;
 }
 
 .horario-wrapper .form-group {
@@ -194,18 +202,18 @@
 }
 
 .horario-wrapper .form-group label {
-  font-size: 0.88rem !important;
+  font-size: 0.85rem !important;
   font-weight: 700 !important;
   color: #0f172a !important;
-  margin-bottom: 0.4rem !important;
+  margin-bottom: 0.35rem !important;
   display: block !important;
 }
 
 .horario-wrapper .form-control,
 .horario-wrapper .form-select {
   width: 100% !important;
-  padding: 0.65rem 0.9rem !important;
-  font-size: 0.92rem !important;
+  padding: 0.55rem 0.8rem !important;
+  font-size: 0.9rem !important;
   font-weight: 600 !important;
   color: #1e293b !important;
   border: 1px solid #cbd5e1 !important;
@@ -213,7 +221,7 @@
   background-color: #ffffff !important;
   transition: border-color 0.2s, box-shadow 0.2s !important;
   box-sizing: border-box !important;
-  height: 42px !important;
+  height: 40px !important;
 }
 
 .horario-wrapper .form-control:focus,
@@ -228,35 +236,36 @@
   background-color: #f0fdf4 !important;
   border: 1px solid #86efac !important;
   border-radius: 8px !important;
-  padding: 0.85rem 1.25rem !important;
+  padding: 0.75rem 1rem !important;
   display: flex !important;
   justify-content: space-between !important;
   align-items: center !important;
   color: #14532d !important;
+  margin-top: 1rem !important;
 }
 
 .horario-wrapper .total-box span {
-  font-size: 0.9rem !important;
+  font-size: 0.85rem !important;
   color: #166534 !important;
   font-weight: 600 !important;
 }
 
 .horario-wrapper .total-box strong {
-  font-size: 1.2rem !important;
+  font-size: 1.1rem !important;
   color: #14532d !important;
   font-weight: 800 !important;
 }
 
-/* Alerta de Error en Horarios */
+/* Alerta de Error */
 .horario-wrapper .time-warning {
   display: none;
   background-color: #fef2f2 !important;
   color: #991b1b !important;
   border: 1px solid #f87171 !important;
-  padding: 0.75rem 1rem !important;
+  padding: 0.65rem 0.85rem !important;
   border-radius: 8px !important;
-  font-size: 0.88rem !important;
-  margin-top: 1rem !important;
+  font-size: 0.82rem !important;
+  margin-top: 0.75rem !important;
   font-weight: 600 !important;
 }
 
@@ -265,14 +274,14 @@
   background-color: #0b6bcb !important;
   color: #ffffff !important;
   font-weight: 700 !important;
-  font-size: 0.95rem !important;
-  padding: 0.75rem 1.5rem !important;
+  font-size: 0.92rem !important;
+  padding: 0.7rem 1.25rem !important;
   border: none !important;
   border-radius: 8px !important;
   cursor: pointer !important;
   transition: all 0.2s ease !important;
   width: 100% !important;
-  margin-top: 1.25rem !important;
+  margin-top: 1rem !important;
   box-shadow: 0 2px 6px rgba(11, 107, 203, 0.25) !important;
 }
 
@@ -282,80 +291,38 @@
   transform: translateY(-1px) !important;
 }
 
-.horario-wrapper .btn-submit:disabled {
-  background-color: #94a3b8 !important;
-  cursor: not-allowed !important;
-  box-shadow: none !important;
-  transform: none !important;
-}
-
-/* --- TABLA DE HORARIO PROGRAMADO (BLANCA Y AZUL OSCURO) --- */
+/* --- TABLA DE HORARIO PROGRAMADO --- */
 .horario-wrapper .table-container {
   background: #ffffff !important;
   border: 1px solid #e2e8f0 !important;
   border-radius: 10px !important;
   overflow-x: auto !important;
-  margin-top: 1rem !important;
+  margin-top: 0.5rem !important;
 }
 
 .horario-wrapper table.custom-table {
   width: 100% !important;
-  table-layout: fixed !important;
+  table-layout: auto !important;
   border-collapse: collapse !important;
   border-spacing: 0 !important;
   background-color: #ffffff !important;
-  background: #ffffff !important;
-}
-
-.horario-wrapper table.custom-table thead,
-.horario-wrapper table.custom-table thead tr {
-  background-color: #f0f5fc !important;
-  background: #f0f5fc !important;
 }
 
 .horario-wrapper table.custom-table thead th {
   background-color: #f0f5fc !important;
-  background: #f0f5fc !important;
-  color: #0b3c5d !important; /* Azul oscuro */
+  color: #0b3c5d !important;
   font-size: 0.88rem !important;
   font-weight: 700 !important;
-  padding: 0.95rem 1.1rem !important;
+  padding: 0.85rem 1rem !important;
   border-bottom: 2px solid #e2e8f0 !important;
-  border-top: none !important;
-  text-transform: none !important;
   white-space: nowrap !important;
-  width: 25% !important;
-}
-
-.horario-wrapper table.custom-table tbody {
-  background-color: #ffffff !important;
-}
-
-.horario-wrapper table.custom-table tbody tr {
-  background-color: #ffffff !important;
-  background: #ffffff !important;
-  box-shadow: none !important;
-  transform: none !important;
-}
-
-.horario-wrapper table.custom-table tbody tr:hover {
-  background-color: #f8fafc !important;
-  background: #f8fafc !important;
 }
 
 .horario-wrapper table.custom-table tbody td {
-  padding: 0.95rem 1.1rem !important;
-  font-size: 0.9rem !important;
+  padding: 0.85rem 1rem !important;
+  font-size: 0.88rem !important;
   color: #334155 !important;
-  background-color: #ffffff !important;
-  background: #ffffff !important;
   border-bottom: 1px solid #f1f5f9 !important;
-  border-top: none !important;
-  width: 25% !important;
-}
-
-.horario-wrapper table.custom-table tbody tr:last-child td {
-  border-bottom: none !important;
 }
 
 .badge-hours {
@@ -364,36 +331,302 @@
   background-color: #e8f1fd !important;
   color: #0b6bcb !important;
   font-weight: 700 !important;
-  padding: 0.3rem 0.75rem !important;
+  padding: 0.25rem 0.65rem !important;
   border-radius: 20px !important;
-  font-size: 0.82rem !important;
+  font-size: 0.8rem !important;
   border: 1px solid #d0e1fd !important;
 }
 
-/* --- RESPONSIVIDAD (MÓVIL) --- */
-@media (max-width: 767.98px) {
-  .horario-wrapper {
-    padding: 1rem 0.75rem !important;
+/* RESPONSIVIDAD (MÓVIL EN 1 COLUMNA) */
+@media (max-width: 991.98px) {
+  .horario-two-columns {
+    flex-direction: column !important;
   }
 
-  .horario-header-title {
-    font-size: 1.4rem !important;
+  .horario-col-form {
+    flex: 1 1 100% !important;
+    max-width: 100% !important;
   }
+}
+/* ==========================================================================
+   ESTILOS GENERALES Y COLUMNAS
+   ========================================================================== */
+.horario-wrapper {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 auto !important;
+  padding: 1.5rem 2rem !important;
+  box-sizing: border-box !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  color: #1e293b !important;
+}
 
-  .horario-stats-grid {
-    grid-template-columns: 1fr !important;
-  }
+.horario-two-columns {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: flex-start !important;
+  gap: 1.5rem !important;
+  width: 100% !important;
+}
 
-  .horario-wrapper .card-form {
-    padding: 1.25rem !important;
-  }
+.horario-col-form {
+  flex: 0 0 350px !important;
+  max-width: 350px !important;
+  width: 100% !important;
+}
 
-  .dias-checkbox-container {
-    gap: 0.4rem !important;
-  }
+.horario-col-tabla {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  width: 100% !important;
+}
 
-  .checkbox-day {
-    padding: 0.45rem 0.75rem !important;
-    font-size: 0.82rem !important;
+.horario-wrapper .card-form {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+  padding: 1.5rem !important;
+  box-sizing: border-box !important;
+}
+
+/* ==========================================================================
+   ESTILOS VISTA CALENDARIO / AGENDA DE TIEMPO
+   ========================================================================== */
+.calendar-timeline-container {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+/* Encabezado Días */
+.calendar-header-days {
+  display: grid;
+  grid-template-columns: 55px repeat(6, 1fr);
+  background-color: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: center;
+}
+
+.time-col-header {
+  padding: 0.6rem 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #94a3b8;
+  border-right: 1px solid #e2e8f0;
+}
+
+.day-col-header {
+  padding: 0.6rem 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #334155;
+  border-right: 1px solid #f1f5f9;
+}
+
+/* Cuerpo Grilla */
+.calendar-body-grid {
+  display: flex;
+  position: relative;
+  height: 576px; /* 12 horas x 48px por hora */
+  overflow-y: auto;
+  background-size: 100% 48px;
+  background-image: linear-gradient(to bottom, #f1f5f9 1px, transparent 1px);
+}
+
+.time-axis {
+  width: 55px;
+  flex-shrink: 0;
+  border-right: 1px solid #e2e8f0;
+  background-color: #f8fafc;
+}
+
+.time-axis div {
+  height: 48px;
+  font-size: 0.72rem;
+  color: #64748b;
+  text-align: center;
+  line-height: 12px;
+  padding-top: 4px;
+  box-sizing: border-box;
+}
+
+.days-columns-wrapper {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  flex-grow: 1;
+  position: relative;
+}
+
+.day-column {
+  position: relative;
+  border-right: 1px solid #f1f5f9;
+  height: 100%;
+}
+
+.day-column:last-child {
+  border-right: none;
+}
+
+/* Tarjeta de Evento / Bloque de Horario */
+.calendar-event-card {
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  background: linear-gradient(135deg, #0b6bcb, #0284c7) !important;
+  color: #ffffff !important;
+  border-radius: 8px;
+  padding: 0.4rem 0.5rem;
+  box-shadow: 0 4px 10px rgba(11, 107, 203, 0.25);
+  overflow: hidden;
+  z-index: 2;
+  transition: transform 0.15s ease;
+}
+
+.calendar-event-card:hover {
+  transform: scale(1.02);
+}
+
+.event-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.event-time {
+  font-size: 0.72rem;
+  opacity: 0.9;
+  margin-top: 2px;
+}
+
+.event-badge {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.25);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 10px;
+  margin-top: 4px;
+}
+
+/* Responsividad */
+@media (max-width: 991.98px) {
+  .horario-two-columns {
+    flex-direction: column !important;
   }
-}
+  .horario-col-form {
+    flex: 1 1 100% !important;
+    max-width: 100% !important;
+  }
+}
+/* ==========================================================================
+   CALENDARIO COMPACTO CON 2 PALETAS DE COLOR Y BOTÓN DE ELIMINACIÓN
+   ========================================================================== */
+
+.compact-calendar .calendar-body-grid {
+  height: 432px !important; /* Reducido: 12 horas x 36px */
+  background-size: 100% 36px !important;
+  background-image: linear-gradient(to bottom, #f1f5f9 1px, transparent 1px) !important;
+}
+
+.compact-calendar .time-axis div {
+  height: 36px !important;
+  font-size: 0.7rem !important;
+  line-height: 10px !important;
+  padding-top: 2px !important;
+}
+
+/* --- PALETA 1: AZUL ELECTRICO (Lunes a Viernes) --- */
+.calendar-event-card.palette-blue {
+  background: linear-gradient(135deg, #0284c7, #0284c7) !important;
+  box-shadow: 0 3px 8px rgba(2, 132, 199, 0.25) !important;
+}
+
+/* --- PALETA 2: ÍNDIGO / MORADO (Sábado) --- */
+.calendar-event-card.palette-purple {
+  background: linear-gradient(135deg, #4f46e5, #6366f1) !important;
+  box-shadow: 0 3px 8px rgba(79, 70, 229, 0.25) !important;
+}
+
+/* --- ESTRUCTURA GENERAL DE TARJETA Y BOTÓN BORRAR --- */
+.calendar-event-card {
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  color: #ffffff !important;
+  border-radius: 6px;
+  padding: 0.35rem 0.45rem;
+  overflow: hidden;
+  z-index: 2;
+  transition: all 0.2s ease-in-out;
+}
+
+.calendar-event-card:hover {
+  transform: translateY(-1px);
+  z-index: 10;
+}
+
+/* Botón flotante para eliminar */
+.delete-day-form {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  margin: 0;
+  padding: 0;
+  z-index: 5;
+}
+
+.btn-delete-event {
+  background: rgba(0, 0, 0, 0.25);
+  border: none;
+  color: #ffffff;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1;
+  transition: background 0.15s ease;
+}
+
+.btn-delete-event:hover {
+  background: #ef4444; /* Rojo al pasar el ratón */
+}
+
+/* Tipografías y badges en vista reducida */
+.compact-calendar .event-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding-right: 14px; /* Deja espacio para el botón 'x' */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.compact-calendar .event-time {
+  font-size: 0.65rem;
+  opacity: 0.95;
+  margin-top: 1px;
+}
+
+.compact-calendar .event-badge {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.25);
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 8px;
+  margin-top: 2px;
+}
+
+.compact-calendar .day-col-header {
+  font-size: 0.8rem;
+  font-weight: 700;
+}
