@@ -38,7 +38,7 @@
 
             </div>
             <div class="horario-stat-value">
-              <%= totalAcumulado %> / <%= horasRequeridas %> <span
+              <%= String(Math.round(totalAcumulado)).padStart(3, '0') %> / <%= horasRequeridas %> <span
                     style="font-size: 1.1rem; font-weight: 500;">hrs</span>
             </div>
             <div class="horario-progress-container">
@@ -160,14 +160,19 @@
                 </td>
                 <td>
                   <% 
-                    const inicio = h.hora_entrada.split(' :'); const fin=h.hora_salida.split(':'); const
-                              minutos=(parseInt(fin[0]) * 60 + parseInt(fin[1])) - (parseInt(inicio[0]) * 60 +
-                              parseInt(inicio[1])); const horasDec=(minutos / 60).toFixed(1); %>
-                              <span class="badge-hours">
-                                <i class="bi bi-clock me-1"></i>
-                                <%= horasDec %> hrs
-                              </span>
-                        </td>
+                    const inicio = (h.hora_entrada || '00:00').split(':'); 
+                    const fin = (h.hora_salida || '00:00').split(':'); 
+                    const minInicio = parseInt(inicio[0] || 0, 10) * 60 + parseInt(inicio[1] || 0, 10);
+                    const minFin = parseInt(fin[0] || 0, 10) * 60 + parseInt(fin[1] || 0, 10);
+                    const diffMin = minFin - minInicio;
+                    const hrs = diffMin > 0 ? (diffMin / 60) : 0;
+                    const horasDec = Number.isInteger(hrs) ? hrs : hrs.toFixed(1);
+                  %>
+                  <span class="badge-hours">
+                    <i class="bi bi-clock me-1"></i>
+                    <%= horasDec %> hrs
+                  </span>
+                </td>
                       </tr>
                       <% }) %>
                         <% } else { %>

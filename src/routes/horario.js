@@ -27,17 +27,17 @@ router.get('/usuario/horario', async (req, res) => {
             ORDER BY dia_semana
         `, [id_usuario]);
 
-        // 2. Obtener el total de horas acumuladas
+        // 2. Obtener el total de horas acumuladas (en segundos exactos sin truncamiento)
         const [resultadoHoras] = await db.query(`
             SELECT COALESCE(
               SUM(
                 TIMESTAMPDIFF(
-                  HOUR, 
+                  SECOND, 
                   TIMESTAMP(fecha, hora_entrada), 
                   TIMESTAMP(fecha, hora_salida)
                 )
               ), 0
-            ) AS total_horas
+            ) AS total_segundos
             FROM asistencias
             WHERE id_usuario = ?
               AND estado != 'ANULADO'
@@ -45,7 +45,8 @@ router.get('/usuario/horario', async (req, res) => {
               AND hora_salida IS NOT NULL
         `, [id_usuario]);
 
-        const totalHorasSistema = resultadoHoras[0]?.total_horas || 0;
+        const totalSegundos = resultadoHoras[0]?.total_segundos || 0;
+        const totalHorasSistema = Math.round(totalSegundos / 3600);
 
         res.render('usuario/horario', {
             user: req.session.user,

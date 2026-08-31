@@ -4,7 +4,6 @@
 
 /* 1. Íconos del Sidebar por Ruta */
 .sidebar-link[href="/admin/obras"]::before {
-  /* Reemplaza esta propiedad por la que use tu proyecto (mask, background-image, etc.) */
   mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z'/%3E%3Cpath d='M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2'/%3E%3Cpath d='M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2'/%3E%3Cpath d='M10 6h4'/%3E%3Cpath d='M10 10h4'/%3E%3Cpath d='M10 14h4'/%3E%3Cpath d='M10 18h4'/%3E%3C/svg%3E");
   -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z'/%3E%3Cpath d='M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2'/%3E%3Cpath d='M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2'/%3E%3Cpath d='M10 6h4'/%3E%3Cpath d='M10 10h4'/%3E%3Cpath d='M10 14h4'/%3E%3Cpath d='M10 18h4'/%3E%3C/svg%3E");
 }
@@ -13,7 +12,7 @@
 .toolbar {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
   justify-content: space-between;
 }
@@ -21,44 +20,99 @@
 .search {
   flex: 1;
   min-width: 220px;
-  height: 40px;
+  height: 42px;
   border-radius: 10px;
-  border: 1px solid var(--border);
-  background: #0b1628;
-  color: var(--text);
-  padding: 0 12px;
+  border: 1px solid var(--border, #cbd5e1);
+  background: #ffffff;
+  color: #0f172a;
+  padding: 0 14px;
+  font-size: 14px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+  transition: all 0.2s ease;
+}
+
+.search:focus {
+  border-color: #0b6bcb;
+  box-shadow: 0 0 0 3px rgba(11, 107, 203, 0.15);
+  outline: none;
+}
+
+.search::placeholder {
+  color: #94a3b8;
 }
 
 /* 3. Botones */
 .btn {
-  padding: 10px 14px;
+  padding: 9px 16px;
   border-radius: 10px;
   border: 1px solid transparent;
-  background: var(--accent);
-  color: #fff;
-  font-weight: 700;
+  background: #0b6bcb;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 14px;
   cursor: pointer;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(11, 107, 203, 0.2);
 }
 
 .btn:hover {
-  background: #2ea7f5;
+  background: #0858a7;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(11, 107, 203, 0.3);
+}
+
+.btn:active {
+  transform: translateY(0);
 }
 
 .btn.secondary {
-  background: #122642;
-  color: var(--text);
-  border-color: var(--border);
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+
+.btn.secondary:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+  border-color: #94a3b8;
+}
+
+.btn.btnEdit {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.btn.btnEdit:hover {
+  background: #dbeafe;
+  color: #1e40af;
+  border-color: #93c5fd;
+}
+
+.btn.btnDel, .btn.danger {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.btn.btnDel:hover, .btn.danger:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fca5a5;
 }
 
 /* 4. Tablas */
 .table-wrap {
   overflow: auto;
-  border: 1px solid var(--border);
+  border: 1px solid #e2e8f0;
   border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
 }
 
 table {
@@ -68,23 +122,32 @@ table {
 }
 
 th, td {
-  padding: 12px 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 12px 16px;
+  border-bottom: 1px solid #f1f5f9;
   text-align: left;
   font-size: 14px;
-  color: #ffffff;
 }
 
 th {
-  color: var(--muted);
-  background: #0b1c30;
+  color: #475569;
+  background: #f8fafc;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #e2e8f0;
   position: sticky;
   top: 0;
   z-index: 1;
 }
 
+td {
+  color: #1e293b;
+  font-weight: 500;
+}
+
 tr:hover td {
-  background: rgba(255, 255, 255, 0.02);
+  background: #f8fafc;
 }
 
 .actions {
@@ -95,36 +158,37 @@ tr:hover td {
 
 /* 5. Chips */
 .chip {
-  padding: 4px 10px;
+  padding: 4px 12px;
   border-radius: 999px;
   font-size: 12px;
-  border: 1px solid var(--border);
+  font-weight: 600;
   display: inline-block;
 }
 
 .chip.ok {
-  background: rgba(46, 204, 113, 0.12);
-  color: #8ef0bd;
-  border-color: rgba(46, 204, 113, 0.4);
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
 }
 
 .chip.off {
-  background: rgba(255, 99, 132, 0.12);
-  color: #ffc6d1;
-  border-color: rgba(255, 99, 132, 0.4);
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
 }
 
 .chip.role {
-  background: rgba(39, 154, 228, 0.12);
-  color: #9ad6ff;
-  border-color: rgba(39, 154, 228, 0.4);
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
 }
 
-/* 6. Modales y Formuarios */
+/* 6. Modales y Formularios */
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
   display: none;
   align-items: center;
   justify-content: center;
@@ -133,30 +197,35 @@ tr:hover td {
 }
 
 .modal {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 18px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px;
   max-width: 600px;
   width: 100%;
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.18);
   max-height: 90vh;
   overflow-y: auto;
+  color: #0f172a;
 }
 
 .modal h3 {
   margin-top: 0;
+  color: #0f172a;
+  font-size: 20px;
+  font-weight: 700;
 }
 
 .form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 12px;
+  gap: 14px;
 }
 
 .form-grid label {
-  color: var(--muted);
-  font-size: 14px;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -170,18 +239,28 @@ tr:hover td {
 .form-grid select,
 .form-grid textarea {
   border-radius: 10px;
-  border: 1px solid var(--border);
-  background: #0b1628;
-  color: var(--text);
-  padding: 10px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
+  padding: 10px 14px;
   font-family: inherit;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.form-grid input:focus,
+.form-grid select:focus,
+.form-grid textarea:focus {
+  outline: none;
+  border-color: #0b6bcb;
+  box-shadow: 0 0 0 3px rgba(11, 107, 203, 0.15);
 }
 
 .modal-actions {
   display: flex;
   gap: 10px;
   justify-content: flex-end;
-  margin-top: 16px;
+  margin-top: 20px;
   flex-wrap: wrap;
 }
 

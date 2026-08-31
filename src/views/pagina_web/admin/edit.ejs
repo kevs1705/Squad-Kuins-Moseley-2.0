@@ -4,18 +4,7 @@
 %>
 <%- include('../../partials/header') %>
 
-<style>
-  /* Estilos específicos de editar proyecto */
-  .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(240px,1fr)); gap:12px; }
-  label { display:flex; flex-direction:column; gap:6px; font-size:14px; color:#9fb1c8; }
-  input, select, textarea { background:#0b1628; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px 12px; color:#f5f7fb; }
-  textarea { min-height:120px; resize:vertical; }
-  .btn { background:#279ae4; color:#fff; border:none; padding:12px 16px; border-radius:10px; cursor:pointer; font-weight:600; }
-  .btn:hover { background:#2ea7f5; }
-  .btn-secondary { background:#122642; border:1px solid rgba(255,255,255,0.08); }
-  .alert { padding:10px 12px; border-radius:10px; }
-  .alert-error { background:rgba(255,99,132,0.12); color:#ffc6d1; border:1px solid rgba(255,99,132,0.25); }
-</style>
+<link rel="stylesheet" href="/css/admin-pagina-web.css">
 
     <% if (err) { %>
       <div class="alert alert-error"><%= err %></div>
