@@ -12,6 +12,15 @@
       <span class="filter-label">Filtrar mensajes:</span>
     </div>
     <input id="q" class="search" placeholder="Buscar por nombre, email o asunto">
+    <div class="page-select-wrap">
+      <span>Mostrar:</span>
+      <select id="pageSize" class="page-select">
+        <option value="10" selected>10</option>
+        <option value="20">20</option>
+        <option value="30">30</option>
+        <option value="50">50</option>
+      </select>
+    </div>
   </div>
  
   <div class="table-wrap">
@@ -45,17 +54,138 @@
       </tbody>
     </table>
   </div>
+
+  <div class="table-pagination" id="paginationBar">
+    <div class="page-info" id="pageInfo">
+      Mostrando 0 - 0 de 0 mensajes
+    </div>
+    <div class="page-controls" id="pageControls">
+    </div>
+  </div>
 </div>
  
 <script>
   const q = document.getElementById('q');
   const tbody = document.getElementById('tbody');
-  q.addEventListener('input', () => {
-    const val = q.value.toLowerCase();
-    [...tbody.rows].forEach(tr => {
-      const cells = [...tr.cells].map(c => c.textContent.toLowerCase()).join(' ');
-      tr.style.display = cells.includes(val) ? '' : 'none';
+  const pageSizeSelect = document.getElementById('pageSize');
+  const pageInfo = document.getElementById('pageInfo');
+  const pageControls = document.getElementById('pageControls');
+
+  let currentPage = 1;
+
+  /* =========================
+     PAGINACIÓN Y BÚSQUEDA DE MENSAJES
+     ========================= */
+
+  function renderPagination() {
+    const filterVal = q ? q.value.toLowerCase().trim() : '';
+    const pageSize = parseInt(pageSizeSelect ? pageSizeSelect.value : 10, 10) || 10;
+    const allRows = [...tbody.rows];
+
+    // Filtrar filas que coincidan con la búsqueda
+    const matchingRows = allRows.filter(tr => {
+      if (tr.cells.length === 1 && tr.cells[0].classList.contains('muted')) return false;
+      const cellsText = [...tr.cells].map(c => c.textContent.toLowerCase()).join(' ');
+      return cellsText.includes(filterVal);
     });
+
+    const totalMatching = matchingRows.length;
+    const totalPages = Math.ceil(totalMatching / pageSize) || 1;
+
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+
+    const startIdx = (currentPage - 1) * pageSize;
+    const endIdx = Math.min(startIdx + pageSize, totalMatching);
+
+    // Ocultar todas las filas
+    allRows.forEach(tr => tr.style.display = 'none');
+
+    // Mostrar solo las filas de la página actual
+    matchingRows.forEach((tr, index) => {
+      if (index >= startIdx && index < endIdx) {
+        tr.style.display = '';
+      }
+    });
+
+    // Actualizar leyenda informativa
+    if (totalMatching === 0) {
+      pageInfo.textContent = 'Sin resultados encontrados';
+    } else {
+      pageInfo.textContent = `Mostrando ${startIdx + 1} - ${endIdx} de ${totalMatching} mensajes`;
+    }
+
+    // Renderizar botones de control
+    pageControls.innerHTML = '';
+
+    // Botón Anterior
+    const prevBtn = document.createElement('button');
+    prevBtn.className = 'page-btn';
+    prevBtn.type = 'button';
+    prevBtn.textContent = 'Anterior';
+    prevBtn.disabled = currentPage === 1 || totalMatching === 0;
+    prevBtn.addEventListener('click', () => {
+      if (currentPage > 1) {
+        currentPage--;
+        renderPagination();
+      }
+    });
+    pageControls.appendChild(prevBtn);
+
+    // Botones de Páginas Numeradas
+    for (let i = 1; i <= totalPages; i++) {
+      if (totalPages > 7) {
+        if (i !== 1 && i !== totalPages && Math.abs(i - currentPage) > 1) {
+          if (i === 2 || i === totalPages - 1) {
+            const dots = document.createElement('span');
+            dots.textContent = '...';
+            dots.style.padding = '0 4px';
+            dots.style.color = '#94a3b8';
+            pageControls.appendChild(dots);
+          }
+          continue;
+        }
+      }
+
+      const pBtn = document.createElement('button');
+      pBtn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
+      pBtn.type = 'button';
+      pBtn.textContent = i;
+      pBtn.addEventListener('click', () => {
+        currentPage = i;
+        renderPagination();
+      });
+      pageControls.appendChild(pBtn);
+    }
+
+    // Botón Siguiente
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'page-btn';
+    nextBtn.type = 'button';
+    nextBtn.textContent = 'Siguiente';
+    nextBtn.disabled = currentPage === totalPages || totalMatching === 0;
+    nextBtn.addEventListener('click', () => {
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderPagination();
+      }
+    });
+    pageControls.appendChild(nextBtn);
+  }
+
+  q.addEventListener('input', () => {
+    currentPage = 1;
+    renderPagination();
   });
+
+  if (pageSizeSelect) {
+    pageSizeSelect.addEventListener('change', () => {
+      currentPage = 1;
+      renderPagination();
+    });
+  }
+
+  // Inicializar paginación al cargar la página
+  renderPagination();
 </script>
 <%- include('../../partials/footer') %>
