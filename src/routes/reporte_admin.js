@@ -184,6 +184,171 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
       horas_dia: r.duracion_segundos != null ? formatSecondsToHHMM(r.duracion_segundos) : 'En curso'
     }));
 
+    // Estadísticas adicionales dinámicas para el panel lateral derecho:
+    let statsData = {};
+
+    if (id_usuario || (usuarioInfo && usuarioInfo.id_usuario)) {
+      const targetUserId = id_usuario || usuarioInfo.id_usuario;
+      // 1. Estadísticas del usuario individual
+      const [userStats] = await db.query(
+        `SELECT
+           COUNT(*) AS total_asistencias,
+           SUM(IF(a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL, 1, 0)) AS asistencias_finalizadas,
+           SUM(IF(a.hora_salida IS NULL, 1, 0)) AS asistencias_en_curso,
+           AVG(IF(a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL,
+                  TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)),
+                  NULL
+           )) AS promedio_segundos,
+           SUM(IF(r.tarea IS NOT NULL AND TRIM(r.tarea) != '', 1, 0)) AS bitacoras_completadas,
+           SUM(IF(r.comprobante IS NOT NULL AND TRIM(r.comprobante) != '', 1, 0)) AS comprobantes_subidos
+         FROM asistencias a
+         LEFT JOIN reportes r ON r.id_asistencia = a.id_asistencia
+         WHERE a.id_usuario = ? AND a.estado != 'ANULADO'`,
+        [targetUserId]
+      );
+
+      // Desglose por obra / lugar
+      const [lugaresDesglose] = await db.query(
+        `SELECT
+           COALESCE(l.nombre, 'Sin lugar asignado') AS lugar_nombre,
+           l.tipo AS lugar_tipo,
+           COUNT(a.id_asistencia) AS total_dias,
+           COALESCE(SUM(
+             IF(a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL,
+                TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)),
+                0)
+           ), 0) AS total_segundos
+         FROM asistencias a
+         LEFT JOIN lugares l ON l.id_lugar = a.id_lugar
+         WHERE a.id_usuario = ? AND a.estado != 'ANULADO'
+         GROUP BY l.id_lugar, l.nombre, l.tipo
+         ORDER BY total_segundos DESC`,
+        [targetUserId]
+      );
+
+      const totalSeg = totalSegundos || 1;
+      const formattedLugares = lugaresDesglose.map(l => ({
+        ...l,
+        horas_formateadas: formatSecondsToHHMM(l.total_segundos),
+        horas_decimal: (l.total_segundos / 3600).toFixed(1),
+        porcentaje: Math.min(100, Math.round((l.total_segundos / (totalSegundos || 1)) * 100))
+      }));
+
+      const promSeg = Math.round(userStats[0]?.promedio_segundos || 0);
+      const promHoras = (promSeg / 3600).toFixed(1);
+
+      statsData = {
+        tipo: 'usuario',
+        total_asistencias: userStats[0]?.total_asistencias || 0,
+        asistencias_finalizadas: userStats[0]?.asistencias_finalizadas || 0,
+        asistencias_en_curso: userStats[0]?.asistencias_en_curso || 0,
+        promedio_horas_dia: `${promHoras} hrs/día`,
+        bitacoras_completadas: userStats[0]?.bitacoras_completadas || 0,
+        comprobantes_subidos: userStats[0]?.comprobantes_subidos || 0,
+        lugares_desglose: formattedLugares
+      };
+    } else {
+      // 2. Estadísticas globales (Ranking de horas por pasante y resumen general)
+      const [topUsers] = await db.query(
+        `SELECT
+           u.id_usuario,
+           u.nombre,
+           u.CI,
+           u.carrera,
+           u.universidad,
+           COUNT(a.id_asistencia) AS total_dias,
+           COALESCE(
+             SUM(
+               IF(a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL,
+                  TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)),
+                  0)
+             ), 0
+           ) AS total_segundos
+         FROM usuarios u
+         LEFT JOIN asistencias a ON a.id_usuario = u.id_usuario AND a.estado != 'ANULADO'
+         WHERE u.rol = 0
+         GROUP BY u.id_usuario, u.nombre, u.CI, u.carrera, u.universidad
+         ORDER BY total_segundos DESC
+         LIMIT 6`
+      );
+
+      const maxSegundos = topUsers.length > 0 && topUsers[0].total_segundos > 0 ? topUsers[0].total_segundos : 1;
+
+      const formattedTop = topUsers.map((u, idx) => ({
+        id_usuario: u.id_usuario,
+        nombre: u.nombre,
+        CI: u.CI,
+        carrera: u.carrera,
+        universidad: u.universidad,
+        total_dias: u.total_dias,
+        horas_formateadas: formatSecondsToHHMMSS(u.total_segundos),
+        horas_decimal: (u.total_segundos / 3600).toFixed(1),
+        porcentaje_relativo: Math.min(100, Math.round((u.total_segundos / maxSegundos) * 100)),
+        ranking: idx + 1
+      }));
+
+      statsData = {
+        tipo: 'global',
+        top_usuarios: formattedTop,
+        total_pasantes_ranking: topUsers.length
+      };
+    }
+
+    // 3. Series temporales para gráficos interactivos (Horas por Semana y por Día de la Semana)
+    const [semanasRows] = await db.query(
+      `SELECT
+         DATE_FORMAT(DATE_SUB(a.fecha, INTERVAL WEEKDAY(a.fecha) DAY), '%Y-%m-%d') AS semana_inicio,
+         CONCAT('Sem ', DATE_FORMAT(a.fecha, '%v')) AS semana_label,
+         ROUND(SUM(TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida))) / 3600, 1) AS horas,
+         COUNT(a.id_asistencia) AS total_dias
+       FROM asistencias a
+       INNER JOIN usuarios u ON u.id_usuario = a.id_usuario
+       ${whereSQL}
+       AND a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL
+       GROUP BY semana_inicio, semana_label
+       ORDER BY semana_inicio ASC
+       LIMIT 15`,
+      params
+    );
+
+    const diasNombresList = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+    const [diasSemanaRows] = await db.query(
+      `SELECT
+         WEEKDAY(a.fecha) AS dia_idx,
+         ROUND(SUM(TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida))) / 3600, 1) AS total_horas,
+         ROUND(AVG(TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida))) / 3600, 1) AS promedio_horas,
+         COUNT(a.id_asistencia) AS total_asistencias
+       FROM asistencias a
+       INNER JOIN usuarios u ON u.id_usuario = a.id_usuario
+       ${whereSQL}
+       AND a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL
+       GROUP BY dia_idx
+       ORDER BY dia_idx ASC`,
+      params
+    );
+
+    const diasMap = {};
+    diasSemanaRows.forEach(d => {
+      diasMap[d.dia_idx] = d;
+    });
+
+    const seriesDias = [0, 1, 2, 3, 4, 5, 6].map(idx => ({
+      dia_idx: idx,
+      dia_nombre: diasNombresList[idx],
+      total_horas: diasMap[idx] ? Number(diasMap[idx].total_horas) : 0,
+      promedio_horas: diasMap[idx] ? Number(diasMap[idx].promedio_horas) : 0,
+      total_asistencias: diasMap[idx] ? diasMap[idx].total_asistencias : 0
+    }));
+
+    statsData.series_semanal = semanasRows.map(s => ({
+      semana_inicio: s.semana_inicio,
+      semana_label: s.semana_label,
+      horas: Number(s.horas || 0),
+      total_dias: s.total_dias
+    }));
+
+    statsData.series_dias_semana = seriesDias;
+
     res.json({
       ok: true,
       data: formattedRows,
@@ -192,7 +357,9 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
       total,
       totalPages: Math.max(1, Math.ceil(total / size)),
       total_acumulada: totalAcumulada,
-      usuario_info: usuarioInfo
+      total_horas_decimal: (totalSegundos / 3600).toFixed(1),
+      usuario_info: usuarioInfo,
+      stats: statsData
     });
   } catch (e) {
     console.error('Error en /api/admin/reportes:', e);
@@ -249,6 +416,70 @@ router.delete('/api/admin/reportes/:id_asistencia', requireAdmin, async (req, re
   } catch (e) {
     console.error(e);
     res.status(500).json({ ok: false, msg: 'Error al anular la jornada' });
+  }
+});
+
+/* ==========================================================================
+   API: OBTENER HORARIO ASIGNADO DE UN USUARIO
+   ========================================================================== */
+router.get('/api/admin/usuarios/:id_usuario/horario', requireAdmin, async (req, res) => {
+  try {
+    const id_usuario = parseInt(req.params.id_usuario, 10);
+    if (!id_usuario) return res.status(400).json({ ok: false, msg: 'ID de usuario no válido' });
+
+    // 1. Datos del usuario
+    const [uRows] = await db.query(
+      'SELECT id_usuario, nombre, CI, universidad, carrera FROM usuarios WHERE id_usuario = ? LIMIT 1',
+      [id_usuario]
+    );
+    if (uRows.length === 0) {
+      return res.status(404).json({ ok: false, msg: 'Usuario no encontrado' });
+    }
+    const usuario = uRows[0];
+
+    // 2. Horarios programados activos
+    const [horarios] = await db.query(
+      `SELECT
+         id_horario,
+         dia_semana,
+         TIME_FORMAT(hora_entrada, '%H:%i') AS hora_entrada,
+         TIME_FORMAT(hora_salida, '%H:%i') AS hora_salida,
+         IF(hora_entrada IS NOT NULL AND hora_salida IS NOT NULL,
+            TIMESTAMPDIFF(SECOND, TIMESTAMP(CURDATE(), hora_entrada), TIMESTAMP(CURDATE(), hora_salida)),
+            0
+         ) AS duracion_segundos,
+         estado
+       FROM horarios
+       WHERE id_usuario = ? AND estado = 'ACTIVO'
+       ORDER BY dia_semana ASC`,
+      [id_usuario]
+    );
+
+    const diasNombres = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+    let totalSegundosSemana = 0;
+
+    const formattedHorarios = (horarios || []).map(h => {
+      const durSecs = Math.max(0, h.duracion_segundos || 0);
+      totalSegundosSemana += durSecs;
+      const horasCalc = (durSecs / 3600).toFixed(1);
+      return {
+        ...h,
+        dia_nombre: diasNombres[h.dia_semana] || `Día ${h.dia_semana}`,
+        horas_dia: `${horasCalc} hrs`
+      };
+    });
+
+    const totalHorasSemanales = (totalSegundosSemana / 3600).toFixed(1);
+
+    res.json({
+      ok: true,
+      usuario,
+      horarios: formattedHorarios,
+      total_horas_semanales: `${totalHorasSemanales} hrs/sem`
+    });
+  } catch (e) {
+    console.error('Error al obtener horario de usuario:', e);
+    res.status(500).json({ ok: false, msg: 'Error al consultar horario' });
   }
 });
 
