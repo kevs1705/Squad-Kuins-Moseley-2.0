@@ -583,38 +583,29 @@ body.reportes-admin-page .btn-secondary:hover {
   background-color: #F8FAFC !important;
 }
  
-/* Iconos de botones */
-body.reportes-admin-page .btn::before {
-  content: "";
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  background-color: currentColor;
+/* Layout en 2 filas de la tarjeta de filtros */
+body.reportes-admin-page .filters-row-top {
+  display: flex;
+  width: 100%;
+  margin-bottom: 12px;
 }
- 
-body.reportes-admin-page .btn-search::before {
-  -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>') no-repeat center / contain;
-  mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>') no-repeat center / contain;
+
+body.reportes-admin-page .filter-group.flex-user-full {
+  flex: 1 1 100%;
+  width: 100%;
 }
- 
-body.reportes-admin-page .btn-clear::before {
-  -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>') no-repeat center / contain;
-  mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>') no-repeat center / contain;
+
+body.reportes-admin-page .filters-row-bottom {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  width: 100%;
 }
- 
-body.reportes-admin-page .btn-export::before {
-  -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>') no-repeat center / contain;
-  mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>') no-repeat center / contain;
-}
- 
-body.reportes-admin-page .btn-chart::before {
-  -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>') no-repeat center / contain;
-  mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>') no-repeat center / contain;
-}
- 
-body.reportes-admin-page .btn-bell::before {
-  -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>') no-repeat center / contain;
-  mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>') no-repeat center / contain;
+
+body.reportes-admin-page .filter-group.flex-sub-item {
+  flex: 1 1 170px;
+  min-width: 140px;
 }
  
 /* ---------- Autocompletado de Usuario ---------- */
@@ -824,8 +815,8 @@ body.reportes-admin-page .table th {
   background: #F8FAFC !important;
   color: #334155 !important;
   font-weight: 700 !important;
-  font-size: 13px !important;
-  padding: 14px 20px !important;
+  font-size: 12.5px !important;
+  padding: 11px 14px !important;
   border: none !important;
   border-bottom: 1px solid var(--color-border) !important;
   text-transform: none !important;
@@ -903,12 +894,12 @@ body.reportes-admin-page .table tbody tr:hover {
 }
  
 body.reportes-admin-page .table tbody td {
-  padding: 16px 24px !important;
+  padding: 11px 14px !important;
   background: #FFFFFF !important;
   border: none !important;
   border-bottom: 1px solid #F1F5F9 !important;
   color: #334155 !important;
-  font-size: 14px !important;
+  font-size: 13.5px !important;
   vertical-align: middle !important;
   border-radius: 0 !important;
 }
@@ -1430,48 +1421,57 @@ body.reportes-admin-page .horario-empty-card {
 
 /* ---------- Marcaciones (Llegada y Salida) en la Tabla ---------- */
 body.reportes-admin-page .badge-time-group {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 90px;
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: nowrap;
 }
 
 body.reportes-admin-page .badge-time-in {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-size: 12px;
+  gap: 3px;
+  font-size: 11.5px;
   font-weight: 600;
   color: var(--color-primary);
   background: #EFF6FF;
-  padding: 2px 8px;
+  padding: 2px 7px;
+  height: 24px;
+  line-height: 1;
   border-radius: 6px;
   border: 1px solid #DBEAFE;
+  white-space: nowrap;
+  box-sizing: border-box;
 }
 
 body.reportes-admin-page .badge-time-out {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-size: 12px;
+  gap: 3px;
+  font-size: 11.5px;
   font-weight: 600;
   color: #0D9488;
   background: #F0FDFA;
-  padding: 2px 8px;
+  padding: 2px 7px;
+  height: 24px;
+  line-height: 1;
   border-radius: 6px;
   border: 1px solid #CCFBF1;
+  white-space: nowrap;
+  box-sizing: border-box;
 }
 
-/* Botón interactivo de Bitácora & Comprobante en Tabla */
+/* Botón interactivo de Actividades en Tabla */
 body.reportes-admin-page .btn-bitacora-modal {
   display: inline-flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   background: #FFFFFF;
   border: 1px solid #CBD5E1;
-  border-radius: 9px;
-  padding: 6px 12px;
+  border-radius: 8px;
+  padding: 5px 10px;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
@@ -1536,57 +1536,168 @@ body.reportes-admin-page .badge-indicador.badge-obs {
   color: #DC2626;
 }
 
-/* Acciones en Tabla */
+/* ---------- Barra Superior de la Tabla y Toggle de Columnas ---------- */
+body.reportes-admin-page .table-card-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--color-border);
+  background: #FFFFFF;
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+body.reportes-admin-page .table-card-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+body.reportes-admin-page .table-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0F172A;
+}
+
+body.reportes-admin-page .table-card-badge {
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 20px;
+  background: #EFF6FF;
+  color: var(--color-primary);
+  border: 1px solid #DBEAFE;
+}
+
+body.reportes-admin-page .table-columns-toggle-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #F8FAFC;
+  padding: 5px 12px;
+  border-radius: 8px;
+  border: 1px solid #E2E8F0;
+}
+
+body.reportes-admin-page .table-columns-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748B;
+  display: inline-flex;
+  align-items: center;
+}
+
+body.reportes-admin-page .column-toggle-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  user-select: none;
+}
+
+body.reportes-admin-page .column-toggle-item input[type="checkbox"] {
+  accent-color: var(--color-primary);
+  cursor: pointer;
+  width: 14px;
+  height: 14px;
+}
+
+/* Duración - Pills con Estado */
+body.reportes-admin-page .hours-pill.pill-observado {
+  background: #FEF2F2 !important;
+  color: #DC2626 !important;
+  border: 1px solid #FCA5A5 !important;
+  font-weight: 700 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  box-shadow: 0 1px 3px rgba(220, 38, 38, 0.12) !important;
+}
+
+body.reportes-admin-page .hours-pill.pill-en-curso {
+  background: #FEF3C7 !important;
+  color: #B45309 !important;
+  border: 1px solid #FDE68A !important;
+  font-weight: 600 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+}
+
+body.reportes-admin-page .pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #D97706;
+  animation: pulseAnimation 1.5s infinite;
+}
+
+@keyframes pulseAnimation {
+  0% { transform: scale(0.95); opacity: 0.7; }
+  50% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.7; }
+}
+
+/* Botones de Acción Dinámicos e Interactivos */
 body.reportes-admin-page .actions-group-inline {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
-body.reportes-admin-page .btn-action-horario {
+body.reportes-admin-page .btn-icon-action {
+  width: 34px;
   height: 34px;
-  padding: 0 10px;
-  border-radius: 8px;
-  border: 1px solid #818CF8;
-  background-color: #EEF2FF;
-  color: #4338CA;
-  font-weight: 600;
-  font-size: 12.5px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  transition: all 0.2s ease;
-}
-
-body.reportes-admin-page .btn-action-horario:hover {
-  background-color: #4338CA;
-  color: #FFFFFF;
-  transform: translateY(-1px);
-  box-shadow: 0 3px 8px rgba(67, 56, 202, 0.2);
-}
-
-body.reportes-admin-page .btn-anular-row {
-  background: #FEE2E2;
-  color: #B91C1C;
-  border: 1px solid #FCA5A5;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 700;
-  cursor: pointer;
+  border-radius: 9px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid transparent;
+  outline: none;
 }
 
-body.reportes-admin-page .btn-anular-row:hover {
-  background: #EF4444;
+/* Botón Editar - Azul Interactivo */
+body.reportes-admin-page .btn-icon-edit {
+  background: #EFF6FF;
+  color: #2563EB;
+  border-color: #BFDBFE;
+}
+
+body.reportes-admin-page .btn-icon-edit:hover {
+  background: #2563EB;
   color: #FFFFFF;
-  border-color: #DC2626;
-  transform: scale(1.08);
+  border-color: #1D4ED8;
+  transform: translateY(-2px) scale(1.06);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.28);
+}
+
+body.reportes-admin-page .btn-icon-edit:active {
+  transform: scale(0.96);
+}
+
+/* Botón Eliminar / Anular - Rojo Interactivo */
+body.reportes-admin-page .btn-icon-delete {
+  background: #FEF2F2;
+  color: #DC2626;
+  border-color: #FECACA;
+}
+
+body.reportes-admin-page .btn-icon-delete:hover {
+  background: #DC2626;
+  color: #FFFFFF;
+  border-color: #B91C1C;
+  transform: translateY(-2px) scale(1.06);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.28);
+}
+
+body.reportes-admin-page .btn-icon-delete:active {
+  transform: scale(0.96);
 }
 
 /* ---------- Top Dashboard: Columna Izquierda (KPIs) + Columna Derecha (Estadísticas) ---------- */
@@ -1993,6 +2104,222 @@ body.reportes-admin-page .user-stat-place-val {
   flex-shrink: 0;
 }
 
+/* ---------- Barra Superior de Acciones (Encima de Filtros) ---------- */
+body.reportes-admin-page .reportes-actions-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+body.reportes-admin-page .actions-left-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+body.reportes-admin-page .actions-section-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #081426;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+body.reportes-admin-page .actions-section-sub {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+body.reportes-admin-page .actions-right-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+body.reportes-admin-page .btn-top-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 9px;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+body.reportes-admin-page .btn-top-action:hover {
+  transform: translateY(-1px);
+}
+
+/* Gráficos Estadísticos - Slate / Outline */
+body.reportes-admin-page .btn-top-graficos {
+  background: #FFFFFF;
+  color: #334155;
+  border-color: #CBD5E1;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+body.reportes-admin-page .btn-top-graficos:hover {
+  background: #F8FAFC;
+  color: #0F172A;
+  border-color: #94A3B8;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+}
+
+/* Notificaciones - Violet / Indigo vibrante */
+body.reportes-admin-page .btn-top-notif {
+  background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
+  color: #FFFFFF;
+  border-color: #4338CA;
+  box-shadow: 0 3px 8px rgba(79, 70, 229, 0.22);
+}
+
+body.reportes-admin-page .btn-top-notif:hover {
+  background: linear-gradient(135deg, #4338CA 0%, #4F46E5 100%);
+  box-shadow: 0 6px 14px rgba(79, 70, 229, 0.32);
+}
+
+/* Exportar Excel - Emerald Green vibrante */
+body.reportes-admin-page .btn-top-export {
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%);
+  color: #FFFFFF;
+  border-color: #047857;
+  box-shadow: 0 3px 8px rgba(5, 150, 105, 0.22);
+}
+
+body.reportes-admin-page .btn-top-export:hover {
+  background: linear-gradient(135deg, #047857 0%, #059669 100%);
+  box-shadow: 0 6px 14px rgba(5, 150, 105, 0.32);
+}
+
+/* ---------- Inputs y Selects del Filtro ---------- */
+body.reportes-admin-page .filter-select-custom {
+  width: 100%;
+  height: 42px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-input);
+  background-color: var(--bg-input);
+  padding: 0 12px;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: var(--color-text);
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+body.reportes-admin-page .filter-select-custom:focus {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-focus);
+}
+
+/* Calendario Flatpickr Wrapper */
+body.reportes-admin-page .calendar-picker-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+body.reportes-admin-page .calendar-picker-wrapper .input-icon-wrap {
+  width: 100%;
+}
+
+body.reportes-admin-page .calendar-picker-wrapper input {
+  cursor: pointer;
+  background-color: #FFFFFF;
+  padding-right: 32px;
+}
+
+body.reportes-admin-page .calendar-clear-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #E2E8F0;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: #64748B;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 2;
+}
+
+body.reportes-admin-page .calendar-clear-btn:hover {
+  background: #CBD5E1;
+  color: #0F172A;
+}
+
+/* Botón Limpiar Filtros con color distintivo (Rose / Coral moderno) */
+body.reportes-admin-page .filter-buttons-right {
+  display: flex;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+body.reportes-admin-page .btn-outline-clean {
+  height: 42px;
+  padding: 0 18px;
+  background: #FFF1F2;
+  border: 1.5px solid #FECDD3;
+  color: #E11D48;
+  font-weight: 600;
+  font-size: 13px;
+  border-radius: var(--radius-input);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+body.reportes-admin-page .btn-outline-clean::before {
+  display: none !important;
+  content: none !important;
+}
+
+body.reportes-admin-page .btn-outline-clean:hover {
+  background: #FFE4E6;
+  border-color: #FDA4AF;
+  color: #BE123C;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.18);
+}
+
+/* Personalización de Flatpickr */
+.flatpickr-calendar {
+  border-radius: 12px !important;
+  box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
+  border: 1px solid #E2E8F0 !important;
+  font-family: inherit !important;
+}
+
+.flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange {
+  background: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+}
+
+.flatpickr-day:hover {
+  background: #EFF6FF !important;
+}
+
 /* ---------- Ajustes Responsivos ---------- */
 @media (max-width: 1100px) {
   body.reportes-admin-page .reportes-dashboard-top {
@@ -2006,6 +2333,21 @@ body.reportes-admin-page .user-stat-place-val {
     grid-template-columns: 1fr;
   }
 
+  body.reportes-admin-page .reportes-actions-top-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  body.reportes-admin-page .actions-right-buttons {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  body.reportes-admin-page .btn-top-action {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
   body.reportes-admin-page .filters-form-row {
     flex-direction: column;
     align-items: stretch;
@@ -2014,24 +2356,14 @@ body.reportes-admin-page .user-stat-place-val {
   body.reportes-admin-page .filter-group {
     min-width: 100%;
   }
- 
-  body.reportes-admin-page .filter-buttons {
+
+  body.reportes-admin-page .filter-buttons-right {
     width: 100%;
-    justify-content: stretch;
   }
- 
-  body.reportes-admin-page .filter-buttons button,
-  body.reportes-admin-page .filter-buttons a {
-    flex: 1 1 auto;
-  }
- 
-  body.reportes-admin-page .filters-bottom-row {
-    flex-wrap: wrap;
-  }
- 
-  body.reportes-admin-page .filters-bottom-row a {
-    flex: 1 1 auto;
+
+  body.reportes-admin-page .btn-outline-clean {
     width: 100%;
+    justify-content: center;
   }
  
   body.reportes-admin-page .content-header {
@@ -2050,7 +2382,594 @@ body.reportes-admin-page .user-stat-place-val {
     gap: 16px;
     align-items: center;
   }
+}
 
+/* ==========================================================================
+   BOTÓN CALENDARIO EN CARD USUARIO SELECCIONADO
+   ========================================================================== */
+body.reportes-admin-page .btn-card-calendar {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border: 1px solid #BFDBFE;
+  padding: 4px 10px;
+  border-radius: 7px;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 2px rgba(29, 78, 216, 0.05);
+}
+
+body.reportes-admin-page .btn-card-calendar:hover {
+  background: #1D4ED8;
+  color: #FFFFFF;
+  border-color: #1D4ED8;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(29, 78, 216, 0.2);
+}
+
+body.reportes-admin-page .btn-card-calendar svg {
+  stroke: currentColor;
+}
+
+/* ==========================================================================
+   MODAL DE CALENDARIO DEL USUARIO
+   ========================================================================== */
+body.reportes-admin-page .calendar-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 14px;
+}
+
+body.reportes-admin-page .calendar-nav-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  background: #F8FAFC;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+}
+
+body.reportes-admin-page .calendar-nav-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+body.reportes-admin-page .btn-cal-nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  color: #1E293B;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+body.reportes-admin-page .btn-cal-nav:hover {
+  background: #EFF6FF;
+  border-color: #93C5FD;
+  color: #1D4ED8;
+}
+
+body.reportes-admin-page .calendar-current-month {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text);
+  min-width: 140px;
+  text-align: center;
+}
+
+body.reportes-admin-page .btn-cal-today {
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 6px;
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+body.reportes-admin-page .btn-cal-today:hover {
+  background: #F1F5F9;
+  color: var(--color-text);
+}
+
+body.reportes-admin-page .calendar-kpis-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+body.reportes-admin-page .cal-kpi-pill {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+body.reportes-admin-page .cal-kpi-pill.kpi-dias {
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border: 1px solid #DBEAFE;
+}
+
+body.reportes-admin-page .cal-kpi-pill.kpi-horas {
+  background: #F0FDF4;
+  color: #15803D;
+  border: 1px solid #DCFCE7;
+}
+
+/* Grid del Calendario */
+/* ==========================================================================
+   ESTILOS VISTA AGENDA SEMANAL DE ASISTENCIAS (Weekly Timeline Grid)
+   ========================================================================== */
+body.reportes-admin-page .weekly-timeline-container {
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+body.reportes-admin-page .weekly-header-days {
+  display: grid;
+  grid-template-columns: 60px repeat(7, 1fr);
+  background: #F8FAFC;
+  border-bottom: 1px solid var(--color-border);
+  text-align: center;
+}
+
+body.reportes-admin-page .weekly-time-col-header {
+  padding: 10px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #94A3B8;
+  border-right: 1px solid var(--color-border);
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+body.reportes-admin-page .weekly-day-col-header {
+  padding: 8px 4px;
+  border-right: 1px solid #F1F5F9;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: #F8FAFC;
+}
+
+body.reportes-admin-page .weekly-day-col-header:last-child {
+  border-right: none;
+}
+
+body.reportes-admin-page .weekly-day-col-header.is-today {
+  background: #EFF6FF;
+}
+
+body.reportes-admin-page .weekly-day-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1E293B;
+  text-transform: uppercase;
+}
+
+body.reportes-admin-page .weekly-day-col-header.is-today .weekly-day-title {
+  color: #1D4ED8;
+}
+
+body.reportes-admin-page .weekly-day-date {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748B;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+
+body.reportes-admin-page .weekly-day-col-header.is-today .weekly-day-date {
+  background: #1D4ED8;
+  color: #FFFFFF;
+  border-color: #1D4ED8;
+}
+
+/* Grilla Semanal con Eje de Horas */
+body.reportes-admin-page .weekly-body-grid {
+  display: flex;
+  position: relative;
+  height: 690px; /* 15 horas x 46px */
+  overflow-y: auto;
+  background-size: 100% 46px;
+  background-image: linear-gradient(to bottom, #F1F5F9 1px, transparent 1px);
+}
+
+body.reportes-admin-page .weekly-time-axis {
+  width: 60px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--color-border);
+  background-color: #F8FAFC;
+}
+
+body.reportes-admin-page .weekly-time-axis div {
+  height: 46px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748B;
+  text-align: center;
+  line-height: 14px;
+  padding-top: 4px;
+  box-sizing: border-box;
+}
+
+body.reportes-admin-page .weekly-days-columns {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  flex-grow: 1;
+  position: relative;
+}
+
+body.reportes-admin-page .weekly-day-column {
+  position: relative;
+  border-right: 1px solid #F1F5F9;
+  height: 100%;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+body.reportes-admin-page .weekly-day-column:last-child {
+  border-right: none;
+}
+
+body.reportes-admin-page .weekly-day-column:hover {
+  background: rgba(241, 245, 249, 0.4);
+}
+
+body.reportes-admin-page .weekly-day-column.is-selected {
+  background: rgba(239, 246, 255, 0.6) !important;
+}
+
+/* Bloque de Turno Programado */
+body.reportes-admin-page .weekly-scheduled-slot {
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  background: rgba(239, 246, 255, 0.85);
+  border: 1.5px dashed #93C5FD;
+  border-radius: 6px;
+  padding: 3px 5px;
+  font-size: 10px;
+  color: #1E40AF;
+  z-index: 1;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+body.reportes-admin-page .sched-slot-label {
+  font-weight: 700;
+  font-size: 9.5px;
+  color: #1D4ED8;
+  line-height: 1.1;
+}
+
+body.reportes-admin-page .sched-slot-time {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: #2563EB;
+}
+
+/* Tarjeta de Asistencia Real Registrada */
+body.reportes-admin-page .weekly-attendance-card {
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  border-radius: 7px;
+  padding: 4px 6px;
+  color: #FFFFFF;
+  z-index: 2;
+  overflow: hidden;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-sizing: border-box;
+}
+
+body.reportes-admin-page .weekly-attendance-card:hover {
+  transform: translateY(-1px) scale(1.02);
+  z-index: 3;
+  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.22);
+}
+
+body.reportes-admin-page .weekly-attendance-card.event-finalizado {
+  background: linear-gradient(135deg, #059669, #10B981) !important;
+  border: 1px solid #047857;
+}
+
+body.reportes-admin-page .weekly-attendance-card.event-en-curso {
+  background: linear-gradient(135deg, #D97706, #F59E0B) !important;
+  border: 1px solid #B45309;
+}
+
+body.reportes-admin-page .weekly-attendance-card.event-observado {
+  background: linear-gradient(135deg, #DC2626, #EF4444) !important;
+  border: 1px solid #B91C1C;
+}
+
+body.reportes-admin-page .weekly-event-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+body.reportes-admin-page .weekly-event-status {
+  font-size: 9.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+body.reportes-admin-page .weekly-mini-dots {
+  display: flex;
+  gap: 2px;
+}
+
+body.reportes-admin-page .weekly-mini-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #FFFFFF;
+}
+
+body.reportes-admin-page .weekly-mini-dot.dot-tarea {
+  background: #BAE6FD;
+}
+
+body.reportes-admin-page .weekly-mini-dot.dot-foto {
+  background: #A7F3D0;
+}
+
+body.reportes-admin-page .weekly-mini-dot.dot-obs {
+  background: #FECACA;
+}
+
+body.reportes-admin-page .weekly-event-hours {
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+body.reportes-admin-page .weekly-event-duration {
+  font-size: 9.5px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.25);
+  display: inline-block;
+  padding: 1px 4px;
+  border-radius: 4px;
+  margin-top: 2px;
+}
+
+body.reportes-admin-page .weekly-event-place {
+  font-size: 9.5px;
+  font-weight: 500;
+  opacity: 0.92;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+/* Card de Detalle del Día Seleccionado en Modal */
+body.reportes-admin-page .calendar-day-detail-card {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-left: 4px solid #2563EB;
+  border-radius: 10px;
+  padding: 14px 16px;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+body.reportes-admin-page .cal-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+body.reportes-admin-page .cal-detail-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+body.reportes-admin-page .cal-detail-badge {
+  background: #EFF6FF;
+  color: #1D4ED8;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid #DBEAFE;
+}
+
+body.reportes-admin-page .cal-detail-lugar {
+  font-weight: 600;
+  color: var(--color-text);
+  font-size: 14px;
+}
+
+body.reportes-admin-page .cal-detail-status {
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 6px;
+}
+
+body.reportes-admin-page .cal-detail-status.status-finalizado {
+  background: #DCFCE7;
+  color: #166534;
+}
+
+body.reportes-admin-page .cal-detail-status.status-en-curso {
+  background: #FEF3C7;
+  color: #B45309;
+}
+
+body.reportes-admin-page .cal-detail-status.status-observado {
+  background: #FEE2E2;
+  color: #DC2626;
+}
+
+body.reportes-admin-page .cal-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+
+body.reportes-admin-page .cal-detail-tarea-wrap,
+body.reportes-admin-page .cal-detail-obs-wrap {
+  font-size: 13px;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-top: 8px;
+}
+
+body.reportes-admin-page .cal-detail-tarea-wrap p,
+body.reportes-admin-page .cal-detail-obs-wrap p {
+  margin: 4px 0 0 0;
+  color: #475569;
+  line-height: 1.4;
+}
+
+/* Barra de Horarios Semanales Programados */
+body.reportes-admin-page .calendar-user-schedule-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  background: #F1F5F9;
+  padding: 8px 12px;
+  border-radius: 9px;
+  border: 1px solid #E2E8F0;
+  font-size: 12px;
+}
+
+body.reportes-admin-page .cal-sched-title {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 700;
+  color: #334155;
+  white-space: nowrap;
+}
+
+body.reportes-admin-page .cal-sched-days-wrap {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+body.reportes-admin-page .cal-sched-item {
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  color: #1E293B;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+body.reportes-admin-page .cal-sched-day {
+  color: #1D4ED8;
+  font-weight: 700;
+}
+
+body.reportes-admin-page .cal-sched-empty {
+  color: #94A3B8;
+  font-style: italic;
+}
+
+/* Etiqueta de Horario Programado dentro de la celda del día */
+body.reportes-admin-page .cal-prog-tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: #475569;
+  background: #F1F5F9;
+  border: 1px solid #E2E8F0;
+  padding: 1px 5px;
+  border-radius: 4px;
+  margin-bottom: 3px;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+body.reportes-admin-page .cal-day-cell.cal-day-has-prog {
+  cursor: pointer;
+}
+
+body.reportes-admin-page .cal-day-cell.cal-day-has-prog:hover {
+  background: #F8FAFC;
+}
+
+/* Ficha de Horario Programado en el Detalle del Día */
+body.reportes-admin-page .cal-detail-sched-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+  background: #EFF6FF;
+  border: 1px solid #DBEAFE;
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+
+body.reportes-admin-page .cal-detail-sched-label {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 600;
+  color: #1E40AF;
+}
+
+body.reportes-admin-page .cal-detail-sched-val {
+  font-weight: 700;
+  color: #1D4ED8;
+}
+
+@media (max-width: 768px) {
   body.reportes-admin-page .actions-group-inline {
     flex-direction: column;
     gap: 4px;
