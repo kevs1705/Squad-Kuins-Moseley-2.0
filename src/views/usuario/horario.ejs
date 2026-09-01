@@ -1,352 +1,753 @@
-<% pageTitle='Panel de Mi Horario' ; pageSubtitle='Configuración y programación de jornadas de pasantía' ; %>
+<% 
+  pageTitle = 'Panel de Mi Horario'; 
+  pageSubtitle = 'Configuración interactiva de jornadas de pasantía'; 
+%>
 <%- include('../partials/header') %>
 
 <link rel="stylesheet" href="/css/horario.css">
 
 <div class="horario-wrapper">
 
-  <!-- Header del Módulo -->
-  <div class="horario-header-row">
-    <h2 class="horario-header-title">Mi Horario</h2>
-    <p class="horario-header-user">
-      <i class="bi bi-person me-1"></i>Usuario: <strong><%= user.nombre %></strong> | CI: <%= user.ci %>
-    </p>
-  </div>
-
-  <!-- METRICAS SUPERIORES -->
+  <!-- METRICAS Y PROYECCIONES SUPERIORES -->
   <% 
-    const horasRequeridas = user.horas_requeridas || 280; 
-    const horasPrevias = user.horas_previas || 0; 
-    const horasSistema = (typeof totalHorasSistema !== 'undefined') ? totalHorasSistema : 0; 
+    const horasRequeridas = Number(user.horas_requeridas) || 280; 
+    const horasPrevias = Number(user.horas_previas) || 0;
+    const horasSistema = (typeof totalHorasSistema !== 'undefined') ? Number(totalHorasSistema) : 0; 
     const totalAcumulado = horasPrevias + horasSistema; 
     const porcentaje = Math.min(100, Math.round((totalAcumulado / horasRequeridas) * 100)); 
-  %>
+    const horasFaltantes = Math.max(0, horasRequeridas - totalAcumulado); 
 
-  <div class="horario-stats-grid">
-    <div class="horario-stat-card">
-      <div class="horario-stat-header">
-        <div class="horario-stat-title">Meta Carrera</div>
-      </div>
-      <div class="horario-stat-value">
-        <%= horasRequeridas %> <span style="font-size: 1.1rem; font-weight: 500;">hrs</span>
-      </div>
-    </div>
-
-    <div class="horario-stat-card">
-      <div class="horario-stat-header">
-        <div class="horario-stat-title">Total Acumulado</div>
-      </div>
-      <div class="horario-stat-value">
-        <%= String(Math.round(totalAcumulado)).padStart(3, '0') %> / <%= horasRequeridas %> 
-        <span style="font-size: 1.1rem; font-weight: 500;">hrs</span>
-      </div>
-      <div class="horario-progress-container">
-        <div class="horario-progress-fill" style="width: <%= porcentaje %>%;"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- CONTENEDOR PRINCIPAL DE 2 COLUMNAS -->
-  <div class="horario-two-columns">
-
-    <!-- COLUMNA IZQUIERDA: FORMULARIO -->
-    <div class="horario-col-form">
-      <div class="card-form">
-        <div class="card-title">
-          <i class="bi bi-sliders me-2 text-primary"></i>Configurar Horario
-        </div>
-
-        <p class="card-subtitle">
-          Establece los días y las horas de tu jornada de pasantía para proyectar tu agenda.
-        </p>
-
-        <form action="/usuario/horario" method="POST" id="formHorario">
-
-          <!-- SELECCIÓN MÚLTIPLE DE DÍAS -->
-          <div class="form-group mb-3">
-            <label class="form-label fw-bold mb-2 text-dark">
-              Días de asistencia:
-            </label>
-            <div class="dias-checkbox-container">
-              <label class="checkbox-day">
-                <input type="checkbox" name="dias_semana" value="1"> Lun
-              </label>
-              <label class="checkbox-day">
-                <input type="checkbox" name="dias_semana" value="2"> Mar
-              </label>
-              <label class="checkbox-day">
-                <input type="checkbox" name="dias_semana" value="3"> Mié
-              </label>
-              <label class="checkbox-day">
-                <input type="checkbox" name="dias_semana" value="4"> Jue
-              </label>
-              <label class="checkbox-day">
-                <input type="checkbox" name="dias_semana" value="5"> Vie
-              </label>
-              <label class="checkbox-day">
-                <input type="checkbox" name="dias_semana" value="6"> Sáb
-              </label>
-            </div>
-          </div>
-
-          <!-- ENTRADAS VERTICALES -->
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="hora_entrada">Hora de entrada</label>
-              <input type="time" name="hora_entrada" id="hora_entrada" class="form-control" value="08:00" required>
-            </div>
-
-            <div class="form-group">
-              <label for="horas">Horas de pasantía</label>
-              <select name="horas" id="horas" class="form-select">
-                <option value="4" selected>4 horas</option>
-                <option value="6">6 horas</option>
-                <option value="8">8 horas</option>
-                <option value="custom">Personalizado (Manual)</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="hora_salida">Hora de salida</label>
-              <input type="time" name="hora_salida" id="hora_salida" class="form-control" value="12:00" required>
-            </div>
-          </div>
-
-          <div id="alertaHorario" class="time-warning">
-            ⚠️ La hora de salida debe ser posterior a la hora de entrada.
-          </div>
-
-          <div class="total-box">
-            <span>Horas calculadas por día:</span>
-            <strong id="totalHoras">4.0 hrs</strong>
-          </div>
-
-          <button type="submit" class="btn-submit" id="btnGuardar">
-            <i class="bi bi-check-circle me-1"></i> Guardar Configuración
-          </button>
-        </form>
-      </div>
-    </div>
-
-  <!-- COLUMNA DERECHA: VISTA CALENDARIO / AGENDA REDUCIDA Y EDITABLE -->
-<div class="horario-col-tabla">
-  <div class="card-form">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <div class="card-title mb-0">
-        <i class="bi bi-calendar3 me-2 text-primary"></i>Mi Agenda Semanal
-      </div>
-      <span class="badge bg-light text-dark border fw-normal px-2 py-1">
-        <i class="bi bi-clock-history me-1"></i>Jornada Regular
-      </span>
-    </div>
-
-    <div class="calendar-timeline-container compact-calendar">
-      
-      <!-- Encabezado con los nombres completos de los días -->
-      <div class="calendar-header-days">
-        <div class="time-col-header">Hora</div>
-        <div class="day-col-header">Lunes</div>
-        <div class="day-col-header">Martes</div>
-        <div class="day-col-header">Miércoles</div>
-        <div class="day-col-header">Jueves</div>
-        <div class="day-col-header">Viernes</div>
-        <div class="day-col-header">Sábado</div>
-      </div>
-
-      <!-- Malla de Horas y Tarjetas -->
-      <div class="calendar-body-grid">
-        
-        <!-- Marcadores de hora reducidos (36px por bloque de hora) -->
-        <div class="time-axis">
-          <div>07:00</div>
-          <div>08:00</div>
-          <div>09:00</div>
-          <div>10:00</div>
-          <div>11:00</div>
-          <div>12:00</div>
-          <div>13:00</div>
-          <div>14:00</div>
-          <div>15:00</div>
-          <div>16:00</div>
-          <div>17:00</div>
-          <div>18:00</div>
-        </div>
-
-        <!-- Grilla Semanal -->
-        <div class="days-columns-wrapper">
-          <% const diasMapa = [1, 2, 3, 4, 5, 6]; %>
-          <% diasMapa.forEach(diaNum => { %>
-            <% const horarioDia = horarios ? horarios.find(h => h.dia_semana === diaNum) : null; %>
-            
-            <div class="day-column">
-              <% if (horarioDia) { %>
-                <% 
-                  const [hE, mE] = horarioDia.hora_entrada.split(':').map(Number);
-                  const [hS, mS] = horarioDia.hora_salida.split(':').map(Number);
-                  
-                  // Altura compacta: 36px por cada hora (Base 07:00 AM)
-                  const topPx = ((hE - 7) * 36) + ((mE / 60) * 36);
-                  const duracionMin = ((hS * 60) + mS) - ((hE * 60) + mE);
-                  const heightPx = (duracionMin / 60) * 36;
-
-                  // Asignar 2 paletas de colores distintas (ej. azul para lun-vie, morado/índigo para sábado)
-                  const colorClass = (diaNum === 6) ? 'palette-purple' : 'palette-blue';
-                %>
-                
-                <div class="calendar-event-card <%= colorClass %>" style="top: <%= topPx %>px; height: <%= heightPx %>px;">
-                  
-                  <!-- BOTÓN DE ELIMINACIÓN DIRECTA -->
-                  <form action="/usuario/horario/eliminar/<%= horarioDia.id_horario %>" method="POST" class="delete-day-form" onsubmit="return confirm('¿Seguro que deseas eliminar el horario de este día?');">
-                    <button type="submit" class="btn-delete-event" title="Eliminar este día">
-                      <i class="bi bi-x"></i>
-                    </button>
-                  </form>
-
-                  <div class="event-title">
-                    <i class="bi bi-briefcase-fill me-1"></i>Pasantía
-                  </div>
-                  <div class="event-time">
-                    <%= horarioDia.hora_entrada.slice(0,5) %> - <%= horarioDia.hora_salida.slice(0,5) %>
-                  </div>
-                  <div class="event-badge">
-                    <%= (duracionMin/60).toFixed(1) %> hrs
-                  </div>
-                </div>
-              <% } %>
-            </div>
-          <% }) %>
-        </div>
-
-      </div>
-    </div>
-
-  </div>
-</div>
-
-  </div>
-
-</div>
-
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const entrada = document.getElementById('hora_entrada');
-    const salida = document.getElementById('hora_salida');
-    const selectorHoras = document.getElementById('horas');
-    const totalLabel = document.getElementById('totalHoras');
-    const alertaHorario = document.getElementById('alertaHorario');
-    const form = document.getElementById('formHorario');
-    const btnGuardar = document.getElementById('btnGuardar');
-
-    function calcularDesdePreset() {
-      if (!entrada.value) return;
-      if (selectorHoras.value === 'custom') {
-        calcularDesdeSalida();
-        return;
-      }
-
-      const [hora, minutos] = entrada.value.split(':').map(Number);
-      const duracionHoras = parseFloat(selectorHoras.value);
-
-      if (isNaN(hora) || isNaN(minutos) || isNaN(duracionHoras)) return;
-
-      const totalMin = (hora * 60 + minutos) + Math.round(duracionHoras * 60);
-      const hSalida = Math.floor((totalMin / 60) % 24);
-      const mSalida = Math.round(totalMin % 60);
-
-      salida.value = `${String(hSalida).padStart(2, '0')}:${String(mSalida).padStart(2, '0')}`;
-      validarYActualizarEtiqueta();
-    }
-
-    function calcularDesdeSalida() {
-      if (!entrada.value || !salida.value) return;
-
-      const [hEntrada, mEntrada] = entrada.value.split(':').map(Number);
-      const [hSalida, mSalida] = salida.value.split(':').map(Number);
-
-      const minEntrada = hEntrada * 60 + mEntrada;
-      const minSalida = hSalida * 60 + mSalida;
-      const diffMinutos = minSalida - minEntrada;
-
-      if (diffMinutos > 0) {
-        const horasDecimales = (diffMinutos / 60);
-        const valorEntero = horasDecimales.toString();
-        const opcionesExistentes = ['4', '6', '8'];
-
-        if (opcionesExistentes.includes(valorEntero)) {
-          selectorHoras.value = valorEntero;
-        } else {
-          selectorHoras.value = 'custom';
-        }
-      }
-
-      validarYActualizarEtiqueta();
-    }
-
-    function validarYActualizarEtiqueta() {
-      if (!entrada.value || !salida.value) return;
-
-      const [hEntrada, mEntrada] = entrada.value.split(':').map(Number);
-      const [hSalida, mSalida] = salida.value.split(':').map(Number);
-
-      const minEntrada = hEntrada * 60 + mEntrada;
-      const minSalida = hSalida * 60 + mSalida;
-      const diffMinutos = minSalida - minEntrada;
-
-      if (diffMinutos <= 0) {
-        if (alertaHorario) alertaHorario.style.display = 'block';
-        totalLabel.textContent = 'Horario inválido';
-        totalLabel.style.color = '#dc2626';
-        if (btnGuardar) btnGuardar.disabled = true;
-      } else {
-        if (alertaHorario) alertaHorario.style.display = 'none';
-        const horasDec = (diffMinutos / 60).toFixed(1);
-        totalLabel.textContent = `${horasDec} hrs`;
-        totalLabel.style.color = '#000000';
-        if (btnGuardar) btnGuardar.disabled = false;
-      }
-    }
-
-    selectorHoras.addEventListener('change', () => {
-      if (selectorHoras.value !== 'custom') {
-        calcularDesdePreset();
-      } else {
-        calcularDesdeSalida();
-      }
-    });
-
-    entrada.addEventListener('input', () => {
-      if (selectorHoras.value !== 'custom') {
-        calcularDesdePreset();
-      } else {
-        calcularDesdeSalida();
-      }
-    });
-
-    salida.addEventListener('input', calcularDesdeSalida);
-
-    if (form) {
-      form.addEventListener('submit', (e) => {
-        const diasSeleccionados = document.querySelectorAll('input[name="dias_semana"]:checked');
-        if (diasSeleccionados.length === 0) {
-          e.preventDefault();
-          alert('Por favor, seleccione al menos un día de la semana.');
-          return;
-        }
-
-        const [hEntrada, mEntrada] = entrada.value.split(':').map(Number);
-        const [hSalida, mSalida] = salida.value.split(':').map(Number);
-        const diffMinutos = (hSalida * 60 + mSalida) - (hEntrada * 60 + mEntrada);
-
-        if (diffMinutos <= 0) {
-          e.preventDefault();
-          alert('La hora de salida debe ser posterior a la hora de entrada.');
-          return;
+    /* Mapeo de horas por día de la semana configurado */
+    const horasPorDia = {}; 
+    if (typeof horarios !== 'undefined' && Array.isArray(horarios)) { 
+      horarios.forEach(h => {
+        if (h.estado === 'ACTIVO' || !h.estado) {
+          const [hE, mE] = (h.hora_entrada || '0:0').split(':').map(Number);
+          const [hS, mS] = (h.hora_salida || '0:0').split(':').map(Number);
+          const duracionMin = ((hS * 60) + (mS || 0)) - ((hE * 60) + (mE || 0));
+          if (duracionMin > 0) {
+            const hrs = duracionMin / 60;
+            horasPorDia[Number(h.dia_semana)] = hrs;
+          }
         }
       });
     }
 
-    calcularDesdePreset();
+    // Cálculo acumulado usando llaves únicas para evitar duplicados
+    let totalHorasSemana = 0; 
+    let diasActivosCount = 0;
+    Object.values(horasPorDia).forEach(hrs => {
+      totalHorasSemana += hrs;
+      diasActivosCount++;
+    });
+
+    /* Cálculo de las fechas de la semana actual (Lunes a Sábado) */
+    const now = new Date();
+    const currentDay = now.getDay(); 
+    const offsetToMonday = (currentDay === 0 ? -6 : 1 - currentDay);
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + offsetToMonday);
+    monday.setHours(0, 0, 0, 0);
+
+    const mesesC = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const mesesCompletos = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const nombresDias = { 1: 'Lunes', 2: 'Martes', 3: 'Miércoles', 4: 'Jueves', 5: 'Viernes', 6: 'Sábado' };
+    const nombresCortos = { 1: 'Lun', 2: 'Mar', 3: 'Mié', 4: 'Jue', 5: 'Vie', 6: 'Sáb' };
+
+    const fechasSemana = {};
+    for (let d = 1; d <= 6; d++) {
+      const f = new Date(monday);
+      f.setDate(monday.getDate() + (d - 1));
+      const isToday = (f.toDateString() === now.toDateString());
+      fechasSemana[d] = {
+        diaNumero: f.getDate(),
+        mesCorto: mesesC[f.getMonth()],
+        mesCompleto: mesesCompletos[f.getMonth()],
+        anio: f.getFullYear(),
+        fechaISO: f.toISOString().split('T')[0],
+        fechaTexto: `${f.getDate()} de ${mesesCompletos[f.getMonth()]}`,
+        isToday: isToday
+      };
+    }
+
+    /* Pronóstico de culminación mediante sumatoria diaria */
+    let fechaEstimadaObj = null;
+    let diasLaboralesRestantes = 0;
+    let semanasRestantes = 0;
+
+    if (totalAcumulado >= horasRequeridas) {
+      fechaEstimadaObj = 'COMPLETADO';
+    } else if (totalHorasSemana > 0 && horasFaltantes > 0) {
+      let horasRestantes = horasFaltantes;
+      let cursor = new Date();
+      cursor.setHours(0, 0, 0, 0);
+
+      const MAX_ITER = 3650;
+      let iter = 0;
+
+      while (horasRestantes > 0 && iter < MAX_ITER) { 
+        const dayOfWeek = cursor.getDay(); 
+        const diaBD = (dayOfWeek === 0) ? 7 : dayOfWeek; 
+        const horasHoy = horasPorDia[diaBD] || 0; 
+        if (horasHoy > 0) {
+          horasRestantes -= horasHoy;
+          diasLaboralesRestantes++;
+          if (horasRestantes <= 0) { 
+            fechaEstimadaObj = new Date(cursor); 
+            break; 
+          } 
+        } 
+        cursor.setDate(cursor.getDate() + 1);
+        iter++; 
+      } 
+      semanasRestantes = (horasFaltantes / totalHorasSemana).toFixed(1); 
+      if (semanasRestantes.endsWith('.0')) { 
+        semanasRestantes = parseInt(semanasRestantes, 10); 
+      } 
+    } 
+
+    let fechaCorta = ''; 
+    let fechaLarga = ''; 
+    if (fechaEstimadaObj instanceof Date) { 
+      const diasNombresList = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+      const diaNom = diasNombresList[fechaEstimadaObj.getDay()]; 
+      const diaNum = String(fechaEstimadaObj.getDate()).padStart(2, '0'); 
+      const mesNom = mesesC[fechaEstimadaObj.getMonth()]; 
+      const anio = fechaEstimadaObj.getFullYear(); 
+      fechaCorta = `${diaNum} ${mesNom} ${anio}`; 
+      fechaLarga = `${diaNom}, ${diaNum} de ${mesNom} de ${anio}`; 
+    } 
+  %>
+
+  <!-- TARJETAS DE ESTADÍSTICAS SUPERIORES -->
+  <div class="horario-stats-grid">
+    
+    <!-- FICHA 1: JORNADA SEMANAL DIRECTA -->
+    <div class="horario-stat-card">
+      <div class="horario-stat-header">
+        <div class="horario-stat-title">Total de Horas por Semana</div>
+        <span class="badge <%= diasActivosCount > 0 ? 'bg-primary-subtle text-primary border border-primary-subtle' : 'bg-secondary-subtle text-secondary' %>" style="font-size: 0.75rem; font-weight: 700; padding: 4px 8px;">
+          <%= diasActivosCount %> <%= diasActivosCount === 1 ? 'día activo' : 'días activos' %>
+        </span>
+      </div>
+      <div class="horario-stat-value">
+        <%= (totalHorasSemana % 1 === 0) ? totalHorasSemana : totalHorasSemana.toFixed(1) %>
+        <span style="font-size: 1.1rem; font-weight: 500; color: #64748b;">hrs/sem</span>
+      </div>
+      <div class="horario-stat-subinfo">
+        <span>
+          <i class="bi bi-clock-history me-1 text-primary"></i>
+          <%= diasActivosCount > 0 ? ((totalHorasSemana / diasActivosCount) % 1 === 0 ? (totalHorasSemana / diasActivosCount) : (totalHorasSemana / diasActivosCount).toFixed(1)) + ' hrs/día prom.' : 'Sin jornada configurada' %>
+        </span>
+      </div>
+    </div>
+
+    <!-- FICHA 2: TOTAL ACUMULADO -->
+    <div class="horario-stat-card">
+      <div class="horario-stat-header">
+        <div class="horario-stat-title">Total Acumulado</div>
+        <span class="badge rounded-pill <%= porcentaje >= 100 ? 'bg-success text-white' : 'bg-primary-subtle text-primary border border-primary-subtle' %>" style="font-size: 0.75rem; font-weight: 700; padding: 4px 8px;">
+          <%= porcentaje %>%
+        </span>
+      </div>
+      <div class="horario-stat-value">
+        <%= String(Math.round(totalAcumulado)).padStart(3, '0') %> / <%= horasRequeridas %>
+        <span style="font-size: 1.1rem; font-weight: 500; color: #64748b;">hrs</span>
+      </div>
+      <div class="horario-progress-container">
+        <div class="horario-progress-fill" style="width: <%= porcentaje %>%;"></div>
+      </div>
+      <div class="horario-stat-subinfo" style="display: flex; justify-content: space-between; align-items: center;">
+        <% if (horasFaltantes > 0) { %>
+          <span><i class="bi bi-hourglass-split me-1 text-warning"></i>Faltan <strong><%= Math.round(horasFaltantes) %> hrs</strong></span>
+        <% } else { %>
+          <span class="text-success"><i class="bi bi-check-circle-fill me-1"></i>¡Meta alcanzada!</span>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- FICHA 3: FECHA ESTIMADA DE TÉRMINO -->
+    <div class="horario-stat-card">
+      <div class="horario-stat-header">
+        <div class="horario-stat-title">Fecha Tentativa a terminar Tu Pasantia</div>
+        <i class="bi bi-calendar2-check-fill text-success" style="font-size: 1.25rem;"></i>
+      </div>
+
+      <% if (fechaEstimadaObj === 'COMPLETADO') { %>
+        <div class="horario-stat-value text-success" style="font-size: 1.6rem;">
+          <i class="bi bi-patch-check-fill me-1"></i>¡Completada!
+        </div>
+        <div class="horario-stat-subinfo text-success" style="font-weight: 600;">
+          <i class="bi bi-trophy-fill me-1 text-warning"></i>Meta alcanzada 🎉
+        </div>
+      <% } else if (fechaEstimadaObj instanceof Date) { %>
+        <div class="horario-stat-value text-success" style="font-size: 1.65rem; letter-spacing: -0.5px;" title="<%= fechaLarga %>">
+          <%= fechaCorta %>
+        </div>
+        <div class="horario-stat-subinfo" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
+          <span title="<%= fechaLarga %>">
+            <i class="bi bi-calendar-event me-1 text-primary"></i><strong><%= diasLaboralesRestantes %></strong> <%= diasLaboralesRestantes === 1 ? 'jornada' : 'jornadas' %> (~<%= semanasRestantes %> sem)
+          </span>
+          <span class="badge bg-light text-primary border" style="font-size: 0.72rem; font-weight: 600;">
+            <%= (totalHorasSemana % 1 === 0) ? totalHorasSemana : totalHorasSemana.toFixed(1) %> hrs/sem
+          </span>
+        </div>
+      <% } else { %>
+        <div class="horario-stat-value text-secondary" style="font-size: 1.4rem;">
+          Sin horario
+        </div>
+        <div class="horario-stat-subinfo text-muted">
+          <i class="bi bi-exclamation-circle me-1 text-warning"></i>Configura tu horario para estimar
+        </div>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- SECCIÓN PRINCIPAL: AGENDA / CALENDARIO INTERACTIVO -->
+  <div class="card-calendar-container">
+    <div class="calendar-toolbar">
+      <div class="toolbar-left">
+        <h2 class="calendar-title">
+          <i class="bi bi-calendar3 me-2 text-primary"></i>Mi Agenda Semanal
+        </h2>
+        <div class="week-range-badge">
+          <i class="bi bi-calendar-range me-1 text-primary"></i>
+          Semana: <%= fechasSemana[1].diaNumero %> <%= fechasSemana[1].mesCorto %> - <%= fechasSemana[6].diaNumero %> <%= fechasSemana[6].mesCorto %> <%= fechasSemana[6].anio %>
+        </div>
+      </div>
+
+      <div class="toolbar-right">
+        <span class="interactive-hint d-none d-md-inline-block">
+          <i class="bi bi-hand-index-thumb me-1 text-primary"></i>Haz clic en un día para editarlo
+        </span>
+        <button type="button" class="btn-open-modal-primary" onclick="abrirModalConfigurar()" title="Configuración general para múltiples días">
+          <i class="bi bi-sliders me-1"></i> Configurar Horario
+        </button>
+      </div>
+    </div>
+
+    <!-- CONTENEDOR ADAPTATIVO DEL CALENDARIO -->
+    <div class="calendar-responsive-wrapper">
+      <div class="calendar-timeline-container compact-calendar">
+
+        <!-- ENCABEZADO DE DÍAS (ESCRITORIO) -->
+        <div class="calendar-header-days">
+          <div class="time-col-header">
+            <i class="bi bi-clock"></i> Hora
+          </div>
+          <% for (let d = 1; d <= 6; d++) { %>
+            <% 
+              const f = fechasSemana[d]; 
+              const horarioHeaderDia = (typeof horarios !== 'undefined' && Array.isArray(horarios)) ? horarios.find(h => h.dia_semana === d) : null;
+            %>
+            <div class="day-col-header <%= f.isToday ? 'today-header' : '' %>" 
+                 onclick="abrirModalConfigurar(<%= d %>, <%= horarioHeaderDia ? JSON.stringify({ id: horarioHeaderDia.id_horario, entrada: horarioHeaderDia.hora_entrada, salida: horarioHeaderDia.hora_salida }) : 'null' %>)" 
+                 title="Clic para configurar <%= nombresDias[d] %> <%= f.diaNumero %> <%= f.mesCorto %>">
+              <div class="day-name"><%= nombresDias[d] %></div>
+              <div class="day-date-number <%= f.isToday ? 'badge-today' : '' %>">
+                <span class="day-num-text"><%= f.diaNumero %></span>
+                <% if (f.isToday) { %>
+                  <span class="tag-today">Hoy</span>
+                <% } else { %>
+                  <span class="tag-month"><%= f.mesCorto %></span>
+                <% } %>
+              </div>
+            </div>
+          <% } %>
+        </div>
+
+        <!-- MALLA DE HORAS / DÍAS -->
+        <div class="calendar-body-grid">
+          <div class="time-axis">
+            <div>07:00</div>
+            <div>08:00</div>
+            <div>09:00</div>
+            <div>10:00</div>
+            <div>11:00</div>
+            <div>12:00</div>
+            <div>13:00</div>
+            <div>14:00</div>
+            <div>15:00</div>
+            <div>16:00</div>
+            <div>17:00</div>
+            <div>18:00</div>
+          </div>
+
+          <div class="days-columns-wrapper">
+            <% 
+              const diasMapa = [1, 2, 3, 4, 5, 6]; 
+              const duraciones = (typeof horarios !== 'undefined' && Array.isArray(horarios)) ? horarios.map(h => {
+                const [hE, mE] = (h.hora_entrada || '0:0').split(':').map(Number);
+                const [hS, mS] = (h.hora_salida || '0:0').split(':').map(Number);
+                return ((hS * 60) + (mS || 0)) - ((hE * 60) + (mE || 0));
+              }) : [];
+
+              const duracionModa = duraciones.length > 0
+                ? duraciones.sort((a,b) => duraciones.filter(v => v===a).length - duraciones.filter(v => v===b).length).pop()
+                : 0;
+            %>
+
+            <% diasMapa.forEach(diaNum => { %>
+              <% 
+                const horarioDia = (typeof horarios !== 'undefined' && Array.isArray(horarios)) ? horarios.find(h => h.dia_semana === diaNum) : null; 
+                const f = fechasSemana[diaNum];
+              %>
+
+              <div class="day-column <%= !horarioDia ? 'day-empty' : '' %> <%= f.isToday ? 'column-today' : '' %>" 
+                   data-day-id="<%= diaNum %>"
+                   onclick="manejarClickColumna(event, <%= diaNum %>, <%= horarioDia ? JSON.stringify({ id: horarioDia.id_horario, entrada: horarioDia.hora_entrada, salida: horarioDia.hora_salida }) : 'null' %>)"
+                   title="Clic para configurar <%= nombresDias[diaNum] %>">
+                
+                <div class="day-mobile-header">
+                  <div class="day-mobile-title-group">
+                    <span class="day-mobile-name"><%= nombresDias[diaNum] %></span>
+                    <span class="day-mobile-date"><%= f.diaNumero %> <%= f.mesCorto %></span>
+                    <% if (f.isToday) { %>
+                      <span class="badge-today-pill">Hoy</span>
+                    <% } %>
+                  </div>
+                  <% if (!horarioDia) { %>
+                    <button type="button" class="btn-quick-add-mobile" onclick="event.stopPropagation(); abrirModalConfigurar(<%= diaNum %>);">
+                      <i class="bi bi-plus-lg"></i> Asignar
+                    </button>
+                  <% } %>
+                </div>
+
+                <% if (horarioDia) { %>
+                  <% 
+                    const [hE, mE] = (horarioDia.hora_entrada || '08:00').split(':').map(Number); 
+                    const [hS, mS] = (horarioDia.hora_salida || '12:00').split(':').map(Number); 
+                    const topPx = ((hE - 7) * 36) + ((mE / 60) * 36); 
+                    const duracionMin = ((hS * 60) + (mS || 0)) - ((hE * 60) + (mE || 0)); 
+                    const heightPx = (duracionMin / 60) * 36; 
+                    
+                    let colorClass = 'palette-blue'; 
+                    if (duracionMin !== duracionModa) {
+                      colorClass = 'palette-blue-soft'; 
+                    } 
+                    if (diaNum === 6) { 
+                      colorClass = 'palette-emerald';
+                    } 
+                  %>
+
+                  <div class="calendar-event-card <%= colorClass %>"
+                    style="--top-pos: <%= topPx %>px; --height-pos: <%= heightPx %>px;"
+                    title="Clic para editar la jornada de <%= nombresDias[diaNum] %>">
+
+                    <div class="event-info-group">
+                      <div class="event-title">
+                        <i class="bi bi-briefcase-fill me-1"></i>Pasantía
+                      </div>
+                      <div class="event-time">
+                        <i class="bi bi-clock me-1"></i><%= horarioDia.hora_entrada.slice(0,5) %> - <%= horarioDia.hora_salida.slice(0,5) %>
+                      </div>
+                    </div>
+
+                    <div class="event-action-group">
+                      <div class="event-badge">
+                        <%= (duracionMin/60).toFixed(1) %> hrs
+                      </div>
+
+                      <form action="/usuario/horario/eliminar/<%= horarioDia.id_horario %>"
+                        method="POST" class="delete-day-form"
+                        onclick="event.stopPropagation();"
+                        onsubmit="return confirm('¿Deseas eliminar la jornada del <%= nombresDias[diaNum] %>?');">
+                        <button type="submit" class="btn-delete-event" title="Eliminar día">
+                          <i class="bi bi-trash3-fill"></i>
+                        </button>
+                      </form>
+                    </div>
+
+                  </div>
+                <% } else { %>
+                  <div class="slot-add-placeholder d-none d-md-flex">
+                    <i class="bi bi-plus-circle"></i>
+                    <span>Asignar</span>
+                  </div>
+
+                  <div class="day-empty-badge d-md-none">
+                    <i class="bi bi-calendar-x me-1"></i>Sin jornada configurada
+                  </div>
+                <% } %>
+
+              </div>
+            <% }) %>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- MODAL INTERACTIVO DE CONFIGURACIÓN Y EDICIÓN -->
+<div id="modalHorarioBackdrop" class="horario-modal-backdrop" onclick="cerrarModalSiClickFuera(event)">
+  <div class="horario-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modalTitulo">
+    
+    <div class="horario-modal-header">
+      <div class="d-flex align-items-center gap-2">
+        <div class="modal-icon-badge">
+          <i class="bi bi-clock-history"></i>
+        </div>
+        <div>
+          <h3 id="modalTitulo" class="modal-main-title">Configurar Horario</h3>
+          <p id="modalSubtitulo" class="modal-main-subtitle">Establece tus horas de asistencia de pasantía</p>
+        </div>
+      </div>
+      <button type="button" class="btn-close-modal" onclick="cerrarModalHorario()" aria-label="Cerrar modal">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <form action="/usuario/horario" method="POST" id="formHorarioModal">
+      <div class="horario-modal-body">
+        
+        <div class="modal-form-section">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <label class="section-label">
+              <i class="bi bi-calendar-check me-1 text-primary"></i> Días a aplicar:
+            </label>
+            <div id="modalQuickDayActions" class="quick-day-actions">
+              <button type="button" class="btn-text-action" onclick="seleccionarDiasLunesViernes()">Lun-Vie</button>
+              <span class="text-muted">·</span>
+              <button type="button" class="btn-text-action" onclick="seleccionarTodosLosDias()">Todos</button>
+              <span class="text-muted">·</span>
+              <button type="button" class="btn-text-action" onclick="limpiarDiasSeleccionados()">Limpiar</button>
+            </div>
+            <div id="modalSingleDayNotice" class="single-day-notice" style="display: none;">
+              <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                <i class="bi bi-lock-fill me-1"></i><span id="modalSingleDayName">Lunes</span>
+              </span>
+            </div>
+          </div>
+
+          <div class="modal-dias-grid">
+            <% for (let d = 1; d <= 6; d++) { %>
+              <% const f = fechasSemana[d]; %>
+              <label class="modal-day-pill" id="label_dia_<%= d %>">
+                <input type="checkbox" name="dias_semana" value="<%= d %>" id="check_dia_<%= d %>" onchange="actualizarEstadoPills()">
+                <div class="pill-content">
+                  <span class="pill-name"><%= nombresCortos[d] %></span>
+                  <span class="pill-date"><%= f.diaNumero %> <%= f.mesCorto %></span>
+                </div>
+              </label>
+            <% } %>
+          </div>
+        </div>
+
+        <div class="modal-form-section">
+          <label class="section-label mb-2">
+            <i class="bi bi-lightning-charge-fill me-1 text-warning"></i> Duración de jornada sugerida:
+          </label>
+          <div class="preset-buttons-group">
+            <button type="button" class="btn-preset active" data-hours="4" onclick="aplicarPresetHoras(4, this)">
+              <strong>4 horas</strong> <small>(08:00 - 12:00)</small>
+            </button>
+            <button type="button" class="btn-preset" data-hours="6" onclick="aplicarPresetHoras(6, this)">
+              <strong>6 horas</strong> <small>(08:00 - 14:00)</small>
+            </button>
+            <button type="button" class="btn-preset" data-hours="8" onclick="aplicarPresetHoras(8, this)">
+              <strong>8 horas</strong> <small>(08:00 - 16:00)</small>
+            </button>
+            <button type="button" class="btn-preset" data-hours="custom" onclick="aplicarPresetHoras('custom', this)">
+              <strong>Manual</strong> <small>(Personalizar)</small>
+            </button>
+          </div>
+        </div>
+
+        <div class="modal-form-section">
+          <div class="modal-inputs-row">
+            <div class="modal-input-group">
+              <label for="modal_hora_entrada" class="input-label">
+                <i class="bi bi-box-arrow-in-right text-success me-1"></i> Hora de Entrada:
+              </label>
+              <input type="time" name="hora_entrada" id="modal_hora_entrada" class="form-modal-input" value="08:00" onchange="recalcularTiemposModal()" required>
+            </div>
+
+            <div class="modal-input-group">
+              <label for="modal_hora_salida" class="input-label">
+                <i class="bi bi-box-arrow-right text-danger me-1"></i> Hora de Salida:
+              </label>
+              <input type="time" name="hora_salida" id="modal_hora_salida" class="form-modal-input" value="12:00" onchange="recalcularTiemposModal()" required>
+            </div>
+          </div>
+        </div>
+
+        <div id="modalAlertaHorario" class="modal-time-warning">
+          <i class="bi bi-exclamation-triangle-fill me-1"></i> La hora de salida debe ser posterior a la hora de entrada.
+        </div>
+
+        <div class="modal-summary-banner">
+          <div class="summary-item">
+            <span class="summary-label">Horas por día:</span>
+            <strong id="modalCalculoDiario" class="summary-val text-success">4.0 hrs</strong>
+          </div>
+          <div class="summary-divider"></div>
+          <div class="summary-item">
+            <span class="summary-label">Proyección seleccionada:</span>
+            <strong id="modalCalculoTotal" class="summary-val text-primary">4.0 hrs</strong>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="horario-modal-footer">
+        <button type="button" id="btnModalEliminarDia" class="btn-modal-delete d-none" onclick="eliminarDiaDesdeModal()">
+          <i class="bi bi-trash3-fill me-1"></i> Eliminar este día
+        </button>
+
+        <div class="footer-right-actions">
+          <button type="button" class="btn-modal-cancel" onclick="cerrarModalHorario()">
+            Cancelar
+          </button>
+          <button type="submit" class="btn-modal-save" id="btnModalGuardar">
+            <i class="bi bi-check2-circle me-1"></i> Guardar Jornada
+          </button>
+        </div>
+      </div>
+    </form>
+
+    <form id="formAuxiliarEliminar" method="POST" style="display: none;"></form>
+
+  </div>
+</div>
+
+<script>
+  let modalEdicionIdHorario = null;
+  let modalEdicionDiaNum = null;
+
+  const modalBackdrop = document.getElementById('modalHorarioBackdrop');
+  const modalTitulo = document.getElementById('modalTitulo');
+  const modalSubtitulo = document.getElementById('modalSubtitulo');
+  const modalEntrada = document.getElementById('modal_hora_entrada');
+  const modalSalida = document.getElementById('modal_hora_salida');
+  const modalAlerta = document.getElementById('modalAlertaHorario');
+  const modalCalcDiario = document.getElementById('modalCalculoDiario');
+  const modalCalcTotal = document.getElementById('modalCalculoTotal');
+  const btnGuardarModal = document.getElementById('btnModalGuardar');
+  const btnEliminarModal = document.getElementById('btnModalEliminarDia');
+  const formHorario = document.getElementById('formHorarioModal');
+  const formEliminarAux = document.getElementById('formAuxiliarEliminar');
+  const quickActions = document.getElementById('modalQuickDayActions');
+  const singleDayNotice = document.getElementById('modalSingleDayNotice');
+  const singleDayNameText = document.getElementById('modalSingleDayName');
+
+  const nombresDiasMap = {
+    1: 'Lunes', 2: 'Martes', 3: 'Miércoles', 4: 'Jueves', 5: 'Viernes', 6: 'Sábado'
+  };
+
+  function abrirModalConfigurar(diaEspecifico = null, horarioData = null) {
+    modalEdicionIdHorario = null;
+    modalEdicionDiaNum = null;
+
+    if (diaEspecifico !== null && diaEspecifico !== undefined) {
+      modalEdicionDiaNum = diaEspecifico;
+
+      if (quickActions) quickActions.style.display = 'none';
+      if (singleDayNotice) singleDayNotice.style.display = 'inline-flex';
+      if (singleDayNameText) singleDayNameText.textContent = `Configurando solo ${nombresDiasMap[diaEspecifico]}`;
+
+      for (let d = 1; d <= 6; d++) {
+        const check = document.getElementById(`check_dia_${d}`);
+        const label = document.getElementById(`label_dia_${d}`);
+        if (check && label) {
+          if (d === diaEspecifico) {
+            check.checked = true;
+            check.disabled = false;
+            label.classList.remove('disabled');
+            label.classList.add('selected');
+          } else {
+            check.checked = false;
+            check.disabled = true;
+            label.classList.add('disabled');
+            label.classList.remove('selected');
+          }
+        }
+      }
+
+      if (horarioData && horarioData.id) {
+        modalEdicionIdHorario = horarioData.id;
+        modalTitulo.innerHTML = `<i class="bi bi-pencil-square text-primary me-1"></i>Editar ${nombresDiasMap[diaEspecifico]}`;
+        modalSubtitulo.textContent = `Ajusta el horario configurado para el ${nombresDiasMap[diaEspecifico]}`;
+        
+        modalEntrada.value = (horarioData.entrada || '08:00').slice(0, 5);
+        modalSalida.value = (horarioData.salida || '12:00').slice(0, 5);
+        
+        if (btnEliminarModal) btnEliminarModal.classList.remove('d-none');
+      } else {
+        modalTitulo.innerHTML = `<i class="bi bi-plus-circle text-primary me-1"></i>Asignar ${nombresDiasMap[diaEspecifico]}`;
+        modalSubtitulo.textContent = `Configura la jornada de pasantía para el ${nombresDiasMap[diaEspecifico]}`;
+        modalEntrada.value = '08:00';
+        modalSalida.value = '12:00';
+        if (btnEliminarModal) btnEliminarModal.classList.add('d-none');
+      }
+
+    } else {
+      if (quickActions) quickActions.style.display = 'flex';
+      if (singleDayNotice) singleDayNotice.style.display = 'none';
+
+      modalTitulo.innerHTML = `<i class="bi bi-sliders text-primary me-1"></i>Configurar Horario Semanal`;
+      modalSubtitulo.textContent = 'Selecciona los días y el rango de jornada a aplicar';
+
+      for (let d = 1; d <= 6; d++) {
+        const check = document.getElementById(`check_dia_${d}`);
+        const label = document.getElementById(`label_dia_${d}`);
+        if (check && label) {
+          check.disabled = false;
+          label.classList.remove('disabled');
+        }
+      }
+
+      seleccionarDiasLunesViernes();
+      modalEntrada.value = '08:00';
+      modalSalida.value = '12:00';
+      if (btnEliminarModal) btnEliminarModal.classList.add('d-none');
+    }
+
+    sincronizarPresetSegunHoras();
+    recalcularTiemposModal();
+
+    modalBackdrop.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function manejarClickColumna(e, diaNum, horarioData) {
+    abrirModalConfigurar(diaNum, horarioData);
+  }
+
+  function cerrarModalHorario() {
+    modalBackdrop.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  function cerrarModalSiClickFuera(e) {
+    if (e.target === modalBackdrop) {
+      cerrarModalHorario();
+    }
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modalBackdrop.classList.contains('active')) {
+      cerrarModalHorario();
+    }
   });
+
+  function seleccionarDiasLunesViernes() {
+    for (let d = 1; d <= 6; d++) {
+      const check = document.getElementById(`check_dia_${d}`);
+      if (check && !check.disabled) check.checked = (d <= 5);
+    }
+    actualizarEstadoPills();
+    recalcularTiemposModal();
+  }
+
+  function seleccionarTodosLosDias() {
+    for (let d = 1; d <= 6; d++) {
+      const check = document.getElementById(`check_dia_${d}`);
+      if (check && !check.disabled) check.checked = true;
+    }
+    actualizarEstadoPills();
+    recalcularTiemposModal();
+  }
+
+  function limpiarDiasSeleccionados() {
+    for (let d = 1; d <= 6; d++) {
+      const check = document.getElementById(`check_dia_${d}`);
+      if (check && !check.disabled) check.checked = false;
+    }
+    actualizarEstadoPills();
+    recalcularTiemposModal();
+  }
+
+  function actualizarEstadoPills() {
+    for (let d = 1; d <= 6; d++) {
+      const label = document.getElementById(`label_dia_${d}`);
+      const check = document.getElementById(`check_dia_${d}`);
+      if (label && check) {
+        if (check.checked) {
+          label.classList.add('selected');
+        } else {
+          label.classList.remove('selected');
+        }
+      }
+    }
+    recalcularTiemposModal();
+  }
+
+  function aplicarPresetHoras(horas, btn) {
+    document.querySelectorAll('.btn-preset').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+
+    if (horas !== 'custom') {
+      const [hE, mE] = modalEntrada.value.split(':').map(Number);
+      const startMin = (isNaN(hE) ? 8 : hE) * 60 + (isNaN(mE) ? 0 : mE);
+      const endMin = startMin + (horas * 60);
+
+      const endH = Math.floor(endMin / 60) % 24;
+      const endM = endMin % 60;
+
+      modalSalida.value = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
+    }
+    recalcularTiemposModal();
+  }
+
+  function sincronizarPresetSegunHoras() {
+    const [hE, mE] = modalEntrada.value.split(':').map(Number);
+    const [hS, mS] = modalSalida.value.split(':').map(Number);
+    const duracionMin = ((hS * 60) + (mS || 0)) - ((hE * 60) + (mE || 0));
+    const hrs = duracionMin / 60;
+
+    document.querySelectorAll('.btn-preset').forEach(b => b.classList.remove('active'));
+    if (hrs === 4) {
+      document.querySelector('.btn-preset[data-hours="4"]')?.classList.add('active');
+    } else if (hrs === 6) {
+      document.querySelector('.btn-preset[data-hours="6"]')?.classList.add('active');
+    } else if (hrs === 8) {
+      document.querySelector('.btn-preset[data-hours="8"]')?.classList.add('active');
+    } else {
+      document.querySelector('.btn-preset[data-hours="custom"]')?.classList.add('active');
+    }
+  }
+
+  function recalcularTiemposModal() {
+    const [hE, mE] = (modalEntrada.value || '0:0').split(':').map(Number);
+    const [hS, mS] = (modalSalida.value || '0:0').split(':').map(Number);
+
+    const entMin = (hE * 60) + (mE || 0);
+    const salMin = (hS * 60) + (mS || 0);
+    const diffMin = salMin - entMin;
+
+    let countDias = 0;
+    for (let d = 1; d <= 6; d++) {
+      const check = document.getElementById(`check_dia_${d}`);
+      if (check && check.checked) countDias++;
+    }
+
+    if (diffMin <= 0) {
+      if (modalAlerta) modalAlerta.style.display = 'block';
+      if (btnGuardarModal) btnGuardarModal.disabled = true;
+      if (modalCalcDiario) modalCalcDiario.textContent = '0.0 hrs';
+      if (modalCalcTotal) modalCalcTotal.textContent = '0.0 hrs';
+    } else {
+      if (modalAlerta) modalAlerta.style.display = 'none';
+      if (btnGuardarModal) btnGuardarModal.disabled = (countDias === 0);
+
+      const hrsDiarias = diffMin / 60;
+      const hrsTotales = hrsDiarias * countDias;
+
+      if (modalCalcDiario) modalCalcDiario.textContent = `${hrsDiarias.toFixed(1)} hrs`;
+      if (modalCalcTotal) modalCalcTotal.textContent = `${hrsTotales.toFixed(1)} hrs`;
+    }
+  }
+
+  function eliminarDiaDesdeModal() {
+    if (modalEdicionIdHorario && confirm('¿Deseas eliminar esta jornada?')) {
+      formEliminarAux.action = `/usuario/horario/eliminar/${modalEdicionIdHorario}`;
+      formEliminarAux.submit();
+    }
+  }
 </script>
 
 <%- include('../partials/footer') %>
