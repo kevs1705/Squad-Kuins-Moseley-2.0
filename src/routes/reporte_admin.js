@@ -35,9 +35,12 @@ function requireAdmin(req, res, next) {
    ========================================================================== */
 router.get('/admin/reportes', requireAdmin, async (req, res) => {
   try {
-    // 1. Consultar usuarios para el autocompletado y filtros
+    // 1. Consultar usuarios para el autocompletado y filtros (con su carrera asociada)
     const [usuarios] = await db.query(
-      'SELECT id_usuario, nombre, CI, universidad, carrera FROM usuarios ORDER BY nombre ASC'
+      `SELECT u.id_usuario, u.nombre, u.CI, u.universidad, u.id_carrera, c.nombre AS carrera_nombre
+       FROM usuarios u
+       LEFT JOIN carreras c ON u.id_carrera = c.id_carrera
+       ORDER BY u.nombre ASC`
     );
 
     // 2. Consultar obras y lugares para el filtro
@@ -45,12 +48,17 @@ router.get('/admin/reportes', requireAdmin, async (req, res) => {
       'SELECT id_lugar, nombre, tipo FROM lugares ORDER BY nombre ASC'
     );
 
-    // 3. Pasar 'usuarios' y 'lugares' a la vista
+    // 3. Consultar lista de carreras desde la tabla carreras
+    const [carreras] = await db.query(
+      `SELECT id_carrera, nombre, siglas FROM carreras ORDER BY nombre ASC`
+    );
+
+    // 4. Pasar 'usuarios', 'lugares' y 'carreras' a la vista
     res.render('reporte_admin', {
-      filtroCI: '',
       user: req.session.user,
       usuarios: usuarios || [],
-      lugares: lugares || []
+      lugares: lugares || [],
+      carreras: carreras || []
     });
   } catch (e) {
     console.error(e);
@@ -63,11 +71,12 @@ router.get('/admin/reportes', requireAdmin, async (req, res) => {
    ========================================================================== */
 router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
   try {
-    const ci = (req.query.ci || '').trim();
+    const id_carrera = req.query.id_carrera ? parseInt(req.query.id_carrera, 10) : (req.query.carrera ? parseInt(req.query.carrera, 10) || null : null);
+    const estado_duracion = (req.query.estado_duracion || '').trim();
     const id_usuario = req.query.id_usuario ? parseInt(req.query.id_usuario, 10) : null;
     const id_lugar = req.query.id_lugar ? parseInt(req.query.id_lugar, 10) : null;
     const nombre = (req.query.nombre || req.query.q || '').trim();
-    const fecha = (req.query.fecha || '').trim();
+    const fechasRaw = (req.query.fechas || req.query.fecha || '').trim();
     const page = Math.max(parseInt(req.query.page || '1', 10), 1);
     let size = Math.max(parseInt(req.query.size || '25', 10), 1);
     size = Math.min(size, 200);
@@ -76,10 +85,18 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
     const where = ["a.estado != 'ANULADO'"];
     const params = [];
 
-    if (ci) {
-      where.push('u.CI LIKE ?');
-      params.push(`%${ci}%`);
+    if (id_carrera) {
+      where.push('u.id_carrera = ?');
+      params.push(id_carrera);
     }
+    if (estado_duracion === 'FINALIZADO') {
+      where.push('a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL');
+    } else if (estado_duracion === 'EN_CURSO') {
+      where.push('a.hora_salida IS NULL AND a.fecha = CURDATE()');
+    } else if (estado_duracion === 'OBSERVADO') {
+      where.push('a.hora_salida IS NULL AND a.fecha < CURDATE()');
+    }
+
     if (id_usuario) {
       where.push('a.id_usuario = ?');
       params.push(id_usuario);
@@ -91,9 +108,26 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
       where.push('a.id_lugar = ?');
       params.push(id_lugar);
     }
-    if (fecha) {
-      where.push('a.fecha = ?');
-      params.push(fecha);
+    if (fechasRaw) {
+      if (fechasRaw.includes(' to ') || fechasRaw.includes(' a ')) {
+        const parts = fechasRaw.split(/\s+(?:to|a)\s+/);
+        if (parts.length === 2 && parts[0] && parts[1]) {
+          where.push('a.fecha BETWEEN ? AND ?');
+          params.push(parts[0].trim(), parts[1].trim());
+        } else if (parts[0]) {
+          where.push('a.fecha = ?');
+          params.push(parts[0].trim());
+        }
+      } else {
+        const dateList = fechasRaw.split(/[,;\s]+/).map(d => d.trim()).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d));
+        if (dateList.length === 1) {
+          where.push('a.fecha = ?');
+          params.push(dateList[0]);
+        } else if (dateList.length > 1) {
+          where.push(`a.fecha IN (${dateList.map(() => '?').join(', ')})`);
+          params.push(...dateList);
+        }
+      }
     }
 
     const whereSQL = where.length ? `WHERE ${where.join(' AND ')}` : '';
@@ -133,7 +167,10 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
     let usuarioInfo = null;
     if (id_usuario) {
       const [uRows] = await db.query(
-        'SELECT id_usuario, nombre, CI, universidad, carrera FROM usuarios WHERE id_usuario = ? LIMIT 1',
+        `SELECT u.id_usuario, u.nombre, u.CI, u.universidad, u.id_carrera, COALESCE(c.nombre, '') AS carrera
+         FROM usuarios u
+         LEFT JOIN carreras c ON u.id_carrera = c.id_carrera
+         WHERE u.id_usuario = ? LIMIT 1`,
         [id_usuario]
       );
       if (uRows.length > 0) {
@@ -179,10 +216,32 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
       [...params, size, offset]
     );
 
-    const formattedRows = rows.map((r) => ({
-      ...r,
-      horas_dia: r.duracion_segundos != null ? formatSecondsToHHMM(r.duracion_segundos) : 'En curso'
-    }));
+    // Formato de fecha actual YYYY-MM-DD para comparación estricta de cadenas
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    const formattedRows = rows.map((r) => {
+      const isPast = Boolean(r.fecha && r.fecha < todayStr);
+      let estadoCalculado = 'FINALIZADO';
+      let horasDiaText = '00:00';
+
+      if (r.duracion_segundos != null) {
+        estadoCalculado = 'FINALIZADO';
+        horasDiaText = formatSecondsToHHMM(r.duracion_segundos);
+      } else if (!r.hora_salida && isPast) {
+        estadoCalculado = 'OBSERVADO';
+        horasDiaText = 'Observación';
+      } else if (!r.hora_salida) {
+        estadoCalculado = 'EN_CURSO';
+        horasDiaText = 'En curso';
+      }
+
+      return {
+        ...r,
+        estado_calculado: estadoCalculado,
+        horas_dia: horasDiaText
+      };
+    });
 
     // Estadísticas adicionales dinámicas para el panel lateral derecho:
     let statsData = {};
@@ -254,7 +313,7 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
            u.id_usuario,
            u.nombre,
            u.CI,
-           u.carrera,
+           COALESCE(c.nombre, '') AS carrera,
            u.universidad,
            COUNT(a.id_asistencia) AS total_dias,
            COALESCE(
@@ -265,9 +324,10 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
              ), 0
            ) AS total_segundos
          FROM usuarios u
+         LEFT JOIN carreras c ON u.id_carrera = c.id_carrera
          LEFT JOIN asistencias a ON a.id_usuario = u.id_usuario AND a.estado != 'ANULADO'
          WHERE u.rol = 0
-         GROUP BY u.id_usuario, u.nombre, u.CI, u.carrera, u.universidad
+         GROUP BY u.id_usuario, u.nombre, u.CI, c.nombre, u.universidad
          ORDER BY total_segundos DESC
          LIMIT 6`
       );
@@ -484,21 +544,124 @@ router.get('/api/admin/usuarios/:id_usuario/horario', requireAdmin, async (req, 
 });
 
 /* ==========================================================================
+   API: CALENDARIO DE ASISTENCIAS Y ACTIVIDADES DEL USUARIO
+   ========================================================================== */
+router.get('/api/admin/usuario/:id_usuario/calendario', requireAdmin, async (req, res) => {
+  try {
+    const id_usuario = parseInt(req.params.id_usuario, 10);
+    if (!id_usuario) return res.status(400).json({ ok: false, msg: 'ID de usuario inválido' });
+
+    // 1. Datos del usuario
+    const [uRows] = await db.query(
+      `SELECT u.id_usuario, u.nombre, u.CI, u.universidad, u.id_carrera, COALESCE(c.nombre, '') AS carrera, COALESCE(c.siglas, '') AS siglas
+       FROM usuarios u
+       LEFT JOIN carreras c ON u.id_carrera = c.id_carrera
+       WHERE u.id_usuario = ? LIMIT 1`,
+      [id_usuario]
+    );
+    if (!uRows.length) return res.status(404).json({ ok: false, msg: 'Usuario no encontrado' });
+
+    // 2. Asistencias y bitácoras del usuario
+    const [asistencias] = await db.query(
+      `SELECT
+         a.id_asistencia,
+         DATE_FORMAT(a.fecha, '%Y-%m-%d') AS fecha,
+         TIME_FORMAT(a.hora_entrada, '%H:%i') AS hora_entrada,
+         TIME_FORMAT(a.hora_salida, '%H:%i') AS hora_salida,
+         l.nombre AS lugar_nombre,
+         l.tipo AS lugar_tipo,
+         IF(a.hora_salida IS NOT NULL AND a.hora_entrada IS NOT NULL,
+            TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)),
+            NULL
+         ) AS duracion_segundos,
+         r.id_reporte,
+         r.tarea,
+         r.comprobante,
+         COALESCE(r.observacion, a.observacion) AS observacion
+       FROM asistencias a
+       LEFT JOIN lugares l ON l.id_lugar = a.id_lugar
+       LEFT JOIN reportes r ON r.id_asistencia = a.id_asistencia
+       WHERE a.id_usuario = ? AND a.estado != 'ANULADO'
+       ORDER BY a.fecha ASC, a.id_asistencia ASC`,
+      [id_usuario]
+    );
+
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    const formatted = asistencias.map(a => {
+      const isPast = Boolean(a.fecha && a.fecha < todayStr);
+      let estado = 'FINALIZADO';
+      let horasTxt = '00:00';
+
+      if (a.duracion_segundos != null) {
+        estado = 'FINALIZADO';
+        horasTxt = formatSecondsToHHMM(a.duracion_segundos);
+      } else if (!a.hora_salida && isPast) {
+        estado = 'OBSERVADO';
+        horasTxt = 'Observación';
+      } else if (!a.hora_salida) {
+        estado = 'EN_CURSO';
+        horasTxt = 'En curso';
+      }
+
+      return {
+        ...a,
+        estado,
+        horas_dia: horasTxt
+      };
+    });
+
+    // 3. Horarios semanales asignados / registrados por el usuario
+    const [horarios] = await db.query(
+      `SELECT
+         id_horario,
+         dia_semana,
+         TIME_FORMAT(hora_entrada, '%H:%i') AS hora_entrada,
+         TIME_FORMAT(hora_salida, '%H:%i') AS hora_salida,
+         estado
+       FROM horarios
+       WHERE id_usuario = ? AND estado = 'ACTIVO'
+       ORDER BY dia_semana ASC`,
+      [id_usuario]
+    );
+
+    res.json({
+      ok: true,
+      usuario: uRows[0],
+      asistencias: formatted,
+      horarios: horarios || []
+    });
+  } catch (err) {
+    console.error('Error al obtener calendario del usuario:', err);
+    res.status(500).json({ ok: false, msg: 'Error interno al consultar calendario' });
+  }
+});
+
+/* ==========================================================================
    EXPORTAR CONSOLIDADO A EXCEL
    ========================================================================== */
 router.get('/admin/reportes/export', requireAdmin, async (req, res) => {
   try {
-    const ci = (req.query.ci || '').trim();
+    const id_carrera = req.query.id_carrera ? parseInt(req.query.id_carrera, 10) : (req.query.carrera ? parseInt(req.query.carrera, 10) || null : null);
+    const estado_duracion = (req.query.estado_duracion || '').trim();
     const id_usuario = req.query.id_usuario ? parseInt(req.query.id_usuario, 10) : null;
     const id_lugar = req.query.id_lugar ? parseInt(req.query.id_lugar, 10) : null;
     const nombre = (req.query.nombre || req.query.q || '').trim();
-    const fecha = (req.query.fecha || '').trim();
+    const fechasRaw = (req.query.fechas || req.query.fecha || '').trim();
 
     const where = ["a.estado != 'ANULADO'"];
     const params = [];
-    if (ci) {
-      where.push('u.CI LIKE ?');
-      params.push(`%${ci}%`);
+    if (id_carrera) {
+      where.push('u.id_carrera = ?');
+      params.push(id_carrera);
+    }
+    if (estado_duracion === 'FINALIZADO') {
+      where.push('a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL');
+    } else if (estado_duracion === 'EN_CURSO') {
+      where.push('a.hora_salida IS NULL AND a.fecha = CURDATE()');
+    } else if (estado_duracion === 'OBSERVADO') {
+      where.push('a.hora_salida IS NULL AND a.fecha < CURDATE()');
     }
     if (id_usuario) {
       where.push('a.id_usuario = ?');
@@ -511,9 +674,26 @@ router.get('/admin/reportes/export', requireAdmin, async (req, res) => {
       where.push('a.id_lugar = ?');
       params.push(id_lugar);
     }
-    if (fecha) {
-      where.push('a.fecha = ?');
-      params.push(fecha);
+    if (fechasRaw) {
+      if (fechasRaw.includes(' to ') || fechasRaw.includes(' a ')) {
+        const parts = fechasRaw.split(/\s+(?:to|a)\s+/);
+        if (parts.length === 2 && parts[0] && parts[1]) {
+          where.push('a.fecha BETWEEN ? AND ?');
+          params.push(parts[0].trim(), parts[1].trim());
+        } else if (parts[0]) {
+          where.push('a.fecha = ?');
+          params.push(parts[0].trim());
+        }
+      } else {
+        const dateList = fechasRaw.split(/[,;\s]+/).map(d => d.trim()).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d));
+        if (dateList.length === 1) {
+          where.push('a.fecha = ?');
+          params.push(dateList[0]);
+        } else if (dateList.length > 1) {
+          where.push(`a.fecha IN (${dateList.map(() => '?').join(', ')})`);
+          params.push(...dateList);
+        }
+      }
     }
     const whereSQL = where.length ? `WHERE ${where.join(' AND ')}` : '';
 
@@ -525,15 +705,17 @@ router.get('/admin/reportes/export', requireAdmin, async (req, res) => {
         userTitle = `Reporte de Asistencias y Bitácoras - ${uRows[0].nombre} (CI: ${uRows[0].CI})`;
         fileSuffix = `usuario_${uRows[0].CI}`;
       }
+    } else if (id_carrera) {
+      const [cRows] = await db.query('SELECT nombre FROM carreras WHERE id_carrera = ? LIMIT 1', [id_carrera]);
+      const cNombre = cRows[0]?.nombre || `Carrera_${id_carrera}`;
+      userTitle = `Reporte General - Carrera: ${cNombre}`;
+      fileSuffix = `carrera_${cNombre.replace(/\s+/g, '_').toLowerCase()}`;
     } else if (id_lugar) {
       const [lRows] = await db.query('SELECT nombre FROM lugares WHERE id_lugar = ? LIMIT 1', [id_lugar]);
       if (lRows.length > 0) {
         userTitle = `Reporte General - Obra/Lugar: ${lRows[0].nombre}`;
         fileSuffix = `lugar_${lRows[0].nombre.replace(/\s+/g, '_').toLowerCase()}`;
       }
-    } else if (ci) {
-      userTitle = `Reporte General - Filtro CI: ${ci}`;
-      fileSuffix = `ci_${ci}`;
     } else if (nombre) {
       userTitle = `Reporte General - Filtro Nombre: ${nombre}`;
       fileSuffix = `usuario_${nombre.replace(/\s+/g, '_').toLowerCase()}`;

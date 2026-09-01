@@ -48,27 +48,33 @@ router.get('/api/graficos/line', async (req, res) => {
 
     const [rows] = await db.query(`
       SELECT
-        FLOOR(DATEDIFF(fecha, '2025-08-18') / 7) + 1 AS semana,
-        MIN(fecha) AS semana_inicio,
-        SUM(TIME_TO_SEC(hora_acumulada))/3600 AS horas_semana
-      FROM reportes
-      WHERE id_usuario = ?
-      GROUP BY semana
-      ORDER BY semana
+        YEARWEEK(a.fecha, 1) AS semana_key,
+        MIN(a.fecha) AS semana_inicio,
+        COALESCE(
+          SUM(
+            IF(a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL,
+               TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)),
+               0)
+          ), 0
+        ) / 3600 AS horas_semana
+      FROM asistencias a
+      WHERE a.id_usuario = ? AND a.estado != 'ANULADO'
+      GROUP BY semana_key
+      ORDER BY semana_key ASC
     `, [userId]);
 
     // Calculamos acumulado en Node.js
     let acc = 0;
-    const labels = rows.map(r => {
-      const d = new Date(r.semana_inicio);
-      return `Sem ${r.semana} · ${d.toISOString().slice(0,10)}`;
+    const labels = rows.map((r, i) => {
+      const d = r.semana_inicio ? new Date(r.semana_inicio) : new Date();
+      return `Sem ${i + 1} · ${d.toISOString().slice(0,10)}`;
     });
     const horas = rows.map(r => {
-      const val = Number(r.horas_semana || 0);
+      const val = Math.round(Number(r.horas_semana || 0) * 10) / 10;
       acc += val;
       return val;
     });
-    const acumulado = horas.map((h, i) => horas.slice(0, i+1).reduce((a,b) => a+b, 0));
+    const acumulado = horas.map((h, i) => Math.round(horas.slice(0, i+1).reduce((a,b) => a+b, 0) * 10) / 10);
 
     res.json({ ok: true, labels, horas, acumulado });
   } catch (e) {
@@ -86,18 +92,24 @@ router.get('/api/graficos/pie', async (_req, res) => {
       SELECT
         u.id_usuario,
         u.nombre,
-        COALESCE(SUM(TIME_TO_SEC(r.hora_acumulada))/3600, 0) AS horas
+        COALESCE(
+          SUM(
+            IF(a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL,
+               TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)),
+               0)
+          ), 0
+        ) / 3600 AS horas
       FROM usuarios u
-      LEFT JOIN reportes r ON r.id_usuario = u.id_usuario
+      LEFT JOIN asistencias a ON a.id_usuario = u.id_usuario AND a.estado != 'ANULADO'
       WHERE u.rol = 0
       GROUP BY u.id_usuario, u.nombre
       ORDER BY horas DESC, u.nombre ASC
     `);
 
     res.json({
-    ok: true,
-    labels: rows.map(r => r.nombre),
-    data: rows.map(r => Number(r.horas || 0))  // <<<<<<
+      ok: true,
+      labels: rows.map(r => r.nombre),
+      data: rows.map(r => Math.round(Number(r.horas || 0) * 10) / 10)
     });
 
   } catch (e) {
