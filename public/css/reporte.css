@@ -496,6 +496,10 @@ body .modal-body input.form-control {
   font-size: 0.95rem !important;
   border-radius: 8px !important;
   padding: 0.75rem !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  resize: none !important;
+  display: block !important;
 }
 
 body .modal-body textarea.form-control:focus,
@@ -638,5 +642,608 @@ body .modal-footer .btn-primary:hover {
 
   .reporte-wrapper table.table-reporte {
     min-width: 750px !important;
+  }
+}
+
+/* --- CELDA Y CONTENIDO DE BITÁCORA RECORTADA --- */
+.reporte-wrapper table.table-reporte tbody td.col-tarea-cell {
+  max-width: 320px !important;
+  min-width: 180px !important;
+  word-break: break-word !important;
+  overflow-wrap: anywhere !important;
+  white-space: normal !important;
+}
+
+.bitacora-container {
+  display: inline-block !important;
+  width: 100% !important;
+  word-break: break-word !important;
+  overflow-wrap: anywhere !important;
+}
+
+.bitacora-oculto {
+  display: none !important;
+}
+
+.btn-ver-mas-bitacora {
+  background: transparent !important;
+  border: none !important;
+  color: #0b6bcb !important;
+  font-weight: 700 !important;
+  font-size: 0.8rem !important;
+  padding: 0 !important;
+  margin-left: 0.35rem !important;
+  cursor: pointer !important;
+  text-decoration: underline !important;
+  display: inline-block !important;
+  line-height: 1.2 !important;
+  transition: color 0.15s ease !important;
+}
+
+.btn-ver-mas-bitacora:hover {
+  color: #0855a3 !important;
+  text-decoration: none !important;
+}
+
+/* --- TARJETA JORNADA DE HOY Y BOTÓN VERIFICAR GPS --- */
+.reporte-wrapper .card-jornada-hoy {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+  padding: 1.25rem 1.75rem !important;
+  position: relative !important;
+  overflow: hidden !important;
+  width: 100% !important;
+}
+
+.reporte-wrapper .jornada-top-row {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: flex-start !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.reporte-wrapper .jornada-title-box {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.85rem !important;
+}
+
+.reporte-wrapper .jornada-title-text {
+  font-size: 1.2rem !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  margin-bottom: 0.25rem !important;
+}
+
+.reporte-wrapper .badge-jornada-status {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.35rem !important;
+  background-color: #f1f5f9 !important;
+  color: #64748b !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  padding: 0.25rem 0.75rem !important;
+  border-radius: 20px !important;
+}
+
+.reporte-wrapper .badge-jornada-status.active {
+  background-color: #e0f2fe !important;
+  color: #0369a1 !important;
+}
+
+.reporte-wrapper .jornada-gps-section {
+  margin-top: 0.5rem !important;
+}
+
+.reporte-wrapper .jornada-gps-title {
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  margin-bottom: 0.35rem !important;
+}
+
+.reporte-wrapper .jornada-gps-desc {
+  font-size: 0.9rem !important;
+  color: #64748b !important;
+  margin-bottom: 1.25rem !important;
+  line-height: 1.5 !important;
+}
+
+.reporte-wrapper .btn-gps-action {
+  background-color: #0b6bcb !important;
+  border-color: #0b6bcb !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  font-size: 0.95rem !important;
+  padding: 0.7rem 1.35rem !important;
+  border-radius: 8px !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 2px 6px rgba(11, 107, 203, 0.25) !important;
+  text-decoration: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.reporte-wrapper .btn-gps-action:hover {
+  background-color: #0855a3 !important;
+  border-color: #0855a3 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 10px rgba(11, 107, 203, 0.35) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* ==========================================================================
+   DISEÑO MODERNO DE TARJETA JORNADAS DE HOY
+   ========================================================================== */
+.reporte-wrapper .card-jornada-hoy-v2 {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04) !important;
+  overflow: hidden !important;
+  width: 100% !important;
+}
+
+.reporte-wrapper .jornada-banner-top {
+  background: #0963c6 !important;
+  color: #ffffff !important;
+  padding: 1rem 1.75rem !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  gap: 1rem !important;
+}
+
+.reporte-wrapper .jornada-banner-left {
+  display: flex !important;
+  align-items: center !important;
+  gap: 1rem !important;
+}
+
+.reporte-wrapper .jornada-banner-circle {
+  width: 46px !important;
+  height: 46px !important;
+  border: 2px solid rgba(255, 255, 255, 0.35) !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 1.25rem !important;
+  color: #ffffff !important;
+  flex-shrink: 0 !important;
+}
+
+.reporte-wrapper .jornada-banner-title {
+  font-size: 1.25rem !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+  margin: 0 0 0.2rem 0 !important;
+  line-height: 1.2 !important;
+}
+
+.reporte-wrapper .jornada-banner-badge {
+  display: inline-block !important;
+  background: rgba(255, 255, 255, 0.22) !important;
+  color: #ffffff !important;
+  font-size: 0.7rem !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  padding: 0.18rem 0.65rem !important;
+  border-radius: 12px !important;
+  letter-spacing: 0.5px !important;
+}
+
+.reporte-wrapper .jornada-banner-right {
+  display: flex !important;
+  align-items: center !important;
+  gap: 1.25rem !important;
+}
+
+.reporte-wrapper .jornada-banner-divider {
+  width: 1px !important;
+  height: 40px !important;
+  background: rgba(255, 255, 255, 0.25) !important;
+}
+
+.reporte-wrapper .jornada-hours-label {
+  display: block !important;
+  font-size: 0.76rem !important;
+  font-weight: 600 !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+  line-height: 1.1 !important;
+  margin-bottom: 0.15rem !important;
+}
+
+.reporte-wrapper .jornada-hours-val {
+  display: block !important;
+  font-size: 1.55rem !important;
+  font-weight: 800 !important;
+  color: #ffffff !important;
+  line-height: 1.1 !important;
+}
+
+.reporte-wrapper .jornada-hours-val small {
+  font-size: 0.85rem !important;
+  font-weight: 600 !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+  margin-left: 0.2rem !important;
+}
+
+.reporte-wrapper .jornada-body-v2 {
+  padding: 1.5rem 1.75rem !important;
+  background: #ffffff !important;
+}
+
+.reporte-wrapper .jornada-gps-head {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  font-size: 1.05rem !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  margin-bottom: 1.25rem !important;
+}
+
+.reporte-wrapper .jornada-entry-card {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  padding: 0.9rem 1.25rem !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 1rem !important;
+  width: fit-content !important;
+  min-width: 280px !important;
+  max-width: 100% !important;
+  margin-bottom: 1.25rem !important;
+}
+
+.reporte-wrapper .entry-card-icon {
+  width: 44px !important;
+  height: 44px !important;
+  background: #e0f2fe !important;
+  border-radius: 10px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #0284c7 !important;
+  font-size: 1.3rem !important;
+  flex-shrink: 0 !important;
+}
+
+.reporte-wrapper .entry-card-title {
+  font-size: 0.92rem !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  display: block !important;
+}
+
+.reporte-wrapper .entry-card-desc {
+  font-size: 0.9rem !important;
+  color: #475569 !important;
+  margin-top: 0.1rem !important;
+  display: block !important;
+}
+
+.reporte-wrapper .jornada-info-msg {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  font-size: 0.9rem !important;
+  color: #475569 !important;
+  margin-bottom: 1.5rem !important;
+}
+
+.reporte-wrapper .btn-gps-blue {
+  background-color: #0963c6 !important;
+  border: none !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  font-size: 0.93rem !important;
+  padding: 0.65rem 1.35rem !important;
+  border-radius: 10px !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 4px 14px rgba(9, 99, 198, 0.25) !important;
+  text-decoration: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+}
+
+.reporte-wrapper .btn-gps-blue:hover {
+  background-color: #0752a7 !important;
+  color: #ffffff !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 18px rgba(9, 99, 198, 0.35) !important;
+}
+
+/* ==========================================================================
+   ESTILOS FLUJO WORKFLOW 3 BLOQUES (ENTRADA - CRONÓMETRO - SALIDA)
+   ========================================================================== */
+.reporte-wrapper .badge-status-blue {
+  background: rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+}
+
+.reporte-wrapper .badge-status-green {
+  background: #10b981 !important;
+  color: #ffffff !important;
+}
+
+.reporte-wrapper .badge-status-grey {
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: #e2e8f0 !important;
+}
+
+.reporte-wrapper .jornada-workflow-container {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 1.25rem !important;
+  margin-top: 0.5rem !important;
+  margin-bottom: 1.75rem !important;
+  width: 100% !important;
+}
+
+.reporte-wrapper .jornada-workflow-col {
+  flex: 1 1 0px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  min-width: 230px !important;
+}
+
+.reporte-wrapper .workflow-col-title {
+  font-size: 0.82rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.6px !important;
+  margin-bottom: 0.75rem !important;
+  text-transform: uppercase !important;
+  display: block !important;
+  text-align: center !important;
+}
+
+.reporte-wrapper .text-entrada {
+  color: #16a34a !important;
+}
+
+.reporte-wrapper .text-timer {
+  color: #0284c7 !important;
+}
+
+.reporte-wrapper .text-salida {
+  color: #f97316 !important;
+}
+
+.reporte-wrapper .jornada-step-card {
+  width: 100% !important;
+  min-height: 185px !important;
+  background: #ffffff !important;
+  border-radius: 16px !important;
+  padding: 1.25rem 1.1rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03) !important;
+  box-sizing: border-box !important;
+  transition: all 0.25s ease !important;
+}
+
+.reporte-wrapper .card-entrada {
+  border: 1.5px solid #e2e8f0 !important;
+}
+
+.reporte-wrapper .card-timer {
+  border: 1.5px solid #bae6fd !important;
+  background: #f0f9ff !important;
+}
+
+.reporte-wrapper .card-salida {
+  border: 1.5px solid #ffedd5 !important;
+}
+
+/* Header de tarjeta Entrada / Salida */
+.reporte-wrapper .step-card-header {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.85rem !important;
+  margin-bottom: 0.75rem !important;
+  width: 100% !important;
+  justify-content: center !important;
+}
+
+.reporte-wrapper .step-card-icon {
+  width: 46px !important;
+  height: 46px !important;
+  border-radius: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 1.4rem !important;
+  flex-shrink: 0 !important;
+}
+
+.reporte-wrapper .icon-entrada {
+  background: #dcfce7 !important;
+  color: #16a34a !important;
+}
+
+.reporte-wrapper .icon-salida {
+  background: #ffedd5 !important;
+  color: #ea580c !important;
+}
+
+.reporte-wrapper .icon-orange {
+  background: #fff7ed !important;
+  color: #f97316 !important;
+  border: 1px solid #ffedd5 !important;
+}
+
+.reporte-wrapper .icon-grey {
+  background: #f1f5f9 !important;
+  color: #94a3b8 !important;
+}
+
+.reporte-wrapper .step-card-info {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.reporte-wrapper .step-card-subtitle {
+  font-size: 0.82rem !important;
+  color: #64748b !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+}
+
+.reporte-wrapper .step-card-time {
+  font-size: 1.45rem !important;
+  font-weight: 800 !important;
+  color: #0f172a !important;
+  line-height: 1.1 !important;
+  margin-top: 0.15rem !important;
+}
+
+.reporte-wrapper .step-card-desc-empty {
+  font-size: 0.8rem !important;
+  color: #64748b !important;
+  font-weight: 500 !important;
+  line-height: 1.25 !important;
+  margin-top: 0.2rem !important;
+}
+
+/* Cuerpo de tarjeta Entrada / Salida */
+.reporte-wrapper .step-card-body {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 0.45rem !important;
+}
+
+.reporte-wrapper .step-card-location {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.35rem !important;
+  font-size: 0.9rem !important;
+  color: #475569 !important;
+  font-weight: 600 !important;
+}
+
+.reporte-wrapper .step-card-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.25rem !important;
+  padding: 0.22rem 0.75rem !important;
+  border-radius: 20px !important;
+  font-size: 0.75rem !important;
+  font-weight: 700 !important;
+}
+
+.reporte-wrapper .badge-gps-green {
+  background: #dcfce7 !important;
+  color: #15803d !important;
+}
+
+.reporte-wrapper .badge-gps-amber {
+  background: #fef3c7 !important;
+  color: #b45309 !important;
+}
+
+/* Cronómetro Digital */
+.reporte-wrapper .timer-icon-wrapper {
+  width: 52px !important;
+  height: 52px !important;
+  border: 2.5px solid #0284c7 !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 1.55rem !important;
+  color: #0284c7 !important;
+  margin-bottom: 0.5rem !important;
+  background: #ffffff !important;
+}
+
+.reporte-wrapper .timer-display-digits {
+  font-size: 2.25rem !important;
+  font-weight: 900 !important;
+  color: #0284c7 !important;
+  letter-spacing: 1.5px !important;
+  line-height: 1 !important;
+  font-family: 'Consolas', 'Courier New', monospace !important;
+  margin-bottom: 0.45rem !important;
+}
+
+.reporte-wrapper .timer-labels {
+  display: flex !important;
+  gap: 1.25rem !important;
+  font-size: 0.74rem !important;
+  font-weight: 700 !important;
+  color: #64748b !important;
+  letter-spacing: 0.2px !important;
+}
+
+/* Flechas conectoras */
+.reporte-wrapper .jornada-workflow-arrow {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-top: 1.2rem !important;
+  flex-shrink: 0 !important;
+}
+
+.reporte-wrapper .arrow-circle {
+  width: 32px !important;
+  height: 32px !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 50% !important;
+  background: #ffffff !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #64748b !important;
+  font-size: 0.95rem !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Footer Bottom Bar */
+.reporte-wrapper .jornada-bottom-bar {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  background: #f8fafc !important;
+  border: 1.5px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  padding: 0.9rem 1.35rem !important;
+  flex-wrap: wrap !important;
+  gap: 1rem !important;
+  margin-top: 0.5rem !important;
+}
+
+.reporte-wrapper .jornada-bottom-status {
+  display: flex !important;
+  align-items: center !important;
+  font-size: 0.92rem !important;
+  color: #1e293b !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 991px) {
+  .reporte-wrapper .jornada-workflow-container {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  .reporte-wrapper .jornada-workflow-arrow {
+    transform: rotate(90deg) !important;
+    margin: 0.5rem 0 !important;
+  }
+  .reporte-wrapper .jornada-step-card {
+    min-height: auto !important;
   }
 }

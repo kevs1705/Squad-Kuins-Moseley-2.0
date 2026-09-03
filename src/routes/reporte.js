@@ -67,6 +67,47 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
     const totalSegundos = totals[0]?.total_segundos || 0;
     const total_acumulada = formatSecondsToHHMMSS(totalSegundos);
 
+    // 2.1. Consultar la jornada de hoy (entrada, salida, lugar, timestamps crudos)
+    const [jornadaHoyRows] = await db.query(`
+      SELECT 
+        a.id_asistencia, 
+        l.nombre AS lugar_nombre,
+        TIME_FORMAT(a.hora_entrada, '%H:%i') AS hora_entrada,
+        TIME_FORMAT(a.hora_salida, '%H:%i') AS hora_salida,
+        a.hora_entrada AS hora_entrada_raw,
+        a.hora_salida AS hora_salida_raw,
+        DATE_FORMAT(a.fecha, '%Y-%m-%d') AS fecha_raw,
+        TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)) AS duracion_segundos
+      FROM asistencias a
+      LEFT JOIN lugares l ON a.id_lugar = l.id_lugar
+      WHERE a.id_usuario = ? 
+        AND a.fecha = CURDATE() 
+        AND a.estado != 'ANULADO'
+      ORDER BY a.id_asistencia DESC
+      LIMIT 1
+    `, [userId]);
+
+    let jornadaHoy = null;
+    if (jornadaHoyRows.length > 0) {
+      const row = jornadaHoyRows[0];
+      let estado = 'SIN_JORNADA';
+      if (row.hora_entrada && !row.hora_salida) {
+        estado = 'EN_CURSO';
+      } else if (row.hora_entrada && row.hora_salida) {
+        estado = 'COMPLETADA';
+      }
+      jornadaHoy = {
+        ...row,
+        estado
+      };
+    } else {
+      jornadaHoy = {
+        estado: 'SIN_JORNADA'
+      };
+    }
+
+    const jornadaActiva = (jornadaHoy && jornadaHoy.estado === 'EN_CURSO') ? jornadaHoy : null;
+
     // 3. JORNADAS UNIFICADAS: Asistencias vinculadas a Reportes por FK (id_asistencia)
     const [jornadas] = await db.query(`
       SELECT 
@@ -111,6 +152,8 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
     res.render('usuario/reporte', {
       user,
       total_acumulada,
+      jornadaActiva,
+      jornadaHoy,
       jornadas: jornadasProcesadas,
       cloudinaryCloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || process.env.CLOUDINARY_CLOUD_NAME || 'sjgf9nkd',
       cloudinaryUploadPreset: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || process.env.CLOUDINARY_UPLOAD_PRESET || 'pasantes_preset'
