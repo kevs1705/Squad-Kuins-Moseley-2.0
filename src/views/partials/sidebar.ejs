@@ -1,4 +1,3 @@
-
 <aside class="sidebar">
   <div class="sidebar__brand">
     <img src="/img/logo.png" alt="Logo BYGGER SRL" loading="lazy" decoding="async" />
@@ -11,20 +10,20 @@
   <nav aria-label="Navegación principal">
     <a href="/cuenta" class="sidebar-link">Mi Cuenta</a>
 
-<% if (typeof user !== 'undefined' && user && user.rol === 0) { %>
-    <a href="/usuario/asistencia" class="sidebar-link">Mis Jornadas</a>
-    <a href="/usuario/horario" class="sidebar-link">Mi Horario</a>
-    <a href="/usuario/reporte" class="sidebar-link">Reportes</a>
-<% } %>
+    <% if (typeof user !=='undefined' && user && user.rol===0) { %>
 
-    <% if (typeof user !== 'undefined' && user && user.rol === 1) { %>  
-      <a href="/admin/reportes" class="sidebar-link">Reporte</a>
-      <a href="/usuarios" class="sidebar-link">Usuarios</a>
-      <a href="/admin/obras" class="sidebar-link">Obras</a>
-      <a href="/admin/pagina-web" class="sidebar-link">Administrar página web</a>
-      <a href="/admin/mensajes" class="sidebar-link">Mensajes web</a>
-    <% } %>
+      <a href="/usuario/horario" class="sidebar-link">Mi Horario</a>
+      <a href="/usuario/reporte" class="sidebar-link">Reportes</a>
+      <% } %>
 
-    <a href="/logout" class="btn-danger">Cerrar sesión</a>
+        <% if (typeof user !=='undefined' && user && user.rol===1) { %>
+          <a href="/admin/reportes" class="sidebar-link">Reporte</a>
+          <a href="/usuarios" class="sidebar-link">Usuarios</a>
+          <a href="/admin/obras" class="sidebar-link">Obras</a>
+          <a href="/admin/pagina-web" class="sidebar-link">Administrar página web</a>
+          <a href="/admin/mensajes" class="sidebar-link">Mensajes web</a>
+          <% } %>
+
+            <a href="/logout" class="btn-danger">Cerrar sesión</a>
   </nav>
 </aside>

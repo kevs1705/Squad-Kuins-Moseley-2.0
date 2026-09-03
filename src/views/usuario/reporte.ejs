@@ -4,6 +4,13 @@
 
     <!-- Hoja de estilos independiente para Reportes -->
     <link rel="stylesheet" href="/css/reporte.css">
+    <style>
+      #modal_tarea,
+      #modal_tarea::placeholder {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 300 !important;
+      }
+    </style>
 
     <div class="reporte-wrapper py-3">
 
@@ -19,16 +26,6 @@
         </div>
 
         <div class="reporte-header-right">
-          <!-- Ficha compacta de Horas Totales Acumuladas -->
-          <div class="card-horas-compact">
-            <div class="horas-compact-info">
-              <span class="horas-compact-label">Horas totales acumuladas</span>
-              <span class="horas-compact-val">
-                <%= total_acumulada %> <small>hrs</small>
-              </span>
-            </div>
-          </div>
-
           <div class="reporte-actions-group">
             <a href="/reportes/export" class="btn-excel-custom">
               <i class="bi bi-file-earmark-excel me-1"></i> Exportar a Excel
@@ -39,6 +36,246 @@
               <i class="bi bi-clock-history me-1"></i> Solicitar Horas Extra
             </button>
           </div>
+        </div>
+      </div>
+
+      <!-- Tarjeta: Panel de Verificación GPS / Geocerca -->
+      <% 
+        const jHoy = (typeof jornadaHoy !== 'undefined' && jornadaHoy) ? jornadaHoy : { estado: 'SIN_JORNADA' };
+        let badgeLabel = 'SIN JORNADA';
+        let badgeClass = 'badge-status-grey';
+        if (jHoy.estado === 'EN_CURSO') {
+          badgeLabel = 'EN CURSO';
+          badgeClass = 'badge-status-blue';
+        } else if (jHoy.estado === 'COMPLETADA') {
+          badgeLabel = 'COMPLETADA';
+          badgeClass = 'badge-status-green';
+        }
+      %>
+      <div class="card-jornada-hoy-v2 mb-4">
+        <!-- Banner Azul Superior -->
+        <div class="jornada-banner-top">
+          <div class="jornada-banner-left">
+            <div class="jornada-banner-circle">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5z"/>
+                <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H1a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z"/>
+              </svg>
+            </div>
+            <div>
+              <h5 class="jornada-banner-title">Jornadas de hoy</h5>
+              <span class="jornada-banner-badge <%= badgeClass %>">
+                <%= badgeLabel %>
+              </span>
+            </div>
+          </div>
+
+          <div class="jornada-banner-right">
+            <div class="jornada-banner-divider"></div>
+            <div class="jornada-banner-circle">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z"/>
+                <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0"/>
+              </svg>
+            </div>
+            <div>
+              <span class="jornada-hours-label">Horas acumuladas</span>
+              <span class="jornada-hours-val">
+                <%= total_acumulada %> <small>hrs</small>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cuerpo de la Tarjeta (Flujo de 3 Pasos + Footer) -->
+        <div class="jornada-body-v2">
+          
+          <div class="jornada-workflow-container">
+            <!-- PASO 1: ENTRADA -->
+            <div class="jornada-workflow-col">
+              <span class="workflow-col-title text-entrada">ENTRADA</span>
+              <div class="jornada-step-card card-entrada">
+                <% if (jHoy.hora_entrada) { %>
+                  <div class="step-card-header">
+                    <div class="step-card-icon icon-entrada">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M6 3.5a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-2a.5.5 0 0 0-1 0v2A1.5 1.5 0 0 0 6.5 15h8a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-8A1.5 1.5 0 0 0 5 3.5v2a.5.5 0 0 0 1 0z"/>
+                        <path fill-rule="evenodd" d="M11.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 1 0-.708.708L10.293 7.5H1.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708z"/>
+                      </svg>
+                    </div>
+                    <div class="step-card-info">
+                      <span class="step-card-subtitle">Entrada registrada</span>
+                      <span class="step-card-time"><%= jHoy.hora_entrada %> hrs</span>
+                    </div>
+                  </div>
+                  <div class="step-card-body">
+                    <div class="step-card-location">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M12.166 8.94c-.524 1.062-1.234 2.12-1.96 3.07A32 32 0 0 1 8 14.58a32 32 0 0 1-2.206-2.57c-.726-.95-1.436-2.008-1.96-3.07C3.304 7.867 3 6.862 3 6a5 5 0 0 1 10 0c0 .862-.305 1.867-.834 2.94M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10"/>
+                        <path d="M8 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4"/>
+                      </svg>
+                      <span><%= jHoy.lugar_nombre || 'Ubicación' %></span>
+                    </div>
+                    <div class="step-card-badge badge-gps-green">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425z"/>
+                      </svg>
+                      GPS verificado
+                    </div>
+                  </div>
+                <% } else { %>
+                  <div class="step-card-header">
+                    <div class="step-card-icon icon-grey">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M6 3.5a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-2a.5.5 0 0 0-1 0v2A1.5 1.5 0 0 0 6.5 15h8a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-8A1.5 1.5 0 0 0 5 3.5v2a.5.5 0 0 0 1 0z"/>
+                        <path fill-rule="evenodd" d="M11.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 1 0-.708.708L10.293 7.5H1.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708z"/>
+                      </svg>
+                    </div>
+                    <div class="step-card-info">
+                      <span class="step-card-subtitle">Aún no registrada</span>
+                      <span class="step-card-desc-empty">Marca tu entrada al iniciar tu jornada</span>
+                    </div>
+                  </div>
+                <% } %>
+              </div>
+            </div>
+
+            <!-- FLECHA DE CONEXIÓN 1 -->
+            <div class="jornada-workflow-arrow">
+              <div class="arrow-circle">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                  <path fill-rule="evenodd" d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8"/>
+                </svg>
+              </div>
+            </div>
+
+            <!-- PASO 2: TIEMPO TRANSCURRIDO HOY (CRONÓMETRO) -->
+            <div class="jornada-workflow-col">
+              <span class="workflow-col-title text-timer">TIEMPO TRANSCURRIDO HOY</span>
+              <div class="jornada-step-card card-timer">
+                <div class="timer-icon-wrapper">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z"/>
+                    <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0"/>
+                  </svg>
+                </div>
+                <div class="timer-display-digits" id="cronometro-display">
+                  00:00:00
+                </div>
+                <div class="timer-labels">
+                  <span>Horas</span>
+                  <span>Minutos</span>
+                  <span>Segundos</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- FLECHA DE CONEXIÓN 2 -->
+            <div class="jornada-workflow-arrow">
+              <div class="arrow-circle">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                  <path fill-rule="evenodd" d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8"/>
+                </svg>
+              </div>
+            </div>
+
+            <!-- PASO 3: SALIDA -->
+            <div class="jornada-workflow-col">
+              <span class="workflow-col-title text-salida">SALIDA</span>
+              <div class="jornada-step-card card-salida">
+                <% if (jHoy.hora_salida) { %>
+                  <div class="step-card-header">
+                    <div class="step-card-icon icon-salida">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 1h-8A1.5 1.5 0 0 0 0 2.5v9A1.5 1.5 0 0 0 1.5 13h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0z"/>
+                        <path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708z"/>
+                      </svg>
+                    </div>
+                    <div class="step-card-info">
+                      <span class="step-card-subtitle">Salida registrada</span>
+                      <span class="step-card-time"><%= jHoy.hora_salida %> hrs</span>
+                    </div>
+                  </div>
+                  <div class="step-card-body">
+                    <div class="step-card-location">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M12.166 8.94c-.524 1.062-1.234 2.12-1.96 3.07A32 32 0 0 1 8 14.58a32 32 0 0 1-2.206-2.57c-.726-.95-1.436-2.008-1.96-3.07C3.304 7.867 3 6.862 3 6a5 5 0 0 1 10 0c0 .862-.305 1.867-.834 2.94M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10"/>
+                        <path d="M8 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4"/>
+                      </svg>
+                      <span><%= jHoy.lugar_nombre || 'Ubicación' %></span>
+                    </div>
+                    <div class="step-card-badge badge-gps-amber">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425z"/>
+                      </svg>
+                      GPS verificado
+                    </div>
+                  </div>
+                <% } else { %>
+                  <div class="step-card-header">
+                    <div class="step-card-icon icon-orange">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 1h-8A1.5 1.5 0 0 0 0 2.5v9A1.5 1.5 0 0 0 1.5 13h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0z"/>
+                        <path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708z"/>
+                      </svg>
+                    </div>
+                    <div class="step-card-info">
+                      <span class="step-card-subtitle">Aún no registrada</span>
+                      <span class="step-card-desc-empty">Marca tu salida al finalizar tu jornada</span>
+                    </div>
+                  </div>
+                <% } %>
+              </div>
+            </div>
+          </div>
+
+          <!-- FOOTER DE ESTADO Y BOTÓN DE ACCIÓN -->
+          <div class="jornada-bottom-bar">
+            <div class="jornada-bottom-status">
+              <% if (jHoy.estado === 'EN_CURSO') { %>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="text-success me-2 flex-shrink-0" viewBox="0 0 16 16">
+                  <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0m-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l5-6.25a.75.75 0 0 0-.019-1.04"/>
+                </svg>
+                <span class="status-text fw-semibold">Tu jornada está actualmente en curso.</span>
+              <% } else if (jHoy.estado === 'COMPLETADA') { %>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="text-success me-2 flex-shrink-0" viewBox="0 0 16 16">
+                  <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0m-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l5-6.25a.75.75 0 0 0-.019-1.04"/>
+                </svg>
+                <span class="status-text fw-semibold">Tu jornada de hoy se ha completado con éxito.</span>
+              <% } else { %>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="text-secondary me-2 flex-shrink-0" viewBox="0 0 16 16">
+                  <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l.451-.081zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2"/>
+                </svg>
+                <span class="status-text text-muted">No tienes ninguna jornada activa hoy. Debes marcar entrada con GPS.</span>
+              <% } %>
+            </div>
+
+            <div class="jornada-bottom-action">
+              <% if (jHoy.estado === 'EN_CURSO') { %>
+                <a href="/geofence" class="btn-gps-blue">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6"/>
+                  </svg>
+                  Verificar ubicación y marcar salida
+                </a>
+              <% } else if (jHoy.estado === 'SIN_JORNADA') { %>
+                <a href="/geofence" class="btn-gps-blue">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6"/>
+                  </svg>
+                  Verificar GPS e iniciar jornada
+                </a>
+              <% } else { %>
+                <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" disabled>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-1" viewBox="0 0 16 16">
+                    <path d="M12.354 4.354a.5.5 0 0 0-.708-.708L5 10.293 1.854 7.146a.5.5 0 1 1-.708.708l3.5 3.5a.5.5 0 0 0 .708 0zm-4.208 7-.896-.897.707-.707.501.502 6.146-6.147a.5.5 0 0 1 .708.708l-7 7a.5.5 0 0 1-.708 0z"/>
+                  </svg>
+                  Jornada finalizada
+                </button>
+              <% } %>
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -122,15 +359,27 @@
                           <% } %>
                     </td>
 
-                    <td>
+                    <td class="col-tarea-cell">
                       <% if(j.tarea) { %>
-                        <%= j.tarea %>
-                          <% } else { %>
-                            <span class="text-muted fs-7"><em>Sin bitácora registrada</em></span>
-                            <% } %>
-                              <% if(j.observacion) { %>
-                                <br><small class="text-danger">Obs: <%= j.observacion %></small>
-                                <% } %>
+                        <% if(j.tarea.length > 80) { %>
+                          <div class="bitacora-container">
+                            <span class="bitacora-corta"><%= j.tarea.substring(0, 80) %>...</span>
+                            <button type="button" class="btn-ver-mas-bitacora btn-ver-detalle-bitacora"
+                              data-tarea="<%= j.tarea %>"
+                              data-fecha="<%= j.fecha %>"
+                              data-lugar="<%= j.lugar_nombre || '' %>">
+                              Ver más
+                            </button>
+                          </div>
+                        <% } else { %>
+                          <span class="bitacora-texto"><%= j.tarea %></span>
+                        <% } %>
+                      <% } else { %>
+                        <span class="text-muted fs-7"><em>Sin bitácora registrada</em></span>
+                      <% } %>
+                      <% if(j.observacion) { %>
+                        <br><small class="text-danger">Obs: <%= j.observacion %></small>
+                      <% } %>
                     </td>
 
                     <td>
@@ -209,6 +458,7 @@
                 <label class="form-label fw-semibold">Descripción de la Tarea / Avance <span
                     class="text-danger">*</span></label>
                 <textarea class="form-control" name="tarea" id="modal_tarea" rows="4" required
+                  style="resize: none; width: 100%; font-family: 'Montserrat', sans-serif !important; font-weight: 300 !important;"
                   placeholder="Describe las actividades realizadas en la jornada..."></textarea>
               </div>
 
@@ -227,7 +477,7 @@
                 <label class="form-label fw-semibold">Adjuntar Comprobante (PNG / JPG / WEBP)</label>
                 <input type="file" name="comprobante" class="form-control" id="modal_comprobante"
                   accept="image/png, image/jpeg, image/jpg, image/webp">
-                <small class="text-muted">Las imágenes se subirán automáticamente a Cloudinary.</small>
+                <small class="text-muted d-block mt-1" style="font-size: 0.78rem;">Las imágenes se subirán automáticamente a Cloudinary.</small>
               </div>
 
               <!-- Previsualización de nueva imagen seleccionada -->
@@ -260,6 +510,35 @@
       </div>
     </div>
 
+    <!-- MODAL INTERACTIVO: VER BITÁCORA DETALLADA (CENTRADOS) -->
+    <div class="modal fade" id="modalVerBitacora" tabindex="-1" aria-labelledby="modalVerBitacoraLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header" style="background-color: #f0f5fc;">
+            <h5 class="modal-title fw-bold" id="modalVerBitacoraLabel" style="color: #0b3c5d;">
+              <i class="bi bi-journal-text me-2 text-primary"></i>Detalle de Tarea / Bitácora
+            </h5>
+            <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Cerrar">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+          <div class="modal-body p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+              <span class="text-muted fs-7"><i class="bi bi-calendar2-event me-1 text-primary"></i> Fecha: <strong id="modalVerBitacoraFecha" class="text-dark"></strong></span>
+              <span class="text-muted fs-7" id="modalVerBitacoraLugarWrap" style="display: none;"><i class="bi bi-geo-alt me-1 text-danger"></i> Obra: <strong id="modalVerBitacoraLugar" class="text-dark"></strong></span>
+            </div>
+            <label class="form-label fw-bold text-dark mb-2">Descripción Completa:</label>
+            <div id="modalVerBitacoraTexto" class="p-3 bg-light rounded border"
+                 style="max-height: 320px; overflow-y: auto; word-break: break-word; white-space: pre-wrap; font-size: 0.93rem; color: #1e293b; line-height: 1.5;">
+            </div>
+          </div>
+          <div class="modal-footer border-top-0 pt-0">
+            <button type="button" class="btn btn-secondary px-4 rounded-3" data-bs-dismiss="modal">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- ========================================================================= -->
     <!-- INICIO: INCLUSIÓN DEL COMPONENTE DE ALERTA REUTILIZABLE -->
     <!-- ========================================================================= -->
@@ -286,6 +565,32 @@
           const uploadFeedback = document.getElementById('upload_feedback');
           const uploadFeedbackText = document.getElementById('upload_feedback_text');
           const btnGuardar = document.getElementById('btnGuardarReporte');
+
+          // Modal Ver Bitácora Completa
+          const modalVerBitacoraEl = document.getElementById('modalVerBitacora');
+          const modalVerBitacora = modalVerBitacoraEl ? new bootstrap.Modal(modalVerBitacoraEl) : null;
+
+          document.querySelectorAll('.btn-ver-detalle-bitacora').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const tarea = btn.dataset.tarea || '';
+              const fecha = btn.dataset.fecha || '';
+              const lugar = btn.dataset.lugar || '';
+
+              document.getElementById('modalVerBitacoraFecha').textContent = fecha;
+              document.getElementById('modalVerBitacoraTexto').textContent = tarea;
+
+              const lugarWrap = document.getElementById('modalVerBitacoraLugarWrap');
+              const lugarEl = document.getElementById('modalVerBitacoraLugar');
+              if (lugar) {
+                lugarEl.textContent = lugar;
+                lugarWrap.style.display = 'inline';
+              } else {
+                lugarWrap.style.display = 'none';
+              }
+
+              if (modalVerBitacora) modalVerBitacora.show();
+            });
+          });
 
           // Helper para previsualizar imagen seleccionada
           fileInput.addEventListener('change', () => {
@@ -438,6 +743,51 @@
               }
             });
         });
+
+        // Cronómetro en vivo de Tiempo Transcurrido Hoy
+        (function initCronometro() {
+          const estadoJornada = '<%= jHoy.estado %>';
+          const horaEntradaRaw = '<%= jHoy.hora_entrada_raw || "" %>';
+          const fechaRaw = '<%= jHoy.fecha_raw || "" %>';
+          const duracionSegundos = parseInt('<%= jHoy.duracion_segundos || 0 %>', 10) || 0;
+          const displayEl = document.getElementById('cronometro-display');
+
+          if (!displayEl) return;
+
+          function formatHHMMSS(totalSecs) {
+            const secs = Math.max(0, Math.floor(totalSecs));
+            const h = String(Math.floor(secs / 3600)).padStart(2, '0');
+            const m = String(Math.floor((secs % 3600) / 60)).padStart(2, '0');
+            const s = String(secs % 60).padStart(2, '0');
+            return `${h}:${m}:${s}`;
+          }
+
+          if (estadoJornada === 'EN_CURSO' && fechaRaw && horaEntradaRaw) {
+            const timeParts = horaEntradaRaw.split(':');
+            const dateParts = fechaRaw.split('-');
+            const entradaDate = new Date(
+              parseInt(dateParts[0], 10),
+              parseInt(dateParts[1], 10) - 1,
+              parseInt(dateParts[2], 10),
+              parseInt(timeParts[0] || '0', 10),
+              parseInt(timeParts[1] || '0', 10),
+              parseInt(timeParts[2] || '0', 10)
+            );
+
+            function updateTicker() {
+              const now = new Date();
+              const diffMs = Math.max(0, now.getTime() - entradaDate.getTime());
+              displayEl.textContent = formatHHMMSS(diffMs / 1000);
+            }
+
+            updateTicker();
+            setInterval(updateTicker, 1000);
+          } else if (estadoJornada === 'COMPLETADA') {
+            displayEl.textContent = formatHHMMSS(duracionSegundos);
+          } else {
+            displayEl.textContent = '00:00:00';
+          }
+        })();
 
         /*
         ===============================================================
