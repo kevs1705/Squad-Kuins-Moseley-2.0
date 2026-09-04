@@ -3,7 +3,7 @@ require('dotenv').config();
 const db = require('./src/config/bd'); // Pool MySQL
 const Zkteco = require('zkteco-js-with-restart');
 
-const BIOMETRICO_IP = process.env.BIOMETRICO_IP || '192.168.0.250';
+const BIOMETRICO_IP = process.env.BIOMETRICO_IP || '192.168.1.250';
 const BIOMETRICO_PORT = Number(process.env.BIOMETRICO_PORT) || 4370;
 const ID_LUGAR_DEFECTO = 3; // ID de lugar por defecto en la tabla lugares
 
