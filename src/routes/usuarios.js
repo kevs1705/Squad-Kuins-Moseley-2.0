@@ -12,7 +12,7 @@ if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
     console.warn('⚠️ No se pudo cargar zkteco-js-with-restart en este entorno:', error.message);
   }
 }
-const BIOMETRICO_IP = process.env.BIOMETRICO_IP || '192.168.0.250';
+const BIOMETRICO_IP = process.env.BIOMETRICO_IP || '192.168.1.250';
 const BIOMETRICO_PORT = Number(process.env.BIOMETRICO_PORT) || 4370;
 
 function requireAuth(req, res, next) {
