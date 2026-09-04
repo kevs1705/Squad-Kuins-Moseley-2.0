@@ -10,11 +10,11 @@
   <nav aria-label="Navegación principal">
     <a href="/cuenta" class="sidebar-link">Mi Cuenta</a>
 
-    <% if (typeof user !=='undefined' && user && user.rol===0) { %>
-
-      <a href="/usuario/horario" class="sidebar-link">Mi Horario</a>
-      <a href="/usuario/reporte" class="sidebar-link">Reportes</a>
-      <% } %>
+<% if (typeof user !== 'undefined' && user && user.rol === 0) { %>
+    <!-- <a href="/usuario/asistencia" class="sidebar-link">Mis Jornadas</a>-->
+    <a href="/usuario/horario" class="sidebar-link">Mi Horario</a>
+    <a href="/usuario/reporte" class="sidebar-link">Mi Asistencia y Bitácora</a>
+<% } %>
 
         <% if (typeof user !=='undefined' && user && user.rol===1) { %>
           <a href="/admin/reportes" class="sidebar-link">Reporte</a>
