@@ -17,22 +17,87 @@ function requireRole(role) {
  * Si quieres ver solo pendientes: agrega WHERE n.estado = 1
  */
 router.get('/notificaciones_admin', requireAuth, requireRole(1), async (req, res) => {
-  const [rows] = await db.query(
-    `SELECT 
-      n.id_notificacion, n.id_usuario, u.nombre AS nombre_usuario,
-      DATE_FORMAT(n.fecha_solicitada, '%Y-%m-%d') AS fecha_solicitada,
-      DATE_FORMAT(n.hora_inicio, '%H:%i') AS hora_inicio,
-      DATE_FORMAT(n.hora_fin, '%H:%i') AS hora_fin,
-      n.motivo, n.estado,
-      n.observacion_admin,
-      DATE_FORMAT(n.creado_en, '%Y-%m-%d %H:%i:%s') AS creado_en,
-      DATE_FORMAT(n.actualizado_en, '%Y-%m-%d %H:%i:%s') AS actualizado_en
-   FROM notificaciones n
-   JOIN usuarios u ON u.id_usuario = n.id_usuario
-   ORDER BY n.creado_en DESC`
-  );
+  try {
+    // 1. Solicitudes de horas extra
+    const [notifs] = await db.query(
+      `SELECT 
+        n.id_notificacion, n.id_usuario, u.nombre AS nombre_usuario,
+        DATE_FORMAT(n.fecha_solicitada, '%Y-%m-%d') AS fecha_solicitada,
+        DATE_FORMAT(n.hora_inicio, '%H:%i') AS hora_inicio,
+        DATE_FORMAT(n.hora_fin, '%H:%i') AS hora_fin,
+        n.motivo, n.estado,
+        n.observacion_admin,
+        DATE_FORMAT(n.creado_en, '%Y-%m-%d %H:%i:%s') AS creado_en,
+        DATE_FORMAT(n.actualizado_en, '%Y-%m-%d %H:%i:%s') AS actualizado_en
+      FROM notificaciones n
+      JOIN usuarios u ON u.id_usuario = n.id_usuario
+      ORDER BY (n.estado = 1) DESC, n.creado_en DESC`
+    );
 
-  res.render('notificaciones_admin', { user: req.session.user, notifs: rows });
+    // 2. Solicitudes de Teletrabajo (Fase 1: Pre-autorización)
+    const [teletrabajos] = await db.query(
+      `SELECT 
+        s.id_solicitud, s.id_usuario, u.nombre AS nombre_usuario, u.CI AS ci_usuario,
+        DATE_FORMAT(s.fecha_solicitada, '%Y-%m-%d') AS fecha_solicitada,
+        TIME_FORMAT(s.hora_inicio, '%H:%i') AS hora_inicio,
+        TIME_FORMAT(s.hora_fin, '%H:%i') AS hora_fin,
+        s.motivo, s.direccion_remota, s.estado,
+        s.observacion_admin,
+        DATE_FORMAT(s.creado_en, '%Y-%m-%d %H:%i:%s') AS creado_en
+      FROM solicitudes_teletrabajo s
+      JOIN usuarios u ON u.id_usuario = s.id_usuario
+      ORDER BY (s.estado = 1) DESC, s.fecha_solicitada DESC, s.creado_en DESC`
+    );
+
+    // 3. Jornadas de Teletrabajo Observadas (Fase 2: Auditoría y Aprobación de Bitácoras)
+    const [jornadasObservadas] = await db.query(
+      `SELECT 
+        a.id_asistencia,
+        a.id_usuario,
+        u.nombre AS usuario_nombre,
+        u.CI AS usuario_ci,
+        DATE_FORMAT(a.fecha, '%Y-%m-%d') AS fecha,
+        TIME_FORMAT(a.hora_entrada, '%H:%i') AS hora_entrada,
+        TIME_FORMAT(a.hora_salida, '%H:%i') AS hora_salida,
+        COALESCE(ag.modalidad, 'TELETRABAJO') AS modalidad,
+        a.estado AS asistencia_estado,
+        ag.lat_entrada,
+        ag.lng_entrada,
+        ag.lat_salida,
+        ag.lng_salida,
+        a.observacion AS asistencia_observacion,
+        
+        st.direccion_remota,
+        st.motivo AS motivo_solicitud,
+        
+        r.id_reporte,
+        r.tarea,
+        r.comprobante,
+        r.observacion AS reporte_observacion,
+        
+        IF(a.hora_salida IS NOT NULL AND a.hora_entrada IS NOT NULL,
+           TIME_FORMAT(TIMEDIFF(a.hora_salida, a.hora_entrada), '%H:%i'),
+           '00:00'
+        ) AS horas_calculadas
+      FROM asistencias a
+      INNER JOIN usuarios u ON u.id_usuario = a.id_usuario
+      LEFT JOIN asistencias_geo ag ON ag.id_asistencia = a.id_asistencia
+      LEFT JOIN solicitudes_teletrabajo st ON st.id_solicitud = ag.id_solicitud_teletrabajo
+      LEFT JOIN reportes r ON r.id_asistencia = a.id_asistencia
+      WHERE a.estado = 'OBSERVADO' AND (ag.modalidad = 'TELETRABAJO' OR ag.id_geo IS NOT NULL)
+      ORDER BY a.fecha DESC, a.hora_entrada DESC`
+    );
+
+    res.render('notificaciones_admin', { 
+      user: req.session.user, 
+      notifs: notifs || [],
+      teletrabajos: teletrabajos || [],
+      jornadasObservadas: jornadasObservadas || []
+    });
+  } catch (error) {
+    console.error('Error al cargar panel de notificaciones admin:', error);
+    res.status(500).send('Error interno al cargar solicitudes.');
+  }
 });
 
 /**

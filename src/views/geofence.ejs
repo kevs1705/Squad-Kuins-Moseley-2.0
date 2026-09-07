@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Verificación de Presencia</title>
+  <title><%= (typeof teletrabajoHoy !== 'undefined' && teletrabajoHoy) ? 'Teletrabajo - Verificación GPS' : 'Verificación de Presencia' %></title>
 
   <link rel="stylesheet" href="/css/geofence.css">
 
@@ -16,46 +16,163 @@
 
   <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  
+  <style>
+    /* Estilos Premium para la vista de Geocerca y Teletrabajo */
+    .badge-teletrabajo-banner {
+      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+      border: 1px solid #bfdbfe;
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 16px;
+      text-align: left;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08);
+    }
+    .badge-teletrabajo-banner h4 {
+      margin: 0 0 6px 0;
+      color: #1e40af;
+      font-size: 1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .badge-teletrabajo-banner p {
+      margin: 0;
+      color: #1e3a8a;
+      font-size: 0.84rem;
+    }
+    .btn-teletrabajo-active {
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+      color: #ffffff !important;
+      font-weight: 700 !important;
+      font-size: 0.95rem !important;
+      padding: 0.75rem 1.25rem !important;
+      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.35) !important;
+      border: none !important;
+      border-radius: 10px !important;
+      cursor: pointer;
+      transition: all 0.2s ease !important;
+    }
+    .btn-teletrabajo-active:hover {
+      background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%) !important;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(37, 99, 235, 0.45) !important;
+    }
+    .gps-status-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-top: 12px;
+      margin-bottom: 12px;
+      font-size: 0.82rem;
+      text-align: left;
+      color: #334155;
+    }
+    .gps-status-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    .gps-status-item:last-child {
+      margin-bottom: 0;
+    }
+    .pulse-radar {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      background: #10b981;
+      border-radius: 50%;
+      margin-right: 6px;
+      box-shadow: 0 0 0 rgba(16, 185, 129, 0.7);
+      animation: pulse-dot 1.5s infinite;
+    }
+    @keyframes pulse-dot {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+  </style>
 </head>
 <body>
   <div class="wrap">
-    <!-- Panel -->
+    <!-- Panel Izquierdo -->
     <div class="card">
-      <h1>Verificación de presencia</h1>
-      <p>Para acceder, confirma que te encuentras dentro de una zona o lugar de trabajo autorizado.</p>
+      <% const isTeletrabajo = (typeof teletrabajoHoy !== 'undefined' && teletrabajoHoy); %>
       
-      <div id="lugares-info" class="small" style="margin-bottom: 12px;">
-        <b>Zonas autorizadas registradas: <%= lugares.length %></b>
+      <% if (isTeletrabajo) { %>
+        <div class="badge-teletrabajo-banner">
+          <h4>🏠 Modo Teletrabajo Activo</h4>
+          <p>Lugar autorizado: <strong><%= teletrabajoHoy.direccion_remota || 'Domicilio particular' %></strong></p>
+          <p style="margin-top: 4px; font-size: 0.78rem; color: #2563eb;">Horario: <strong><%= teletrabajoHoy.hora_inicio %> - <%= teletrabajoHoy.hora_fin %></strong></p>
+        </div>
+        <h1>Marcación Remota</h1>
+        <p class="small text-muted" style="margin-bottom: 12px;">
+          Tu ubicación actual se registra directamente en el mapa para validar tu jornada laboral en casa.
+        </p>
+      <% } else { %>
+        <h1>Verificación de Presencia</h1>
+        <p>Para acceder, confirma que te encuentras dentro de una zona o lugar de trabajo autorizado.</p>
+        
+        <div id="lugares-info" class="small" style="margin-bottom: 12px;">
+          <b>Zonas autorizadas registradas: <%= lugares.length %></b>
+        </div>
+      <% } %>
+
+      <div class="gps-status-card">
+        <div class="gps-status-item">
+          <span><strong>Estado GPS:</strong></span>
+          <span id="gps-status-badge"><span class="pulse-radar"></span> <span id="gps-status-text">Detectando señal...</span></span>
+        </div>
+        <div class="gps-status-item">
+          <span><strong>Precisión:</strong></span>
+          <span id="gps-accuracy-val">Calculando...</span>
+        </div>
+        <% if (isTeletrabajo) { %>
+          <div class="gps-status-item">
+            <span><strong>Modalidad:</strong></span>
+            <span class="text-primary fw-semibold">Teletrabajo 🏠</span>
+          </div>
+        <% } %>
       </div>
 
       <div class="geofence-actions-group">
-        <button id="btn">Verificar mi ubicación</button>
-        <a href="/dashboard" class="btn-back-geo">
+        <button id="btn" class="<%= isTeletrabajo ? 'btn-teletrabajo-active' : '' %>">
+          <%= isTeletrabajo ? '📍 Marcar Entrada / Salida GPS' : 'Verificar mi ubicación' %>
+        </button>
+        <a href="/usuario/reporte" class="btn-back-geo">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="19" y1="12" x2="5" y2="12"></line>
             <polyline points="12 19 5 12 12 5"></polyline>
           </svg>
-          Volver al Inicio
+          Volver a Mis Jornadas
         </a>
       </div>
       
       <div id="log" class="log"></div>
       
-      <p class="small" style="margin-top:10px">
-        * Consejo: activa el GPS y Wi-Fi para mejor precisión.
+      <p class="small" style="margin-top:12px; font-size: 0.76rem; color: #64748b;">
+        * Consejo: si estás en laptop o móvil, activa la ubicación precisa para mayor exactitud.
       </p>
     </div>
 
-    <!-- Mapa -->
+    <!-- Mapa Derecho -->
     <div style="position:relative">
       <div id="map"></div>
       <div class="legend">
-        <div><span class="dot" style="background:#22c55e"></span> Obras / Lugares Autorizados</div>
-        <div><span class="dot" style="background:#eab308"></span> Tu ubicación GPS</div>
+        <% if (isTeletrabajo) { %>
+          <div><span class="dot" style="background:#2563eb"></span> Tu punto de Teletrabajo</div>
+          <div><span class="dot" style="background:#10b981"></span> Tu posición GPS en vivo</div>
+        <% } else { %>
+          <div><span class="dot" style="background:#22c55e"></span> Obras / Lugares Autorizados</div>
+          <div><span class="dot" style="background:#eab308"></span> Tu ubicación GPS</div>
+        <% } %>
       </div>
     </div>
   </div>
-<!-- Guardamos el JSON de forma segura en un tag HTML oculto -->
+
+<!-- Guardamos el JSON de lugares -->
 <script id="lugares-data" type="application/json">
   <%- JSON.stringify(lugares || []) %>
 </script>
@@ -63,7 +180,10 @@
 <script>
 const btn = document.getElementById('btn');
 const log = document.getElementById('log');
+const gpsStatusText = document.getElementById('gps-status-text');
+const gpsAccuracyVal = document.getElementById('gps-accuracy-val');
 const redirect = "<%= redirect %>";
+const isTeletrabajoMode = "<%= isTeletrabajo %>" === "true";
 
 // Inyección segura
 let LUGARES = [];
@@ -73,99 +193,143 @@ try {
   console.error("Error al parsear lugares:", e);
 }
 
-// --- MAPA ---
+// --- CONFIGURACIÓN DEL MAPA ---
 const map = L.map('map', { zoomControl: true, attributionControl: true });
 
+// Usar OpenStreetMap estándar nítido de alta resolución
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
   maxZoom: 19,
-  subdomains: ['a', 'b', 'c'],
   attribution: '&copy; OpenStreetMap contributors' 
 }).addTo(map);
 
-const bounds = []; // Colección de coordenadas [lat, lng] válidas
+const bounds = [];
 
-// Dibujar los lugares válidos
-LUGARES.forEach(lugar => {
-  const lat = parseFloat(lugar.latitud);
-  const lng = parseFloat(lugar.longitud);
-  const radio = parseFloat(lugar.radio_metros) || 100;
+if (!isTeletrabajoMode) {
+  // Dibujar obras autorizadas (excluyendo coordenadas en 0,0)
+  LUGARES.forEach(lugar => {
+    const lat = parseFloat(lugar.latitud);
+    const lng = parseFloat(lugar.longitud);
+    const radio = parseFloat(lugar.radio_metros) || 100;
 
-  if (!isNaN(lat) && !isNaN(lng)) {
-    // Marcador central
-    L.circleMarker([lat, lng], {
-      radius: 7, color: '#22c55e', weight: 2, fill: true, fillOpacity: 1
-    }).addTo(map).bindPopup(`<b>${lugar.nombre}</b><br>Radio: ${radio}m`);
+    if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+      L.circleMarker([lat, lng], {
+        radius: 7, color: '#22c55e', weight: 2, fill: true, fillOpacity: 1
+      }).addTo(map).bindPopup(`<b>${lugar.nombre}</b><br>Radio: ${radio}m`);
 
-    // Círculo de cobertura
-    L.circle([lat, lng], {
-      radius: radio, color: '#22c55e', weight: 1.5, fill: true, fillOpacity: 0.1
-    }).addTo(map);
+      L.circle([lat, lng], {
+        radius: radio, color: '#22c55e', weight: 1.5, fill: true, fillOpacity: 0.1
+      }).addTo(map);
 
-    // Guardamos la coordenada en nuestro array para los límites
-    bounds.push([lat, lng]);
+      bounds.push([lat, lng]);
+    }
+  });
+
+  if (bounds.length > 0) {
+    map.fitBounds(bounds, { padding: [50, 50] });
+  } else {
+    map.setView([-16.5000, -68.1333], 15);
   }
-});
-
-// Ajustar vista del mapa de forma segura
-if (bounds.length > 0) {
-  // Ajustamos los límites pasando directamente la lista de coordenadas LatLng
-  map.fitBounds(bounds, { padding: [50, 50] });
 } else {
-  // Coordenadas por defecto (La Paz) si no hay lugares válidos
-  map.setView([-16.5000, -68.1333], 14);
+  // Vista inicial por defecto centrada en la ciudad
+  map.setView([-16.5000, -68.1333], 15);
 }
 
-// Forzar el recálculo de dimensiones del mapa tras renderizar el DOM
 setTimeout(() => {
   map.invalidateSize();
 }, 250);
 
 let userMarker = null;
 let userAccCircle = null;
+let lastKnownCoords = null;
 
-function fitAll() {
-  const points = [...bounds];
-
-  if (userMarker) {
-    const userLatLng = userMarker.getLatLng();
-    points.push([userLatLng.lat, userLatLng.lng]);
-  }
-
-  if (points.length > 0) {
-    map.fitBounds(points, { padding: [40, 40], animate: true });
-  }
+function write(s){ 
+  if (log) log.textContent = s; 
 }
 
-function write(s){ log.textContent = s; }
+// Auto-detectar posición al cargar la página
+function autoLocateUser() {
+  if (!navigator.geolocation) return;
 
-btn.addEventListener('click', verifyPosition);
-
-async function verifyPosition() {
-  write('Obteniendo posición GPS...');
-  btn.disabled = true;
-
-  const opts = { enableHighAccuracy: true, maximumAge: 15000, timeout: 12000 };
-
-  navigator.geolocation.getCurrentPosition(async pos => {
+  navigator.geolocation.getCurrentPosition(pos => {
     const { latitude: lat, longitude: lng, accuracy } = pos.coords;
+    lastKnownCoords = { lat, lng, accuracy };
+
+    if (gpsStatusText) gpsStatusText.textContent = 'Señal GPS Activa';
+    if (gpsAccuracyVal) gpsAccuracyVal.textContent = `±${Math.round(accuracy)} metros`;
+
+    const markerColor = isTeletrabajoMode ? '#2563eb' : '#10b981';
 
     if (!userMarker) {
       userMarker = L.circleMarker([lat, lng], {
-        radius: 8, color: '#eab308', weight: 2, fill: true, fillOpacity: 1
-      }).addTo(map).bindPopup('Tu posición');
+        radius: 9, color: '#ffffff', weight: 2.5, fillColor: markerColor, fillOpacity: 1
+      }).addTo(map).bindPopup(isTeletrabajoMode ? '<b>Tu Ubicación de Teletrabajo</b>' : '<b>Tu Ubicación</b>').openPopup();
     } else {
       userMarker.setLatLng([lat, lng]);
     }
 
     if (!userAccCircle) {
       userAccCircle = L.circle([lat, lng], {
-        radius: Math.max(accuracy, 1), color: '#eab308', weight: 1, fill: true, fillOpacity: 0.08
+        radius: Math.max(accuracy, isTeletrabajoMode ? 80 : 30),
+        color: markerColor,
+        weight: 1.5,
+        fillColor: markerColor,
+        fillOpacity: 0.12
       }).addTo(map);
     } else {
-      userAccCircle.setLatLng([lat, lng]).setRadius(Math.max(accuracy, 1));
+      userAccCircle.setLatLng([lat, lng]).setRadius(Math.max(accuracy, isTeletrabajoMode ? 80 : 30));
     }
 
-    fitAll();
+    // Zoom animado cercano directo a la ubicación del usuario (nivel 16-17)
+    map.setView([lat, lng], 16, { animate: true });
+    write(`Ubicación detectada: Lat ${lat.toFixed(5)}, Lng ${lng.toFixed(5)}`);
+  }, err => {
+    console.warn('Auto GPS error:', err.message);
+    if (gpsStatusText) gpsStatusText.textContent = 'Esperando permiso GPS...';
+    if (gpsAccuracyVal) gpsAccuracyVal.textContent = 'Presiona el botón para permitir';
+  }, { enableHighAccuracy: true, timeout: 10000 });
+}
+
+// Ejecutar auto-detección al entrar
+autoLocateUser();
+
+btn.addEventListener('click', verifyPosition);
+
+async function verifyPosition() {
+  write('Obteniendo posición GPS precisa...');
+  btn.disabled = true;
+
+  const opts = { enableHighAccuracy: true, maximumAge: 10000, timeout: 12000 };
+
+  navigator.geolocation.getCurrentPosition(async pos => {
+    const { latitude: lat, longitude: lng, accuracy } = pos.coords;
+    lastKnownCoords = { lat, lng, accuracy };
+
+    if (gpsStatusText) gpsStatusText.textContent = 'GPS Verificado';
+    if (gpsAccuracyVal) gpsAccuracyVal.textContent = `±${Math.round(accuracy)} metros`;
+
+    const markerColor = isTeletrabajoMode ? '#2563eb' : '#10b981';
+
+    if (!userMarker) {
+      userMarker = L.circleMarker([lat, lng], {
+        radius: 9, color: '#ffffff', weight: 2.5, fillColor: markerColor, fillOpacity: 1
+      }).addTo(map).bindPopup(isTeletrabajoMode ? '<b>Tu Ubicación de Teletrabajo</b>' : '<b>Tu Ubicación</b>').openPopup();
+    } else {
+      userMarker.setLatLng([lat, lng]);
+    }
+
+    if (!userAccCircle) {
+      userAccCircle = L.circle([lat, lng], {
+        radius: Math.max(accuracy, isTeletrabajoMode ? 80 : 30),
+        color: markerColor,
+        weight: 1.5,
+        fillColor: markerColor,
+        fillOpacity: 0.12
+      }).addTo(map);
+    } else {
+      userAccCircle.setLatLng([lat, lng]).setRadius(Math.max(accuracy, isTeletrabajoMode ? 80 : 30));
+    }
+
+    map.setView([lat, lng], 17, { animate: true });
     write(`Lat: ${lat.toFixed(6)} · Lng: ${lng.toFixed(6)} · Precisión: ${Math.round(accuracy)}m\nVerificando...`);
 
     try {
@@ -192,9 +356,13 @@ async function verifyPosition() {
 
       write(`✅ ${data.msg}`);
       
+      const modalHtml = isTeletrabajoMode 
+        ? `Modalidad: <b style="color: #2563eb;">TELETRABAJO 🏠</b><br>Lugar asignado: <b>${data.lugar}</b><br><br><small class="text-muted">¿Qué marcación deseas registrar hoy?</small>`
+        : `Te encuentras en: <b>${data.lugar}</b><br>¿Deseas registrar tu entrada o salida?`;
+
       const result = await Swal.fire({
-        title: 'Ubicación Verificada',
-        html: `Te encuentras en: <b>${data.lugar}</b><br>¿Deseas registrar tu entrada o salida?`,
+        title: isTeletrabajoMode ? 'Ubicación de Teletrabajo Lista' : 'Ubicación Verificada',
+        html: modalHtml,
         icon: 'success',
         showDenyButton: true,
         showCancelButton: true,
@@ -202,8 +370,8 @@ async function verifyPosition() {
         denyButtonText: 'Marcar Salida',
         cancelButtonText: 'Cancelar',
         confirmButtonColor: '#10b981',
-        denyButtonColor: '#0b6bcb',
-        cancelButtonColor: '#e2e8f0'
+        denyButtonColor: '#2563eb',
+        cancelButtonColor: '#94a3b8'
       });
 
       let tipo = null;
@@ -240,15 +408,26 @@ async function verifyPosition() {
       }
 
       write(`✅ Registrado: ${tipo}`);
-      await Swal.fire({
-        icon: 'success',
-        title: 'Asistencia Registrada',
-        html: `Acción: <b>${tipo.toUpperCase()}</b><br>Lugar: <b>${data.lugar}</b><br>Hora del servidor: <b>${regData.hora}</b>`,
-        timer: 2500,
-        showConfirmButton: false
-      });
 
-      location.assign(redirect);
+      if (isTeletrabajoMode && tipo === 'salida') {
+        await Swal.fire({
+          icon: 'success',
+          title: 'Salida de Teletrabajo Registrada',
+          html: `Has marcado tu <b>SALIDA</b>.<br><br>📝 <strong>Paso Final Obligatorio:</strong> Ahora debes completar y subir tu <b>Bitácora de Tareas</b> para que tus horas sean aprobadas por el Administrador.`,
+          confirmButtonText: 'Ir a Llenar Bitácora',
+          confirmButtonColor: '#2563eb'
+        });
+        location.assign('/usuario/reporte?abrirBitacora=1');
+      } else {
+        await Swal.fire({
+          icon: 'success',
+          title: isTeletrabajoMode ? 'Entrada de Teletrabajo Registrada' : 'Asistencia Registrada',
+          html: `Acción: <b>${tipo.toUpperCase()}</b><br>Hora registrada: <b>${regData.hora}</b><br><small class="text-muted">Modalidad: Teletrabajo (En Observación)</small>`,
+          timer: 2500,
+          showConfirmButton: false
+        });
+        location.assign(redirect);
+      }
 
     } catch (e) {
       console.error(e);
@@ -258,7 +437,7 @@ async function verifyPosition() {
     }
   }, async err => {
     write('Error GPS: ' + err.message);
-    await Swal.fire({ icon: 'error', title: 'Ubicación bloqueada', text: err.message });
+    await Swal.fire({ icon: 'error', title: 'Ubicación bloqueada', text: 'Por favor permite el acceso a tu ubicación GPS en el navegador: ' + err.message });
     btn.disabled = false;
   }, opts);
 }

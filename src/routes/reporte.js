@@ -46,7 +46,7 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
     if (users.length === 0) return res.status(404).send('Usuario no encontrado');
     const userDB = users[0];
 
-    // 2. Total acumulado de horas (Calculado desde asistencias unificadas)
+    // 2. Total acumulado de horas OFICIALES / APROBADAS (Excluye OBSERVADO y ANULADO)
     const [totals] = await db.query(`
       SELECT COALESCE(
         SUM(
@@ -59,7 +59,7 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
       ) AS total_segundos
       FROM asistencias
       WHERE id_usuario = ?
-        AND estado != 'ANULADO'
+        AND estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO')
         AND hora_entrada IS NOT NULL
         AND hora_salida IS NOT NULL
     `, [userId]);
@@ -67,10 +67,46 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
     const totalSegundos = totals[0]?.total_segundos || 0;
     const total_acumulada = formatSecondsToHHMMSS(totalSegundos);
 
-    // 2.1. Consultar la jornada de hoy (entrada, salida, lugar, timestamps crudos)
+    // 2.1. Total de horas EN OBSERVACIÓN (Teletrabajo pendiente de revisión de bitácora)
+    const [totalsObs] = await db.query(`
+      SELECT COALESCE(
+        SUM(
+          TIMESTAMPDIFF(
+            SECOND,
+            TIMESTAMP(fecha, hora_entrada),
+            TIMESTAMP(fecha, hora_salida)
+          )
+        ), 0
+      ) AS total_segundos_obs
+      FROM asistencias
+      WHERE id_usuario = ?
+        AND estado = 'OBSERVADO'
+        AND hora_entrada IS NOT NULL
+        AND hora_salida IS NOT NULL
+    `, [userId]);
+
+    const total_observadas = formatSecondsToHHMMSS(totalsObs[0]?.total_segundos_obs || 0);
+
+    // 2.2. Verificar si el usuario tiene permiso de teletrabajo aprobado para hoy
+    const [teletrabajoAprobadoRows] = await db.query(`
+      SELECT 
+        id_solicitud, 
+        direccion_remota, 
+        TIME_FORMAT(hora_inicio, '%H:%i') AS hora_inicio, 
+        TIME_FORMAT(hora_fin, '%H:%i') AS hora_fin,
+        motivo
+      FROM solicitudes_teletrabajo
+      WHERE id_usuario = ? AND fecha_solicitada = CURDATE() AND estado = 2
+      LIMIT 1
+    `, [userId]);
+    const teletrabajoHoy = teletrabajoAprobadoRows.length > 0 ? teletrabajoAprobadoRows[0] : null;
+
+    // 2.3. Consultar la jornada de hoy (entrada, salida, lugar, timestamps crudos, modalidad)
     const [jornadaHoyRows] = await db.query(`
       SELECT 
         a.id_asistencia, 
+        COALESCE(ag.modalidad, 'PRESENCIAL') AS modalidad,
+        a.estado AS asistencia_estado,
         l.nombre AS lugar_nombre,
         TIME_FORMAT(a.hora_entrada, '%H:%i') AS hora_entrada,
         TIME_FORMAT(a.hora_salida, '%H:%i') AS hora_salida,
@@ -79,6 +115,7 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
         DATE_FORMAT(a.fecha, '%Y-%m-%d') AS fecha_raw,
         TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)) AS duracion_segundos
       FROM asistencias a
+      LEFT JOIN asistencias_geo ag ON a.id_asistencia = ag.id_asistencia
       LEFT JOIN lugares l ON a.id_lugar = l.id_lugar
       WHERE a.id_usuario = ? 
         AND a.fecha = CURDATE() 
@@ -102,7 +139,8 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
       };
     } else {
       jornadaHoy = {
-        estado: 'SIN_JORNADA'
+        estado: 'SIN_JORNADA',
+        modalidad: teletrabajoHoy ? 'TELETRABAJO' : 'PRESENCIAL'
       };
     }
 
@@ -114,6 +152,7 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
         a.id_asistencia,
         DATE_FORMAT(a.fecha, '%Y-%m-%d') AS fecha,
         a.estado AS asistencia_estado,
+        COALESCE(ag.modalidad, 'PRESENCIAL') AS modalidad,
         l.nombre AS lugar_nombre,
         l.tipo AS lugar_tipo,
         
@@ -129,6 +168,7 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
         r.comprobante,
         r.observacion
       FROM asistencias a
+      LEFT JOIN asistencias_geo ag ON a.id_asistencia = ag.id_asistencia
       LEFT JOIN lugares l ON a.id_lugar = l.id_lugar
       LEFT JOIN reportes r ON a.id_asistencia = r.id_asistencia
       WHERE a.id_usuario = ?
@@ -152,6 +192,8 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
     res.render('usuario/reporte', {
       user,
       total_acumulada,
+      total_observadas,
+      teletrabajoHoy,
       jornadaActiva,
       jornadaHoy,
       jornadas: jornadasProcesadas,

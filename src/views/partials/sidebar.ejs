@@ -17,12 +17,13 @@
 <% } %>
 
         <% if (typeof user !=='undefined' && user && user.rol===1) { %>
-          <a href="/admin/reportes" class="sidebar-link">Reporte</a>
+          <a href="/admin/reportes" class="sidebar-link">Reporte y Auditoría</a>
+          <a href="/notificaciones_admin" class="sidebar-link">Solicitudes y Teletrabajo</a>
           <a href="/usuarios" class="sidebar-link">Usuarios</a>
           <a href="/admin/obras" class="sidebar-link">Obras</a>
           <a href="/admin/pagina-web" class="sidebar-link">Administrar página web</a>
           <a href="/admin/mensajes" class="sidebar-link">Mensajes web</a>
-          <% } %>
+        <% } %>
 
             <a href="/logout" class="btn-danger">Cerrar sesión</a>
   </nav>
