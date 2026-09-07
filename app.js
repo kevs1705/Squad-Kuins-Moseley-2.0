@@ -65,6 +65,9 @@ app.use(notificacionesRoutes);
 const GeofenceRoutes = require('./src/routes/geofence');
 app.use(GeofenceRoutes);
 
+const TeletrabajoRoutes = require('./src/routes/teletrabajo');
+app.use(TeletrabajoRoutes);
+
 const pagina_webRoutes = require('./src/routes/pagina_web/pagina');
 app.use(pagina_webRoutes);
 

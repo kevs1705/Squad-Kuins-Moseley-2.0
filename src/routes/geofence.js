@@ -1,36 +1,47 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../config/bd.js'); // Ajusta la ruta a tu conexión MySQL (pool/promise)
+const db = require('../config/bd.js');
 const { distanceMeters } = require('../middleware/geofence');
 const { requireAuth } = require('../middleware/auth.js');
 
-// GET: Cargar la vista de geocerca con los lugares activos
+// GET: Cargar la vista de geocerca con los lugares activos o modo teletrabajo
 router.get('/geofence', requireAuth, async (req, res) => {
-  const redirect = req.query.redirect || '/dashboard';
+  const redirect = req.query.redirect || '/usuario/reporte';
+  const userId = req.session.user.id || req.session.user.id_usuario;
 
   try {
-    // Obtener los lugares activos de la base de datos
+    // 1. Verificar si el usuario tiene permiso de teletrabajo aprobado para hoy
+    const [teletrabajoRows] = await db.query(
+      `SELECT id_solicitud, direccion_remota, 
+              TIME_FORMAT(hora_inicio, '%H:%i') AS hora_inicio, 
+              TIME_FORMAT(hora_fin, '%H:%i') AS hora_fin,
+              motivo
+       FROM solicitudes_teletrabajo
+       WHERE id_usuario = ? AND fecha_solicitada = CURDATE() AND estado = 2
+       LIMIT 1`,
+      [userId]
+    );
+    const teletrabajoHoy = teletrabajoRows.length > 0 ? teletrabajoRows[0] : null;
+
+    // 2. Obtener los lugares activos de la base de datos (excluyendo tipo TELETRABAJO y coordenadas 0,0)
     const [lugares] = await db.query(
-      "SELECT id_lugar, nombre, latitud, longitud, radio_metros FROM lugares WHERE estado = 'ACTIVO'"
+      "SELECT id_lugar, nombre, latitud, longitud, radio_metros FROM lugares WHERE estado = 'ACTIVO' AND tipo != 'TELETRABAJO' AND latitud != 0 AND longitud != 0"
     );
 
-    if (!lugares || lugares.length === 0) {
-      return res.status(500).send('No hay lugares/obras activas configuradas en la base de datos.');
-    }
-
-    // Renderizar la vista pasando el listado de lugares
-    res.render('geofence', { redirect, lugares });
+    // Renderizar la vista pasando lugares y estado de teletrabajo
+    res.render('geofence', { redirect, lugares: lugares || [], teletrabajoHoy });
   } catch (error) {
-    console.error('Error al obtener lugares:', error);
-    res.status(500).send('Error interno del servidor.');
+    console.error('Error al cargar geocerca:', error);
+    res.status(500).send('Error interno del servidor al cargar geocerca.');
   }
 });
 
-// POST API: Validar si las coordenadas del usuario coinciden con alguna obra/lugar activo
+// POST API: Validar coordenadas del usuario (Modo Teletrabajo o Lugares activos)
 router.post('/api/geofence/verify', async (req, res) => {
   if (!req.session || !req.session.user) {
     return res.status(401).json({ ok: false, msg: 'Sesión no iniciada.' });
   }
+  const userId = req.session.user.id || req.session.user.id_usuario;
   const { lat, lng, accuracy } = req.body;
 
   if (typeof lat !== 'number' || typeof lng !== 'number' || typeof accuracy !== 'number') {
@@ -39,20 +50,82 @@ router.post('/api/geofence/verify', async (req, res) => {
 
   const hardMaxAccuracy = 200; // metros
   if (accuracy > hardMaxAccuracy) {
-    return res.status(400).json({ ok: false, msg: `Señal GPS imprecisa (${Math.round(accuracy)}m).` });
+    return res.status(400).json({ ok: false, msg: `Señal GPS imprecisa (${Math.round(accuracy)}m). Intenta en un lugar con mejor cobertura GPS o activa el Wi-Fi.` });
   }
 
   try {
-    // 1. Obtener lugares activos desde la base de datos
+    // 1. Verificar si el usuario tiene teletrabajo aprobado para hoy
+    const [teletrabajoRows] = await db.query(
+      `SELECT id_solicitud, direccion_remota, motivo
+       FROM solicitudes_teletrabajo
+       WHERE id_usuario = ? AND fecha_solicitada = CURDATE() AND estado = 2
+       LIMIT 1`,
+      [userId]
+    );
+    const teletrabajoHoy = teletrabajoRows.length > 0 ? teletrabajoRows[0] : null;
+
+    // MODO TELETRABAJO
+    if (teletrabajoHoy) {
+      // Buscar o asegurar que exista el lugar 'Teletrabajo' en la tabla lugares
+      let idLugarTeletrabajo = null;
+      try {
+        const [lugarTele] = await db.query(
+          "SELECT id_lugar FROM lugares WHERE nombre = 'Teletrabajo' LIMIT 1"
+        );
+        if (lugarTele && lugarTele.length > 0) {
+          idLugarTeletrabajo = lugarTele[0].id_lugar;
+        } else {
+          const [insertLugar] = await db.query(
+            "INSERT INTO lugares (nombre, tipo, direccion, estado, latitud, longitud, radio_metros) VALUES ('Teletrabajo', 'TELETRABAJO', 'Ubicación Remota', 'ACTIVO', 0, 0, 0)"
+          );
+          idLugarTeletrabajo = insertLugar.insertId;
+        }
+      } catch (errLugar) {
+        console.warn('Fallback al obtener id_lugar para teletrabajo:', errLugar.message);
+        const [primerLugar] = await db.query("SELECT id_lugar FROM lugares LIMIT 1");
+        idLugarTeletrabajo = primerLugar[0]?.id_lugar || 1;
+      }
+
+      req.session.geofence = {
+        ok: true,
+        esTeletrabajo: true,
+        id_solicitud_teletrabajo: teletrabajoHoy.id_solicitud,
+        id_lugar: idLugarTeletrabajo,
+        nombre_lugar: `Teletrabajo: ${teletrabajoHoy.direccion_remota || 'Ubicación Remota'}`,
+        lat,
+        lng,
+        accuracy: Math.round(accuracy),
+        distance: 0,
+        until: Date.now() + (10 * 60 * 60 * 1000) // Válido por 10 horas
+      };
+
+      return req.session.save((err) => {
+        if (err) {
+          console.error('Error guardando sesión de geocerca:', err);
+          return res.status(500).json({ ok: false, msg: 'Error al guardar la sesión.' });
+        }
+
+        return res.json({
+          ok: true,
+          esTeletrabajo: true,
+          msg: `Ubicación remota verificada para Teletrabajo (${teletrabajoHoy.direccion_remota || 'Remoto'}).`,
+          lugar: `🏠 Teletrabajo (${teletrabajoHoy.direccion_remota || 'Remoto'})`,
+          distanceM: 0,
+          accuracyM: Math.round(accuracy)
+        });
+      });
+    }
+
+    // MODO PRESENCIAL NORMAL: Obtener lugares activos desde la base de datos
     const [lugares] = await db.query(
       "SELECT id_lugar, nombre, latitud, longitud, radio_metros FROM lugares WHERE estado = 'ACTIVO'"
     );
 
     if (!lugares || lugares.length === 0) {
-      return res.status(400).json({ ok: false, msg: 'No existen ubicaciones activas autorizadas.' });
+      return res.status(400).json({ ok: false, msg: 'No existen ubicaciones activas autorizadas en el sistema.' });
     }
 
-    // 2. Verificar si el usuario está dentro del radio de ALGUNA de las obras/oficinas
+    // Verificar si el usuario está dentro del radio de alguna obra/oficina
     let lugarValido = null;
     let menorDistancia = Infinity;
 
@@ -62,11 +135,11 @@ router.post('/api/geofence/verify', async (req, res) => {
       const radioLugar = parseFloat(lugar.radio_metros);
 
       const dist = distanceMeters(latLugar, lngLugar, lat, lng);
-      const dentro = dist <= radioLugar; // Validación estricta: distancia menor o igual al radio de la obra
+      const dentro = dist <= radioLugar;
 
       if (dentro) {
         lugarValido = { ...lugar, distanciaCalculada: dist };
-        break; // Detener en la primera coincidencia válida
+        break;
       }
 
       if (dist < menorDistancia) {
@@ -74,7 +147,6 @@ router.post('/api/geofence/verify', async (req, res) => {
       }
     }
 
-    // 3. Si no estuvo dentro de ningún lugar activo
     if (!lugarValido) {
       return res.status(403).json({
         ok: false,
@@ -82,16 +154,18 @@ router.post('/api/geofence/verify', async (req, res) => {
       });
     }
 
-    // 4. Guardar pase en la sesión indicando el lugar donde se validó
+    // Guardar pase presencial en la sesión
     req.session.geofence = {
       ok: true,
-      until: Date.now() + (8 * 60 * 60 * 1000), // Válido por 8 horas
+      esTeletrabajo: false,
+      id_solicitud_teletrabajo: null,
       id_lugar: lugarValido.id_lugar,
       nombre_lugar: lugarValido.nombre,
       lat,
       lng,
       accuracy: Math.round(accuracy),
-      distance: Math.round(lugarValido.distanciaCalculada)
+      distance: Math.round(lugarValido.distanciaCalculada),
+      until: Date.now() + (8 * 60 * 60 * 1000)
     };
 
     req.session.save((err) => {
@@ -102,6 +176,7 @@ router.post('/api/geofence/verify', async (req, res) => {
 
       return res.json({
         ok: true,
+        esTeletrabajo: false,
         msg: `Ubicación verificada en "${lugarValido.nombre}"`,
         lugar: lugarValido.nombre,
         distanceM: Math.round(lugarValido.distanciaCalculada),
@@ -127,67 +202,116 @@ router.post('/api/geofence/register', async (req, res) => {
     return res.status(400).json({ ok: false, msg: 'Tipo de asistencia inválido.' });
   }
 
-  // Validar formato básico de fecha (YYYY-MM-DD) y hora (HH:MM:SS) enviados por el cliente
   const regexFecha = /^\d{4}-\d{2}-\d{2}$/;
   const regexHora = /^\d{2}:\d{2}:\d{2}$/;
 
-  // Si el cliente no los envía, usar fallback con fecha/hora de la región fija (ej. 'America/La_Paz')
   let fechaUsar = fechaCliente;
   let horaUsar = horaCliente;
 
   if (!fechaUsar || !regexFecha.test(fechaUsar) || !horaUsar || !regexHora.test(horaUsar)) {
-    // Fallback: Calcular fecha/hora de la región con Intl.DateTimeFormat
     const ahoraRegion = new Date();
     fechaUsar = ahoraRegion.toLocaleDateString('sv-SE', { timeZone: 'America/La_Paz' });
     horaUsar = ahoraRegion.toLocaleTimeString('en-GB', { timeZone: 'America/La_Paz' });
   }
 
-  // Verificar que la geocerca haya sido validada en esta sesión y no haya expirado
   if (!req.session.geofence || !req.session.geofence.ok || Date.now() > req.session.geofence.until) {
     return res.status(403).json({ ok: false, msg: 'Ubicación no verificada o sesión de ubicación expirada.' });
   }
 
   const userId = req.session.user.id || req.session.user.id_usuario;
+  const esTeletrabajo = !!req.session.geofence.esTeletrabajo;
   const idLugar = req.session.geofence.id_lugar;
+  const idSolicitudTeletrabajo = esTeletrabajo ? req.session.geofence.id_solicitud_teletrabajo : null;
+  const modalidad = esTeletrabajo ? 'TELETRABAJO' : 'PRESENCIAL';
+  const estadoAsistencia = esTeletrabajo ? 'OBSERVADO' : 'PRESENTE';
+  const lat = req.session.geofence.lat || null;
+  const lng = req.session.geofence.lng || null;
 
   try {
-    // Buscar si ya existe una asistencia para la fecha del cliente
+    // Buscar si ya existe una asistencia para la fecha
     const [existing] = await db.query(
       'SELECT id_asistencia, hora_entrada, hora_salida FROM asistencias WHERE id_usuario = ? AND fecha = ? LIMIT 1',
       [userId, fechaUsar]
     );
 
+    let asistenciaId = null;
+
     if (existing && existing.length > 0) {
-      const record = existing[0];
+      asistenciaId = existing[0].id_asistencia;
       if (tipo === 'entrada') {
         await db.query(
-          'UPDATE asistencias SET hora_entrada = ?, id_lugar = ? WHERE id_asistencia = ?',
-          [horaUsar, idLugar, record.id_asistencia]
+          `UPDATE asistencias 
+           SET hora_entrada = ?, id_lugar = ?, estado = ?
+           WHERE id_asistencia = ?`,
+          [horaUsar, idLugar, estadoAsistencia, asistenciaId]
         );
       } else {
         await db.query(
-          'UPDATE asistencias SET hora_salida = ?, id_lugar = ? WHERE id_asistencia = ?',
-          [horaUsar, idLugar, record.id_asistencia]
+          `UPDATE asistencias 
+           SET hora_salida = ?, id_lugar = COALESCE(?, id_lugar), 
+               estado = IF(? = 'TELETRABAJO', 'OBSERVADO', estado)
+           WHERE id_asistencia = ?`,
+          [horaUsar, idLugar, modalidad, asistenciaId]
         );
       }
     } else {
-      // No existe registro para la fecha, insertar nuevo
+      // Insertar nuevo registro en tabla pura asistencias
       if (tipo === 'entrada') {
-        await db.query(
-          'INSERT INTO asistencias (id_usuario, id_lugar, fecha, hora_entrada, estado) VALUES (?, ?, ?, ?, ?)',
-          [userId, idLugar, fechaUsar, horaUsar, 'PRESENTE']
+        const [ins] = await db.query(
+          `INSERT INTO asistencias (id_usuario, id_lugar, fecha, hora_entrada, estado) 
+           VALUES (?, ?, ?, ?, ?)`,
+          [userId, idLugar, fechaUsar, horaUsar, estadoAsistencia]
         );
+        asistenciaId = ins.insertId;
       } else {
-        await db.query(
-          'INSERT INTO asistencias (id_usuario, id_lugar, fecha, hora_salida, estado) VALUES (?, ?, ?, ?, ?)',
-          [userId, idLugar, fechaUsar, horaUsar, 'PRESENTE']
+        const [ins] = await db.query(
+          `INSERT INTO asistencias (id_usuario, id_lugar, fecha, hora_salida, estado) 
+           VALUES (?, ?, ?, ?, ?)`,
+          [userId, idLugar, fechaUsar, horaUsar, estadoAsistencia]
         );
+        asistenciaId = ins.insertId;
       }
     }
 
+    // Guardar / Actualizar registro en la tabla satélite asistencias_geo
+    if (asistenciaId) {
+      if (tipo === 'entrada') {
+        await db.query(`
+          INSERT INTO asistencias_geo 
+            (id_asistencia, modalidad, id_solicitud_teletrabajo, lat_entrada, lng_entrada, precision_entrada_m)
+          VALUES (?, ?, ?, ?, ?, ?)
+          ON DUPLICATE KEY UPDATE
+            modalidad = VALUES(modalidad),
+            id_solicitud_teletrabajo = VALUES(id_solicitud_teletrabajo),
+            lat_entrada = VALUES(lat_entrada),
+            lng_entrada = VALUES(lng_entrada),
+            precision_entrada_m = VALUES(precision_entrada_m)
+        `, [asistenciaId, modalidad, idSolicitudTeletrabajo, lat, lng, req.session.geofence.accuracy || null]);
+      } else {
+        await db.query(`
+          INSERT INTO asistencias_geo 
+            (id_asistencia, modalidad, id_solicitud_teletrabajo, lat_salida, lng_salida, precision_salida_m)
+          VALUES (?, ?, ?, ?, ?, ?)
+          ON DUPLICATE KEY UPDATE
+            modalidad = VALUES(modalidad),
+            id_solicitud_teletrabajo = VALUES(id_solicitud_teletrabajo),
+            lat_salida = VALUES(lat_salida),
+            lng_salida = VALUES(lng_salida),
+            precision_salida_m = VALUES(precision_salida_m)
+        `, [asistenciaId, modalidad, idSolicitudTeletrabajo, lat, lng, req.session.geofence.accuracy || null]);
+      }
+    }
+
+    const msgRes = esTeletrabajo
+      ? (tipo === 'salida' 
+          ? `Salida de Teletrabajo registrada. Recuerda completar tu bitácora de tareas para enviar a revisión.` 
+          : `Entrada de Teletrabajo registrada exitosamente. Jornada en observación.`)
+      : `Se registró tu ${tipo} con éxito.`;
+
     return res.json({
       ok: true,
-      msg: `Se registró tu ${tipo} con éxito.`,
+      esTeletrabajo,
+      msg: msgRes,
       hora: horaUsar
     });
 
