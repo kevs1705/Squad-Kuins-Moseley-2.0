@@ -90,11 +90,11 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
       params.push(id_carrera);
     }
     if (estado_duracion === 'FINALIZADO') {
-      where.push('a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL');
+      where.push("a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL AND a.estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO')");
     } else if (estado_duracion === 'EN_CURSO') {
-      where.push('a.hora_salida IS NULL AND a.fecha = CURDATE()');
+      where.push("a.hora_salida IS NULL AND a.fecha = CURDATE() AND a.estado NOT IN ('ANULADO', 'RECHAZADO')");
     } else if (estado_duracion === 'OBSERVADO') {
-      where.push('a.hora_salida IS NULL AND a.fecha < CURDATE()');
+      where.push("(a.estado = 'OBSERVADO' OR (a.hora_salida IS NULL AND a.fecha < CURDATE()))");
     }
 
     if (id_usuario) {
@@ -142,7 +142,7 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
     );
     const total = countRows[0]?.total || 0;
 
-    // Total de horas acumuladas calculadas en segundos para el filtro actual
+    // Total de horas acumuladas calculadas en segundos para el filtro actual (Excluye OBSERVADO, RECHAZADO, ANULADO)
     const [totalsRows] = await db.query(
       `SELECT COALESCE(
          SUM(
@@ -156,7 +156,8 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
        FROM asistencias a
        INNER JOIN usuarios u ON u.id_usuario = a.id_usuario
        ${whereSQL}
-       AND a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL`,
+       AND a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL
+       AND a.estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO')`,
       params
     );
 
@@ -178,7 +179,7 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
       }
     }
 
-    // Consulta unificada: Asistencia + Lugar + Bitácora (Reporte)
+    // Consulta unificada: Asistencia + Modalidad (asistencias_geo) + Lugar + Bitácora (Reporte)
     const [rows] = await db.query(
       `SELECT
          a.id_asistencia,
@@ -188,6 +189,7 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
          DATE_FORMAT(a.fecha, '%Y-%m-%d') AS fecha,
          l.nombre AS lugar_nombre,
          l.tipo AS lugar_tipo,
+         COALESCE(ag.modalidad, 'PRESENCIAL') AS modalidad,
          
          -- Horarios de entrada y salida
          TIME_FORMAT(a.hora_entrada, '%H:%i') AS hora_entrada,
@@ -208,6 +210,7 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
          COALESCE(r.observacion, a.observacion) AS observacion
        FROM asistencias a
        INNER JOIN usuarios u ON u.id_usuario = a.id_usuario
+       LEFT JOIN asistencias_geo ag ON ag.id_asistencia = a.id_asistencia
        LEFT JOIN lugares l ON l.id_lugar = a.id_lugar
        LEFT JOIN reportes r ON r.id_asistencia = a.id_asistencia
        ${whereSQL}
@@ -225,7 +228,14 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
       let estadoCalculado = 'FINALIZADO';
       let horasDiaText = '00:00';
 
-      if (r.duracion_segundos != null) {
+      // 1. Si el estado en BD es explícitamente OBSERVADO (ej. Teletrabajo pendiente de aprobación)
+      if (r.asistencia_estado === 'OBSERVADO') {
+        estadoCalculado = 'OBSERVADO';
+        horasDiaText = 'Observación';
+      } else if (r.asistencia_estado === 'RECHAZADO') {
+        estadoCalculado = 'RECHAZADO';
+        horasDiaText = 'Rechazado';
+      } else if (r.duracion_segundos != null) {
         estadoCalculado = 'FINALIZADO';
         horasDiaText = formatSecondsToHHMM(r.duracion_segundos);
       } else if (!r.hora_salida && isPast) {
@@ -252,9 +262,9 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
       const [userStats] = await db.query(
         `SELECT
            COUNT(*) AS total_asistencias,
-           SUM(IF(a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL, 1, 0)) AS asistencias_finalizadas,
-           SUM(IF(a.hora_salida IS NULL, 1, 0)) AS asistencias_en_curso,
-           AVG(IF(a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL,
+           SUM(IF(a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL AND a.estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO'), 1, 0)) AS asistencias_finalizadas,
+           SUM(IF(a.hora_salida IS NULL AND a.estado NOT IN ('ANULADO', 'RECHAZADO'), 1, 0)) AS asistencias_en_curso,
+           AVG(IF(a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL AND a.estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO'),
                   TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)),
                   NULL
            )) AS promedio_segundos,
@@ -266,14 +276,14 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
         [targetUserId]
       );
 
-      // Desglose por obra / lugar
+      // Desglose por obra / lugar (horas aprobadas)
       const [lugaresDesglose] = await db.query(
         `SELECT
            COALESCE(l.nombre, 'Sin lugar asignado') AS lugar_nombre,
            l.tipo AS lugar_tipo,
            COUNT(a.id_asistencia) AS total_dias,
            COALESCE(SUM(
-             IF(a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL,
+             IF(a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL AND a.estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO'),
                 TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)),
                 0)
            ), 0) AS total_segundos
@@ -307,7 +317,7 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
         lugares_desglose: formattedLugares
       };
     } else {
-      // 2. Estadísticas globales (Ranking de horas por pasante y resumen general)
+      // 2. Estadísticas globales (Ranking de horas oficiales por pasante y resumen general)
       const [topUsers] = await db.query(
         `SELECT
            u.id_usuario,
@@ -318,7 +328,7 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
            COUNT(a.id_asistencia) AS total_dias,
            COALESCE(
              SUM(
-               IF(a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL,
+               IF(a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL AND a.estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO'),
                   TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)),
                   0)
              ), 0
@@ -354,7 +364,7 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
       };
     }
 
-    // 3. Series temporales para gráficos interactivos (Horas por Semana y por Día de la Semana)
+    // 3. Series temporales para gráficos interactivos (Horas oficiales por Semana y por Día de la Semana)
     const [semanasRows] = await db.query(
       `SELECT
          DATE_FORMAT(DATE_SUB(a.fecha, INTERVAL WEEKDAY(a.fecha) DAY), '%Y-%m-%d') AS semana_inicio,
@@ -365,6 +375,7 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
        INNER JOIN usuarios u ON u.id_usuario = a.id_usuario
        ${whereSQL}
        AND a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL
+       AND a.estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO')
        GROUP BY semana_inicio, semana_label
        ORDER BY semana_inicio ASC
        LIMIT 15`,
@@ -382,6 +393,7 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
        INNER JOIN usuarios u ON u.id_usuario = a.id_usuario
        ${whereSQL}
        AND a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL
+       AND a.estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO')
        GROUP BY dia_idx
        ORDER BY dia_idx ASC`,
       params
@@ -570,6 +582,8 @@ router.get('/api/admin/usuario/:id_usuario/calendario', requireAdmin, async (req
          TIME_FORMAT(a.hora_salida, '%H:%i') AS hora_salida,
          l.nombre AS lugar_nombre,
          l.tipo AS lugar_tipo,
+         COALESCE(ag.modalidad, 'PRESENCIAL') AS modalidad,
+         a.estado AS asistencia_estado,
          IF(a.hora_salida IS NOT NULL AND a.hora_entrada IS NOT NULL,
             TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)),
             NULL
@@ -579,6 +593,7 @@ router.get('/api/admin/usuario/:id_usuario/calendario', requireAdmin, async (req
          r.comprobante,
          COALESCE(r.observacion, a.observacion) AS observacion
        FROM asistencias a
+       LEFT JOIN asistencias_geo ag ON ag.id_asistencia = a.id_asistencia
        LEFT JOIN lugares l ON l.id_lugar = a.id_lugar
        LEFT JOIN reportes r ON r.id_asistencia = a.id_asistencia
        WHERE a.id_usuario = ? AND a.estado != 'ANULADO'
@@ -594,7 +609,13 @@ router.get('/api/admin/usuario/:id_usuario/calendario', requireAdmin, async (req
       let estado = 'FINALIZADO';
       let horasTxt = '00:00';
 
-      if (a.duracion_segundos != null) {
+      if (a.asistencia_estado === 'OBSERVADO' || a.estado === 'OBSERVADO') {
+        estado = 'OBSERVADO';
+        horasTxt = 'Observación';
+      } else if (a.asistencia_estado === 'RECHAZADO' || a.estado === 'RECHAZADO') {
+        estado = 'RECHAZADO';
+        horasTxt = 'Rechazado';
+      } else if (a.duracion_segundos != null) {
         estado = 'FINALIZADO';
         horasTxt = formatSecondsToHHMM(a.duracion_segundos);
       } else if (!a.hora_salida && isPast) {
@@ -657,11 +678,11 @@ router.get('/admin/reportes/export', requireAdmin, async (req, res) => {
       params.push(id_carrera);
     }
     if (estado_duracion === 'FINALIZADO') {
-      where.push('a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL');
+      where.push("a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL AND a.estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO')");
     } else if (estado_duracion === 'EN_CURSO') {
-      where.push('a.hora_salida IS NULL AND a.fecha = CURDATE()');
+      where.push("a.hora_salida IS NULL AND a.fecha = CURDATE() AND a.estado NOT IN ('ANULADO', 'RECHAZADO')");
     } else if (estado_duracion === 'OBSERVADO') {
-      where.push('a.hora_salida IS NULL AND a.fecha < CURDATE()');
+      where.push("(a.estado = 'OBSERVADO' OR (a.hora_salida IS NULL AND a.fecha < CURDATE()))");
     }
     if (id_usuario) {
       where.push('a.id_usuario = ?');
@@ -727,6 +748,8 @@ router.get('/admin/reportes/export', requireAdmin, async (req, res) => {
          u.CI,
          DATE_FORMAT(a.fecha, '%Y-%m-%d') AS fecha,
          l.nombre AS lugar,
+         COALESCE(ag.modalidad, 'PRESENCIAL') AS modalidad,
+         a.estado AS asistencia_estado,
          TIME_FORMAT(a.hora_entrada, '%H:%i:%s') AS hora_entrada,
          TIME_FORMAT(a.hora_salida, '%H:%i:%s') AS hora_salida,
          IF(a.hora_salida IS NOT NULL AND a.hora_entrada IS NOT NULL,
@@ -737,6 +760,7 @@ router.get('/admin/reportes/export', requireAdmin, async (req, res) => {
          COALESCE(r.observacion, a.observacion) AS observacion
        FROM asistencias a
        INNER JOIN usuarios u ON u.id_usuario = a.id_usuario
+       LEFT JOIN asistencias_geo ag ON ag.id_asistencia = a.id_asistencia
        LEFT JOIN lugares l ON l.id_lugar = a.id_lugar
        LEFT JOIN reportes r ON r.id_asistencia = a.id_asistencia
        ${whereSQL}
@@ -757,7 +781,8 @@ router.get('/admin/reportes/export', requireAdmin, async (req, res) => {
        FROM asistencias a
        INNER JOIN usuarios u ON u.id_usuario = a.id_usuario
        ${whereSQL}
-       AND a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL`,
+       AND a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL
+       AND a.estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO')`,
       params
     );
 
@@ -804,14 +829,23 @@ router.get('/admin/reportes/export', requireAdmin, async (req, res) => {
       ws.addRow(['Sin registros coincidentes', '', '', '', '', '', '', '', '']);
     } else {
       for (const r of reports) {
+        let horasTexto = 'En curso';
+        if (r.asistencia_estado === 'OBSERVADO') {
+          horasTexto = 'Observación';
+        } else if (r.asistencia_estado === 'RECHAZADO') {
+          horasTexto = 'Rechazado';
+        } else if (r.duracion_segundos != null) {
+          horasTexto = formatSecondsToHHMMSS(r.duracion_segundos);
+        }
+
         ws.addRow({
           nombre: r.nombre,
           ci: r.CI,
           fecha: r.fecha,
-          lugar: r.lugar || 'N/A',
+          lugar: r.modalidad === 'TELETRABAJO' ? 'Teletrabajo (Remoto)' : (r.lugar || 'N/A'),
           hora_entrada: r.hora_entrada || '-',
           hora_salida: r.hora_salida || '-',
-          horas_trabajadas: r.duracion_segundos != null ? formatSecondsToHHMMSS(r.duracion_segundos) : 'En curso',
+          horas_trabajadas: horasTexto,
           tarea: r.tarea || 'Sin bitácora registrada',
           observacion: r.observacion || ''
         });
