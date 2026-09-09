@@ -1341,28 +1341,185 @@ body .modal-footer .btn-primary:hover {
   margin: 0 !important;
 }
 
-/* Modal Teletrabajo Tabs */
+/* Modal Teletrabajo Tabs (Diseño según Mockup) */
+.nav-pills-teletrabajo {
+  list-style: none !important;
+  list-style-type: none !important;
+  padding-left: 0 !important;
+  margin-left: 0 !important;
+  display: flex !important;
+  gap: 0.5rem !important;
+}
+
+.nav-pills-teletrabajo li,
+.nav-pills-teletrabajo .nav-item {
+  list-style: none !important;
+  list-style-type: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
 .nav-pills-teletrabajo .nav-link {
-  color: #64748b !important;
+  color: #475569 !important;
+  background-color: #ffffff !important;
   font-weight: 600 !important;
   border-radius: 8px !important;
-  padding: 0.5rem 1rem !important;
-  font-size: 0.88rem !important;
+  padding: 0.45rem 1rem !important;
+  font-size: 0.84rem !important;
+  border: 1px solid #cbd5e1 !important;
+  transition: all 0.2s ease !important;
+}
+
+.nav-pills-teletrabajo .nav-link:hover {
+  background-color: #f8fafc !important;
+  color: #1e293b !important;
 }
 
 .nav-pills-teletrabajo .nav-link.active {
   background-color: #2563eb !important;
   color: #ffffff !important;
+  border-color: #2563eb !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25) !important;
+  font-weight: 600 !important;
+}
+
+#tab-mis-solicitudes,
+#tab-mis-solicitudes table,
+.table-teletrabajo-solicitudes,
+.table-teletrabajo-solicitudes th,
+.table-teletrabajo-solicitudes td,
+.table-teletrabajo-solicitudes tr,
+.table-teletrabajo-solicitudes strong,
+.table-teletrabajo-solicitudes span:not(.badge),
+.table-teletrabajo-solicitudes em {
+  color: #0f172a !important;
 }
 
 .table-teletrabajo-solicitudes th {
-  font-size: 0.8rem !important;
+  font-size: 0.82rem !important;
   text-transform: uppercase !important;
-  background-color: #f8fafc !important;
-  color: #475569 !important;
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+  font-weight: 700 !important;
+  border-bottom: 2px solid #cbd5e1 !important;
 }
 
 .table-teletrabajo-solicitudes td {
   font-size: 0.85rem !important;
   vertical-align: middle !important;
+  color: #1e293b !important;
+  background-color: #ffffff !important;
+}
+
+/* --- ADAPTABILIDAD Y CONTROL DE TAMAÑO PARA MODAL TELETRABAJO --- */
+#modalTeletrabajo .modal-dialog {
+  max-width: 800px !important;
+  width: 95% !important;
+  margin: 1.25rem auto !important;
+}
+
+#modalTeletrabajo .modal-content {
+  max-height: 88vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+#modalTeletrabajo .modal-body {
+  overflow-y: auto !important;
+  max-height: calc(88vh - 75px) !important;
+  padding: 1.25rem 1.5rem !important;
+}
+
+/* Ocultar pestañas inactivas para prevenir desborde vertical */
+#modalTeletrabajo .tab-content > .tab-pane {
+  display: none !important;
+}
+
+#modalTeletrabajo .tab-content > .tab-pane.active,
+#modalTeletrabajo .tab-content > .tab-pane.show.active {
+  display: block !important;
+}
+
+/* Barra de desplazamiento estética */
+#modalTeletrabajo .modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+#modalTeletrabajo .modal-body::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+#modalTeletrabajo .modal-body::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+#modalTeletrabajo .modal-body::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Forzar a que los campos de texto e inputs ocupen el 100% del ancho de la ficha */
+#modalTeletrabajo .form-control,
+#modalTeletrabajo input[type="text"],
+#modalTeletrabajo input[type="date"],
+#modalTeletrabajo input[type="time"],
+#modalTeletrabajo textarea {
+  width: 100% !important;
+  max-width: 100% !important;
+  display: block !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 576px) {
+  #modalTeletrabajo .modal-dialog {
+    margin: 0.5rem auto !important;
+    width: calc(100% - 1rem) !important;
+  }
+  #modalTeletrabajo .modal-body {
+    padding: 1rem !important;
+    max-height: calc(90vh - 70px) !important;
+  }
+}
+
+/* --- BADGES DE ESTADO PERSONALIZADOS DE TELETRABAJO --- */
+.badge-teletrabajo-pendiente {
+  background-color: #fef2f2 !important;
+  color: #dc2626 !important;
+  border: 1px solid #fecaca !important;
+  font-size: 0.76rem !important;
+  font-weight: 600 !important;
+  padding: 0.28rem 0.65rem !important;
+  border-radius: 6px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  box-shadow: 0 1px 3px rgba(220, 38, 38, 0.08) !important;
+}
+
+.badge-teletrabajo-aprobado {
+  background-color: #e0f2fe !important;
+  color: #0284c7 !important;
+  border: 1px solid #bae6fd !important;
+  font-size: 0.76rem !important;
+  font-weight: 600 !important;
+  padding: 0.28rem 0.65rem !important;
+  border-radius: 6px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  box-shadow: 0 1px 3px rgba(2, 132, 199, 0.08) !important;
+}
+
+.badge-teletrabajo-rechazado {
+  background-color: #f1f5f9 !important;
+  color: #64748b !important;
+  border: 1px solid #cbd5e1 !important;
+  font-size: 0.76rem !important;
+  font-weight: 600 !important;
+  padding: 0.28rem 0.65rem !important;
+  border-radius: 6px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
 }
