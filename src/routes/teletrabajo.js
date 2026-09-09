@@ -327,7 +327,7 @@ router.get('/api/admin/teletrabajo/pendientes-auditoria', requireAuth, requireAd
 
 /**
  * POST /api/admin/teletrabajo/jornada/:id/approve
- * Aprueba definitivamente una jornada de teletrabajo observada -> pasa a 'PRESENTE'
+ * Aprueba definitivamente una jornada de teletrabajo -> pasa a 'PRESENTE' y sus horas se suman al acumulado
  */
 router.post('/api/admin/teletrabajo/jornada/:id/approve', requireAuth, requireAdmin, async (req, res) => {
   try {
@@ -341,12 +341,12 @@ router.post('/api/admin/teletrabajo/jornada/:id/approve', requireAuth, requireAd
        SET estado = 'PRESENTE', 
            observacion = ?,
            actualizado_en = NOW()
-       WHERE id_asistencia = ? AND estado = 'OBSERVADO'`,
+       WHERE id_asistencia = ? AND estado IN ('OBSERVADO', 'RECHAZADO', 'EDITADO_ADMIN')`,
       [obs ? `Teletrabajo Aprobado | Obs Admin: ${obs}` : 'Teletrabajo Aprobado por Administrador', id]
     );
 
     if (result.affectedRows === 0) {
-      return res.status(400).json({ ok: false, msg: 'La jornada no está en estado OBSERVADO o no existe.' });
+      return res.status(400).json({ ok: false, msg: 'La jornada ya está aprobada o no existe.' });
     }
 
     return res.json({ ok: true, msg: 'Jornada de teletrabajo y bitácora APROBADAS con éxito. Las horas se han sumado al total acumulado.' });
@@ -357,8 +357,39 @@ router.post('/api/admin/teletrabajo/jornada/:id/approve', requireAuth, requireAd
 });
 
 /**
+ * POST /api/admin/teletrabajo/jornada/:id/revert
+ * Deshacer suma de horas de teletrabajo -> regresa el estado a 'OBSERVADO'
+ */
+router.post('/api/admin/teletrabajo/jornada/:id/revert', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const obs = String(req.body?.obs || '').trim();
+
+    if (!id) return res.status(400).json({ ok: false, msg: 'ID de asistencia inválido' });
+
+    const [result] = await db.query(
+      `UPDATE asistencias
+       SET estado = 'OBSERVADO', 
+           observacion = ?,
+           actualizado_en = NOW()
+       WHERE id_asistencia = ?`,
+      [obs ? `Teletrabajo Revertido | Obs: ${obs}` : 'Suma de horas deshecha (Pendiente de Auditoría)', id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ ok: false, msg: 'No se encontró la jornada a revertir.' });
+    }
+
+    return res.json({ ok: true, msg: 'Suma de horas deshecha con éxito. La jornada vuelve a estar en Observación.' });
+  } catch (error) {
+    console.error('Error al revertir jornada de teletrabajo:', error);
+    return res.status(500).json({ ok: false, msg: 'Error interno al revertir jornada.' });
+  }
+});
+
+/**
  * POST /api/admin/teletrabajo/jornada/:id/reject
- * Rechaza una jornada de teletrabajo observada -> pasa a 'RECHAZADO'
+ * Rechaza una jornada de teletrabajo -> pasa a 'RECHAZADO'
  */
 router.post('/api/admin/teletrabajo/jornada/:id/reject', requireAuth, requireAdmin, async (req, res) => {
   try {
@@ -372,12 +403,12 @@ router.post('/api/admin/teletrabajo/jornada/:id/reject', requireAuth, requireAdm
        SET estado = 'RECHAZADO', 
            observacion = ?,
            actualizado_en = NOW()
-       WHERE id_asistencia = ? AND estado = 'OBSERVADO'`,
+       WHERE id_asistencia = ? AND estado != 'RECHAZADO'`,
       [obs ? `Teletrabajo Rechazado | Motivo: ${obs}` : 'Teletrabajo Rechazado por Administrador', id]
     );
 
     if (result.affectedRows === 0) {
-      return res.status(400).json({ ok: false, msg: 'La jornada no está en estado OBSERVADO o no existe.' });
+      return res.status(400).json({ ok: false, msg: 'La jornada ya está rechazada o no existe.' });
     }
 
     return res.json({ ok: true, msg: 'Jornada de teletrabajo RECHAZADA.' });
@@ -387,4 +418,144 @@ router.post('/api/admin/teletrabajo/jornada/:id/reject', requireAuth, requireAdm
   }
 });
 
+/**
+ * PUT /api/admin/teletrabajo/solicitud/:id
+ * Editar una solicitud de teletrabajo (fechas, horas, motivo, dirección, estado, observación)
+ */
+router.put('/api/admin/teletrabajo/solicitud/:id', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    let { fecha_solicitada, hora_inicio, hora_fin, motivo, direccion_remota, estado, observacion_admin } = req.body;
+
+    if (!id) return res.status(400).json({ ok: false, msg: 'ID de solicitud inválido.' });
+
+    fecha_solicitada = String(fecha_solicitada || '').trim().slice(0, 10);
+    hora_inicio = String(hora_inicio || '').trim().slice(0, 8);
+    hora_fin = String(hora_fin || '').trim().slice(0, 8);
+    motivo = String(motivo || '').trim();
+    direccion_remota = String(direccion_remota || '').trim().slice(0, 255);
+    estado = Number(estado) || 1;
+    observacion_admin = String(observacion_admin || '').trim();
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha_solicitada)) {
+      return res.status(400).json({ ok: false, msg: 'Formato de fecha inválido (YYYY-MM-DD).' });
+    }
+
+    if (hora_inicio && hora_inicio.length === 5) hora_inicio += ':00';
+    if (hora_fin && hora_fin.length === 5) hora_fin += ':00';
+
+    const [result] = await db.query(
+      `UPDATE solicitudes_teletrabajo
+       SET fecha_solicitada = ?,
+           hora_inicio = ?,
+           hora_fin = ?,
+           motivo = ?,
+           direccion_remota = ?,
+           estado = ?,
+           observacion_admin = ?,
+           actualizado_en = NOW()
+       WHERE id_solicitud = ?`,
+      [
+        fecha_solicitada,
+        hora_inicio || '08:00:00',
+        hora_fin || '17:00:00',
+        motivo,
+        direccion_remota || 'Domicilio Particular',
+        estado,
+        observacion_admin || null,
+        id
+      ]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ ok: false, msg: 'No se encontró la solicitud de teletrabajo.' });
+    }
+
+    return res.json({ ok: true, msg: 'Solicitud de teletrabajo actualizada correctamente.' });
+  } catch (error) {
+    console.error('Error al editar solicitud de teletrabajo:', error);
+    return res.status(500).json({ ok: false, msg: 'Error interno al actualizar solicitud.' });
+  }
+});
+
+/**
+ * DELETE /api/admin/teletrabajo/solicitud/:id
+ * Eliminar definitivamente una solicitud de teletrabajo
+ */
+router.delete('/api/admin/teletrabajo/solicitud/:id', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!id) return res.status(400).json({ ok: false, msg: 'ID de solicitud inválido.' });
+
+    // Desvincular de asistencias_geo si existe
+    await db.query(`UPDATE asistencias_geo SET id_solicitud_teletrabajo = NULL WHERE id_solicitud_teletrabajo = ?`, [id]);
+
+    const [result] = await db.query(`DELETE FROM solicitudes_teletrabajo WHERE id_solicitud = ?`, [id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ ok: false, msg: 'No se encontró la solicitud a eliminar.' });
+    }
+
+    return res.json({ ok: true, msg: 'Solicitud de teletrabajo eliminada exitosamente.' });
+  } catch (error) {
+    console.error('Error al eliminar solicitud de teletrabajo:', error);
+    return res.status(500).json({ ok: false, msg: 'Error interno al eliminar la solicitud.' });
+  }
+});
+
+/**
+ * PUT /api/admin/teletrabajo/jornada/:id
+ * Editar horas y observación de una jornada de teletrabajo
+ */
+router.put('/api/admin/teletrabajo/jornada/:id', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const { hora_entrada, hora_salida, observacion } = req.body || {};
+
+    if (!id) return res.status(400).json({ ok: false, msg: 'ID de jornada inválido.' });
+
+    const valEntrada = hora_entrada && hora_entrada.trim() ? hora_entrada.trim() : null;
+    const valSalida = hora_salida && hora_salida.trim() && hora_salida.trim() !== '-' ? hora_salida.trim() : null;
+    const valObs = observacion && observacion.trim() ? observacion.trim() : null;
+
+    await db.query(
+      `UPDATE asistencias 
+       SET hora_entrada = ?, 
+           hora_salida = ?, 
+           observacion = ?,
+           estado = 'EDITADO_ADMIN',
+           actualizado_en = NOW()
+       WHERE id_asistencia = ?`,
+      [valEntrada, valSalida, valObs, id]
+    );
+
+    // Actualizar observación en reportes si existe
+    await db.query('UPDATE reportes SET observacion = ? WHERE id_asistencia = ?', [valObs, id]);
+
+    return res.json({ ok: true, msg: 'Jornada de teletrabajo actualizada correctamente.' });
+  } catch (error) {
+    console.error('Error al editar jornada de teletrabajo:', error);
+    return res.status(500).json({ ok: false, msg: 'Error al actualizar la jornada.' });
+  }
+});
+
+/**
+ * DELETE /api/admin/teletrabajo/jornada/:id
+ * Anular / eliminar una jornada de teletrabajo
+ */
+router.delete('/api/admin/teletrabajo/jornada/:id', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!id) return res.status(400).json({ ok: false, msg: 'ID de jornada inválido.' });
+
+    await db.query("UPDATE asistencias SET estado = 'ANULADO', actualizado_en = NOW() WHERE id_asistencia = ?", [id]);
+
+    return res.json({ ok: true, msg: 'Jornada de teletrabajo anulada correctamente.' });
+  } catch (error) {
+    console.error('Error al anular jornada de teletrabajo:', error);
+    return res.status(500).json({ ok: false, msg: 'Error al anular la jornada.' });
+  }
+});
+
 module.exports = router;
+

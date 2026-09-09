@@ -49,7 +49,7 @@ router.get('/notificaciones_admin', requireAuth, requireRole(1), async (req, res
       ORDER BY (s.estado = 1) DESC, s.fecha_solicitada DESC, s.creado_en DESC`
     );
 
-    // 3. Jornadas de Teletrabajo Observadas (Fase 2: Auditoría y Aprobación de Bitácoras)
+    // 3. Jornadas de Teletrabajo (Auditoría, Aprobadas/Sumadas y Observadas)
     const [jornadasObservadas] = await db.query(
       `SELECT 
         a.id_asistencia,
@@ -84,8 +84,10 @@ router.get('/notificaciones_admin', requireAuth, requireRole(1), async (req, res
       LEFT JOIN asistencias_geo ag ON ag.id_asistencia = a.id_asistencia
       LEFT JOIN solicitudes_teletrabajo st ON st.id_solicitud = ag.id_solicitud_teletrabajo
       LEFT JOIN reportes r ON r.id_asistencia = a.id_asistencia
-      WHERE a.estado = 'OBSERVADO' AND (ag.modalidad = 'TELETRABAJO' OR ag.id_geo IS NOT NULL)
-      ORDER BY a.fecha DESC, a.hora_entrada DESC`
+      LEFT JOIN lugares l ON l.id_lugar = a.id_lugar
+      WHERE (ag.modalidad = 'TELETRABAJO' OR ag.id_geo IS NOT NULL OR l.tipo = 'TELETRABAJO' OR l.nombre = 'Teletrabajo')
+        AND a.estado != 'ANULADO'
+      ORDER BY (a.estado = 'OBSERVADO') DESC, a.fecha DESC, a.hora_entrada DESC`
     );
 
     res.render('notificaciones_admin', { 
@@ -101,7 +103,7 @@ router.get('/notificaciones_admin', requireAuth, requireRole(1), async (req, res
 });
 
 /**
- * Aprobar notificación: inserta en reportes y marca estado=2 (Aprobado)
+ * Aprobar notificación (Horas Extra): inserta en reportes y marca estado=2 (Aprobado)
  * Body: { obs: "texto opcional del admin" }
  */
 router.post('/notificaciones/:id/approve', requireAuth, requireRole(1), async (req, res) => {
@@ -112,7 +114,7 @@ router.post('/notificaciones/:id/approve', requireAuth, requireRole(1), async (r
   try {
     await conn.beginTransaction();
 
-    // Leer notificacion (solo si está pendiente)
+    // Leer notificacion
     const [rows] = await conn.query(
       `SELECT id_notificacion, id_usuario, fecha_solicitada, hora_inicio, hora_fin, motivo, estado
        FROM notificaciones WHERE id_notificacion = ? FOR UPDATE`,
@@ -123,13 +125,12 @@ router.post('/notificaciones/:id/approve', requireAuth, requireRole(1), async (r
       return res.status(404).json({ ok: false, msg: 'Notificación no encontrada' });
     }
     const n = rows[0];
-    if (Number(n.estado) !== 1) {
+    if (Number(n.estado) === 2) {
       await conn.rollback();
-      return res.status(400).json({ ok: false, msg: 'La solicitud ya no está pendiente' });
+      return res.status(400).json({ ok: false, msg: 'Las horas ya han sido sumadas y aprobadas anteriormente.' });
     }
 
     // Insert en reportes (hora_acumulada = TIMEDIFF(hora_fin, hora_inicio))
-    // Observación: "Horas extra: <motivo>" (+ observación admin si hay)
     const observacion = `Horas extra: ${n.motivo || ''}${obs ? ' | Obs: ' + obs : ''}`;
 
     await conn.query(
@@ -140,7 +141,7 @@ router.post('/notificaciones/:id/approve', requireAuth, requireRole(1), async (r
       [
         n.id_usuario,
         n.fecha_solicitada,
-        n.hora_fin, n.hora_inicio, // TIMEDIFF(fin, inicio)
+        n.hora_fin, n.hora_inicio,
         n.hora_inicio,
         n.hora_fin,
         'Horas extra',
@@ -157,11 +158,60 @@ router.post('/notificaciones/:id/approve', requireAuth, requireRole(1), async (r
     );
 
     await conn.commit();
-    return res.json({ ok: true, msg: 'Aprobada e insertada en reportes' });
+    return res.json({ ok: true, msg: 'Horas extra aprobadas e integradas al total acumulado.' });
   } catch (e) {
     console.error('approve error:', e);
     await conn.rollback();
-    return res.status(500).json({ ok: false, msg: 'Error aprobando' });
+    return res.status(500).json({ ok: false, msg: 'Error aprobando horas extra' });
+  } finally {
+    conn.release();
+  }
+});
+
+/**
+ * Deshacer suma de horas extra: elimina el registro insertado en reportes y vuelve estado a 1 (Pendiente)
+ */
+router.post('/notificaciones/:id/revert', requireAuth, requireRole(1), async (req, res) => {
+  const id = Number(req.params.id);
+  const obs = String(req.body?.obs || '').trim();
+
+  const conn = await db.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    const [rows] = await conn.query(
+      `SELECT id_notificacion, id_usuario, fecha_solicitada, hora_inicio, hora_fin, motivo, estado
+       FROM notificaciones WHERE id_notificacion = ? FOR UPDATE`,
+      [id]
+    );
+    if (!rows.length) {
+      await conn.rollback();
+      return res.status(404).json({ ok: false, msg: 'Notificación no encontrada' });
+    }
+    const n = rows[0];
+
+    // Eliminar el registro generado en reportes
+    await conn.query(
+      `DELETE FROM reportes 
+       WHERE id_usuario = ? AND fecha = ? AND tarea = 'Horas extra' AND hora_inicio = ? AND hora_fin = ?
+       ORDER BY id_reporte DESC LIMIT 1`,
+      [n.id_usuario, n.fecha_solicitada, n.hora_inicio, n.hora_fin]
+    );
+
+    // Regresar notificación a estado pendiente
+    await conn.query(
+      `UPDATE notificaciones
+         SET estado = 1, observacion_admin = ?, actualizado_en = NOW()
+       WHERE id_notificacion = ?`,
+      [obs ? `Suma revertida | Obs: ${obs}` : null, id]
+    );
+
+    await conn.commit();
+    return res.json({ ok: true, msg: 'Suma de horas revertida exitosamente. La solicitud vuelve a estar pendiente.' });
+  } catch (e) {
+    console.error('revert error:', e);
+    await conn.rollback();
+    return res.status(500).json({ ok: false, msg: 'Error al deshacer suma de horas extra' });
   } finally {
     conn.release();
   }
@@ -179,14 +229,14 @@ router.post('/notificaciones/:id/reject', requireAuth, requireRole(1), async (re
     const [r] = await db.query(
       `UPDATE notificaciones
          SET estado = 3, observacion_admin = ?, actualizado_en = NOW()
-       WHERE id_notificacion = ? AND estado = 1`,
+       WHERE id_notificacion = ? AND estado != 3`,
       [obs || null, id]
     );
 
     if (r.affectedRows === 0) {
-      return res.status(400).json({ ok: false, msg: 'No se pudo rechazar (¿ya no está pendiente?)' });
+      return res.status(400).json({ ok: false, msg: 'No se pudo rechazar la notificación.' });
     }
-    return res.json({ ok: true, msg: 'Rechazada' });
+    return res.json({ ok: true, msg: 'Solicitud rechazada' });
   } catch (e) {
     console.error('reject error:', e);
     return res.status(500).json({ ok: false, msg: 'Error rechazando' });
