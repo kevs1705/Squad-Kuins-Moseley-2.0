@@ -77,13 +77,20 @@
   <div class="card-historial">
     <h5 class="historial-header-title">Historial de jornadas</h5>
 
-    <!-- Fila de Filtros / Controles (Primero Fecha, Segundo Búsqueda) -->
+    <!-- Fila de Filtros / Controles (Rango de Fechas + Búsqueda) -->
     <div class="historial-controls-row">
       <div class="filter-field-group filter-date-box">
-        <label for="historialDateFilter" class="filter-field-label">Filtrar por fecha:</label>
+        <label for="historialFechaDesde" class="filter-field-label">Desde:</label>
         <div class="input-icon-wrapper">
           <i class="bi bi-calendar3"></i>
-          <input type="date" id="historialDateFilter" class="form-control" title="Filtrar por fecha">
+          <input type="date" id="historialFechaDesde" class="form-control" title="Fecha Desde">
+        </div>
+      </div>
+      <div class="filter-field-group filter-date-box">
+        <label for="historialFechaHasta" class="filter-field-label">Hasta:</label>
+        <div class="input-icon-wrapper">
+          <i class="bi bi-calendar3"></i>
+          <input type="date" id="historialFechaHasta" class="form-control" title="Fecha Hasta">
         </div>
       </div>
       <div class="filter-field-group search-input-box">
@@ -156,21 +163,28 @@
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('historialSearch');
-    const dateInput = document.getElementById('historialDateFilter');
+    const fechaDesdeInput = document.getElementById('historialFechaDesde');
+    const fechaHastaInput = document.getElementById('historialFechaHasta');
     const tableRows = document.querySelectorAll('.table-historial tbody tr');
 
     function filterTable() {
       const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
-      const dateTerm = dateInput ? dateInput.value : '';
+      const fechaDesde = fechaDesdeInput ? fechaDesdeInput.value : '';
+      const fechaHasta = fechaHastaInput ? fechaHastaInput.value : '';
 
       tableRows.forEach(row => {
         if (row.children.length <= 1) return; // Omitir fila de mensaje de "Sin registros"
 
-        const fechaText = row.cells[0] ? row.cells[0].textContent.trim() : '';
-        const obraText = row.cells[1] ? row.cells[1].textContent.toLowerCase() : '';
+        const cellFecha = row.cells[0] ? row.cells[0].textContent : '';
+        const matchDate = cellFecha.match(/\d{4}-\d{2}-\d{2}/);
+        const rowFecha = matchDate ? matchDate[0] : cellFecha.trim();
 
-        const matchesSearch = !searchTerm || obraText.includes(searchTerm) || fechaText.toLowerCase().includes(searchTerm);
-        const matchesDate = !dateTerm || fechaText.includes(dateTerm);
+        const rowText = row.textContent.toLowerCase();
+        const matchesSearch = !searchTerm || rowText.includes(searchTerm);
+
+        let matchesDate = true;
+        if (fechaDesde && rowFecha < fechaDesde) matchesDate = false;
+        if (fechaHasta && rowFecha > fechaHasta) matchesDate = false;
 
         if (matchesSearch && matchesDate) {
           row.style.display = '';
@@ -181,7 +195,8 @@
     }
 
     if (searchInput) searchInput.addEventListener('input', filterTable);
-    if (dateInput) dateInput.addEventListener('change', filterTable);
+    if (fechaDesdeInput) fechaDesdeInput.addEventListener('change', filterTable);
+    if (fechaHastaInput) fechaHastaInput.addEventListener('change', filterTable);
   });
 </script>
 

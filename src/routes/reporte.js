@@ -290,7 +290,8 @@ const handleUploadOptional = (req, res, next) => {
 router.post('/reportes/guardar', requireAuth, handleUploadOptional, async (req, res) => {
   try {
     const userId = req.session.user.id;
-    const { id_asistencia, tarea, comprobante } = req.body;
+    let { id_asistencia, tarea, comprobante } = req.body;
+    tarea = String(tarea || '').trim().slice(0, 350);
 
     if (!id_asistencia || !tarea) {
       return res.status(400).json({ ok: false, error: 'Debe seleccionar una asistencia y describir la tarea.' });
