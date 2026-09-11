@@ -111,122 +111,71 @@ router.get('/notificaciones_admin', requireAuth, requireRole(1), async (req, res
 });
 
 /**
- * Aprobar notificación (Horas Extra): inserta en reportes y marca estado=2 (Aprobado / Horas Sumadas)
+ * Aprobar notificación (Horas Extra): marca estado=2 (Aprobado / Horas Sumadas)
  * Body: { obs: "texto opcional del admin" }
  */
 router.post('/notificaciones/:id/approve', requireAuth, requireRole(1), async (req, res) => {
   const id = Number(req.params.id);
   const obs = String(req.body?.obs || '').trim();
 
-  const conn = await db.getConnection();
   try {
-    await conn.beginTransaction();
-
     // Leer notificacion
-    const [rows] = await conn.query(
+    const [rows] = await db.query(
       `SELECT id_notificacion, id_usuario, fecha_solicitada, hora_inicio, hora_fin, horas_cantidad, motivo, tarea, comprobante, estado
-       FROM notificaciones WHERE id_notificacion = ? FOR UPDATE`,
+       FROM notificaciones WHERE id_notificacion = ?`,
       [id]
     );
     if (!rows.length) {
-      await conn.rollback();
       return res.status(404).json({ ok: false, msg: 'Reporte de horas extra no encontrado' });
     }
     const n = rows[0];
     if (Number(n.estado) === 2) {
-      await conn.rollback();
       return res.status(400).json({ ok: false, msg: 'Las horas ya han sido sumadas y aprobadas anteriormente.' });
     }
 
-    // Preparar descripción y tarea
-    const tareaReporte = n.tarea || n.motivo || 'Horas extras autorizadas';
-    const observacionReporte = `Horas extras aprobadas${n.motivo ? ' - Justificación: ' + n.motivo : ''}${obs ? ' | Obs Admin: ' + obs : ''}`;
-
-    // Insertar en reportes para integrar al total acumulado oficial
-    await conn.query(
-      `INSERT INTO reportes
-        (id_usuario, fecha, hora_acumulada, hora_inicio, hora_fin, tarea, comprobante, observacion)
-       VALUES
-        (?, ?, TIMEDIFF(?, ?), ?, ?, ?, ?, ?)`,
-      [
-        n.id_usuario,
-        n.fecha_solicitada,
-        n.hora_fin, n.hora_inicio,
-        n.hora_inicio,
-        n.hora_fin,
-        tareaReporte,
-        n.comprobante || null,
-        observacionReporte
-      ]
-    );
-
     // Marcar notificación como aprobada
-    await conn.query(
+    await db.query(
       `UPDATE notificaciones
          SET estado = 2, observacion_admin = ?, actualizado_en = NOW()
        WHERE id_notificacion = ?`,
       [obs || null, id]
     );
 
-    await conn.commit();
     return res.json({ ok: true, msg: 'Horas extras aprobadas y acreditadas exitosamente al total acumulado.' });
   } catch (e) {
     console.error('approve error:', e);
-    await conn.rollback();
     return res.status(500).json({ ok: false, msg: 'Error aprobando horas extra' });
-  } finally {
-    conn.release();
   }
 });
 
 /**
- * Deshacer suma de horas extra: elimina el registro insertado en reportes y vuelve estado a 1 (Pendiente)
+ * Deshacer suma de horas extra: vuelve estado a 1 (Pendiente)
  */
 router.post('/notificaciones/:id/revert', requireAuth, requireRole(1), async (req, res) => {
   const id = Number(req.params.id);
   const obs = String(req.body?.obs || '').trim();
 
-  const conn = await db.getConnection();
   try {
-    await conn.beginTransaction();
-
-    const [rows] = await conn.query(
-      `SELECT id_notificacion, id_usuario, fecha_solicitada, hora_inicio, hora_fin, motivo, tarea, estado
-       FROM notificaciones WHERE id_notificacion = ? FOR UPDATE`,
+    const [rows] = await db.query(
+      `SELECT id_notificacion, estado FROM notificaciones WHERE id_notificacion = ?`,
       [id]
     );
     if (!rows.length) {
-      await conn.rollback();
       return res.status(404).json({ ok: false, msg: 'Reporte de horas extra no encontrado' });
     }
-    const n = rows[0];
-
-    const tareaReporte = n.tarea || n.motivo || 'Horas extras autorizadas';
-
-    // Eliminar el registro generado en reportes
-    await conn.query(
-      `DELETE FROM reportes 
-       WHERE id_usuario = ? AND fecha = ? AND (tarea = ? OR tarea = 'Horas extra' OR tarea = 'Horas extras autorizadas') AND hora_inicio = ? AND hora_fin = ?
-       ORDER BY id_reporte DESC LIMIT 1`,
-      [n.id_usuario, n.fecha_solicitada, tareaReporte, n.hora_inicio, n.hora_fin]
-    );
 
     // Regresar notificación a estado pendiente
-    await conn.query(
+    await db.query(
       `UPDATE notificaciones
          SET estado = 1, observacion_admin = ?, actualizado_en = NOW()
        WHERE id_notificacion = ?`,
       [obs ? `Suma revertida | Obs: ${obs}` : null, id]
     );
 
-    await conn.commit();
     return res.json({ ok: true, msg: 'Suma de horas revertida exitosamente. El reporte vuelve a estar pendiente de evaluación.' });
   } catch (e) {
     console.error('revert error:', e);
-    await conn.rollback();
     return res.status(500).json({ ok: false, msg: 'Error al deshacer suma de horas extra' });
-  } finally {
-    conn.release();
   }
 });
 
