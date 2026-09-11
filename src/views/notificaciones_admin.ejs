@@ -1,451 +1,1220 @@
 <%
   pageTitle = 'Gestión de Solicitudes y Teletrabajo';
-  pageSubtitle = 'Aprobación previa y auditoría de jornadas — Admin: ' + (user ? user.nombre : '');
+  pageSubtitle = 'Panel Administrativo de Pre-autorización y Auditoría de Bitácoras — BYGGER SRL';
 %>
 <%- include('partials/header') %>
 
-  <!-- Leaflet para ver mapas de auditoría si es necesario -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin></script>
+  <!-- Bootstrap Icons para iconos nítidos -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <style>
-    .admin-req-card {
-      background: #ffffff;
-      border: 1px solid #e2e8f0;
-      border-radius: 14px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
+    :root {
+      --admin-primary: #0F5FA6;
+      --admin-primary-hover: #0D528F;
+      --admin-primary-soft: #EFF6FF;
+      --admin-dark: #081426;
+      --admin-bg-page: #F8FAFC;
+      --admin-card-bg: #FFFFFF;
+      --admin-border: #E2E8F0;
+      --admin-text-main: #1E293B;
+      --admin-text-muted: #64748B;
+      --admin-radius: 16px;
+      --admin-radius-sm: 10px;
+      --admin-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+      --admin-shadow-hover: 0 15px 30px -5px rgba(15, 95, 166, 0.1), 0 10px 15px -5px rgba(0, 0, 0, 0.04);
     }
-    .nav-tabs-custom {
-      border-bottom: 2px solid #e2e8f0;
-      gap: 0.5rem;
+
+    /* Contenedor adaptado con margen lateral equilibrado */
+    .teletrabajo-container {
+      width: 100%;
+      max-width: 100%;
+      margin: 0;
+      padding: 0.75rem 0.5rem 3rem 0.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      box-sizing: border-box;
     }
-    .nav-tabs-custom .nav-link {
-      color: #64748b;
-      font-weight: 600;
-      font-size: 0.95rem;
-      border: none;
-      border-bottom: 3px solid transparent;
-      padding: 0.75rem 1.25rem;
-      border-radius: 0;
-      transition: all 0.2s ease;
-      background: transparent;
+
+    /* Tarjetas de Métricas KPI a ancho completo */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.25rem;
+      width: 100%;
     }
-    .nav-tabs-custom .nav-link:hover {
-      color: #2563eb;
-    }
-    .nav-tabs-custom .nav-link.active {
-      color: #2563eb;
-      border-bottom-color: #2563eb;
-      background: transparent;
-    }
-    .badge-count {
-      background: #ef4444;
-      color: #ffffff;
-      font-size: 0.75rem;
-      font-weight: 700;
-      padding: 2px 7px;
-      border-radius: 10px;
-      margin-left: 6px;
-    }
-    .badge-count-amber {
-      background: #f59e0b;
-      color: #ffffff;
-      font-size: 0.75rem;
-      font-weight: 700;
-      padding: 2px 7px;
-      border-radius: 10px;
-      margin-left: 6px;
-    }
-    .chip--pend { background: #fef3c7; color: #b45309; font-weight: 600; }
-    .chip--ok { background: #dcfce7; color: #15803d; font-weight: 600; }
-    .chip--err { background: #fee2e2; color: #b91c1c; font-weight: 600; }
-    .table-modern th {
-      background-color: #f8fafc;
-      color: #475569;
-      font-weight: 700;
-      font-size: 0.83rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      border-bottom: 2px solid #e2e8f0;
-    }
-    .table-modern td {
-      vertical-align: middle;
-      font-size: 0.9rem;
-    }
-    .card-stat-widget {
-      background: #ffffff;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      padding: 1.25rem;
+    .kpi-card {
+      background: var(--admin-card-bg);
+      border: 1px solid var(--admin-border);
+      border-radius: var(--admin-radius);
+      padding: 1.25rem 1.5rem;
       display: flex;
       align-items: center;
-      gap: 1rem;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+      justify-content: space-between;
+      box-shadow: var(--admin-shadow);
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .card-stat-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 10px;
+    .kpi-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--admin-shadow-hover);
+      border-color: #CBD5E1;
+    }
+    .kpi-info-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--admin-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.25rem;
+    }
+    .kpi-info-val {
+      font-size: 1.85rem;
+      font-weight: 800;
+      color: var(--admin-text-main);
+      line-height: 1.1;
+      margin-bottom: 0.35rem;
+    }
+    .kpi-icon-box {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.4rem;
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+    .kpi-icon-blue { background: #EFF6FF; color: #0F5FA6; }
+    .kpi-icon-amber { background: #FFFBEB; color: #D97706; }
+    .kpi-icon-emerald { background: #ECFDF5; color: #059669; }
+
+    /* Contenedor Principal de Pestañas y Tablas */
+    .admin-main-card {
+      background: var(--admin-card-bg);
+      border: 1px solid var(--admin-border);
+      border-radius: var(--admin-radius);
+      box-shadow: var(--admin-shadow);
+      padding: 1.75rem;
+      width: 100%;
+    }
+
+    /* Pestañas Segmentadas Sin Viñetas */
+    .nav-tabs-segmented {
+      display: flex !important;
+      background: #F1F5F9 !important;
+      padding: 6px !important;
+      border-radius: 14px !important;
+      gap: 6px !important;
+      border: none !important;
+      margin-bottom: 1.5rem !important;
+      list-style: none !important;
+      overflow-x: auto;
+    }
+    .nav-tabs-segmented .nav-item {
+      flex: 1;
+      min-width: 220px;
+      list-style: none !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    .nav-tabs-segmented .nav-item::before,
+    .nav-tabs-segmented .nav-item::marker {
+      display: none !important;
+      content: "" !important;
+    }
+    .nav-tabs-segmented .nav-link {
+      width: 100%;
+      text-align: center;
+      border: none;
+      border-radius: 10px;
+      padding: 0.8rem 1rem;
+      font-weight: 700;
+      font-size: 0.92rem;
+      color: var(--admin-text-muted);
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    .nav-tabs-segmented .nav-link:hover {
+      color: var(--admin-primary);
+      background: rgba(255, 255, 255, 0.6);
+    }
+    .nav-tabs-segmented .nav-link.active {
+      color: var(--admin-primary) !important;
+      background: #FFFFFF !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .pill-counter {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 12px;
+      line-height: 1;
+    }
+    .pill-counter-red { background: #FEE2E2; color: #DC2626; }
+    .pill-counter-amber { background: #FEF3C7; color: #D97706; }
+    .pill-counter-blue { background: #DBEAFE; color: #1D4ED8; }
+
+    /* REGLAS ESTRICTAS DE VISIBILIDAD DE CONTENIDO DE PESTAÑAS */
+    .tab-content > .tab-pane {
+      display: none !important;
+    }
+    .tab-content > .tab-pane.active {
+      display: block !important;
+    }
+
+    /* Barra de Herramientas de Filtro Mejorada */
+    .filter-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1.25rem;
+      padding-bottom: 1.25rem;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--admin-border);
+    }
+    .search-input-wrap {
+      position: relative;
+      min-width: 300px;
+    }
+    .search-input-wrap i {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #0F5FA6;
+      font-size: 0.95rem;
+      pointer-events: none;
+    }
+    .filter-input-search {
+      width: 100% !important;
+      height: 42px !important;
+      background: #FFFFFF !important;
+      color: #1E293B !important;
+      border: 1.5px solid #CBD5E1 !important;
+      border-radius: 10px !important;
+      padding: 0 14px 0 40px !important;
+      font-size: 0.88rem !important;
+      font-weight: 500 !important;
+      transition: all 0.2s ease !important;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+    }
+    .filter-input-search:focus {
+      background: #FFFFFF !important;
+      color: #1E293B !important;
+      border-color: #0F5FA6 !important;
+      box-shadow: 0 0 0 3px rgba(15, 95, 166, 0.15) !important;
+      outline: none !important;
+    }
+    .filter-input-search::placeholder {
+      color: #94A3B8 !important;
+    }
+
+    .filter-select-custom {
+      height: 42px !important;
+      min-width: 160px !important;
+      background: #FFFFFF !important;
+      color: #1E293B !important;
+      border: 1.5px solid #CBD5E1 !important;
+      border-radius: 10px !important;
+      padding: 0 12px !important;
+      font-size: 0.88rem !important;
+      font-weight: 600 !important;
+      cursor: pointer !important;
+      transition: all 0.2s ease !important;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+    }
+    .filter-select-custom:focus {
+      background: #FFFFFF !important;
+      color: #1E293B !important;
+      border-color: #0F5FA6 !important;
+      box-shadow: 0 0 0 3px rgba(15, 95, 166, 0.15) !important;
+      outline: none !important;
+    }
+
+    /* Input de Observación en Tablas */
+    .admin-obs-input {
+      width: 100% !important;
+      max-width: 100% !important;
+      box-sizing: border-box !important;
+      background: #FFFFFF !important;
+      color: #1E293B !important;
+      border: 1.5px solid #E2E8F0 !important;
+      border-radius: 8px !important;
+      padding: 7px 10px !important;
+      font-size: 0.82rem !important;
+      font-weight: 500 !important;
+      transition: all 0.2s ease !important;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+      margin-bottom: 6px !important;
+    }
+    .admin-obs-input:focus {
+      background: #FFFFFF !important;
+      color: #1E293B !important;
+      border-color: #0F5FA6 !important;
+      box-shadow: 0 0 0 3px rgba(15, 95, 166, 0.12) !important;
+      outline: none !important;
+    }
+    .admin-obs-input::placeholder {
+      color: #94A3B8 !important;
+    }
+
+    /* Tabla Corporativa Limpia a Ancho Completo */
+    .table-responsive {
+      width: 100% !important;
+      overflow-x: auto !important;
+      -webkit-overflow-scrolling: touch;
+      border-radius: 10px;
+    }
+    .table-corporate {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      margin-bottom: 0;
+    }
+    .table-corporate thead th {
+      background: #F8FAFC;
+      color: var(--admin-text-muted);
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      padding: 1rem 1.15rem;
+      border-top: 1px solid var(--admin-border);
+      border-bottom: 2px solid var(--admin-border);
+      white-space: nowrap;
+    }
+    .table-corporate thead th:first-child { border-top-left-radius: 10px; }
+    .table-corporate thead th:last-child {
+      border-top-right-radius: 10px;
+      min-width: 220px;
+      width: 220px;
+      text-align: center;
+    }
+    .table-corporate tbody tr {
+      transition: background 0.15s ease;
+    }
+    .table-corporate tbody tr:hover {
+      background: #F8FAFC;
+    }
+    .table-corporate tbody td {
+      padding: 1.15rem 1.15rem;
+      vertical-align: middle;
+      border-bottom: 1px solid #F1F5F9;
+      font-size: 0.9rem;
+      color: var(--admin-text-main);
+    }
+    .table-corporate tbody td:last-child {
+      padding: 0.85rem 0.75rem;
+      min-width: 220px;
+      width: 220px;
+      text-align: center;
+    }
+
+    /* Avatar y Colaborador */
+    .user-profile-cell {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .user-avatar-circle {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #0F5FA6 0%, #0D9488 100%);
+      color: #FFFFFF;
+      font-weight: 700;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 3px 8px rgba(15, 95, 166, 0.2);
+      flex-shrink: 0;
+    }
+    .user-name-text {
+      font-weight: 700;
+      color: var(--admin-text-main);
+      line-height: 1.2;
+    }
+    .badge-ci {
+      display: inline-block;
+      background: #F1F5F9;
+      color: var(--admin-text-muted);
+      font-weight: 700;
+      font-size: 0.74rem;
+      padding: 2px 7px;
+      border-radius: 6px;
+      margin-top: 2px;
+    }
+
+    /* Badges de Estado */
+    .badge-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+    .status-pending { background: #FEF3C7; color: #B45309; border: 1px solid rgba(217, 119, 6, 0.2); }
+    .status-approved { background: #DCFCE7; color: #15803D; border: 1px solid rgba(22, 163, 74, 0.2); }
+    .status-rejected { background: #FEE2E2; color: #B91C1C; border: 1px solid rgba(220, 38, 38, 0.2); }
+    .status-observed { background: #FFF7ED; color: #C2410C; border: 1px solid rgba(234, 88, 12, 0.2); }
+
+    /* Botones de Decisión Admin Armonizados */
+    .decision-container {
+      width: 100% !important;
+      max-width: 220px !important;
+      min-width: 180px !important;
+      margin: 0 auto !important;
+      box-sizing: border-box !important;
+      display: flex !important;
+      flex-direction: column !important;
+    }
+    .decision-btn-row {
+      display: flex !important;
+      gap: 6px !important;
+      justify-content: center !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+    }
+    .btn-action-decision {
+      flex: 1 1 0 !important;
+      min-width: 0 !important;
+      box-sizing: border-box !important;
+      white-space: nowrap !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 5px !important;
+      padding: 7px 8px !important;
+      border-radius: 8px !important;
+      font-size: 0.82rem !important;
+      font-weight: 700 !important;
+      cursor: pointer !important;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      border: none !important;
+      text-decoration: none !important;
+    }
+    .btn-action-approve {
+      background: #059669 !important;
+      color: #FFFFFF !important;
+      box-shadow: 0 2px 6px rgba(5, 150, 105, 0.25) !important;
+    }
+    .btn-action-approve:hover {
+      background: #047857 !important;
+      color: #FFFFFF !important;
+      transform: translateY(-1px) !important;
+      box-shadow: 0 4px 10px rgba(5, 150, 105, 0.35) !important;
+    }
+    .btn-action-reject {
+      background: #FFF1F2 !important;
+      color: #E11D48 !important;
+      border: 1px solid #FECDD3 !important;
+    }
+    .btn-action-reject:hover {
+      background: #FFE4E6 !important;
+      color: #BE123C !important;
+      border-color: #FDA4AF !important;
+      transform: translateY(-1px) !important;
+    }
+    .btn-action-revert {
+      background: #FEF3C7 !important;
+      color: #92400E !important;
+      border: 1px solid #FDE68A !important;
+      font-weight: 700 !important;
+    }
+    .btn-action-revert:hover {
+      background: #FDE68A !important;
+      color: #78350F !important;
+      border-color: #FCD34D !important;
+      transform: translateY(-1px) !important;
+    }
+
+    /* Marcaciones E / S al estilo de reporte_admin */
+    .badge-time-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: nowrap;
+    }
+    .badge-time-in {
+      background: #EFF6FF;
+      color: #1D4ED8;
+      border: 1px solid #DBEAFE;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 12.5px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .badge-time-in b {
+      color: #1E40AF;
+      font-weight: 800;
+      margin-right: 2px;
+    }
+    .badge-time-out {
+      background: #ECFDF5;
+      color: #047857;
+      border: 1px solid #A7F3D0;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 12.5px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .badge-time-out b {
+      color: #065F46;
+      font-weight: 800;
+      margin-right: 2px;
+    }
+
+    /* Pastilla de Horas */
+    .hours-pill-corporate {
+      background-color: #E6FFFA;
+      color: #0D9488;
+      border: 1px solid rgba(13, 148, 136, 0.2);
+      padding: 5px 11px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 13px;
+      display: inline-block;
+      white-space: nowrap;
+    }
+
+    /* Botón de Visualización de Auditoría (Ver Tareas / Ver GPS) */
+    .btn-audit-badge {
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      background: #EFF6FF !important;
+      color: #0F5FA6 !important;
+      border: 1px solid #BFDBFE !important;
+      border-radius: 8px !important;
+      padding: 7px 12px !important;
+      font-size: 0.82rem !important;
+      font-weight: 700 !important;
+      cursor: pointer !important;
+      transition: all 0.2s ease !important;
+      text-decoration: none !important;
+      box-shadow: 0 1px 2px rgba(15, 95, 166, 0.05) !important;
+    }
+    .btn-audit-badge:hover {
+      background: #DBEAFE !important;
+      color: #0B4A82 !important;
+      border-color: #93C5FD !important;
+      transform: translateY(-1px) !important;
+    }
+    .badge-evidence-photo {
+      background: #10B981 !important;
+      color: #FFFFFF !important;
+      font-size: 0.68rem !important;
+      font-weight: 800 !important;
+      padding: 2px 6px !important;
+      border-radius: 6px !important;
+      line-height: 1 !important;
+    }
+
+    /* Botones Icono de Acción (Editar) */
+    .btn-icon-action {
+      width: 32px !important;
+      height: 32px !important;
+      border-radius: 8px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      border: 1px solid transparent !important;
+      cursor: pointer !important;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      font-size: 0.85rem !important;
+      background: transparent;
+      padding: 0 !important;
+      flex-shrink: 0;
+    }
+    .btn-icon-edit {
+      background: #EFF6FF !important;
+      color: #1D4ED8 !important;
+      border-color: #BFDBFE !important;
+    }
+    .btn-icon-edit:hover {
+      background: #DBEAFE !important;
+      color: #1E40AF !important;
+      border-color: #93C5FD !important;
+      transform: translateY(-1px);
     }
   </style>
 
-  <!-- RESUMEN EN TARJETAS ESTADÍSTICAS -->
-  <% 
-    const pendTeletrabajo = (teletrabajos||[]).filter(t => Number(t.estado) === 1).length;
-    const pendAuditoria = (jornadasObservadas||[]).length;
-    const pendHorasExtra = (notifs||[]).filter(n => Number(n.estado) === 1).length;
-  %>
-  <div class="row g-3 mb-4">
-    <div class="col-md-4">
-      <div class="card-stat-widget">
-        <div class="card-stat-icon" style="background: #eff6ff; color: #2563eb;">
-          <i class="bi bi-house-door"></i>
-        </div>
+  <div class="teletrabajo-container">
+    
+    <!-- 1. RESUMEN DE MÉTRICAS KPI -->
+    <% 
+      const pendTeletrabajo = (teletrabajos||[]).filter(t => Number(t.estado) === 1).length;
+      const totalTeletrabajo = (teletrabajos||[]).length;
+      const pendAuditoria = (jornadasObservadas||[]).filter(j => j.asistencia_estado === 'OBSERVADO').length;
+      const sumadasAuditoria = (jornadasObservadas||[]).filter(j => j.asistencia_estado === 'PRESENTE' || j.asistencia_estado === 'EDITADO_ADMIN').length;
+      const totalAuditoria = (jornadasObservadas||[]).length;
+      const pendHorasExtra = (notifs||[]).filter(n => Number(n.estado) === 1).length;
+      const sumadasHorasExtra = (notifs||[]).filter(n => Number(n.estado) === 2).length;
+    %>
+    <div class="kpi-grid">
+      <!-- KPI 1: Teletrabajo Pre-Autorizaciones -->
+      <div class="kpi-card">
         <div>
-          <span class="text-muted fs-7 d-block">Solicitudes Teletrabajo</span>
-          <h4 class="fw-bold mb-0 text-dark">
-            <%= (teletrabajos||[]).length %> 
+          <div class="kpi-info-title">Solicitudes Teletrabajo</div>
+          <div class="kpi-info-val"><%= totalTeletrabajo %></div>
+          <div>
             <% if (pendTeletrabajo > 0) { %>
-              <small class="badge bg-warning text-dark fs-7 ms-1"><%= pendTeletrabajo %> pendientes</small>
+              <span class="badge-status-pill status-pending fs-8">
+                <i class="bi bi-clock-history"></i> <%= pendTeletrabajo %> Pendientes
+              </span>
+            <% } else { %>
+              <span class="badge-status-pill status-approved fs-8">
+                <i class="bi bi-check2"></i> Todo al día
+              </span>
             <% } %>
-          </h4>
+          </div>
+        </div>
+        <div class="kpi-icon-box kpi-icon-blue">
+          <i class="bi bi-house-door-fill"></i>
         </div>
       </div>
-    </div>
 
-    <div class="col-md-4">
-      <div class="card-stat-widget">
-        <div class="card-stat-icon" style="background: #fffbeb; color: #d97706;">
+      <!-- KPI 2: Auditoría y Suma de Horas Teletrabajo -->
+      <div class="kpi-card">
+        <div>
+          <div class="kpi-info-title">Jornadas Teletrabajo</div>
+          <div class="kpi-info-val"><%= totalAuditoria %></div>
+          <div>
+            <% if (pendAuditoria > 0) { %>
+              <span class="badge-status-pill status-observed fs-8">
+                <i class="bi bi-exclamation-triangle"></i> <%= pendAuditoria %> Pend. Auditoría
+              </span>
+            <% } else { %>
+              <span class="badge-status-pill status-approved fs-8">
+                <i class="bi bi-shield-check"></i> <%= sumadasAuditoria %> Horas sumadas
+              </span>
+            <% } %>
+          </div>
+        </div>
+        <div class="kpi-icon-box kpi-icon-amber">
           <i class="bi bi-journal-check"></i>
         </div>
+      </div>
+      <!-- KPI 3: Horas Extra -->
+      <div class="kpi-card">
         <div>
-          <span class="text-muted fs-7 d-block">Bitácoras en Observación</span>
-          <h4 class="fw-bold mb-0 text-dark">
-            <%= pendAuditoria %>
-            <% if (pendAuditoria > 0) { %>
-              <small class="badge bg-danger fs-7 ms-1">Requieren revisión</small>
-            <% } %>
-          </h4>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-md-4">
-      <div class="card-stat-widget">
-        <div class="card-stat-icon" style="background: #f0fdf4; color: #16a34a;">
-          <i class="bi bi-clock-history"></i>
-        </div>
-        <div>
-          <span class="text-muted fs-7 d-block">Solicitudes Horas Extra</span>
-          <h4 class="fw-bold mb-0 text-dark">
-            <%= (notifs||[]).length %>
-            <% if (pendHorasExtra > 0) { %>
-              <small class="badge bg-warning text-dark fs-7 ms-1"><%= pendHorasExtra %> pendientes</small>
-            <% } %>
-          </h4>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- PANEL PRINCIPAL CON PESTAÑAS -->
-  <div class="admin-req-card">
-    <ul class="nav nav-tabs nav-tabs-custom mb-4" id="adminTabs" role="tablist">
-      <!-- Tab 1: Solicitudes de Teletrabajo -->
-      <li class="nav-item" role="presentation">
-        <button class="nav-link active" id="tab-teletrabajo-solicitudes-tab" data-bs-toggle="tab" data-bs-target="#tab-teletrabajo-solicitudes" type="button" role="tab">
-          <i class="bi bi-house-door me-1"></i> Solicitudes de Teletrabajo
-          <% if (pendTeletrabajo > 0) { %><span class="badge-count"><%= pendTeletrabajo %></span><% } %>
-        </button>
-      </li>
-
-      <!-- Tab 2: Auditoría de Jornadas / Bitácoras Observadas -->
-      <li class="nav-item" role="presentation">
-        <button class="nav-link" id="tab-teletrabajo-auditoria-tab" data-bs-toggle="tab" data-bs-target="#tab-teletrabajo-auditoria" type="button" role="tab">
-          <i class="bi bi-eye me-1"></i> Auditoría de Bitácoras (En Observación)
-          <% if (pendAuditoria > 0) { %><span class="badge-count-amber"><%= pendAuditoria %></span><% } %>
-        </button>
-      </li>
-
-      <!-- Tab 3: Horas Extra -->
-      <li class="nav-item" role="presentation">
-        <button class="nav-link" id="tab-horas-extra-tab" data-bs-toggle="tab" data-bs-target="#tab-horas-extra" type="button" role="tab">
-          <i class="bi bi-clock-history me-1"></i> Horas Extra
-          <% if (pendHorasExtra > 0) { %><span class="badge-count"><%= pendHorasExtra %></span><% } %>
-        </button>
-      </li>
-    </ul>
-
-    <div class="tab-content" id="adminTabsContent">
-      
-      <!-- ===================================================================== -->
-      <!-- PESTAÑA 1: SOLICITUDES DE TELETRABAJO (PRE-AUTORIZACIÓN) -->
-      <!-- ===================================================================== -->
-      <div class="tab-pane fade show active" id="tab-teletrabajo-solicitudes" role="tabpanel">
-        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-          <h5 class="fw-bold mb-0 text-dark">
-            <i class="bi bi-house-check text-primary me-2"></i>Pre-autorización de Días de Teletrabajo
-          </h5>
-          <div class="d-flex gap-2">
-            <input type="text" id="filtroTextoTeletrabajo" class="form-control form-control-sm" style="max-width: 260px;" placeholder="Buscar pasante, fecha o motivo...">
-            <select id="filtroEstadoTeletrabajo" class="form-select form-select-sm" style="width: 140px;">
-              <option value="">Todos</option>
-              <option value="1">Pendientes</option>
-              <option value="2">Aprobados</option>
-              <option value="3">Rechazados</option>
-            </select>
-          </div>
-        </div>
-
-        <% if (!teletrabajos || teletrabajos.length === 0) { %>
-          <div class="alert alert-info py-4 text-center">
-            <i class="bi bi-inbox fs-3 d-block mb-2"></i>
-            No se han registrado solicitudes de teletrabajo aún.
-          </div>
-        <% } else { %>
-          <div class="table-responsive">
-            <table class="table table-bordered table-hover align-middle table-modern">
-              <thead>
-                <tr>
-                  <th>Pasante / Usuario</th>
-                  <th>Fecha Solicitada</th>
-                  <th>Horario Propuesto</th>
-                  <th>Ubicación</th>
-                  <th>Motivo / Justificación</th>
-                  <th>Estado</th>
-                  <th class="text-center" style="min-width: 220px;">Acción / Observación</th>
-                </tr>
-              </thead>
-              <tbody id="tbodyTeletrabajo">
-                <% teletrabajos.forEach(t => { %>
-                  <tr data-id="<%= t.id_solicitud %>" 
-                      data-estado="<%= t.estado %>"
-                      data-nombre="<%= (t.nombre_usuario || '').toLowerCase() %>"
-                      data-fecha="<%= t.fecha_solicitada %>"
-                      data-motivo="<%= (t.motivo || '').toLowerCase() %>">
-                    <td>
-                      <strong><%= t.nombre_usuario %></strong>
-                      <br><small class="text-muted">CI: <%= t.ci_usuario %></small>
-                    </td>
-                    <td><i class="bi bi-calendar-event text-primary me-1"></i><strong><%= t.fecha_solicitada %></strong></td>
-                    <td><%= t.hora_inicio %> - <%= t.hora_fin %></td>
-                    <td><i class="bi bi-geo-alt text-danger me-1"></i><%= t.direccion_remota || 'Domicilio' %></td>
-                    <td>
-                      <span style="font-size: 0.88rem;"><%= t.motivo %></span>
-                    </td>
-                    <td>
-                      <% if (t.estado === 1) { %>
-                        <span class="badge chip--pend px-2 py-1"><i class="bi bi-hourglass-split me-1"></i>Pendiente</span>
-                      <% } else if (t.estado === 2) { %>
-                        <span class="badge chip--ok px-2 py-1"><i class="bi bi-check-circle me-1"></i>Aprobado</span>
-                      <% } else { %>
-                        <span class="badge chip--err px-2 py-1"><i class="bi bi-x-circle me-1"></i>Rechazado</span>
-                      <% } %>
-                    </td>
-                    <td class="text-center">
-                      <% if (t.estado === 1) { %>
-                        <div class="d-flex flex-column gap-1">
-                          <input type="text" class="form-control form-control-sm input-obs-teletrabajo" placeholder="Observación (opcional)">
-                          <div class="d-flex gap-1 justify-content-center mt-1">
-                            <button class="btn btn-sm btn-success btn-aprobar-teletrabajo" data-id="<%= t.id_solicitud %>">
-                              <i class="bi bi-check-lg"></i> Aprobar
-                            </button>
-                            <button class="btn btn-sm btn-danger btn-rechazar-teletrabajo" data-id="<%= t.id_solicitud %>">
-                              <i class="bi bi-x-lg"></i> Rechazar
-                            </button>
-                          </div>
-                        </div>
-                      <% } else { %>
-                        <small class="text-muted"><%= t.observacion_admin || '—' %></small>
-                      <% } %>
-                    </td>
-                  </tr>
-                <% }); %>
-              </tbody>
-            </table>
-          </div>
-        <% } %>
-      </div>
-
-      <!-- ===================================================================== -->
-      <!-- PESTAÑA 2: AUDITORÍA DE BITÁCORAS DE TELETRABAJO (EN OBSERVACIÓN) -->
-      <!-- ===================================================================== -->
-      <div class="tab-pane fade" id="tab-teletrabajo-auditoria" role="tabpanel">
-        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div class="kpi-info-title">Horas Extra Solicitadas</div>
+          <div class="kpi-info-val"><%= (notifs||[]).length %></div>
           <div>
-            <h5 class="fw-bold mb-0 text-dark">
-              <i class="bi bi-shield-check text-warning me-2"></i>Auditoría y Aprobación Final de Jornadas
-            </h5>
-            <small class="text-muted">Revisa las tareas y comprobantes de teletrabajo. Al aprobar, las horas se suman oficialmente al acumulado del pasante.</small>
+            <% if (pendHorasExtra > 0) { %>
+              <span class="badge-status-pill status-pending fs-8">
+                <i class="bi bi-hourglass-split"></i> <%= pendHorasExtra %> Pendientes
+              </span>
+            <% } else { %>
+              <span class="badge-status-pill status-approved fs-8">
+                <i class="bi bi-check-all"></i> Al día
+              </span>
+            <% } %>
           </div>
         </div>
-
-        <% if (!jornadasObservadas || jornadasObservadas.length === 0) { %>
-          <div class="alert alert-success py-4 text-center">
-            <i class="bi bi-check2-all fs-2 d-block mb-2 text-success"></i>
-            ¡Excelente! No hay jornadas de teletrabajo pendientes de revisión en este momento.
-          </div>
-        <% } else { %>
-          <div class="table-responsive">
-            <table class="table table-bordered table-hover align-middle table-modern">
-              <thead>
-                <tr>
-                  <th>Pasante</th>
-                  <th>Fecha</th>
-                  <th>Marcación</th>
-                  <th>Horas Turno</th>
-                  <th>Bitácora / Tareas Realizadas</th>
-                  <th>Comprobante</th>
-                  <th class="text-center" style="min-width: 220px;">Aprobación Final</th>
-                </tr>
-              </thead>
-              <tbody>
-                <% jornadasObservadas.forEach(j => { %>
-                  <tr id="fila-jornada-<%= j.id_asistencia %>">
-                    <td>
-                      <strong><%= j.usuario_nombre %></strong>
-                      <br><small class="text-muted">CI: <%= j.usuario_ci %></small>
-                      <% if(j.lat_entrada && j.lng_entrada) { %>
-                        <br><a href="https://maps.google.com/?q=<%= j.lat_entrada %>,<%= j.lng_entrada %>" target="_blank" class="badge bg-light text-primary border text-decoration-none mt-1">
-                          <i class="bi bi-geo-alt-fill text-danger me-1"></i>Ver GPS Entrada
-                        </a>
-                      <% } %>
-                    </td>
-                    <td>
-                      <i class="bi bi-calendar3 text-primary me-1"></i><strong><%= j.fecha %></strong>
-                      <br><span class="badge bg-primary" style="font-size: 0.72rem;">🏠 Teletrabajo</span>
-                    </td>
-                    <td>
-                      <span class="text-success fw-semibold"><%= j.hora_entrada || '-' %></span>
-                      →
-                      <span class="text-primary fw-semibold"><%= j.hora_salida || 'Sin salida' %></span>
-                    </td>
-                    <td>
-                      <span class="badge bg-warning text-dark px-2 py-1 fw-bold fs-7">
-                        <i class="bi bi-stopwatch me-1"></i><%= j.horas_calculadas %> hrs
-                      </span>
-                    </td>
-                    <td style="max-width: 320px;">
-                      <% if(j.tarea) { %>
-                        <div class="p-2 bg-light rounded border fs-7" style="max-height: 120px; overflow-y: auto; white-space: pre-wrap;">
-                          <%= j.tarea %>
-                        </div>
-                      <% } else { %>
-                        <span class="text-danger fs-7"><em>⚠️ Sin bitácora registrada aún</em></span>
-                      <% } %>
-                    </td>
-                    <td class="text-center">
-                      <% if(j.comprobante) { %>
-                        <a href="<%= j.comprobante %>" target="_blank" class="btn btn-sm btn-outline-primary">
-                          <i class="bi bi-image me-1"></i> Ver Foto
-                        </a>
-                      <% } else { %>
-                        <span class="text-muted fs-7">-</span>
-                      <% } %>
-                    </td>
-                    <td class="text-center">
-                      <div class="d-flex flex-column gap-1">
-                        <input type="text" class="form-control form-control-sm input-obs-jornada" placeholder="Obs / Feedback (opcional)">
-                        <div class="d-flex gap-1 justify-content-center mt-1">
-                          <button class="btn btn-sm btn-success btn-aprobar-jornada" data-id="<%= j.id_asistencia %>">
-                            <i class="bi bi-check-circle-fill me-1"></i> Aprobar Horas
-                          </button>
-                          <button class="btn btn-sm btn-danger btn-rechazar-jornada" data-id="<%= j.id_asistencia %>">
-                            <i class="bi bi-x-circle-fill me-1"></i> Rechazar
-                          </button>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                <% }); %>
-              </tbody>
-            </table>
-          </div>
-        <% } %>
+        <div class="kpi-icon-box kpi-icon-emerald">
+          <i class="bi bi-stopwatch-fill"></i>
+        </div>
       </div>
+    </div>
 
-      <!-- ===================================================================== -->
-      <!-- PESTAÑA 3: SOLICITUDES DE HORAS EXTRA -->
-      <!-- ===================================================================== -->
-      <div class="tab-pane fade" id="tab-horas-extra" role="tabpanel">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-clock-history text-primary me-2"></i>Solicitudes de Horas Extra</h5>
-        </div>
+    <!-- 2. PANEL PRINCIPAL CON PESTAÑAS SEGMENTADAS -->
+    <div class="admin-main-card">
+      
+      <ul class="nav-tabs-segmented" id="adminTabs" role="tablist">
+        <!-- Tab 1 -->
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="tab-btn-1" type="button" data-target="#tab-teletrabajo-solicitudes">
+            <i class="bi bi-house-check fs-6"></i>
+            <span>1. Pre-Autorización Teletrabajo</span>
+            <% if (pendTeletrabajo > 0) { %>
+              <span class="pill-counter pill-counter-amber"><%= pendTeletrabajo %></span>
+            <% } %>
+          </button>
+        </li>
 
-        <% if ((notifs||[]).length === 0) { %>
-          <div class="alert alert-info py-4 text-center">Aún no hay solicitudes de horas extra.</div>
-        <% } else { %>
-          <div class="table-responsive">
-            <table class="table table-bordered table-hover align-middle table-modern">
-              <thead>
-                <tr>
-                  <th>Pasante</th>
-                  <th>Fecha</th>
-                  <th>Inicio</th>
-                  <th>Fin</th>
-                  <th>Motivo</th>
-                  <th>Estado</th>
-                  <th class="text-center" style="min-width: 200px;">Acciones</th>
-                </tr>
-              </thead>
-              <tbody id="tbodyHorasExtra">
-                <% notifs.forEach(n => { %>
-                  <tr data-id="<%= n.id_notificacion %>" data-estado="<%= Number(n.estado) %>">
-                    <td><strong><%= n.nombre_usuario %></strong></td>
-                    <td><%= n.fecha_solicitada %></td>
-                    <td><%= (n.hora_inicio||'').slice(0,5) %></td>
-                    <td><%= (n.hora_fin||'').slice(0,5) %></td>
-                    <td><%= n.motivo %></td>
-                    <td>
-                      <span class="chip <%= n.estado==1?'chip--pend':(n.estado==2?'chip--ok':'chip--err') %>">
-                        <%= n.estado==1?'Pendiente':(n.estado==2?'Aprobado':'Rechazado') %>
-                      </span>
-                    </td>
-                    <td class="text-center">
-                      <% if (Number(n.estado) === 1) { %>
-                        <div class="d-flex flex-column gap-1">
-                          <input class="form-control form-control-sm" placeholder="Observación (opcional)" data-role="obs" />
-                          <div class="d-flex gap-1 justify-content-center mt-1">
-                            <button class="btn btn-sm btn-success" data-role="approve"><i class="bi bi-check-lg"></i> Aprobar</button>
-                            <button class="btn btn-sm btn-danger" data-role="reject"><i class="bi bi-x-lg"></i> Rechazar</button>
+        <!-- Tab 2 -->
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="tab-btn-2" type="button" data-target="#tab-teletrabajo-auditoria">
+            <i class="bi bi-shield-check fs-6"></i>
+            <span>2. Auditoría y Bitácoras (Fase 2)</span>
+            <% if (pendAuditoria > 0) { %>
+              <span class="pill-counter pill-counter-red"><%= pendAuditoria %></span>
+            <% } %>
+          </button>
+        </li>
+
+        <!-- Tab 3 -->
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="tab-btn-3" type="button" data-target="#tab-horas-extra">
+            <i class="bi bi-clock-history fs-6"></i>
+            <span>3. Horas Extra</span>
+            <% if (pendHorasExtra > 0) { %>
+              <span class="pill-counter pill-counter-blue"><%= pendHorasExtra %></span>
+            <% } %>
+          </button>
+        </li>
+      </ul>
+
+      <div class="tab-content" id="adminTabsContent">
+        
+        <!-- ===================================================================== -->
+        <!-- PESTAÑA 1: PRE-AUTORIZACIÓN DE TELETRABAJO -->
+        <!-- ===================================================================== -->
+        <div class="tab-pane active" id="tab-teletrabajo-solicitudes" role="tabpanel">
+          
+          <div class="filter-toolbar">
+            <div>
+              <h5 class="fw-bold mb-1 text-dark">Pre-autorización de Jornadas Remotas</h5>
+              <p class="text-muted fs-7 mb-0">Habilita a los pasantes para marcar asistencia remota desde su domicilio en la fecha autorizada.</p>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+              <div class="search-input-wrap">
+                <i class="bi bi-search"></i>
+                <input type="text" id="filtroTextoTeletrabajo" class="filter-input-search" placeholder="Buscar por pasante, motivo o fecha...">
+              </div>
+              <select id="filtroEstadoTeletrabajo" class="filter-select-custom">
+                <option value="">Todos los estados</option>
+                <option value="1">Pendientes</option>
+                <option value="2">Aprobados</option>
+                <option value="3">Rechazados</option>
+              </select>
+            </div>
+          </div>
+
+          <% if (!teletrabajos || teletrabajos.length === 0) { %>
+            <div class="text-center py-5">
+              <div class="user-avatar-circle mx-auto mb-3" style="width: 60px; height: 60px; background: #EFF6FF; color: #0F5FA6;">
+                <i class="bi bi-inbox fs-3"></i>
+              </div>
+              <h6 class="fw-bold text-dark">No hay solicitudes de teletrabajo registradas</h6>
+              <p class="text-muted fs-7">Las solicitudes que envíen los pasantes aparecerán listadas aquí.</p>
+            </div>
+          <% } else { %>
+            <div class="table-responsive">
+              <table class="table-corporate">
+                <thead>
+                  <tr>
+                    <th>Colaborador / Pasante</th>
+                    <th>Fecha Turno</th>
+                    <th>Horario Propuesto</th>
+                    <th>Ubicación / Domicilio</th>
+                    <th>Motivo & Justificación</th>
+                    <th>Estado</th>
+                    <th class="text-center">Decisión Admin</th>
+                  </tr>
+                </thead>
+                <tbody id="tbodyTeletrabajo">
+                  <% teletrabajos.forEach(t => { 
+                    const inicial = (t.nombre_usuario || 'U').charAt(0).toUpperCase();
+                  %>
+                    <tr data-id="<%= t.id_solicitud %>" 
+                        data-estado="<%= t.estado %>"
+                        data-nombre="<%= (t.nombre_usuario || '').toLowerCase() %>"
+                        data-fecha="<%= t.fecha_solicitada %>"
+                        data-motivo="<%= (t.motivo || '').toLowerCase() %>">
+                      <td>
+                        <div class="user-profile-cell">
+                          <div class="user-avatar-circle"><%= inicial %></div>
+                          <div>
+                            <div class="user-name-text"><%= t.nombre_usuario %></div>
+                            <span class="badge-ci">CI: <%= t.ci_usuario || 'S/D' %></span>
                           </div>
                         </div>
-                      <% } else { %>
-                        <small class="text-muted"><%= n.observacion_admin || '—' %></small>
-                      <% } %>
-                    </td>
-                  </tr>
-                <% }); %>
-              </tbody>
-            </table>
-          </div>
-        <% } %>
-      </div>
+                      </td>
+                      <td>
+                        <span style="font-weight: 600; font-size: 13.5px; color: #1E293B;"><%= t.fecha_solicitada %></span>
+                      </td>
+                      <td>
+                        <div class="badge-time-group">
+                          <span class="badge-time-in" title="Hora inicio propuesta"><b>E:</b> <%= t.hora_inicio %></span>
+                          <span class="badge-time-out" title="Hora fin propuesta"><b>S:</b> <%= t.hora_fin %></span>
+                        </div>
+                      </td>
+                      <td>
+                        <div style="font-size: 13px; color: #334155; font-weight: 500;">
+                          <%= t.direccion_remota || 'Domicilio Particular' %>
+                        </div>
+                      </td>
+                      <td style="max-width: 260px;">
+                        <span class="text-muted fs-7" title="<%= t.motivo %>">
+                          <%= (t.motivo && t.motivo.length > 75) ? t.motivo.substring(0, 75) + '...' : t.motivo %>
+                        </span>
+                      </td>
+                      <td>
+                        <% if (t.estado === 1) { %>
+                          <span class="badge-status-pill status-pending"><i class="bi bi-hourglass-split"></i> Pendiente</span>
+                        <% } else if (t.estado === 2) { %>
+                          <span class="badge-status-pill status-approved"><i class="bi bi-check-circle-fill"></i> Aprobado</span>
+                        <% } else { %>
+                          <span class="badge-status-pill status-rejected"><i class="bi bi-x-circle-fill"></i> Rechazado</span>
+                        <% } %>
+                      </td>
+                      <td class="text-center">
+                        <div class="d-flex align-items-center justify-content-center gap-1">
+                          <% if (t.estado === 1) { %>
+                            <div class="decision-container" style="max-width: 170px;">
+                              <input type="text" class="admin-obs-input input-obs-teletrabajo" placeholder="Obs (opcional)">
+                              <div class="decision-btn-row">
+                                <button class="btn-action-decision btn-action-approve btn-aprobar-teletrabajo" data-id="<%= t.id_solicitud %>" title="Aprobar solicitud">
+                                  <i class="bi bi-check-lg"></i> Aprobar
+                                </button>
+                                <button class="btn-action-decision btn-action-reject btn-rechazar-teletrabajo" data-id="<%= t.id_solicitud %>" title="Rechazar solicitud">
+                                  <i class="bi bi-x-lg"></i>
+                                </button>
+                              </div>
+                            </div>
+                          <% } else { %>
+                            <div style="font-size: 0.78rem; color: #64748B; max-width: 130px; line-height: 1.2; text-align: left;" title="<%= t.observacion_admin || 'Sin observaciones' %>">
+                              <%= (t.observacion_admin && t.observacion_admin.length > 30) ? t.observacion_admin.substring(0, 30) + '...' : (t.observacion_admin || 'Sin observaciones') %>
+                            </div>
+                          <% } %>
+                          <div class="d-flex gap-1 ms-1">
+                            <button type="button" class="btn-icon-action btn-icon-edit btn-editar-solicitud" 
+                                    data-id="<%= t.id_solicitud %>"
+                                    data-usuario="<%= t.nombre_usuario %>"
+                                    data-fecha="<%= t.fecha_solicitada %>"
+                                    data-inicio="<%= t.hora_inicio %>"
+                                    data-fin="<%= t.hora_fin %>"
+                                    data-motivo="<%= t.motivo || '' %>"
+                                    data-direccion="<%= t.direccion_remota || '' %>"
+                                    data-estado="<%= t.estado %>"
+                                    data-obs="<%= t.observacion_admin || '' %>"
+                                    title="Editar solicitud de teletrabajo">
+                              <i class="bi bi-pencil-fill"></i>
+                            </button>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          <% } %>
+        </div>
 
+        <!-- ===================================================================== -->
+        <!-- PESTAÑA 2: AUDITORÍA DE BITÁCORAS DE TELETRABAJO (FASE 2) -->
+        <!-- ===================================================================== -->
+        <div class="tab-pane" id="tab-teletrabajo-auditoria" role="tabpanel">
+          
+          <div class="filter-toolbar">
+            <div>
+              <h5 class="fw-bold mb-1 text-dark">Auditoría y Certificación de Turnos de Teletrabajo</h5>
+              <p class="text-muted fs-7 mb-0">Revisa bitácoras, evidencias y coordenadas GPS. Acepta o deshace la suma de horas para cada jornada.</p>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+              <div class="search-input-wrap">
+                <i class="bi bi-search"></i>
+                <input type="text" id="filtroTextoAuditoria" class="filter-input-search" placeholder="Buscar por pasante, fecha o tarea...">
+              </div>
+              <select id="filtroEstadoAuditoria" class="filter-select-custom">
+                <option value="">Todos los estados</option>
+                <option value="OBSERVADO">⏳ Pendientes de Auditoría</option>
+                <option value="PRESENTE">✅ Horas Sumadas (Aprobados)</option>
+                <option value="RECHAZADO">❌ Rechazados</option>
+              </select>
+            </div>
+          </div>
+
+          <% if (!jornadasObservadas || jornadasObservadas.length === 0) { %>
+            <div class="text-center py-5">
+              <div class="user-avatar-circle mx-auto mb-3" style="width: 60px; height: 60px; background: #ECFDF5; color: #059669;">
+                <i class="bi bi-check2-all fs-2"></i>
+              </div>
+              <h6 class="fw-bold text-dark">No hay jornadas registradas</h6>
+              <p class="text-muted fs-7">Las jornadas de teletrabajo que marquen los pasantes aparecerán aquí.</p>
+            </div>
+          <% } else { %>
+            <div class="table-responsive">
+              <table class="table-corporate">
+                <thead>
+                  <tr>
+                    <th>Colaborador</th>
+                    <th>Fecha & Modalidad</th>
+                    <th>Marcación (Entrada / Salida)</th>
+                    <th>Horas Turno</th>
+                    <th>GPS Remoto</th>
+                    <th>Bitácora & Evidencia</th>
+                    <th>Estado Horas</th>
+                    <th class="text-center">Decisión / Suma de Horas</th>
+                  </tr>
+                </thead>
+                <tbody id="tbodyAuditoria">
+                  <% jornadasObservadas.forEach(j => { 
+                    const inicial = (j.usuario_nombre || 'U').charAt(0).toUpperCase();
+                    const nombreEscapado = (j.usuario_nombre || '').replace(/'/g, "\\'");
+                    const fechaEscapada = (j.fecha || '');
+                    const tareaJson = JSON.stringify(j.tarea || '');
+                    const compEscapado = (j.comprobante || '').replace(/'/g, "\\'");
+                    const esAprobado = (j.asistencia_estado === 'PRESENTE' || j.asistencia_estado === 'EDITADO_ADMIN');
+                    const esObservado = (j.asistencia_estado === 'OBSERVADO');
+                  %>
+                    <tr id="fila-jornada-<%= j.id_asistencia %>"
+                        data-id="<%= j.id_asistencia %>"
+                        data-estado="<%= j.asistencia_estado %>"
+                        data-nombre="<%= (j.usuario_nombre || '').toLowerCase() %>"
+                        data-fecha="<%= j.fecha %>"
+                        data-tarea="<%= (j.tarea || '').toLowerCase() %>">
+                      <td>
+                        <div class="user-profile-cell">
+                          <div class="user-avatar-circle"><%= inicial %></div>
+                          <div>
+                            <div class="user-name-text"><%= j.usuario_nombre %></div>
+                            <span class="badge-ci">CI: <%= j.usuario_ci || 'S/D' %></span>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div style="font-weight: 600; color: #1E293B; font-size: 13.5px;"><%= j.fecha %></div>
+                        <span style="font-size: 11.5px; font-weight: 700; color: #0F5FA6; background: #EFF6FF; padding: 2px 7px; border-radius: 6px; border: 1px solid #DBEAFE; display: inline-block; margin-top: 2px;">
+                          Teletrabajo
+                        </span>
+                      </td>
+                      <td>
+                        <div class="badge-time-group">
+                          <span class="badge-time-in" title="Hora de entrada">
+                            <b>E:</b> <%= j.hora_entrada || '-' %>
+                          </span>
+                          <span class="badge-time-out" title="Hora de salida">
+                            <b>S:</b> <%= j.hora_salida || '-' %>
+                          </span>
+                        </div>
+                      </td>
+                      <td>
+                        <span class="hours-pill-corporate">
+                          <%= j.horas_calculadas %> hrs
+                        </span>
+                      </td>
+                      <td>
+                        <% if (j.lat_entrada && j.lng_entrada) { %>
+                          <button type="button" class="btn-audit-badge" onclick="verMapaModal(<%= j.lat_entrada %>, <%= j.lng_entrada %>, '<%= nombreEscapado %>')">
+                            <i class="bi bi-geo-alt-fill text-danger"></i> Ver GPS
+                          </button>
+                        <% } else { %>
+                          <span class="text-muted fs-7">Sin GPS</span>
+                        <% } %>
+                      </td>
+                      <td>
+                        <button type="button" class="btn-audit-badge" onclick='verBitacoraModalDirecto("<%= nombreEscapado %>", "<%= fechaEscapada %>", <%= tareaJson %>, "<%= compEscapado %>")'>
+                          <i class="bi bi-file-earmark-text text-primary"></i>
+                          <span>Ver Tareas</span>
+                          <% if(j.comprobante) { %>
+                            <span class="badge-evidence-photo">Foto</span>
+                          <% } %>
+                        </button>
+                      </td>
+                      <td>
+                        <% if (esAprobado) { %>
+                          <span class="badge-status-pill status-approved" title="Las horas de esta jornada han sido computadas"><i class="bi bi-check-circle-fill"></i> Horas Sumadas</span>
+                        <% } else if (esObservado) { %>
+                          <span class="badge-status-pill status-observed" title="Pendiente de certificación por administrador"><i class="bi bi-hourglass-split"></i> Pend. Auditoría</span>
+                        <% } else { %>
+                          <span class="badge-status-pill status-rejected" title="Jornada rechazada"><i class="bi bi-x-circle-fill"></i> Rechazado</span>
+                        <% } %>
+                      </td>
+                      <td class="text-center">
+                        <div class="d-flex align-items-center justify-content-center gap-1">
+                          <% if (esAprobado) { %>
+                            <button type="button" class="btn-action-decision btn-action-revert btn-revertir-jornada" data-id="<%= j.id_asistencia %>" data-usuario="<%= j.usuario_nombre %>" title="Deshacer suma de horas (vuelve a observación)">
+                              <i class="bi bi-arrow-counterclockwise"></i> Deshacer Suma
+                            </button>
+                          <% } else if (esObservado) { %>
+                            <div class="decision-container" style="max-width: 170px;">
+                              <input type="text" class="admin-obs-input input-obs-jornada" placeholder="Obs (opcional)">
+                              <div class="decision-btn-row">
+                                <button class="btn-action-decision btn-action-approve btn-aprobar-jornada" data-id="<%= j.id_asistencia %>" title="Aprobar y certificar suma de horas">
+                                  <i class="bi bi-check-lg"></i> Aceptar
+                                </button>
+                                <button class="btn-action-decision btn-action-reject btn-rechazar-jornada" data-id="<%= j.id_asistencia %>" title="Rechazar">
+                                  <i class="bi bi-x-lg"></i>
+                                </button>
+                              </div>
+                            </div>
+                          <% } else { %>
+                            <button type="button" class="btn-action-decision btn-action-approve btn-aprobar-jornada" data-id="<%= j.id_asistencia %>" title="Aceptar y sumar horas">
+                              <i class="bi bi-check-lg"></i> Aceptar Suma
+                            </button>
+                          <% } %>
+                          
+                          <div class="d-flex gap-1 ms-1">
+                            <button type="button" class="btn-icon-action btn-icon-edit btn-editar-jornada" 
+                                    data-id="<%= j.id_asistencia %>"
+                                    data-usuario="<%= j.usuario_nombre %>"
+                                    data-fecha="<%= j.fecha %>"
+                                    data-entrada="<%= j.hora_entrada || '' %>"
+                                    data-salida="<%= j.hora_salida || '' %>"
+                                    data-obs="<%= j.asistencia_observacion || '' %>"
+                                    title="Editar horas y observación">
+                              <i class="bi bi-pencil-fill"></i>
+                            </button>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          <% } %>
+        </div>
+
+        <!-- ===================================================================== -->
+        <!-- PESTAÑA 3: HORAS EXTRA -->
+        <!-- ===================================================================== -->
+        <div class="tab-pane" id="tab-horas-extra" role="tabpanel">
+          
+          <div class="filter-toolbar">
+            <div>
+              <h5 class="fw-bold mb-1 text-dark">Rendición y Evaluación de Horas Extras</h5>
+              <p class="text-muted fs-7 mb-0">Audita el trabajo extraordinario realizado fuera de sede/obra con informe de bitácora y evidencia fotográfica.</p>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+              <div class="search-input-wrap">
+                <i class="bi bi-search"></i>
+                <input type="text" id="filtroTextoHorasExtra" class="filter-input-search" placeholder="Buscar por colaborador, informe o fecha...">
+              </div>
+              <select id="filtroEstadoHorasExtra" class="filter-select-custom">
+                <option value="">Todos los estados</option>
+                <option value="1">⏳ Pendientes de Evaluación</option>
+                <option value="2">✅ Horas Sumadas (Aprobados)</option>
+                <option value="3">❌ Observados / Rechazados</option>
+              </select>
+            </div>
+          </div>
+
+          <% if ((notifs||[]).length === 0) { %>
+            <div class="text-center py-5">
+              <div class="user-avatar-circle mx-auto mb-3" style="width: 60px; height: 60px; background: #F1F5F9; color: #64748B;">
+                <i class="bi bi-clock-history fs-3"></i>
+              </div>
+              <h6 class="fw-bold text-dark">No hay reportes de horas extra</h6>
+              <p class="text-muted fs-7">Las declaraciones de horas adicionales trabajadas aparecerán aquí para tu evaluación.</p>
+            </div>
+          <% } else { %>
+            <div class="table-responsive">
+              <table class="table-corporate">
+                <thead>
+                  <tr>
+                    <th>Colaborador</th>
+                    <th>Fecha Declarada</th>
+                    <th>Horario / Duración</th>
+                    <th>Informe de Actividades</th>
+                    <th>Foto de Evidencia</th>
+                    <th>Estado</th>
+                    <th class="text-center">Auditoría / Decisión</th>
+                  </tr>
+                </thead>
+                <tbody id="tbodyHorasExtra">
+                  <% notifs.forEach(n => { 
+                    const inicial = (n.nombre_usuario || 'U').charAt(0).toUpperCase();
+                    const estadoNum = Number(n.estado);
+                    const tareaTexto = n.tarea || n.motivo || 'Sin detalle de actividades';
+                  %>
+                    <tr data-id="<%= n.id_notificacion %>" 
+                        data-estado="<%= estadoNum %>"
+                        data-nombre="<%= (n.nombre_usuario || '').toLowerCase() %>"
+                        data-fecha="<%= n.fecha_solicitada %>"
+                        data-motivo="<%= (tareaTexto).toLowerCase() %>">
+                      <td>
+                        <div class="user-profile-cell">
+                          <div class="user-avatar-circle"><%= inicial %></div>
+                          <div>
+                            <div class="user-name-text"><%= n.nombre_usuario %></div>
+                            <% if (n.ci_usuario) { %>
+                              <div class="fs-8 text-muted">CI: <%= n.ci_usuario %></div>
+                            <% } %>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <span style="font-weight: 600; font-size: 13.5px; color: #1E293B;"><%= n.fecha_solicitada %></span>
+                      </td>
+                      <td>
+                        <div class="d-flex flex-column gap-1">
+                          <span class="badge px-2 py-1 align-self-start" style="background: #fef3c7; color: #92400e; font-weight: 700; font-size: 12px; border: 1px solid #fde68a;">
+                            <i class="bi bi-stopwatch me-1"></i> <%= n.duracion_calculada %> hrs
+                          </span>
+                          <div class="badge-time-group">
+                            <span class="badge-time-in"><b>E:</b> <%= (n.hora_inicio||'').slice(0,5) %></span>
+                            <span class="badge-time-out"><b>S:</b> <%= (n.hora_fin||'').slice(0,5) %></span>
+                          </div>
+                        </div>
+                      </td>
+                      <td style="max-width: 260px;">
+                        <div class="fs-7 text-dark p-2 rounded-2 border bg-light" style="max-height: 85px; overflow-y: auto; white-space: pre-wrap; font-size: 12.5px; line-height: 1.4;">
+                          <%= tareaTexto %>
+                        </div>
+                      </td>
+                      <td>
+                        <% if (n.comprobante) { %>
+                          <button type="button" class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1 shadow-xs btn-preview-comprobante"
+                            style="background-color: #0b6bcb; border-color: #0b6bcb; color: #ffffff !important; font-weight: 600; border-radius: 8px; padding: 5px 14px; font-size: 13px;"
+                            data-nombre="<%= n.nombre_usuario %>" 
+                            data-fecha="<%= n.fecha_solicitada %>" 
+                            data-tarea="<%= tareaTexto.replace(/"/g, '&quot;') %>" 
+                            data-img="<%= n.comprobante %>"
+                            title="Ver fotografía de evidencia">
+                            <i class="bi bi-eye-fill" style="color: #ffffff !important;"></i> <span style="color: #ffffff !important;">Ver</span>
+                          </button>
+                        <% } else { %>
+                          <span class="text-muted fs-8"><i class="bi bi-image-slash me-1"></i> Sin foto</span>
+                        <% } %>
+                      </td>
+                      <td>
+                        <% if (estadoNum === 1) { %>
+                          <span class="badge-status-pill status-pending"><i class="bi bi-hourglass-split"></i> En Revisión</span>
+                        <% } else if (estadoNum === 2) { %>
+                          <span class="badge-status-pill status-approved"><i class="bi bi-check-circle-fill"></i> Horas Sumadas</span>
+                        <% } else { %>
+                          <span class="badge-status-pill status-rejected"><i class="bi bi-x-circle-fill"></i> Observado</span>
+                          <% if (n.observacion_admin) { %>
+                            <div class="fs-8 text-danger mt-1 fw-medium" style="max-width: 140px; line-height: 1.2;">
+                              <i class="bi bi-info-circle me-1"></i><%= n.observacion_admin %>
+                            </div>
+                          <% } %>
+                        <% } %>
+                      </td>
+                      <td class="text-center">
+                        <% if (estadoNum === 2) { %>
+                          <button type="button" class="btn-action-decision btn-action-revert btn-revertir-horas-extra" data-id="<%= n.id_notificacion %>" data-usuario="<%= n.nombre_usuario %>" title="Deshacer suma de horas extra (vuelve a estar pendiente)">
+                            <i class="bi bi-arrow-counterclockwise"></i> Deshacer Suma
+                          </button>
+                        <% } else if (estadoNum === 1) { %>
+                          <div class="decision-container">
+                            <input class="admin-obs-input" placeholder="Obs. o motivo (opcional)" data-role="obs" />
+                            <div class="decision-btn-row">
+                              <button class="btn-action-decision btn-action-approve" data-role="approve" title="Aceptar y sumar horas"><i class="bi bi-check-lg"></i> Aceptar Suma</button>
+                              <button class="btn-action-decision btn-action-reject" data-role="reject" title="Observar / Rechazar"><i class="bi bi-x-lg"></i> Observar</button>
+                            </div>
+                          </div>
+                        <% } else { %>
+                          <button type="button" class="btn-action-decision btn-action-approve" data-role="approve" title="Reconsiderar y sumar horas"><i class="bi bi-check-lg"></i> Aceptar Suma</button>
+                        <% } %>
+                      </td>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          <% } %>
+        </div>
+
+      </div>
     </div>
+
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
+    function verBitacoraModalDirecto(nombre, fecha, tarea, comprobante) {
+      let imgHtml = '';
+      if (comprobante && comprobante.trim() !== '') {
+        imgHtml = `
+          <div style="margin-top: 15px; text-align: center;">
+            <p style="font-weight: 700; color: #1e293b; margin-bottom: 6px; font-size: 0.85rem;">📸 Evidencia Fotográfica Adjunta:</p>
+            <a href="${comprobante}" target="_blank" title="Clic para abrir en tamaño completo">
+              <img src="${comprobante}" alt="Comprobante" style="max-height: 240px; max-width: 100%; border-radius: 10px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.08); object-fit: cover;">
+            </a>
+            <div style="font-size: 0.75rem; color: #64748b; margin-top: 4px;">Clic en la foto para ver en tamaño original</div>
+          </div>
+        `;
+      }
+      Swal.fire({
+        title: `<strong>Bitácora: ${nombre}</strong>`,
+        html: `
+          <div style="text-align: left; font-size: 0.9rem; line-height: 1.5; color: #334155;">
+            <p style="margin-bottom: 8px;"><b>📅 Fecha del Turno:</b> ${fecha}</p>
+            <p style="font-weight: 700; color: #0f5fa6; margin-bottom: 4px;">📝 Tareas y Actividades Realizadas:</p>
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; max-height: 180px; overflow-y: auto; white-space: pre-wrap;">${tarea ? tarea : '<em>El pasante no ingresó descripción de actividades.</em>'}</div>
+            ${imgHtml}
+          </div>
+        `,
+        showCloseButton: true,
+        confirmButtonText: 'Cerrar',
+        confirmButtonColor: '#0f5fa6'
+      });
+    }
+
+    function verMapaModal(lat, lng, nombre) {
+      Swal.fire({
+        title: `<strong>Ubicación GPS: ${nombre}</strong>`,
+        html: `
+          <div style="text-align: center; font-size: 0.9rem; color: #334155;">
+            <p style="margin-bottom: 14px;"><i class="bi bi-geo-alt-fill text-danger"></i> Coordenadas de Marcación: <b>${lat}, ${lng}</b></p>
+            <a href="https://maps.google.com/?q=${lat},${lng}" target="_blank" class="btn btn-primary btn-sm fw-bold px-3 py-2" style="border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+              <i class="bi bi-box-arrow-up-right"></i> Abrir en Google Maps
+            </a>
+          </div>
+        `,
+        showCloseButton: true,
+        confirmButtonText: 'Cerrar',
+        confirmButtonColor: '#64748b'
+      });
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       
-      // --- FILTROS TAB TELETRABAJO ---
-      const filtroTxt = document.getElementById('filtroTextoTeletrabajo');
-      const filtroEst = document.getElementById('filtroEstadoTeletrabajo');
+      // --- SISTEMA DE PESTAÑAS EXCLUSIVO ---
+      const tabButtons = document.querySelectorAll('.nav-tabs-segmented .nav-link');
+      const tabPanes = document.querySelectorAll('.tab-content > .tab-pane');
+
+      tabButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const targetSelector = btn.getAttribute('data-target');
+          if (!targetSelector) return;
+
+          tabButtons.forEach(b => b.classList.remove('active'));
+          tabPanes.forEach(pane => {
+            pane.classList.remove('active', 'show');
+            pane.style.setProperty('display', 'none', 'important');
+          });
+
+          btn.classList.add('active');
+          const targetPane = document.querySelector(targetSelector);
+          if (targetPane) {
+            targetPane.classList.add('active', 'show');
+            targetPane.style.setProperty('display', 'block', 'important');
+          }
+        });
+      });
+
+      tabPanes.forEach(pane => {
+        if (!pane.classList.contains('active')) {
+          pane.style.setProperty('display', 'none', 'important');
+        } else {
+          pane.style.setProperty('display', 'block', 'important');
+        }
+      });
+
+      // --- FILTROS TAB 1: SOLICITUDES TELETRABAJO ---
+      const filtroTxtTele = document.getElementById('filtroTextoTeletrabajo');
+      const filtroEstTele = document.getElementById('filtroEstadoTeletrabajo');
       const tbodyTeletrabajo = document.getElementById('tbodyTeletrabajo');
 
       function filtrarTeletrabajo() {
         if (!tbodyTeletrabajo) return;
-        const q = (filtroTxt?.value || '').toLowerCase().trim();
-        const est = filtroEst?.value || '';
+        const q = (filtroTxtTele?.value || '').toLowerCase().trim();
+        const est = filtroEstTele?.value || '';
 
         [...tbodyTeletrabajo.children].forEach(tr => {
           const nom = tr.dataset.nombre || '';
@@ -460,10 +1229,65 @@
         });
       }
 
-      filtroTxt?.addEventListener('input', filtrarTeletrabajo);
-      filtroEst?.addEventListener('change', filtrarTeletrabajo);
+      filtroTxtTele?.addEventListener('input', filtrarTeletrabajo);
+      filtroEstTele?.addEventListener('change', filtrarTeletrabajo);
 
-      // --- APROBAR / RECHAZAR SOLICITUD DE TELETRABAJO (FASE 1) ---
+      // --- FILTROS TAB 2: AUDITORÍA DE TELETRABAJO ---
+      const filtroTxtAudit = document.getElementById('filtroTextoAuditoria');
+      const filtroEstAudit = document.getElementById('filtroEstadoAuditoria');
+      const tbodyAuditoria = document.getElementById('tbodyAuditoria');
+
+      function filtrarAuditoria() {
+        if (!tbodyAuditoria) return;
+        const q = (filtroTxtAudit?.value || '').toLowerCase().trim();
+        const est = filtroEstAudit?.value || '';
+
+        [...tbodyAuditoria.children].forEach(tr => {
+          const nom = tr.dataset.nombre || '';
+          const fec = tr.dataset.fecha || '';
+          const tar = tr.dataset.tarea || '';
+          const estado = tr.dataset.estado || '';
+
+          const matchTxt = !q || nom.includes(q) || fec.includes(q) || tar.includes(q);
+          let matchEst = true;
+          if (est === 'OBSERVADO') matchEst = (estado === 'OBSERVADO');
+          else if (est === 'PRESENTE') matchEst = (estado === 'PRESENTE' || estado === 'EDITADO_ADMIN');
+          else if (est === 'RECHAZADO') matchEst = (estado === 'RECHAZADO');
+
+          tr.style.display = (matchTxt && matchEst) ? '' : 'none';
+        });
+      }
+
+      filtroTxtAudit?.addEventListener('input', filtrarAuditoria);
+      filtroEstAudit?.addEventListener('change', filtrarAuditoria);
+
+      // --- FILTROS TAB 3: HORAS EXTRA ---
+      const filtroTxtExtra = document.getElementById('filtroTextoHorasExtra');
+      const filtroEstExtra = document.getElementById('filtroEstadoHorasExtra');
+      const tbodyHorasExtra = document.getElementById('tbodyHorasExtra');
+
+      function filtrarHorasExtra() {
+        if (!tbodyHorasExtra) return;
+        const q = (filtroTxtExtra?.value || '').toLowerCase().trim();
+        const est = filtroEstExtra?.value || '';
+
+        [...tbodyHorasExtra.children].forEach(tr => {
+          const nom = tr.dataset.nombre || '';
+          const fec = tr.dataset.fecha || '';
+          const mot = tr.dataset.motivo || '';
+          const estado = tr.dataset.estado || '';
+
+          const matchTxt = !q || nom.includes(q) || fec.includes(q) || mot.includes(q);
+          const matchEst = !est || estado === est;
+
+          tr.style.display = (matchTxt && matchEst) ? '' : 'none';
+        });
+      }
+
+      filtroTxtExtra?.addEventListener('input', filtrarHorasExtra);
+      filtroEstExtra?.addEventListener('change', filtrarHorasExtra);
+
+      // --- TAB 1: APROBAR / RECHAZAR SOLICITUD DE TELETRABAJO ---
       document.querySelectorAll('.btn-aprobar-teletrabajo, .btn-rechazar-teletrabajo').forEach(btn => {
         btn.addEventListener('click', async () => {
           const id = btn.dataset.id;
@@ -480,7 +1304,7 @@
             showCancelButton: true,
             confirmButtonText: esAprobar ? 'Sí, Aprobar' : 'Sí, Rechazar',
             cancelButtonText: 'Cancelar',
-            confirmButtonColor: esAprobar ? '#16a34a' : '#dc2626'
+            confirmButtonColor: esAprobar ? '#059669' : '#dc2626'
           });
 
           if (!confirmResult.isConfirmed) return;
@@ -511,7 +1335,103 @@
         });
       });
 
-      // --- AUDITORÍA DE JORNADAS DE TELETRABAJO (FASE 2) ---
+      // --- TAB 1: EDITAR SOLICITUD DE TELETRABAJO ---
+      document.querySelectorAll('.btn-editar-solicitud').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.dataset.id;
+          const usuario = btn.dataset.usuario || 'Usuario';
+          const fecha = btn.dataset.fecha || '';
+          const inicio = btn.dataset.inicio || '08:00';
+          const fin = btn.dataset.fin || '17:00';
+          const motivo = btn.dataset.motivo || '';
+          const direccion = btn.dataset.direccion || 'Domicilio Particular';
+          const estado = btn.dataset.estado || '1';
+          const obs = btn.dataset.obs || '';
+
+          const { value: formValues } = await Swal.fire({
+            title: `<strong>Editar Solicitud: ${usuario}</strong>`,
+            html: `
+              <div style="text-align: left; font-size: 0.88rem;">
+                <div style="margin-bottom: 10px;">
+                  <label style="font-weight: 700; color: #1e293b; display: block; margin-bottom: 3px;">Fecha Solicitada:</label>
+                  <input type="date" id="swal-fecha" class="form-control" style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 10px; width: 100%; box-sizing: border-box;" value="${fecha}">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                  <div>
+                    <label style="font-weight: 700; color: #1e293b; display: block; margin-bottom: 3px;">Hora Inicio:</label>
+                    <input type="time" id="swal-inicio" class="form-control" style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 10px; width: 100%; box-sizing: border-box;" value="${inicio}">
+                  </div>
+                  <div>
+                    <label style="font-weight: 700; color: #1e293b; display: block; margin-bottom: 3px;">Hora Fin:</label>
+                    <input type="time" id="swal-fin" class="form-control" style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 10px; width: 100%; box-sizing: border-box;" value="${fin}">
+                  </div>
+                </div>
+                <div style="margin-bottom: 10px;">
+                  <label style="font-weight: 700; color: #1e293b; display: block; margin-bottom: 3px;">Domicilio / Ubicación:</label>
+                  <input type="text" id="swal-direccion" class="form-control" style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 10px; width: 100%; box-sizing: border-box;" value="${direccion}">
+                </div>
+                <div style="margin-bottom: 10px;">
+                  <label style="font-weight: 700; color: #1e293b; display: block; margin-bottom: 3px;">Motivo & Justificación:</label>
+                  <textarea id="swal-motivo" class="form-control" rows="2" style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 10px; width: 100%; box-sizing: border-box;">${motivo}</textarea>
+                </div>
+                <div style="margin-bottom: 10px;">
+                  <label style="font-weight: 700; color: #1e293b; display: block; margin-bottom: 3px;">Estado de la Solicitud:</label>
+                  <select id="swal-estado" class="form-select" style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 10px; width: 100%; box-sizing: border-box; font-weight: 600;">
+                    <option value="1" ${estado == '1' ? 'selected' : ''}>⏳ 1. Pendiente de Aprobación</option>
+                    <option value="2" ${estado == '2' ? 'selected' : ''}>✅ 2. Aprobado (Permiso Activo)</option>
+                    <option value="3" ${estado == '3' ? 'selected' : ''}>❌ 3. Rechazado</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="font-weight: 700; color: #1e293b; display: block; margin-bottom: 3px;">Observación del Administrador:</label>
+                  <input type="text" id="swal-obs" class="form-control" style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 10px; width: 100%; box-sizing: border-box;" value="${obs}" placeholder="Comentarios u observaciones del admin">
+                </div>
+              </div>
+            `,
+            focusConfirm: false,
+            showCancelButton: true,
+            confirmButtonText: 'Guardar Cambios',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#0F5FA6',
+            preConfirm: () => {
+              const f = document.getElementById('swal-fecha').value;
+              const i = document.getElementById('swal-inicio').value;
+              const fn = document.getElementById('swal-fin').value;
+              const dir = document.getElementById('swal-direccion').value;
+              const mot = document.getElementById('swal-motivo').value;
+              const est = document.getElementById('swal-estado').value;
+              const ob = document.getElementById('swal-obs').value;
+
+              if (!f) {
+                Swal.showValidationMessage('La fecha es obligatoria');
+                return false;
+              }
+              return { fecha_solicitada: f, hora_inicio: i, hora_fin: fn, direccion_remota: dir, motivo: mot, estado: est, observacion_admin: ob };
+            }
+          });
+
+          if (!formValues) return;
+
+          try {
+            const res = await fetch(`/api/admin/teletrabajo/solicitud/${id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(formValues)
+            });
+            const data = await res.json();
+            if (data.ok) {
+              await Swal.fire({ icon: 'success', title: 'Actualizado', text: data.msg, timer: 1500, showConfirmButton: false });
+              location.reload();
+            } else {
+              Swal.fire({ icon: 'error', title: 'Error', text: data.msg || 'No se pudo actualizar' });
+            }
+          } catch (e) {
+            Swal.fire({ icon: 'error', title: 'Error', text: 'Error de conexión con el servidor' });
+          }
+        });
+      });
+
+      // --- TAB 2: APROBAR / ACEPTAR SUMA DE HORAS DE TELETRABAJO ---
       document.querySelectorAll('.btn-aprobar-jornada, .btn-rechazar-jornada').forEach(btn => {
         btn.addEventListener('click', async () => {
           const id = btn.dataset.id;
@@ -522,15 +1442,15 @@
           const obs = obsInput ? obsInput.value.trim() : '';
 
           const confirmResult = await Swal.fire({
-            title: esAprobar ? '¿Aprobar Jornada y Bitácora?' : '¿Rechazar Jornada?',
+            title: esAprobar ? '¿Aceptar y Sumar Horas de Teletrabajo?' : '¿Rechazar Jornada?',
             text: esAprobar 
-              ? 'Las horas trabajadas se certificarán y se sumarán al acumulador total del usuario.' 
-              : 'La jornada quedará como no computable.',
+              ? 'Las horas de esta jornada se certificarán y se sumarán oficialmente al total de horas del usuario.' 
+              : 'La jornada quedará en estado RECHAZADO.',
             icon: esAprobar ? 'success' : 'warning',
             showCancelButton: true,
-            confirmButtonText: esAprobar ? 'Aprobar y Sumar Horas' : 'Rechazar Jornada',
+            confirmButtonText: esAprobar ? 'Aceptar y Sumar Horas' : 'Rechazar Jornada',
             cancelButtonText: 'Cancelar',
-            confirmButtonColor: esAprobar ? '#16a34a' : '#dc2626'
+            confirmButtonColor: esAprobar ? '#059669' : '#dc2626'
           });
 
           if (!confirmResult.isConfirmed) return;
@@ -561,14 +1481,172 @@
         });
       });
 
-      // --- ACCIONES HORAS EXTRA ---
+      // --- TAB 2: DESHACER SUMA DE HORAS DE TELETRABAJO ---
+      document.querySelectorAll('.btn-revertir-jornada').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.dataset.id;
+          const usuario = btn.dataset.usuario || 'el usuario';
+
+          const { value: obsAdmin } = await Swal.fire({
+            title: '¿Deshacer suma de horas?',
+            html: `Se revertirá la certificación de horas para <b>${usuario}</b>.<br><small style="color: #64748b;">La jornada regresará al estado de Observación y requerirá nueva auditoría.</small>`,
+            input: 'text',
+            inputPlaceholder: 'Motivo para deshacer la suma (opcional)',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, Deshacer Suma',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#d97706',
+            cancelButtonColor: '#64748b'
+          });
+
+          if (obsAdmin === undefined) return; // Cancelado
+
+          btn.disabled = true;
+
+          try {
+            const res = await fetch(`/api/admin/teletrabajo/jornada/${id}/revert`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ obs: obsAdmin })
+            });
+
+            const data = await res.json();
+
+            if (data.ok) {
+              await Swal.fire({ icon: 'success', title: 'Suma Deshecha', text: data.msg, timer: 1800, showConfirmButton: false });
+              location.reload();
+            } else {
+              Swal.fire({ icon: 'error', title: 'Error', text: data.msg || 'No se pudo revertir la jornada' });
+              btn.disabled = false;
+            }
+          } catch (err) {
+            console.error(err);
+            Swal.fire({ icon: 'error', title: 'Error de red', text: err.message });
+            btn.disabled = false;
+          }
+        });
+      });
+
+      // --- TAB 2: EDITAR JORNADA DE TELETRABAJO ---
+      document.querySelectorAll('.btn-editar-jornada').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.dataset.id;
+          const usuario = btn.dataset.usuario || 'Usuario';
+          const fecha = btn.dataset.fecha || '';
+          const entrada = btn.dataset.entrada || '';
+          const salida = btn.dataset.salida || '';
+          const obs = btn.dataset.obs || '';
+
+          const { value: formValues } = await Swal.fire({
+            title: `<strong>Editar Jornada: ${usuario}</strong>`,
+            html: `
+              <div style="text-align: left; font-size: 0.88rem;">
+                <p style="margin-bottom: 8px; color: #64748b;"><b>Fecha:</b> ${fecha} · Modalidad: Teletrabajo</p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                  <div>
+                    <label style="font-weight: 700; color: #1e293b; display: block; margin-bottom: 3px;">Hora Entrada:</label>
+                    <input type="time" id="swal-jornada-entrada" class="form-control" style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 10px; width: 100%; box-sizing: border-box;" value="${entrada}">
+                  </div>
+                  <div>
+                    <label style="font-weight: 700; color: #1e293b; display: block; margin-bottom: 3px;">Hora Salida:</label>
+                    <input type="time" id="swal-jornada-salida" class="form-control" style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 10px; width: 100%; box-sizing: border-box;" value="${salida}">
+                  </div>
+                </div>
+                <div>
+                  <label style="font-weight: 700; color: #1e293b; display: block; margin-bottom: 3px;">Observación del Administrador:</label>
+                  <textarea id="swal-jornada-obs" class="form-control" rows="2" style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 10px; width: 100%; box-sizing: border-box;" placeholder="Observación o justificativo">${obs}</textarea>
+                </div>
+              </div>
+            `,
+            focusConfirm: false,
+            showCancelButton: true,
+            confirmButtonText: 'Guardar Jornada',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#0F5FA6',
+            preConfirm: () => {
+              const ent = document.getElementById('swal-jornada-entrada').value;
+              const sal = document.getElementById('swal-jornada-salida').value;
+              const ob = document.getElementById('swal-jornada-obs').value;
+              return { hora_entrada: ent, hora_salida: sal, observacion: ob };
+            }
+          });
+
+          if (!formValues) return;
+
+          try {
+            const res = await fetch(`/api/admin/teletrabajo/jornada/${id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(formValues)
+            });
+            const data = await res.json();
+            if (data.ok) {
+              await Swal.fire({ icon: 'success', title: 'Guardado', text: data.msg, timer: 1500, showConfirmButton: false });
+              location.reload();
+            } else {
+              Swal.fire({ icon: 'error', title: 'Error', text: data.msg || 'No se pudo actualizar la jornada' });
+            }
+          } catch (e) {
+            Swal.fire({ icon: 'error', title: 'Error', text: 'Error de conexión con el servidor' });
+          }
+        });
+      });
+
+      // --- TAB 3: VISTA PREVIA DE COMPROBANTE FOTOGRÁFICO DE HORAS EXTRA ---
+      document.querySelectorAll('.btn-preview-comprobante').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const nombre = btn.dataset.nombre || 'Colaborador';
+          const fecha = btn.dataset.fecha || '';
+          const tarea = btn.dataset.tarea || '';
+          const img = btn.dataset.img || '';
+          verBitacoraModalDirecto(nombre, fecha, tarea, img);
+        });
+      });
+
+      // --- TAB 3: APROBAR / RECHAZAR HORAS EXTRA ---
       document.querySelectorAll('#tbodyHorasExtra button[data-role]').forEach(btn => {
         btn.addEventListener('click', async () => {
-          const role = btn.dataset.role; // approve | reject
+          const role = btn.dataset.role;
           const tr = btn.closest('tr');
           const id = tr?.dataset.id;
           const obsInput = tr?.querySelector('input[data-role="obs"]');
-          const obs = obsInput ? obsInput.value.trim() : '';
+          let obs = obsInput ? obsInput.value.trim() : '';
+
+          if (role === 'reject' && !obs) {
+            const { value: obsPrompt } = await Swal.fire({
+              title: 'Observar Horas Extra',
+              text: 'Ingresa una observación o motivo por el cual no se acreditan estas horas extras:',
+              input: 'textarea',
+              inputPlaceholder: 'Ej: La foto no demuestra el trabajo / tiempo excesivo para la tarea / sin justificación...',
+              inputValidator: (value) => {
+                if (!value || value.trim().length < 4) {
+                  return 'Por favor ingresa un motivo para que el colaborador pueda ver la observación.';
+                }
+              },
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonText: 'Confirmar Observación',
+              cancelButtonText: 'Cancelar',
+              confirmButtonColor: '#ef4444',
+              cancelButtonColor: '#64748b'
+            });
+
+            if (!obsPrompt) return;
+            obs = obsPrompt.trim();
+          } else if (role === 'approve') {
+            const confirm = await Swal.fire({
+              title: '¿Aprobar y Sumar Horas?',
+              text: 'Se validará el informe y se sumará la duración calculada al total acumulado del colaborador.',
+              icon: 'question',
+              showCancelButton: true,
+              confirmButtonText: 'Sí, Aceptar y Sumar',
+              cancelButtonText: 'Cancelar',
+              confirmButtonColor: '#10b981',
+              cancelButtonColor: '#64748b'
+            });
+            if (!confirm.isConfirmed) return;
+          }
 
           btn.disabled = true;
 
@@ -581,7 +1659,7 @@
             const data = await res.json();
 
             if (data.ok) {
-              await Swal.fire({ icon: 'success', title: 'Listo', text: data.msg, timer: 1200, showConfirmButton: false });
+              await Swal.fire({ icon: 'success', title: 'Listo', text: data.msg, timer: 1500, showConfirmButton: false });
               location.reload();
             } else {
               Swal.fire({ icon: 'error', title: 'Error', text: data.msg || 'Operación fallida' });
@@ -589,7 +1667,53 @@
             }
           } catch (err) {
             console.error(err);
-            Swal.fire({ icon: 'error', title: 'Error', text: 'Error de red' });
+            Swal.fire({ icon: 'error', title: 'Error de red', text: err.message });
+            btn.disabled = false;
+          }
+        });
+      });
+
+      // --- TAB 3: DESHACER SUMA DE HORAS EXTRA ---
+      document.querySelectorAll('.btn-revertir-horas-extra').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.dataset.id;
+          const usuario = btn.dataset.usuario || 'el usuario';
+
+          const { value: obsAdmin } = await Swal.fire({
+            title: '¿Deshacer suma de horas extra?',
+            html: `Se descontarán las horas extra del acumulador total de <b>${usuario}</b>.<br><small style="color: #64748b;">La solicitud volverá a estar en estado pendiente.</small>`,
+            input: 'text',
+            inputPlaceholder: 'Motivo para deshacer la suma (opcional)',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, Deshacer Suma',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#d97706',
+            cancelButtonColor: '#64748b'
+          });
+
+          if (obsAdmin === undefined) return;
+
+          btn.disabled = true;
+
+          try {
+            const res = await fetch(`/notificaciones/${id}/revert`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ obs: obsAdmin })
+            });
+            const data = await res.json();
+
+            if (data.ok) {
+              await Swal.fire({ icon: 'success', title: 'Suma Revertida', text: data.msg, timer: 1500, showConfirmButton: false });
+              location.reload();
+            } else {
+              Swal.fire({ icon: 'error', title: 'Error', text: data.msg || 'No se pudo revertir la suma de horas' });
+              btn.disabled = false;
+            }
+          } catch (err) {
+            console.error(err);
+            Swal.fire({ icon: 'error', title: 'Error de red', text: err.message });
             btn.disabled = false;
           }
         });

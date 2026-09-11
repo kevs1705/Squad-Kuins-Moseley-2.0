@@ -146,6 +146,22 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
 
     const jornadaActiva = (jornadaHoy && jornadaHoy.estado === 'EN_CURSO') ? jornadaHoy : null;
 
+    // 2.4. Consultar si hay una sesión de Horas Extras en curso (estado = 0)
+    const [heActivaRows] = await db.query(`
+      SELECT 
+        id_notificacion,
+        DATE_FORMAT(fecha_solicitada, '%Y-%m-%d') AS fecha_solicitada,
+        TIME_FORMAT(hora_inicio, '%H:%i:%s') AS hora_inicio,
+        TIME_FORMAT(hora_inicio, '%H:%i') AS hora_inicio_corta,
+        fecha_solicitada AS fecha_raw,
+        hora_inicio AS hora_inicio_raw
+      FROM notificaciones
+      WHERE id_usuario = ? AND estado = 0
+      ORDER BY id_notificacion DESC
+      LIMIT 1
+    `, [userId]);
+    const horaExtraActiva = heActivaRows.length > 0 ? heActivaRows[0] : null;
+
     // 3. JORNADAS UNIFICADAS: Asistencias vinculadas a Reportes por FK (id_asistencia)
     const [jornadas] = await db.query(`
       SELECT 
@@ -196,6 +212,7 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
       teletrabajoHoy,
       jornadaActiva,
       jornadaHoy,
+      horaExtraActiva,
       jornadas: jornadasProcesadas,
       cloudinaryCloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || process.env.CLOUDINARY_CLOUD_NAME || 'sjgf9nkd',
       cloudinaryUploadPreset: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || process.env.CLOUDINARY_UPLOAD_PRESET || 'pasantes_preset'
@@ -351,59 +368,160 @@ router.post('/reportes/guardar', requireAuth, handleUploadOptional, async (req, 
 });
 
 
+// Helper: Obtener Fecha y Hora de Bolivia (La Paz, UTC-4)
+function getBoliviaDateTime() {
+  const ahora = new Date();
+  const fecha = ahora.toLocaleDateString('sv-SE', { timeZone: 'America/La_Paz' }); // YYYY-MM-DD
+  const hora = ahora.toLocaleTimeString('en-GB', { timeZone: 'America/La_Paz' }); // HH:MM:SS
+  return { fecha, hora, ahora };
+}
+
 /* ==========================================================================
-   SOLICITUD DE NOTIFICACIONES / HORAS EXTRA
+   HORAS EXTRAS EN TIEMPO REAL: INICIAR, CANCELAR Y FINALIZAR (ZONA HORARIA BOLIVIA)
    ========================================================================== */
-router.post('/api/notificaciones', requireAuth, async (req, res) => {
+
+// 1. INICIAR SESIÓN DE HORAS EXTRAS (Cronómetro activo con hora de Bolivia)
+router.post('/api/horas-extras/iniciar', requireAuth, async (req, res) => {
   try {
-    const id_usuario = req.session.user.id;
-    let { fecha_solicitada, hora_inicio, hora_fin, motivo } = req.body;
+    const userId = req.session.user.id_usuario || req.session.user.id || req.session.user.id_user;
 
-    fecha_solicitada = String(fecha_solicitada || '').trim().slice(0, 10);
-    hora_inicio = String(hora_inicio || '').trim().slice(0, 8);
-    hora_fin = String(hora_fin || '').trim().slice(0, 8);
-    motivo = String(motivo || '').trim().slice(0, 2000);
+    // Verificar si ya tiene una sesión activa
+    const [existentes] = await db.query(
+      `SELECT id_notificacion, DATE_FORMAT(fecha_solicitada, '%Y-%m-%d') AS fecha_solicitada, TIME_FORMAT(hora_inicio, '%H:%i:%s') AS hora_inicio 
+       FROM notificaciones 
+       WHERE id_usuario = ? AND estado = 0 
+       ORDER BY id_notificacion DESC LIMIT 1`,
+      [userId]
+    );
 
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha_solicitada)) {
-      return res.status(400).json({ ok: false, msg: 'Fecha inválida (YYYY-MM-DD).' });
-    }
-    if (!/^\d{2}:\d{2}(:\d{2})?$/.test(hora_inicio) || !/^\d{2}:\d{2}(:\d{2})?$/.test(hora_fin)) {
-      return res.status(400).json({ ok: false, msg: 'Hora inválida (HH:MM).' });
+    if (existentes.length > 0) {
+      return res.json({
+        ok: true,
+        msg: 'Ya tienes una sesión de horas extras en curso.',
+        horaExtra: existentes[0]
+      });
     }
 
-    if (hora_inicio.length === 5) hora_inicio += ':00';
-    if (hora_fin.length === 5) hora_fin += ':00';
-
-    if (hora_inicio >= hora_fin) {
-      return res.status(400).json({ ok: false, msg: 'La hora fin debe ser mayor que la hora inicio.' });
-    }
-    if (!motivo || motivo.length < 5) {
-      return res.status(400).json({ ok: false, msg: 'Motivo mínimo 5 caracteres.' });
-    }
+    const { fecha: fechaBolivia, hora: horaBolivia } = getBoliviaDateTime();
 
     const [result] = await db.query(
-      `INSERT INTO notificaciones (id_usuario, fecha_solicitada, hora_inicio, hora_fin, motivo, estado)
-       VALUES (?, ?, ?, ?, ?, 1)`,
-      [id_usuario, fecha_solicitada, hora_inicio, hora_fin, motivo]
+      `INSERT INTO notificaciones (id_usuario, fecha_solicitada, hora_inicio, estado)
+       VALUES (?, ?, ?, 0)`,
+      [userId, fechaBolivia, horaBolivia]
+    );
+
+    const [nuevo] = await db.query(
+      `SELECT id_notificacion, DATE_FORMAT(fecha_solicitada, '%Y-%m-%d') AS fecha_solicitada, TIME_FORMAT(hora_inicio, '%H:%i:%s') AS hora_inicio 
+       FROM notificaciones WHERE id_notificacion = ?`,
+      [result.insertId]
     );
 
     res.json({
       ok: true,
-      msg: 'Solicitud creada con éxito',
-      notificacion: {
-        id_notificacion: result.insertId,
-        id_usuario,
-        fecha_solicitada,
-        hora_inicio,
-        hora_fin,
-        motivo,
-        estado: 1
-      }
+      msg: 'Sesión de horas extras iniciada con éxito. El cronómetro está corriendo.',
+      horaExtra: nuevo[0]
     });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ ok: false, msg: 'Error creando la solicitud' });
+  } catch (err) {
+    console.error('Error al iniciar horas extras:', err);
+    res.status(500).json({ ok: false, msg: 'Error al iniciar la sesión de horas extras' });
   }
+});
+
+// 2. CANCELAR SESIÓN DE HORAS EXTRAS EN CURSO
+router.post('/api/horas-extras/cancelar', requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.user.id_usuario || req.session.user.id || req.session.user.id_user;
+    const { id_notificacion } = req.body || {};
+
+    if (id_notificacion) {
+      await db.query('DELETE FROM notificaciones WHERE id_usuario = ? AND id_notificacion = ? AND estado = 0', [userId, id_notificacion]);
+    } else {
+      await db.query('DELETE FROM notificaciones WHERE id_usuario = ? AND estado = 0', [userId]);
+    }
+
+    res.json({ ok: true, msg: 'Sesión de horas extras descartada exitosamente.' });
+  } catch (err) {
+    console.error('Error al cancelar horas extras:', err);
+    res.status(500).json({ ok: false, msg: 'Error al cancelar la sesión de horas extras' });
+  }
+});
+
+// 3. FINALIZAR HORAS EXTRAS (REGISTRAR INFORME + FOTO OBLIGATORIA CON HORA DE BOLIVIA)
+router.post('/api/horas-extras/finalizar', requireAuth, handleUploadOptional, async (req, res) => {
+  try {
+    const userId = req.session.user.id_usuario || req.session.user.id || req.session.user.id_user;
+    const { id_notificacion, tarea, motivo, comprobante } = req.body;
+
+    const tareaFinal = String(tarea || motivo || '').trim();
+    if (!tareaFinal || tareaFinal.length < 5) {
+      return res.status(400).json({ ok: false, msg: 'Debes ingresar un informe de actividades detallado de lo que realizaste (mínimo 5 caracteres).' });
+    }
+
+    // Comprobante / Foto obligatoria
+    const publicPath = req.file ? '/uploads/comprobantes/' + req.file.filename : null;
+    const comprobanteFinal = (comprobante && typeof comprobante === 'string' && comprobante.trim() !== '') 
+      ? comprobante.trim() 
+      : publicPath;
+
+    if (!comprobanteFinal) {
+      return res.status(400).json({ ok: false, msg: 'Es obligatorio adjuntar una fotografía o captura de evidencia del trabajo realizado.' });
+    }
+
+    // Buscar la sesión activa en curso
+    let querySesion = `SELECT id_notificacion, DATE_FORMAT(fecha_solicitada, '%Y-%m-%d') AS fecha_solicitada, TIME_FORMAT(hora_inicio, '%H:%i:%s') AS hora_inicio FROM notificaciones WHERE id_usuario = ? AND estado = 0`;
+    let paramsSesion = [userId];
+    if (id_notificacion) {
+      querySesion += ' AND id_notificacion = ?';
+      paramsSesion.push(id_notificacion);
+    }
+    querySesion += ' ORDER BY id_notificacion DESC LIMIT 1';
+
+    const [sesiones] = await db.query(querySesion, paramsSesion);
+    if (!sesiones.length) {
+      return res.status(400).json({ 
+        ok: false, 
+        msg: 'No se encontró ninguna sesión de horas extras activa. Debes presionar "Iniciar Horas Extras" antes de poder finalizar.' 
+      });
+    }
+
+    const s = sesiones[0];
+    const { fecha: fechaFinBolivia, hora: horaFinBolivia } = getBoliviaDateTime();
+
+    // Calcular duración exacta
+    const inicioDate = new Date(`${s.fecha_solicitada}T${s.hora_inicio}`);
+    const finDate = new Date(`${fechaFinBolivia}T${horaFinBolivia}`);
+    const diffSeg = Math.max(0, Math.floor((finDate.getTime() - inicioDate.getTime()) / 1000));
+    const horasCantidad = Math.round((diffSeg / 3600) * 100) / 100;
+
+    // Actualizar con hora_fin de Bolivia, estado = 1 (En Revisión del Administrador)
+    await db.query(`
+      UPDATE notificaciones
+      SET hora_fin = ?,
+          horas_cantidad = ?,
+          tarea = ?,
+          motivo = ?,
+          comprobante = ?,
+          estado = 1,
+          actualizado_en = NOW()
+      WHERE id_notificacion = ?
+    `, [horaFinBolivia, horasCantidad, tareaFinal, tareaFinal, comprobanteFinal, s.id_notificacion]);
+
+    res.json({
+      ok: true,
+      msg: '¡Horas extras finalizadas con éxito! Tu informe y fotografía de evidencia fueron enviados a revisión y evaluación del administrador.'
+    });
+  } catch (err) {
+    console.error('Error al finalizar horas extras:', err);
+    res.status(500).json({ ok: false, msg: 'Error al finalizar las horas extras' });
+  }
+});
+
+// Endpoint de compatibilidad
+router.post('/api/notificaciones', requireAuth, handleUploadOptional, async (req, res) => {
+  return res.status(400).json({
+    ok: false,
+    msg: 'Para registrar horas extras debes usar el botón "Iniciar Horas Extras" y luego "Finalizar Horas Extras".'
+  });
 });
 
 /* ==========================================================================

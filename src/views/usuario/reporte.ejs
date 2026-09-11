@@ -2,7 +2,9 @@
   pageSubtitle='Resumen de asistencias, actividades y solicitudes de horas extras' ; %>
   <%- include('../partials/header') %>
 
-    <!-- Hoja de estilos independiente para Reportes -->
+    <!-- Hoja de estilos independiente para Reportes y Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.min.css">
     <link rel="stylesheet" href="/css/reporte.css">
     <style>
       #modal_tarea,
@@ -75,14 +77,98 @@
               data-bs-target="#modalTeletrabajo">
               <i class="bi bi-house-door me-1"></i> Solicitar Teletrabajo
             </button>
-            <!-- Botón que activa la alerta interactiva de módulo en desarrollo -->
-            <button type="button" class="btn-horas-extra-custom" data-bs-toggle="modal"
-              data-bs-target="#modalEnProceso">
-              <i class="bi bi-clock-history me-1"></i> Solicitar Horas Extra
-            </button>
+            <!-- Botón de Horas Extras (Solo si no hay una sesión activa) -->
+            <% if (typeof horaExtraActiva === 'undefined' || !horaExtraActiva) { %>
+              <button type="button" class="btn-horas-extra-custom" id="btnIniciarHorasExtra">
+                <i class="bi bi-play-circle-fill me-1"></i> Iniciar Horas Extra
+              </button>
+            <% } %>
           </div>
         </div>
       </div>
+
+      <!-- Tarjeta Premium: Horas Extras en Curso (Si aplica) -->
+      <% if (typeof horaExtraActiva !== 'undefined' && horaExtraActiva) { %>
+        <div class="card-horas-extras-v2 mb-4">
+          <!-- Banner Ámbar/Naranja Superior -->
+          <div class="horas-extras-banner-top">
+            <div class="horas-extras-banner-left">
+              <div class="horas-extras-banner-circle">
+                <i class="bi bi-stopwatch-fill"></i>
+              </div>
+              <div>
+                <h5 class="horas-extras-banner-title">Sesión de Horas Extras</h5>
+                <span class="horas-extras-banner-badge">
+                  <i class="bi bi-record-circle-fill"></i> EN VIVO
+                </span>
+              </div>
+            </div>
+
+            <div class="horas-extras-banner-right">
+              <div class="horas-extras-banner-divider"></div>
+              <div class="horas-extras-banner-circle">
+                <i class="bi bi-clock-history"></i>
+              </div>
+              <div>
+                <span class="jornada-hours-label">Tiempo transcurrido</span>
+                <span id="tickerHorasExtra" class="jornada-hours-val font-monospace" data-inicio="<%= horaExtraActiva.fecha_solicitada %>T<%= horaExtraActiva.hora_inicio %>">
+                  00:00:00
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cuerpo de la Tarjeta con Detalles y Acciones -->
+          <div class="horas-extras-body-v2">
+            <div class="d-flex align-items-center gap-4 flex-wrap">
+              <div class="horas-extras-info-item">
+                <div class="horas-extras-icon-box">
+                  <i class="bi bi-calendar-check-fill"></i>
+                </div>
+                <div>
+                  <span class="horas-extras-info-label">Fecha de registro</span>
+                  <span class="horas-extras-info-val"><%= horaExtraActiva.fecha_solicitada %></span>
+                </div>
+              </div>
+
+              <div class="horas-extras-info-item">
+                <div class="horas-extras-icon-box">
+                  <i class="bi bi-play-circle-fill"></i>
+                </div>
+                <div>
+                  <span class="horas-extras-info-label">Hora de inicio (Bolivia)</span>
+                  <span class="horas-extras-info-val"><%= horaExtraActiva.hora_inicio %> hrs</span>
+                </div>
+              </div>
+
+              <div class="horas-extras-info-item">
+                <div class="horas-extras-icon-box text-danger" style="background: #fef2f2; border-color: #fecaca;">
+                  <i class="bi bi-activity text-danger"></i>
+                </div>
+                <div>
+                  <span class="horas-extras-info-label">Estado de la sesión</span>
+                  <span class="horas-extras-info-val text-danger d-flex align-items-center gap-1">
+                    <span class="spinner-grow spinner-grow-sm text-danger" style="width: 0.55rem; height: 0.55rem;" role="status"></span>
+                    Contabilizando tiempo
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Botones de Acción dentro de la sección -->
+            <div class="horas-extras-action-btns">
+              <button type="button" class="btn-he-finalizar" data-bs-toggle="modal" data-bs-target="#modalFinalizarHorasExtra">
+                <i class="bi bi-stop-circle-fill"></i>
+                <span>Finalizar y Reportar</span>
+              </button>
+              <button type="button" class="btn-he-descartar" id="btnCancelarHorasExtra" title="Descartar sesión en curso sin guardar">
+                <i class="bi bi-trash3-fill"></i>
+                <span>Descartar Sesión</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      <% } %>
 
       <!-- Banner de Permiso de Teletrabajo Activo Hoy (Si aplica) -->
       <% if (typeof teletrabajoHoy !=='undefined' && teletrabajoHoy) { %>
@@ -730,31 +816,123 @@
       </div>
     </div>
 
-    <!-- MODAL INTERACTIVO: MÓDULO EN PROCESO -->
-    <div class="modal fade" id="modalEnProceso" tabindex="-1" aria-labelledby="modalEnProcesoLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content text-center p-3">
-          <div class="modal-header border-0 pb-0 justify-content-end">
-            <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Cerrar">
-              <i class="bi bi-x-lg"></i>
-            </button>
-          </div>
-          <div class="modal-body py-3">
-            <div class="mb-3">
-              <i class="bi bi-cone-stripes text-warning display-3"></i>
+    <!-- MODAL INTERACTIVO: FINALIZAR Y REPORTAR HORAS EXTRA -->
+    <% if (typeof horaExtraActiva !== 'undefined' && horaExtraActiva) { %>
+    <div class="modal fade" id="modalFinalizarHorasExtra" tabindex="-1" aria-labelledby="modalFinalizarHorasExtraLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content shadow-lg border-0" style="border-radius: 16px; overflow: hidden;">
+          <form id="formFinalizarHorasExtra" enctype="multipart/form-data">
+            <input type="hidden" name="id_notificacion" value="<%= horaExtraActiva.id_notificacion %>">
+            
+            <!-- HEADER DEL MODAL (ESTILO HOMOGÉNEO A LOS OTROS MODALES) -->
+            <div class="modal-header" style="background-color: #f0f5fc; border-bottom: 1px solid #e2e8f0; padding: 1.25rem 1.5rem; display: flex; align-items: flex-start; justify-content: space-between;">
+              <div>
+                <h5 class="modal-title fw-bold" id="modalFinalizarHorasExtraLabel" style="color: #0b3c5d; font-size: 1.2rem; margin: 0; display: flex; align-items: center; gap: 8px;">
+                  <i class="bi bi-stopwatch-fill text-danger fs-4"></i> Finalizar y Reportar Horas Extras
+                </h5>
+                <small class="text-muted d-block mt-1" style="font-size: 0.82rem; font-weight: 400;">
+                  Ingresa tu informe de actividades y la foto de evidencia para enviar a revisión del administrador.
+                </small>
+              </div>
+              <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Cerrar">
+                <i class="bi bi-x-lg"></i>
+              </button>
             </div>
-            <h4 class="fw-bold mb-2">Módulo en Desarrollo</h4>
-            <p class="text-muted mb-0">
-              La funcionalidad para <strong>Solicitar Horas Extra</strong> se encuentra actualmente en proceso de
-              construcción y estará disponible próximamente.
-            </p>
-          </div>
-          <div class="modal-footer justify-content-center border-0 pt-0">
-            <button type="button" class="btn btn-secondary px-4 rounded-3" data-bs-dismiss="modal">Entendido</button>
-          </div>
+
+            <!-- CUERPO DEL MODAL (CON TARJETAS ORGANIZADAS Y SCROLLBAR SUAVE) -->
+            <div class="modal-body p-4" style="background: #ffffff;">
+              
+              <!-- TARJETA 1: Resumen de Tiempo Transcurrido -->
+              <div class="card border-0 mb-3" style="border-radius: 12px; background: #ffffff; border: 1px solid #e2e8f0 !important; overflow: hidden;">
+                <div class="card-header py-2 px-3 d-flex align-items-center justify-content-between" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0 !important;">
+                  <div>
+                    <h6 class="fw-bold text-dark mb-0" style="font-size: 0.92rem; line-height: 1.2;">
+                      <i class="bi bi-clock-history text-danger me-1"></i> Resumen de Tiempo Registrado
+                    </h6>
+                    <small class="text-muted d-block" style="font-size: 0.76rem; line-height: 1.2;">Sincronizado con la hora oficial de Bolivia (UTC-4).</small>
+                  </div>
+                  <span class="badge bg-danger text-white rounded-pill px-2 py-0 fs-8">
+                    ● EN VIVO
+                  </span>
+                </div>
+                <div class="card-body p-3">
+                  <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+                    <div class="he-time-stat-box">
+                      <span class="he-time-stat-label"><i class="bi bi-play-circle me-1"></i>Hora Inicio</span>
+                      <span class="he-time-stat-val text-dark"><%= horaExtraActiva.hora_inicio %> hrs</span>
+                    </div>
+                    <div class="he-time-stat-box" style="border-color: #fecaca; background: #fff5f5;">
+                      <span class="he-time-stat-label text-danger"><i class="bi bi-stop-circle me-1"></i>Hora Fin (Actual)</span>
+                      <span id="modal_hora_fin_live" class="he-time-stat-val text-danger">00:00:00</span>
+                    </div>
+                    <div class="he-time-stat-box" style="border-color: #fed7aa; background: #fffbeb;">
+                      <span class="he-time-stat-label text-warning" style="color: #d97706 !important;"><i class="bi bi-hourglass-split me-1"></i>Duración Total</span>
+                      <span id="modal_duracion_live" class="he-time-stat-val" style="color: #b45309;">00:00:00</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- TARJETA 2: Informe de Actividades / Bitácora OBLIGATORIO -->
+              <div class="card border-0 mb-3" style="border-radius: 12px; background: #ffffff; border: 1px solid #e2e8f0 !important; overflow: hidden;">
+                <div class="card-header py-2 px-3" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0 !important;">
+                  <h6 class="fw-bold text-dark mb-0" style="font-size: 0.92rem; line-height: 1.2;">
+                    <i class="bi bi-card-checklist text-primary me-1"></i> Informe de Actividades Realizadas <span class="text-danger">*</span>
+                  </h6>
+                  <small class="text-muted d-block" style="font-size: 0.76rem; line-height: 1.2;">Describe los trabajos, planos, cálculos o tareas desarrolladas durante estas horas extras.</small>
+                </div>
+                <div class="card-body p-3">
+                  <textarea name="tarea" id="he_fin_tarea" rows="4" class="form-control" required
+                    style="border-radius: 8px; border-color: #cbd5e1; resize: vertical; font-family: 'Montserrat', sans-serif !important; font-weight: 300 !important; font-size: 0.9rem;"
+                    placeholder="Describe detalladamente las tareas realizadas..."></textarea>
+                  <div class="d-flex justify-content-between align-items-center mt-1">
+                    <small class="text-muted" style="font-size: 0.76rem;">Mínimo 5 caracteres. El administrador evaluará este informe para aprobar las horas.</small>
+                    <small class="text-muted" style="font-size: 0.76rem;" id="charCounterHE">0/500</small>
+                  </div>
+                </div>
+              </div>
+
+              <!-- TARJETA 3: Fotografía / Comprobante de Evidencia OBLIGATORIO -->
+              <div class="card border-0 mb-2" style="border-radius: 12px; background: #ffffff; border: 1px solid #e2e8f0 !important; overflow: hidden;">
+                <div class="card-header py-2 px-3" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0 !important;">
+                  <h6 class="fw-bold text-dark mb-0" style="font-size: 0.92rem; line-height: 1.2;">
+                    <i class="bi bi-camera-fill text-success me-1"></i> Fotografía / Comprobante de Evidencia <span class="text-danger">*</span>
+                  </h6>
+                  <small class="text-muted d-block" style="font-size: 0.76rem; line-height: 1.2;">Adjunta captura o fotografía del entregable o avance realizado (PNG, JPG hasta 5MB).</small>
+                </div>
+                <div class="card-body p-3">
+                  <input type="file" name="comprobante" id="he_fin_comprobante" class="form-control" accept="image/png, image/jpeg, image/jpg" style="border-radius: 8px; border-color: #cbd5e1;" required />
+                  
+                  <!-- Contenedor de Vista Previa -->
+                  <div id="he_fin_preview_container" class="mt-3 text-center p-2 rounded-3 border bg-light" style="display: none;">
+                    <div class="d-flex justify-content-between align-items-center mb-1 px-2">
+                      <small class="text-muted fw-semibold">Vista previa de evidencia:</small>
+                      <button type="button" id="he_fin_btn_quitar_foto" class="btn btn-sm btn-link text-danger p-0 text-decoration-none fw-semibold" style="font-size: 0.8rem;">
+                        <i class="bi bi-trash me-1"></i> Quitar imagen
+                      </button>
+                    </div>
+                    <img id="he_fin_preview_img" src="" alt="Vista previa" class="img-fluid rounded-3 shadow-sm border" style="max-height: 220px; object-fit: contain; width: auto;" />
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- FOOTER DEL MODAL -->
+            <div class="modal-footer px-4 py-3 bg-light border-top d-flex justify-content-between align-items-center">
+              <button type="button" class="btn btn-light border px-4 py-2 text-secondary fw-semibold" style="border-radius: 10px; background: #f1f5f9; border-color: #cbd5e1 !important;" data-bs-dismiss="modal">
+                <i class="bi bi-arrow-left me-1"></i> Seguir Trabajando
+              </button>
+              <button type="submit" id="he_fin_btn_submit" class="btn btn-danger px-4 py-2 fw-semibold d-inline-flex align-items-center gap-2" style="background: #ef4444; border-color: #dc2626; border-radius: 10px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);">
+                <i class="bi bi-send-fill"></i>
+                <span>Finalizar y Enviar a Evaluación</span>
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
+    <% } %>
 
     <!-- MODAL: REGISTRAR / EDITAR BITÁCORA -->
     <div class="modal fade" id="modalReporte" tabindex="-1">
@@ -1394,33 +1572,252 @@
 
         /*
         ===============================================================
-        ENVÍO DE SOLICITUD DE HORAS EXTRA (TEMPORALMENTE DESHABILITADO)
+        GESTIÓN DE HORAS EXTRAS EN TIEMPO REAL (INICIAR, CANCELAR, FINALIZAR)
         ===============================================================
-        document.getElementById('formHorasExtra').addEventListener('submit', async (e) => {
-          e.preventDefault();
-          const formData = new FormData(e.target);
-          const payload = Object.fromEntries(formData.entries());
-      
-          try {
-            const res = await fetch('/api/notificaciones', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload)
-            });
-      
-            const data = await res.json();
-      
-            if (data.ok) {
-              mostrarAlerta(data.msg, 'success');
-              location.reload();
-            } else {
-              mostrarAlerta(data.msg || 'Error al procesar la solicitud', 'error');
-            }
-          } catch (err) {
-            mostrarAlerta('Error conectando con el servidor.', 'error');
-          }
-        });
         */
+        (function() {
+          const btnIniciar = document.getElementById('btnIniciarHorasExtra');
+          const btnCancelar = document.getElementById('btnCancelarHorasExtra');
+          const tickerHE = document.getElementById('tickerHorasExtra');
+          const formFinHE = document.getElementById('formFinalizarHorasExtra');
+          const fileFin = document.getElementById('he_fin_comprobante');
+          const previewContainer = document.getElementById('he_fin_preview_container');
+          const previewImg = document.getElementById('he_fin_preview_img');
+          const btnQuitarFoto = document.getElementById('he_fin_btn_quitar_foto');
+          const btnSubmitFin = document.getElementById('he_fin_btn_submit');
+          const modalHoraFinLive = document.getElementById('modal_hora_fin_live');
+          const modalDuracionLive = document.getElementById('modal_duracion_live');
+
+          // Helper para obtener fecha/hora exacta de Bolivia (La Paz, UTC-4)
+          function getBoliviaTime() {
+            const now = new Date();
+            const horaStr = now.toLocaleTimeString('en-GB', { timeZone: 'America/La_Paz' });
+            const fechaStr = now.toLocaleDateString('sv-SE', { timeZone: 'America/La_Paz' });
+            const [h, m, s] = (horaStr || '00:00:00').split(':').map(Number);
+            const [y, mo, d] = (fechaStr || '2026-01-01').split('-').map(Number);
+            return {
+              date: new Date(y, mo - 1, d, h, m, s),
+              horaStr,
+              fechaStr
+            };
+          }
+
+          // Helper para formatear segundos a HH:MM:SS
+          function fmtHMS(sec) {
+            const s = Math.max(0, Math.floor(sec));
+            const h = Math.floor(s / 3600);
+            const m = Math.floor((s % 3600) / 60);
+            const secRem = s % 60;
+            return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(secRem).padStart(2, '0')}`;
+          }
+
+          // 1. Cronómetro activo en tiempo real (Sincronizado con Bolivia)
+          if (tickerHE && tickerHE.dataset.inicio) {
+            const rawInicio = tickerHE.dataset.inicio; // Formato: YYYY-MM-DDTHH:MM:SS
+            const parts = rawInicio.split('T');
+            const dateParts = parts[0].split('-');
+            const timeParts = (parts[1] || '00:00:00').split(':');
+
+            const inicioDate = new Date(
+              parseInt(dateParts[0], 10),
+              parseInt(dateParts[1], 10) - 1,
+              parseInt(dateParts[2], 10),
+              parseInt(timeParts[0] || '0', 10),
+              parseInt(timeParts[1] || '0', 10),
+              parseInt(timeParts[2] || '0', 10)
+            );
+
+            function updateTickerHE() {
+              const bolivia = getBoliviaTime();
+              const diffSec = Math.max(0, (bolivia.date.getTime() - inicioDate.getTime()) / 1000);
+              const formatted = fmtHMS(diffSec);
+
+              tickerHE.textContent = formatted;
+
+              if (modalHoraFinLive) {
+                modalHoraFinLive.textContent = bolivia.horaStr;
+              }
+              if (modalDuracionLive) {
+                modalDuracionLive.textContent = formatted;
+              }
+            }
+
+            updateTickerHE();
+            setInterval(updateTickerHE, 1000);
+          }
+
+          // 2. INICIAR HORAS EXTRA
+          btnIniciar?.addEventListener('click', async () => {
+            const result = await Swal.fire({
+              title: '¿Iniciar Horas Extras ahora?',
+              text: 'Se registrará tu hora exacta de inicio y el cronómetro comenzará a correr en tiempo real.',
+              icon: 'question',
+              showCancelButton: true,
+              confirmButtonText: 'Sí, Iniciar Ahora',
+              cancelButtonText: 'Cancelar',
+              confirmButtonColor: '#f59e0b',
+              cancelButtonColor: '#64748b'
+            });
+
+            if (!result.isConfirmed) return;
+
+            try {
+              btnIniciar.disabled = true;
+              const res = await fetch('/api/horas-extras/iniciar', { method: 'POST' });
+              const data = await res.json();
+
+              if (data.ok) {
+                await Swal.fire({
+                  icon: 'success',
+                  title: '¡Sesión Iniciada!',
+                  text: data.msg || 'Tu cronómetro de horas extras está corriendo.',
+                  timer: 1500,
+                  showConfirmButton: false
+                });
+                location.reload();
+              } else {
+                mostrarAlerta(data.msg || 'No se pudo iniciar la sesión', 'error');
+                btnIniciar.disabled = false;
+              }
+            } catch (err) {
+              console.error(err);
+              mostrarAlerta('Error de conexión al iniciar horas extras', 'error');
+              btnIniciar.disabled = false;
+            }
+          });
+
+          // 3. CANCELAR / DESCARTAR SESIÓN ACTIVA
+          btnCancelar?.addEventListener('click', async () => {
+            const result = await Swal.fire({
+              title: '¿Descartar Sesión de Horas Extras?',
+              text: 'Se cancelará el cronómetro en curso y no se registrará ningún tiempo extraordinario.',
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonText: 'Sí, Descartar',
+              cancelButtonText: 'Seguir Trabajando',
+              confirmButtonColor: '#ef4444',
+              cancelButtonColor: '#64748b'
+            });
+
+            if (!result.isConfirmed) return;
+
+            try {
+              btnCancelar.disabled = true;
+              const res = await fetch('/api/horas-extras/cancelar', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({})
+              });
+              const data = await res.json();
+              if (data.ok) {
+                await Swal.fire({
+                  icon: 'info',
+                  title: 'Sesión Descartada',
+                  text: data.msg || 'La sesión de horas extras fue cancelada correctamente.',
+                  timer: 1500,
+                  showConfirmButton: false
+                });
+                location.reload();
+              } else {
+                mostrarAlerta(data.msg || 'No se pudo descartar la sesión', 'error');
+                btnCancelar.disabled = false;
+              }
+            } catch (err) {
+              console.error(err);
+              mostrarAlerta('Error de conexión al descartar', 'error');
+              btnCancelar.disabled = false;
+            }
+          });
+
+          // 4. VISTA PREVIA DE FOTO EN EL MODAL DE FINALIZACIÓN
+          fileFin?.addEventListener('change', (e) => {
+            const file = e.target.files?.[0];
+            if (file) {
+              if (file.size > 5 * 1024 * 1024) {
+                mostrarAlerta('La imagen de evidencia no debe superar los 5 MB.', 'warning');
+                fileFin.value = '';
+                previewContainer.style.display = 'none';
+                return;
+              }
+              const reader = new FileReader();
+              reader.onload = (re) => {
+                previewImg.src = re.target.result;
+                previewContainer.style.display = 'block';
+              };
+              reader.readAsDataURL(file);
+            } else {
+              previewContainer.style.display = 'none';
+            }
+          });
+
+          // Contador de caracteres para informe de horas extras
+          const textareaFinHE = document.getElementById('he_fin_tarea');
+          const charCounterHE = document.getElementById('charCounterHE');
+          if (textareaFinHE && charCounterHE) {
+            textareaFinHE.addEventListener('input', () => {
+              charCounterHE.textContent = `${textareaFinHE.value.length}/500`;
+            });
+          }
+
+          btnQuitarFoto?.addEventListener('click', () => {
+            if (fileFin) fileFin.value = '';
+            if (previewContainer) previewContainer.style.display = 'none';
+          });
+
+          // 5. FINALIZAR HORAS EXTRAS (ENVIAR INFORME + FOTO OBLIGATORIA)
+          formFinHE?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const tarea = document.getElementById('he_fin_tarea')?.value.trim() || '';
+            if (tarea.length < 5) {
+              mostrarAlerta('Debes redactar un informe de actividades de al menos 5 caracteres.', 'warning');
+              return;
+            }
+
+            if (!fileFin?.files || fileFin.files.length === 0) {
+              mostrarAlerta('Es obligatorio adjuntar una fotografía o comprobante de evidencia del trabajo realizado.', 'warning');
+              return;
+            }
+
+            const formData = new FormData(formFinHE);
+
+            try {
+              if (btnSubmitFin) {
+                btnSubmitFin.disabled = true;
+                btnSubmitFin.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Enviando informe...';
+              }
+
+              const res = await fetch('/api/horas-extras/finalizar', {
+                method: 'POST',
+                body: formData
+              });
+
+              const data = await res.json();
+
+              if (data.ok) {
+                await Swal.fire({
+                  icon: 'success',
+                  title: '¡Horas Extras Finalizadas!',
+                  text: data.msg || 'Tu informe y fotografía fueron enviados con éxito para evaluación del administrador.',
+                  confirmButtonColor: '#10b981'
+                });
+                location.reload();
+              } else {
+                mostrarAlerta(data.msg || 'Error al finalizar las horas extras', 'error');
+              }
+            } catch (err) {
+              console.error('Error finalizando horas extra:', err);
+              mostrarAlerta('Error de red al enviar el reporte', 'error');
+            } finally {
+              if (btnSubmitFin) {
+                btnSubmitFin.disabled = false;
+                btnSubmitFin.innerHTML = '<i class="bi bi-send-fill me-1"></i> Finalizar y Enviar a Evaluación';
+              }
+            }
+          });
+        })();
       </script>
       </body>
 

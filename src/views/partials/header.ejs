@@ -8,9 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.min.css">
   <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="/css/admin-panel.css">
-   <link rel="stylesheet" href="/css/usuario-panel.css">
+  <link rel="stylesheet" href="/css/usuario-panel.css">
   
   <% if (typeof extraStyles !== 'undefined' && Array.isArray(extraStyles)) { %>
     <% extraStyles.forEach(style => { %>
@@ -83,6 +85,12 @@
     }
     .sidebar nav a.btn-danger { background:rgba(255,99,132,0.12); color:#ffc6d1; margin-top: 10px; }
     .sidebar nav a.btn-danger:hover { background:rgba(255,99,132,0.18); color: #ffb3c1; transform: translateX(3px); }
+    
+    .sidebar nav a[href*="notificaciones"]::before,
+    .sidebar nav a[href*="notificaciones_admin"]::before {
+      -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>') no-repeat center / contain;
+      mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>') no-repeat center / contain;
+    }
     
     /* Area de contenido */
     .content {

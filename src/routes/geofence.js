@@ -273,32 +273,32 @@ router.post('/api/geofence/register', async (req, res) => {
       }
     }
 
-    // Guardar / Actualizar registro en la tabla satélite asistencias_geo
-    if (asistenciaId) {
+    // Guardar / Actualizar registro en la tabla satélite asistencias_geo EXCLUSIVAMENTE para TELETRABAJO
+    if (asistenciaId && esTeletrabajo) {
       if (tipo === 'entrada') {
         await db.query(`
           INSERT INTO asistencias_geo 
             (id_asistencia, modalidad, id_solicitud_teletrabajo, lat_entrada, lng_entrada, precision_entrada_m)
-          VALUES (?, ?, ?, ?, ?, ?)
+          VALUES (?, 'TELETRABAJO', ?, ?, ?, ?)
           ON DUPLICATE KEY UPDATE
-            modalidad = VALUES(modalidad),
+            modalidad = 'TELETRABAJO',
             id_solicitud_teletrabajo = VALUES(id_solicitud_teletrabajo),
             lat_entrada = VALUES(lat_entrada),
             lng_entrada = VALUES(lng_entrada),
             precision_entrada_m = VALUES(precision_entrada_m)
-        `, [asistenciaId, modalidad, idSolicitudTeletrabajo, lat, lng, req.session.geofence.accuracy || null]);
+        `, [asistenciaId, idSolicitudTeletrabajo, lat, lng, req.session.geofence.accuracy || null]);
       } else {
         await db.query(`
           INSERT INTO asistencias_geo 
             (id_asistencia, modalidad, id_solicitud_teletrabajo, lat_salida, lng_salida, precision_salida_m)
-          VALUES (?, ?, ?, ?, ?, ?)
+          VALUES (?, 'TELETRABAJO', ?, ?, ?, ?)
           ON DUPLICATE KEY UPDATE
-            modalidad = VALUES(modalidad),
+            modalidad = 'TELETRABAJO',
             id_solicitud_teletrabajo = VALUES(id_solicitud_teletrabajo),
             lat_salida = VALUES(lat_salida),
             lng_salida = VALUES(lng_salida),
             precision_salida_m = VALUES(precision_salida_m)
-        `, [asistenciaId, modalidad, idSolicitudTeletrabajo, lat, lng, req.session.geofence.accuracy || null]);
+        `, [asistenciaId, idSolicitudTeletrabajo, lat, lng, req.session.geofence.accuracy || null]);
       }
     }
 

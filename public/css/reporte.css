@@ -1522,4 +1522,234 @@ body .modal-footer .btn-primary:hover {
   display: inline-flex !important;
   align-items: center !important;
   gap: 4px !important;
+}
+
+/* ==========================================================================
+   TARJETA PREMIUM HORAS EXTRAS EN VIVO (ESTILO SISTEMA SQUAD KUINS)
+   ========================================================================== */
+.reporte-wrapper .card-horas-extras-v2 {
+  background: #ffffff !important;
+  border: 1px solid #fed7aa !important;
+  border-radius: 14px !important;
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.12) !important;
+  overflow: hidden !important;
+  width: 100% !important;
+  margin-bottom: 1.5rem !important;
+}
+
+.reporte-wrapper .horas-extras-banner-top {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%) !important;
+  color: #ffffff !important;
+  padding: 1rem 1.75rem !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  gap: 1rem !important;
+}
+
+.reporte-wrapper .horas-extras-banner-left {
+  display: flex !important;
+  align-items: center !important;
+  gap: 1rem !important;
+}
+
+.reporte-wrapper .horas-extras-banner-circle {
+  width: 46px !important;
+  height: 46px !important;
+  border: 2px solid rgba(255, 255, 255, 0.4) !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 1.3rem !important;
+  color: #ffffff !important;
+  flex-shrink: 0 !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+.reporte-wrapper .horas-extras-banner-title {
+  font-size: 1.25rem !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+  margin: 0 0 0.2rem 0 !important;
+  line-height: 1.2 !important;
+}
+
+.reporte-wrapper .horas-extras-banner-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.35rem !important;
+  background: #ef4444 !important;
+  color: #ffffff !important;
+  font-size: 0.72rem !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  padding: 0.2rem 0.65rem !important;
+  border-radius: 12px !important;
+  letter-spacing: 0.5px !important;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4) !important;
+}
+
+.reporte-wrapper .horas-extras-banner-right {
+  display: flex !important;
+  align-items: center !important;
+  gap: 1.25rem !important;
+}
+
+.reporte-wrapper .horas-extras-banner-divider {
+  width: 1px !important;
+  height: 40px !important;
+  background: rgba(255, 255, 255, 0.3) !important;
+}
+
+.reporte-wrapper .horas-extras-body-v2 {
+  padding: 1.25rem 1.75rem !important;
+  background: #ffffff !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  flex-wrap: wrap !important;
+  gap: 1.25rem !important;
+}
+
+.reporte-wrapper .horas-extras-info-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.85rem !important;
+}
+
+.reporte-wrapper .horas-extras-icon-box {
+  width: 42px !important;
+  height: 42px !important;
+  background: #fffbeb !important;
+  border: 1px solid #fde68a !important;
+  border-radius: 10px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #d97706 !important;
+  font-size: 1.2rem !important;
+}
+
+.reporte-wrapper .horas-extras-info-label {
+  display: block !important;
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+  color: #64748b !important;
+  margin-bottom: 0.15rem !important;
+}
+
+.reporte-wrapper .horas-extras-info-val {
+  display: block !important;
+  font-size: 1.05rem !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+}
+
+.reporte-wrapper .horas-extras-action-btns {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+  flex-wrap: wrap !important;
+}
+
+.reporte-wrapper .btn-he-finalizar {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+  border: 1px solid #dc2626 !important;
+  padding: 0.65rem 1.25rem !important;
+  font-size: 0.92rem !important;
+  font-weight: 600 !important;
+  border-radius: 10px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.25) !important;
+  text-decoration: none !important;
+}
+
+.reporte-wrapper .btn-he-finalizar:hover {
+  background: #dc2626 !important;
+  color: #ffffff !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 10px rgba(239, 68, 68, 0.35) !important;
+}
+
+.reporte-wrapper .btn-he-descartar {
+  background: #ffffff !important;
+  color: #64748b !important;
+  border: 1px solid #cbd5e1 !important;
+  padding: 0.65rem 1.15rem !important;
+  font-size: 0.92rem !important;
+  font-weight: 600 !important;
+  border-radius: 10px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  transition: all 0.2s ease !important;
+  text-decoration: none !important;
+}
+
+.reporte-wrapper .btn-he-descartar:hover {
+  background: #fef2f2 !important;
+  color: #dc2626 !important;
+  border-color: #fca5a5 !important;
+  transform: translateY(-1px) !important;
+}
+
+/* ==========================================================================
+   MODAL FINALIZAR HORAS EXTRAS - ESTILO UNIFICADO Y SCROLLBAR
+   ========================================================================== */
+#modalFinalizarHorasExtra .modal-body {
+  max-height: calc(82vh - 130px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f8fafc;
+}
+
+#modalFinalizarHorasExtra .modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+#modalFinalizarHorasExtra .modal-body::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+
+#modalFinalizarHorasExtra .modal-body::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 6px;
+}
+
+#modalFinalizarHorasExtra .modal-body::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
+}
+
+.he-time-stat-box {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  text-align: center;
+  flex: 1;
+  min-width: 140px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.he-time-stat-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  margin-bottom: 0.2rem;
+  letter-spacing: 0.3px;
+}
+
+.he-time-stat-val {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #0f172a;
 }
