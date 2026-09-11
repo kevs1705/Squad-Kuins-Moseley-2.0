@@ -12,6 +12,46 @@
         font-family: 'Montserrat', sans-serif !important;
         font-weight: 300 !important;
       }
+
+      #btn_seleccionar_comprobante {
+        transition: all 0.2s ease;
+      }
+
+      #btn_seleccionar_comprobante:hover {
+        background-color: #0958a6 !important;
+        border-color: #0958a6 !important;
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(11, 107, 203, 0.25) !important;
+      }
+
+      .btn-ojito-bitacora {
+        background: rgba(11, 107, 203, 0.08) !important;
+        border: 1px solid rgba(11, 107, 203, 0.25) !important;
+        color: #0b6bcb !important;
+        border-radius: 6px !important;
+        padding: 5px 8px !important;
+        font-size: 0.84rem !important;
+        line-height: 1 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        vertical-align: middle !important;
+        cursor: pointer !important;
+        transition: all 0.15s ease !important;
+        text-decoration: none !important;
+      }
+
+      .btn-ojito-bitacora:hover {
+        background: #0b6bcb !important;
+        color: #ffffff !important;
+        border-color: #0b6bcb !important;
+        transform: scale(1.08);
+      }
+
+      .btn-ojito-bitacora svg {
+        display: block;
+        pointer-events: none;
+      }
     </style>
 
     <div class="reporte-wrapper py-3">
@@ -450,13 +490,20 @@
                 <i class="bi bi-journal-text me-2 text-primary"></i>Historial de Asistencias y Bitácora
               </h5>
 
-              <!-- Fila de Filtros / Controles (Primero Fecha, Segundo Búsqueda) -->
+              <!-- Fila de Filtros / Controles (Rango de Fechas + Búsqueda) -->
               <div class="reporte-controls-row">
                 <div class="filter-field-group filter-date-box">
-                  <label for="reporteDateFilter" class="filter-field-label">Filtrar por fecha:</label>
+                  <label for="reporteFechaDesde" class="filter-field-label">Desde:</label>
                   <div class="input-icon-wrapper">
                     <i class="bi bi-calendar3"></i>
-                    <input type="date" id="reporteDateFilter" class="form-control" title="Filtrar por fecha">
+                    <input type="date" id="reporteFechaDesde" class="form-control" title="Fecha Desde">
+                  </div>
+                </div>
+                <div class="filter-field-group filter-date-box">
+                  <label for="reporteFechaHasta" class="filter-field-label">Hasta:</label>
+                  <div class="input-icon-wrapper">
+                    <i class="bi bi-calendar3"></i>
+                    <input type="date" id="reporteFechaHasta" class="form-control" title="Fecha Hasta">
                   </div>
                 </div>
                 <div class="filter-field-group search-input-box">
@@ -478,9 +525,7 @@
                       <th>Entrada</th>
                       <th>Salida</th>
                       <th>Horas Turno</th>
-                      <th>Tarea / Bitácora</th>
-                      <th>Comprobante</th>
-                      <th class="text-center">Acción</th>
+                      <th class="text-center">Bitacora</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -539,54 +584,44 @@
                                     <% } %>
                           </td>
 
-                          <td class="col-tarea-cell">
-                            <% if(j.tarea) { %>
-                              <% if(j.tarea.length> 80) { %>
-                                <div class="bitacora-container">
-                                  <span class="bitacora-corta">
-                                    <%= j.tarea.substring(0, 80) %>...
-                                  </span>
-                                  <button type="button" class="btn-ver-mas-bitacora btn-ver-detalle-bitacora"
-                                    data-tarea="<%= j.tarea %>" data-fecha="<%= j.fecha %>"
-                                    data-lugar="<%= j.lugar_nombre || '' %>">
-                                    Ver más
-                                  </button>
-                                </div>
-                                <% } else { %>
-                                  <span class="bitacora-texto">
-                                    <%= j.tarea %>
-                                  </span>
-                                  <% } %>
-                                    <% } else { %>
-                                      <span class="text-muted fs-7"><em>Sin bitácora registrada</em></span>
-                                      <% } %>
-                                        <% if(j.observacion) { %>
-                                          <br><small class="text-danger">Obs: <%= j.observacion %></small>
-                                          <% } %>
-                          </td>
-
-                          <td>
-                            <% if(j.comprobante) { %>
-                              <a href="<%= j.comprobante %>" target="_blank" class="btn-comprobante-ver">
-                                <i class="bi bi-image"></i> Ver
-                              </a>
-                              <% } else { %>
-                                <span class="text-muted">-</span>
-                                <% } %>
-                          </td>
-
                           <td class="text-center">
-                            <button class="btn-reporte-action btn-reporte" data-asistencia="<%= j.id_asistencia %>"
-                              data-tarea="<%= j.tarea || '' %>" data-comprobante="<%= j.comprobante || '' %>">
-                              <i class="bi bi-pencil-square me-1"></i>
-                              <%= j.tarea ? 'Editar' : 'Registrar' %>
-                            </button>
+                            <% if (j.tarea || j.comprobante) { %>
+                              <div class="d-inline-flex align-items-center justify-content-center gap-2">
+                                <button type="button" class="btn-ojito-bitacora btn-ver-detalle-bitacora"
+                                  data-tarea="<%= j.tarea || '' %>" data-fecha="<%= j.fecha %>"
+                                  data-lugar="<%= j.lugar_nombre || '' %>" data-comprobante="<%= j.comprobante || '' %>"
+                                  title="Ver detalle">
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                    viewBox="0 0 16 16">
+                                    <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z" />
+                                    <path
+                                      d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" />
+                                  </svg>
+                                </button>
+
+                                <button class="btn-reporte-action btn-reporte py-1 px-2"
+                                  data-asistencia="<%= j.id_asistencia %>" data-tarea="<%= j.tarea || '' %>"
+                                  data-comprobante="<%= j.comprobante || '' %>" data-fecha="<%= j.fecha %>"
+                                  title="Editar bitácora" style="font-size: 0.8rem;">
+                                  <i class="bi bi-pencil-square me-1"></i> Editar
+                                </button>
+                              </div>
+                              <% } else { %>
+                                <button class="btn-reporte-action btn-reporte" data-asistencia="<%= j.id_asistencia %>"
+                                  data-tarea="" data-comprobante="" data-fecha="<%= j.fecha %>"
+                                  title="Registrar bitácora">
+                                  <i class="bi bi-plus-circle me-1"></i> Registrar
+                                </button>
+                                <% } %>
+                                  <% if(j.observacion) { %>
+                                    <br><small class="text-danger">Obs: <%= j.observacion %></small>
+                                    <% } %>
                           </td>
                         </tr>
                         <% }); %>
                           <% } else { %>
                             <tr>
-                              <td colspan="8" class="text-center py-4 text-muted fw-semibold">No se encontraron
+                              <td colspan="6" class="text-center py-4 text-muted fw-semibold">No se encontraron
                                 registros de
                                 jornadas.</td>
                             </tr>
@@ -616,7 +651,8 @@
 
             <div class="d-flex align-items-center gap-3">
               <!-- Pestañas de Navegación en el Encabezado -->
-              <ul class="nav nav-pills nav-pills-teletrabajo list-unstyled mb-0" id="teletrabajoTabs" role="tablist" style="list-style: none; padding-left: 0;">
+              <ul class="nav nav-pills nav-pills-teletrabajo list-unstyled mb-0" id="teletrabajoTabs" role="tablist"
+                style="list-style: none; padding-left: 0;">
                 <li class="nav-item" role="presentation">
                   <button class="nav-link active" id="tab-nueva-solicitud-tab" data-bs-toggle="pill"
                     data-bs-target="#tab-nueva-solicitud" type="button" role="tab" aria-selected="true">
@@ -745,7 +781,8 @@
                 <div class="d-flex justify-content-between align-items-center mb-3">
                   <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-clock-history me-1 text-primary"></i> Estado de tus
                     solicitudes</h6>
-                  <button type="button" class="btn btn-sm btn-primary px-3 fw-semibold text-white" id="btnRecargarMisSolicitudes" style="background-color: #2563eb; border-color: #2563eb;">
+                  <button type="button" class="btn btn-sm btn-primary px-3 fw-semibold text-white"
+                    id="btnRecargarMisSolicitudes" style="background-color: #2563eb; border-color: #2563eb;">
                     <i class="bi bi-arrow-clockwise me-1"></i> Actualizar
                   </button>
                 </div>
@@ -911,10 +948,23 @@
             <div class="modal-body">
               <input type="hidden" name="id_asistencia" id="modal_id_asistencia">
 
+              <!-- Fecha de la jornada seleccionada -->
+              <div class="d-flex align-items-center justify-content-between p-2 mb-3 bg-light rounded border">
+                <span class="text-muted fs-7"><i class="bi bi-calendar2-event me-1 text-primary"></i> Fecha de la
+                  jornada:</span>
+                <span id="modal_reporte_fecha"
+                  class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1"
+                  style="font-size: 0.82rem; font-weight: 600;"></span>
+              </div>
+
               <div class="mb-3">
-                <label class="form-label fw-semibold">Descripción de la Tarea / Avance <span
-                    class="text-danger">*</span></label>
-                <textarea class="form-control" name="tarea" id="modal_tarea" rows="4" required
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <label class="form-label fw-semibold mb-0">Descripción de la Tarea / Avance <span
+                      class="text-danger">*</span></label>
+                  <small class="text-muted" style="font-size: 0.78rem;"><span id="modal_tarea_count">0</span>/350
+                    letras</small>
+                </div>
+                <textarea class="form-control" name="tarea" id="modal_tarea" rows="4" maxlength="350" required
                   style="resize: none; width: 100%; font-family: 'Montserrat', sans-serif !important; font-weight: 300 !important;"
                   placeholder="Describe las actividades realizadas en la jornada..."></textarea>
               </div>
@@ -931,11 +981,28 @@
               </div>
 
               <div class="mb-3">
-                <label class="form-label fw-semibold">Adjuntar Comprobante (PNG / JPG / WEBP)</label>
-                <input type="file" name="comprobante" class="form-control" id="modal_comprobante"
-                  accept="image/png, image/jpeg, image/jpg, image/webp">
-                <small class="text-muted d-block mt-1" style="font-size: 0.78rem;">Las imágenes se subirán
-                  automáticamente a Cloudinary.</small>
+                <label class="form-label fw-semibold mb-2">Adjuntar Comprobante (PNG / JPG / WEBP)</label>
+
+                <!-- Input file real 100% oculto -->
+                <input type="file" name="comprobante" id="modal_comprobante"
+                  accept="image/png, image/jpeg, image/jpg, image/webp" style="display: none !important;">
+
+                <!-- Contenedor con UN SOLO BOTÓN BONITO y texto del archivo -->
+                <div class="d-flex align-items-center gap-2 p-2 rounded-3 border" style="background-color: #f8fafc;">
+                  <button type="button" id="btn_seleccionar_comprobante"
+                    class="btn btn-sm btn-primary px-3 py-2 fw-semibold rounded-2 d-inline-flex align-items-center gap-2 shadow-sm"
+                    style="background-color: #0b6bcb; border-color: #0b6bcb; font-size: 0.85rem; flex-shrink: 0;">
+                    <i class="bi bi-cloud-arrow-up-fill fs-6"></i> Seleccionar archivo
+                  </button>
+                  <span id="upload_file_info" class="text-muted text-truncate ps-1" style="font-size: 0.83rem;">
+                    Ningún archivo seleccionado
+                  </span>
+                </div>
+
+                <small class="text-muted d-block mt-1" style="font-size: 0.78rem;">
+                  <i class="bi bi-shield-check text-success me-1"></i>Las imágenes se subirán automáticamente a
+                  Cloudinary.
+                </small>
               </div>
 
               <!-- Previsualización de nueva imagen seleccionada -->
@@ -990,8 +1057,28 @@
                   class="text-dark"></strong></span>
             </div>
             <label class="form-label fw-bold text-dark mb-2">Descripción Completa:</label>
-            <div id="modalVerBitacoraTexto" class="p-3 bg-light rounded border"
-              style="max-height: 320px; overflow-y: auto; word-break: break-word; white-space: pre-wrap; font-size: 0.93rem; color: #1e293b; line-height: 1.5;">
+            <div id="modalVerBitacoraTexto" class="p-3 bg-light rounded border mb-3"
+              style="max-height: 200px; overflow-y: auto; word-break: break-word; white-space: pre-wrap; font-size: 0.93rem; color: #1e293b; line-height: 1.5;">
+            </div>
+
+            <!-- Sección Comprobante Adjunto dentro del Modal -->
+            <div id="modalVerBitacoraComprobanteWrap" class="pt-2 border-top" style="display: none;">
+              <label class="form-label fw-bold text-dark mb-2">
+                <i class="bi bi-image text-primary me-1"></i> Comprobante Adjunto:
+              </label>
+              <div class="text-center p-3 bg-light rounded border">
+                <a href="#" id="modalVerBitacoraImgLink" target="_blank"
+                  title="Haz clic para ver la imagen en tamaño completo">
+                  <img id="modalVerBitacoraImg" src="" alt="Comprobante" class="img-fluid rounded shadow-sm border mb-2"
+                    style="max-height: 220px; object-fit: contain; width: auto;">
+                </a>
+                <div>
+                  <a href="#" id="modalVerBitacoraLink" target="_blank"
+                    class="btn btn-sm btn-outline-primary px-3 py-1 rounded-pill" style="font-size: 0.82rem;">
+                    <i class="bi bi-box-arrow-up-right me-1"></i> Abrir imagen completa
+                  </a>
+                </div>
+              </div>
             </div>
           </div>
           <div class="modal-footer border-top-0 pt-0">
@@ -1015,6 +1102,43 @@
       <!-- 3. Lógica JavaScript de la Vista -->
       <script>
         document.addEventListener('DOMContentLoaded', () => {
+          // Filtrado en vivo de Tabla de Reportes (Rango de Fechas + Búsqueda por texto)
+          const reporteFechaDesde = document.getElementById('reporteFechaDesde');
+          const reporteFechaHasta = document.getElementById('reporteFechaHasta');
+          const reporteSearch = document.getElementById('reporteSearch');
+          const tableReporteRows = document.querySelectorAll('.table-reporte tbody tr');
+
+          function filterReporteTable() {
+            const searchTerm = reporteSearch ? reporteSearch.value.toLowerCase().trim() : '';
+            const fechaDesde = reporteFechaDesde ? reporteFechaDesde.value : '';
+            const fechaHasta = reporteFechaHasta ? reporteFechaHasta.value : '';
+
+            tableReporteRows.forEach(row => {
+              if (row.children.length <= 1) return; // Fila vacía o de mensaje
+
+              const cellFecha = row.cells[0] ? row.cells[0].textContent : '';
+              const matchDate = cellFecha.match(/\d{4}-\d{2}-\d{2}/);
+              const rowFecha = matchDate ? matchDate[0] : cellFecha.trim();
+
+              const rowText = row.textContent.toLowerCase();
+              const matchesSearch = !searchTerm || rowText.includes(searchTerm);
+
+              let matchesDate = true;
+              if (fechaDesde && rowFecha < fechaDesde) matchesDate = false;
+              if (fechaHasta && rowFecha > fechaHasta) matchesDate = false;
+
+              if (matchesSearch && matchesDate) {
+                row.style.display = '';
+              } else {
+                row.style.display = 'none';
+              }
+            });
+          }
+
+          if (reporteFechaDesde) reporteFechaDesde.addEventListener('change', filterReporteTable);
+          if (reporteFechaHasta) reporteFechaHasta.addEventListener('change', filterReporteTable);
+          if (reporteSearch) reporteSearch.addEventListener('input', filterReporteTable);
+
           const modalEl = document.getElementById('modalReporte');
           const modalReporte = new bootstrap.Modal(modalEl);
           const formReporte = document.getElementById('formReporte');
@@ -1034,9 +1158,10 @@
 
           document.querySelectorAll('.btn-ver-detalle-bitacora').forEach(btn => {
             btn.addEventListener('click', () => {
-              const tarea = btn.dataset.tarea || '';
+              const tarea = btn.dataset.tarea || 'Sin descripción registrada.';
               const fecha = btn.dataset.fecha || '';
               const lugar = btn.dataset.lugar || '';
+              const comprobante = btn.dataset.comprobante || '';
 
               document.getElementById('modalVerBitacoraFecha').textContent = fecha;
               document.getElementById('modalVerBitacoraTexto').textContent = tarea;
@@ -1050,14 +1175,43 @@
                 lugarWrap.style.display = 'none';
               }
 
+              const compWrap = document.getElementById('modalVerBitacoraComprobanteWrap');
+              const compImg = document.getElementById('modalVerBitacoraImg');
+              const compLink = document.getElementById('modalVerBitacoraLink');
+              const compImgLink = document.getElementById('modalVerBitacoraImgLink');
+
+              if (comprobante && comprobante.trim() !== '') {
+                compWrap.style.display = 'block';
+                compImg.src = comprobante.trim();
+                compLink.href = comprobante.trim();
+                if (compImgLink) compImgLink.href = comprobante.trim();
+              } else {
+                compWrap.style.display = 'none';
+                compImg.src = '';
+                compLink.href = '#';
+                if (compImgLink) compImgLink.href = '#';
+              }
+
               if (modalVerBitacora) modalVerBitacora.show();
             });
           });
+
+          const btnSeleccionarComprobante = document.getElementById('btn_seleccionar_comprobante');
+          const uploadFileInfo = document.getElementById('upload_file_info');
+
+          if (btnSeleccionarComprobante) {
+            btnSeleccionarComprobante.addEventListener('click', () => {
+              fileInput.click();
+            });
+          }
 
           // Helper para previsualizar imagen seleccionada
           fileInput.addEventListener('change', () => {
             if (fileInput.files && fileInput.files[0]) {
               const file = fileInput.files[0];
+              if (uploadFileInfo) {
+                uploadFileInfo.innerHTML = `<span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1"><i class="bi bi-check2-circle me-1"></i>${file.name}</span>`;
+              }
               const reader = new FileReader();
               reader.onload = (e) => {
                 previewNewImg.src = e.target.result;
@@ -1073,6 +1227,9 @@
             fileInput.value = '';
             previewNewImg.src = '';
             previewNewContainer.style.display = 'none';
+            if (uploadFileInfo) {
+              uploadFileInfo.textContent = 'Ningún archivo seleccionado';
+            }
           }
 
           if (btnQuitarImg) {
@@ -1089,9 +1246,18 @@
               const asistenciaId = btn.dataset.asistencia;
               const tareaTexto = btn.dataset.tarea || '';
               const comprobanteActual = btn.dataset.comprobante || '';
+              const fechaJornada = btn.dataset.fecha || '';
 
               document.getElementById('modal_id_asistencia').value = asistenciaId;
-              document.getElementById('modal_tarea').value = tareaTexto;
+              const modalFechaEl = document.getElementById('modal_reporte_fecha');
+              if (modalFechaEl) {
+                modalFechaEl.textContent = fechaJornada;
+              }
+
+              const inputTarea = document.getElementById('modal_tarea');
+              inputTarea.value = tareaTexto;
+              const charCountEl = document.getElementById('modal_tarea_count');
+              if (charCountEl) charCountEl.textContent = inputTarea.value.length;
 
               if (comprobanteActual && comprobanteActual.trim() !== '') {
                 previewExistingContainer.style.display = 'block';
@@ -1104,6 +1270,14 @@
               modalReporte.show();
             });
           });
+
+          const modalTareaInput = document.getElementById('modal_tarea');
+          const modalTareaCountSpan = document.getElementById('modal_tarea_count');
+          if (modalTareaInput && modalTareaCountSpan) {
+            modalTareaInput.addEventListener('input', () => {
+              modalTareaCountSpan.textContent = modalTareaInput.value.length;
+            });
+          }
 
           // Función para subir a Cloudinary directamente desde el navegador
           async function subirACloudinary(file) {
