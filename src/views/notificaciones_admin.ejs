@@ -985,19 +985,19 @@
           
           <div class="filter-toolbar">
             <div>
-              <h5 class="fw-bold mb-1 text-dark">Solicitudes de Horas Extra</h5>
-              <p class="text-muted fs-7 mb-0">Revisa y autoriza extensiones de turnos. Acepta o deshace la suma de horas al acumulado.</p>
+              <h5 class="fw-bold mb-1 text-dark">Rendición y Evaluación de Horas Extras</h5>
+              <p class="text-muted fs-7 mb-0">Audita el trabajo extraordinario realizado fuera de sede/obra con informe de bitácora y evidencia fotográfica.</p>
             </div>
             <div class="d-flex gap-2 flex-wrap">
               <div class="search-input-wrap">
                 <i class="bi bi-search"></i>
-                <input type="text" id="filtroTextoHorasExtra" class="filter-input-search" placeholder="Buscar por colaborador, motivo o fecha...">
+                <input type="text" id="filtroTextoHorasExtra" class="filter-input-search" placeholder="Buscar por colaborador, informe o fecha...">
               </div>
               <select id="filtroEstadoHorasExtra" class="filter-select-custom">
                 <option value="">Todos los estados</option>
-                <option value="1">⏳ Pendientes</option>
+                <option value="1">⏳ Pendientes de Evaluación</option>
                 <option value="2">✅ Horas Sumadas (Aprobados)</option>
-                <option value="3">❌ Rechazados</option>
+                <option value="3">❌ Observados / Rechazados</option>
               </select>
             </div>
           </div>
@@ -1007,8 +1007,8 @@
               <div class="user-avatar-circle mx-auto mb-3" style="width: 60px; height: 60px; background: #F1F5F9; color: #64748B;">
                 <i class="bi bi-clock-history fs-3"></i>
               </div>
-              <h6 class="fw-bold text-dark">No hay solicitudes de horas extra</h6>
-              <p class="text-muted fs-7">Las solicitudes de horas adicionales aparecerán aquí.</p>
+              <h6 class="fw-bold text-dark">No hay reportes de horas extra</h6>
+              <p class="text-muted fs-7">Las declaraciones de horas adicionales trabajadas aparecerán aquí para tu evaluación.</p>
             </div>
           <% } else { %>
             <div class="table-responsive">
@@ -1016,46 +1016,82 @@
                 <thead>
                   <tr>
                     <th>Colaborador</th>
-                    <th>Fecha Solicitada</th>
-                    <th>Intervalo de Horas</th>
-                    <th>Motivo</th>
+                    <th>Fecha Declarada</th>
+                    <th>Horario / Duración</th>
+                    <th>Informe de Actividades</th>
+                    <th>Foto de Evidencia</th>
                     <th>Estado</th>
-                    <th class="text-center">Decisión / Suma de Horas</th>
+                    <th class="text-center">Auditoría / Decisión</th>
                   </tr>
                 </thead>
                 <tbody id="tbodyHorasExtra">
                   <% notifs.forEach(n => { 
                     const inicial = (n.nombre_usuario || 'U').charAt(0).toUpperCase();
                     const estadoNum = Number(n.estado);
+                    const tareaTexto = n.tarea || n.motivo || 'Sin detalle de actividades';
                   %>
                     <tr data-id="<%= n.id_notificacion %>" 
                         data-estado="<%= estadoNum %>"
                         data-nombre="<%= (n.nombre_usuario || '').toLowerCase() %>"
                         data-fecha="<%= n.fecha_solicitada %>"
-                        data-motivo="<%= (n.motivo || '').toLowerCase() %>">
+                        data-motivo="<%= (tareaTexto).toLowerCase() %>">
                       <td>
                         <div class="user-profile-cell">
                           <div class="user-avatar-circle"><%= inicial %></div>
                           <div>
                             <div class="user-name-text"><%= n.nombre_usuario %></div>
+                            <% if (n.ci_usuario) { %>
+                              <div class="fs-8 text-muted">CI: <%= n.ci_usuario %></div>
+                            <% } %>
                           </div>
                         </div>
                       </td>
-                      <td><span style="font-weight: 600; font-size: 13.5px; color: #1E293B;"><%= n.fecha_solicitada %></span></td>
                       <td>
-                        <div class="badge-time-group">
-                          <span class="badge-time-in"><b>E:</b> <%= (n.hora_inicio||'').slice(0,5) %></span>
-                          <span class="badge-time-out"><b>S:</b> <%= (n.hora_fin||'').slice(0,5) %></span>
+                        <span style="font-weight: 600; font-size: 13.5px; color: #1E293B;"><%= n.fecha_solicitada %></span>
+                      </td>
+                      <td>
+                        <div class="d-flex flex-column gap-1">
+                          <span class="badge px-2 py-1 align-self-start" style="background: #fef3c7; color: #92400e; font-weight: 700; font-size: 12px; border: 1px solid #fde68a;">
+                            <i class="bi bi-stopwatch me-1"></i> <%= n.duracion_calculada %> hrs
+                          </span>
+                          <div class="badge-time-group">
+                            <span class="badge-time-in"><b>E:</b> <%= (n.hora_inicio||'').slice(0,5) %></span>
+                            <span class="badge-time-out"><b>S:</b> <%= (n.hora_fin||'').slice(0,5) %></span>
+                          </div>
                         </div>
                       </td>
-                      <td style="max-width: 280px;"><span class="fs-7 text-muted"><%= n.motivo %></span></td>
+                      <td style="max-width: 260px;">
+                        <div class="fs-7 text-dark p-2 rounded-2 border bg-light" style="max-height: 85px; overflow-y: auto; white-space: pre-wrap; font-size: 12.5px; line-height: 1.4;">
+                          <%= tareaTexto %>
+                        </div>
+                      </td>
+                      <td>
+                        <% if (n.comprobante) { %>
+                          <button type="button" class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1 shadow-xs btn-preview-comprobante"
+                            style="background-color: #0b6bcb; border-color: #0b6bcb; color: #ffffff !important; font-weight: 600; border-radius: 8px; padding: 5px 14px; font-size: 13px;"
+                            data-nombre="<%= n.nombre_usuario %>" 
+                            data-fecha="<%= n.fecha_solicitada %>" 
+                            data-tarea="<%= tareaTexto.replace(/"/g, '&quot;') %>" 
+                            data-img="<%= n.comprobante %>"
+                            title="Ver fotografía de evidencia">
+                            <i class="bi bi-eye-fill" style="color: #ffffff !important;"></i> <span style="color: #ffffff !important;">Ver</span>
+                          </button>
+                        <% } else { %>
+                          <span class="text-muted fs-8"><i class="bi bi-image-slash me-1"></i> Sin foto</span>
+                        <% } %>
+                      </td>
                       <td>
                         <% if (estadoNum === 1) { %>
-                          <span class="badge-status-pill status-pending"><i class="bi bi-hourglass-split"></i> Pendiente</span>
+                          <span class="badge-status-pill status-pending"><i class="bi bi-hourglass-split"></i> En Revisión</span>
                         <% } else if (estadoNum === 2) { %>
                           <span class="badge-status-pill status-approved"><i class="bi bi-check-circle-fill"></i> Horas Sumadas</span>
                         <% } else { %>
-                          <span class="badge-status-pill status-rejected"><i class="bi bi-x-circle-fill"></i> Rechazado</span>
+                          <span class="badge-status-pill status-rejected"><i class="bi bi-x-circle-fill"></i> Observado</span>
+                          <% if (n.observacion_admin) { %>
+                            <div class="fs-8 text-danger mt-1 fw-medium" style="max-width: 140px; line-height: 1.2;">
+                              <i class="bi bi-info-circle me-1"></i><%= n.observacion_admin %>
+                            </div>
+                          <% } %>
                         <% } %>
                       </td>
                       <td class="text-center">
@@ -1065,14 +1101,14 @@
                           </button>
                         <% } else if (estadoNum === 1) { %>
                           <div class="decision-container">
-                            <input class="admin-obs-input" placeholder="Observación (opcional)" data-role="obs" />
+                            <input class="admin-obs-input" placeholder="Obs. o motivo (opcional)" data-role="obs" />
                             <div class="decision-btn-row">
                               <button class="btn-action-decision btn-action-approve" data-role="approve" title="Aceptar y sumar horas"><i class="bi bi-check-lg"></i> Aceptar Suma</button>
-                              <button class="btn-action-decision btn-action-reject" data-role="reject" title="Rechazar"><i class="bi bi-x-lg"></i> Rechazar</button>
+                              <button class="btn-action-decision btn-action-reject" data-role="reject" title="Observar / Rechazar"><i class="bi bi-x-lg"></i> Observar</button>
                             </div>
                           </div>
                         <% } else { %>
-                          <button type="button" class="btn-action-decision btn-action-approve" data-role="approve" title="Aceptar y sumar horas"><i class="bi bi-check-lg"></i> Aceptar Suma</button>
+                          <button type="button" class="btn-action-decision btn-action-approve" data-role="approve" title="Reconsiderar y sumar horas"><i class="bi bi-check-lg"></i> Aceptar Suma</button>
                         <% } %>
                       </td>
                     </tr>
@@ -1557,6 +1593,17 @@
         });
       });
 
+      // --- TAB 3: VISTA PREVIA DE COMPROBANTE FOTOGRÁFICO DE HORAS EXTRA ---
+      document.querySelectorAll('.btn-preview-comprobante').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const nombre = btn.dataset.nombre || 'Colaborador';
+          const fecha = btn.dataset.fecha || '';
+          const tarea = btn.dataset.tarea || '';
+          const img = btn.dataset.img || '';
+          verBitacoraModalDirecto(nombre, fecha, tarea, img);
+        });
+      });
+
       // --- TAB 3: APROBAR / RECHAZAR HORAS EXTRA ---
       document.querySelectorAll('#tbodyHorasExtra button[data-role]').forEach(btn => {
         btn.addEventListener('click', async () => {
@@ -1564,7 +1611,42 @@
           const tr = btn.closest('tr');
           const id = tr?.dataset.id;
           const obsInput = tr?.querySelector('input[data-role="obs"]');
-          const obs = obsInput ? obsInput.value.trim() : '';
+          let obs = obsInput ? obsInput.value.trim() : '';
+
+          if (role === 'reject' && !obs) {
+            const { value: obsPrompt } = await Swal.fire({
+              title: 'Observar Horas Extra',
+              text: 'Ingresa una observación o motivo por el cual no se acreditan estas horas extras:',
+              input: 'textarea',
+              inputPlaceholder: 'Ej: La foto no demuestra el trabajo / tiempo excesivo para la tarea / sin justificación...',
+              inputValidator: (value) => {
+                if (!value || value.trim().length < 4) {
+                  return 'Por favor ingresa un motivo para que el colaborador pueda ver la observación.';
+                }
+              },
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonText: 'Confirmar Observación',
+              cancelButtonText: 'Cancelar',
+              confirmButtonColor: '#ef4444',
+              cancelButtonColor: '#64748b'
+            });
+
+            if (!obsPrompt) return;
+            obs = obsPrompt.trim();
+          } else if (role === 'approve') {
+            const confirm = await Swal.fire({
+              title: '¿Aprobar y Sumar Horas?',
+              text: 'Se validará el informe y se sumará la duración calculada al total acumulado del colaborador.',
+              icon: 'question',
+              showCancelButton: true,
+              confirmButtonText: 'Sí, Aceptar y Sumar',
+              cancelButtonText: 'Cancelar',
+              confirmButtonColor: '#10b981',
+              cancelButtonColor: '#64748b'
+            });
+            if (!confirm.isConfirmed) return;
+          }
 
           btn.disabled = true;
 
