@@ -34,7 +34,8 @@ router.get('/usuarios', requireAuth, requireAdmin, async (req, res) => {
     const [rows] = await db.query(
       `SELECT u.id_usuario, u.nombre, u.apellido_paterno, u.apellido_materno, u.CI, 
               u.universidad, u.id_carrera, c.nombre AS carrera_nombre, c.siglas AS carrera_siglas,
-              u.celular, u.estado, u.rol, u.contrasena
+              u.celular, u.estado, u.rol, u.contrasena,
+              DATE_FORMAT(u.fecha_inicio_pasantia, '%d/%m/%Y') AS fecha_inicio_pasantia
        FROM usuarios u
        LEFT JOIN carreras c ON u.id_carrera = c.id_carrera
        ORDER BY u.id_usuario DESC`
