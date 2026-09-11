@@ -179,54 +179,57 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
     `, [userId]);
     const horaExtraActiva = heActivaRows.length > 0 ? heActivaRows[0] : null;
 
-    // 3. JORNADAS UNIFICADAS: Asistencias ordinarias + Teletrabajo + Horas Extras Aprobadas
-    const [jornadas] = await db.query(`
-      SELECT * FROM (
-        SELECT 
-          CAST(a.id_asistencia AS CHAR) AS id_asistencia,
-          DATE_FORMAT(a.fecha, '%Y-%m-%d') AS fecha,
-          a.estado AS asistencia_estado,
-          COALESCE(ag.modalidad, 'PRESENCIAL') AS modalidad,
-          l.nombre AS lugar_nombre,
-          l.tipo AS lugar_tipo,
-          TIME_FORMAT(a.hora_entrada, '%H:%i') AS hora_entrada_f,
-          TIME_FORMAT(a.hora_salida, '%H:%i') AS hora_salida_f,
-          a.hora_entrada,
-          a.hora_salida,
-          r.id_reporte,
-          r.tarea,
-          r.comprobante,
-          COALESCE(r.observacion, a.observacion) AS observacion
-        FROM asistencias a
-        LEFT JOIN asistencias_geo ag ON a.id_asistencia = ag.id_asistencia
-        LEFT JOIN lugares l ON a.id_lugar = l.id_lugar
-        LEFT JOIN reportes r ON a.id_asistencia = r.id_asistencia
-        WHERE a.id_usuario = ?
-          AND a.estado != 'ANULADO'
+    // 3. JORNADAS UNIFICADAS: Asistencias ordinarias + Teletrabajo + Horas Extras Aprobadas (Sin UNION para evitar conflicto de collations)
+    const [asistenciasRows] = await db.query(`
+      SELECT 
+        CAST(a.id_asistencia AS CHAR) AS id_asistencia,
+        DATE_FORMAT(a.fecha, '%Y-%m-%d') AS fecha,
+        a.estado AS asistencia_estado,
+        COALESCE(ag.modalidad, 'PRESENCIAL') AS modalidad,
+        l.nombre AS lugar_nombre,
+        l.tipo AS lugar_tipo,
+        TIME_FORMAT(a.hora_entrada, '%H:%i') AS hora_entrada_f,
+        TIME_FORMAT(a.hora_salida, '%H:%i') AS hora_salida_f,
+        a.hora_entrada,
+        a.hora_salida,
+        r.id_reporte,
+        r.tarea,
+        r.comprobante,
+        COALESCE(r.observacion, a.observacion) AS observacion
+      FROM asistencias a
+      LEFT JOIN asistencias_geo ag ON a.id_asistencia = ag.id_asistencia
+      LEFT JOIN lugares l ON a.id_lugar = l.id_lugar
+      LEFT JOIN reportes r ON a.id_asistencia = r.id_asistencia
+      WHERE a.id_usuario = ?
+        AND a.estado != 'ANULADO'
+    `, [userId]);
 
-        UNION ALL
+    const [heRows] = await db.query(`
+      SELECT
+        CONCAT('he_', n.id_notificacion) AS id_asistencia,
+        DATE_FORMAT(n.fecha_solicitada, '%Y-%m-%d') AS fecha,
+        'FINALIZADO' AS asistencia_estado,
+        'HORA_EXTRA' AS modalidad,
+        'Horas Extras' AS lugar_nombre,
+        'HORA_EXTRA' AS lugar_tipo,
+        TIME_FORMAT(n.hora_inicio, '%H:%i') AS hora_entrada_f,
+        TIME_FORMAT(n.hora_fin, '%H:%i') AS hora_salida_f,
+        n.hora_inicio AS hora_entrada,
+        n.hora_fin AS hora_salida,
+        NULL AS id_reporte,
+        n.tarea,
+        n.comprobante,
+        n.observacion_admin AS observacion
+      FROM notificaciones n
+      WHERE n.id_usuario = ?
+        AND n.estado = 2
+    `, [userId]);
 
-        SELECT
-          CONCAT('he_', n.id_notificacion) AS id_asistencia,
-          DATE_FORMAT(n.fecha_solicitada, '%Y-%m-%d') AS fecha,
-          'FINALIZADO' AS asistencia_estado,
-          'HORA_EXTRA' AS modalidad,
-          'Horas Extras' AS lugar_nombre,
-          'HORA_EXTRA' AS lugar_tipo,
-          TIME_FORMAT(n.hora_inicio, '%H:%i') AS hora_entrada_f,
-          TIME_FORMAT(n.hora_fin, '%H:%i') AS hora_salida_f,
-          n.hora_inicio AS hora_entrada,
-          n.hora_fin AS hora_salida,
-          NULL AS id_reporte,
-          n.tarea,
-          n.comprobante,
-          n.observacion_admin AS observacion
-        FROM notificaciones n
-        WHERE n.id_usuario = ?
-          AND n.estado = 2
-      ) AS q
-      ORDER BY fecha DESC, hora_entrada DESC
-    `, [userId, userId]);
+    const jornadas = [...asistenciasRows, ...heRows].sort((a, b) => {
+      const cmpDate = (b.fecha || '').localeCompare(a.fecha || '');
+      if (cmpDate !== 0) return cmpDate;
+      return String(b.hora_entrada || '').localeCompare(String(a.hora_entrada || ''));
+    });
     const jornadasProcesadas = jornadas.map(j => ({
       ...j,
       hora_entrada_vis: j.hora_entrada_f || '-',
@@ -570,43 +573,46 @@ router.get('/reportes/export', requireAuth, async (req, res) => {
     if (!urows || urows.length === 0) return res.status(404).send('Usuario no encontrado');
     const usuario = urows[0];
 
-    // Consulta unificada uniendo asistencias con reportes y horas extras
-    const [reports] = await db.query(`
-      SELECT * FROM (
-        SELECT
-          DATE_FORMAT(a.fecha, '%Y-%m-%d') AS fecha,
-          l.nombre AS lugar,
-          TIME_FORMAT(a.hora_entrada, '%H:%i:%s') AS hora_entrada,
-          TIME_FORMAT(a.hora_salida, '%H:%i:%s') AS hora_salida,
-          IF(a.hora_salida IS NOT NULL AND a.hora_entrada IS NOT NULL, 
-             TIME_FORMAT(TIMEDIFF(a.hora_salida, a.hora_entrada), '%H:%i:%s'), 
-             '00:00:00') AS horas_trabajadas,
-          r.tarea, 
-          COALESCE(r.observacion, a.observacion) AS observacion
-        FROM asistencias a
-        LEFT JOIN lugares l ON a.id_lugar = l.id_lugar
-        LEFT JOIN reportes r ON a.id_asistencia = r.id_asistencia
-        WHERE a.id_usuario = ?
-          AND a.estado != 'ANULADO'
+    // Consulta unificada uniendo asistencias con reportes y horas extras (Sin UNION para evitar conflicto de collations)
+    const [asistenciasReports] = await db.query(`
+      SELECT
+        DATE_FORMAT(a.fecha, '%Y-%m-%d') AS fecha,
+        l.nombre AS lugar,
+        TIME_FORMAT(a.hora_entrada, '%H:%i:%s') AS hora_entrada,
+        TIME_FORMAT(a.hora_salida, '%H:%i:%s') AS hora_salida,
+        IF(a.hora_salida IS NOT NULL AND a.hora_entrada IS NOT NULL, 
+           TIME_FORMAT(TIMEDIFF(a.hora_salida, a.hora_entrada), '%H:%i:%s'), 
+           '00:00:00') AS horas_trabajadas,
+        r.tarea, 
+        COALESCE(r.observacion, a.observacion) AS observacion
+      FROM asistencias a
+      LEFT JOIN lugares l ON a.id_lugar = l.id_lugar
+      LEFT JOIN reportes r ON a.id_asistencia = r.id_asistencia
+      WHERE a.id_usuario = ?
+        AND a.estado != 'ANULADO'
+    `, [userId]);
 
-        UNION ALL
+    const [heReports] = await db.query(`
+      SELECT
+        DATE_FORMAT(n.fecha_solicitada, '%Y-%m-%d') AS fecha,
+        '⚡ Horas Extras (Aprobadas)' AS lugar,
+        TIME_FORMAT(n.hora_inicio, '%H:%i:%s') AS hora_entrada,
+        TIME_FORMAT(n.hora_fin, '%H:%i:%s') AS hora_salida,
+        IF(n.hora_fin IS NOT NULL AND n.hora_inicio IS NOT NULL,
+           TIME_FORMAT(TIMEDIFF(n.hora_fin, n.hora_inicio), '%H:%i:%s'),
+           '00:00:00') AS horas_trabajadas,
+        n.tarea,
+        n.observacion_admin AS observacion
+      FROM notificaciones n
+      WHERE n.id_usuario = ?
+        AND n.estado = 2
+    `, [userId]);
 
-        SELECT
-          DATE_FORMAT(n.fecha_solicitada, '%Y-%m-%d') AS fecha,
-          '⚡ Horas Extras (Aprobadas)' AS lugar,
-          TIME_FORMAT(n.hora_inicio, '%H:%i:%s') AS hora_entrada,
-          TIME_FORMAT(n.hora_fin, '%H:%i:%s') AS hora_salida,
-          IF(n.hora_fin IS NOT NULL AND n.hora_inicio IS NOT NULL,
-             TIME_FORMAT(TIMEDIFF(n.hora_fin, n.hora_inicio), '%H:%i:%s'),
-             '00:00:00') AS horas_trabajadas,
-          n.tarea,
-          n.observacion_admin AS observacion
-        FROM notificaciones n
-        WHERE n.id_usuario = ?
-          AND n.estado = 2
-      ) AS q
-      ORDER BY fecha DESC, hora_entrada DESC
-    `, [userId, userId]);
+    const reports = [...asistenciasReports, ...heReports].sort((a, b) => {
+      const cmpDate = (b.fecha || '').localeCompare(a.fecha || '');
+      if (cmpDate !== 0) return cmpDate;
+      return String(b.hora_entrada || '').localeCompare(String(a.hora_entrada || ''));
+    });
 
     const [totals] = await db.query(`
       SELECT COALESCE(
