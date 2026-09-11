@@ -81,7 +81,7 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
         AND hora_fin IS NOT NULL
     `, [userId]);
 
-    const totalSegundos = (totals[0]?.total_segundos || 0) + (totalsHE[0]?.total_segundos_he || 0);
+    const totalSegundos = (Number(totals[0]?.total_segundos) || 0) + (Number(totalsHE[0]?.total_segundos_he) || 0);
     const total_acumulada = formatSecondsToHHMMSS(totalSegundos);
 
     // 2.1. Total de horas EN OBSERVACIÓN (Teletrabajo pendiente de revisión de bitácora)
@@ -649,7 +649,7 @@ router.get('/reportes/export', requireAuth, async (req, res) => {
         AND hora_fin IS NOT NULL
     `, [userId]);
 
-    const totalSegundos = (totals[0]?.total_segundos || 0) + (totalsHE[0]?.total_segundos_he || 0);
+    const totalSegundos = (Number(totals[0]?.total_segundos) || 0) + (Number(totalsHE[0]?.total_segundos_he) || 0);
     const totalAcum = formatSecondsToHHMMSS(totalSegundos);
 
     const toExcelDate = (ymd) => {

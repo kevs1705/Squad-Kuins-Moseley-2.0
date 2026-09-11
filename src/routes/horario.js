@@ -40,12 +40,29 @@ router.get('/usuario/horario', async (req, res) => {
             ) AS total_segundos
             FROM asistencias
             WHERE id_usuario = ?
-              AND estado != 'ANULADO'
+              AND estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO')
               AND hora_entrada IS NOT NULL
               AND hora_salida IS NOT NULL
         `, [id_usuario]);
 
-        const totalSegundos = resultadoHoras[0]?.total_segundos || 0;
+        const [resultadoHE] = await db.query(`
+            SELECT COALESCE(
+              SUM(
+                TIMESTAMPDIFF(
+                  SECOND, 
+                  TIMESTAMP(fecha_solicitada, hora_inicio), 
+                  TIMESTAMP(fecha_solicitada, hora_fin)
+                )
+              ), 0
+            ) AS total_segundos_he
+            FROM notificaciones
+            WHERE id_usuario = ?
+              AND estado = 2
+              AND hora_inicio IS NOT NULL
+              AND hora_fin IS NOT NULL
+        `, [id_usuario]);
+
+        const totalSegundos = (Number(resultadoHoras[0]?.total_segundos) || 0) + (Number(resultadoHE[0]?.total_segundos_he) || 0);
         const totalHorasSistema = Math.round(totalSegundos / 3600);
 
         res.render('usuario/horario', {

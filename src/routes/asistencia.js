@@ -21,7 +21,7 @@ router.get('/usuario/asistencia', requireAuth, async (req, res) => {
     if (users.length === 0) return res.status(404).send('Usuario no encontrado');
     const userDB = users[0];
 
-    // 2. Horas totales acumuladas
+    // 2. Horas totales acumuladas (Oficiales + Horas extras aprobadas)
     const [totals] = await db.query(`
       SELECT COALESCE(
         SUM(
@@ -34,12 +34,30 @@ router.get('/usuario/asistencia', requireAuth, async (req, res) => {
       ) AS total_segundos
       FROM asistencias
       WHERE id_usuario = ?
-        AND estado != 'ANULADO'
+        AND estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO')
         AND hora_entrada IS NOT NULL
         AND hora_salida IS NOT NULL
     `, [userId]);
 
-    const total_acumulada = formatSecondsToHHMMSS(totals[0]?.total_segundos || 0);
+    const [totalsHE] = await db.query(`
+      SELECT COALESCE(
+        SUM(
+          TIMESTAMPDIFF(
+            SECOND,
+            TIMESTAMP(fecha_solicitada, hora_inicio),
+            TIMESTAMP(fecha_solicitada, hora_fin)
+          )
+        ), 0
+      ) AS total_segundos_he
+      FROM notificaciones
+      WHERE id_usuario = ?
+        AND estado = 2
+        AND hora_inicio IS NOT NULL
+        AND hora_fin IS NOT NULL
+    `, [userId]);
+
+    const totalSegundos = (Number(totals[0]?.total_segundos) || 0) + (Number(totalsHE[0]?.total_segundos_he) || 0);
+    const total_acumulada = formatSecondsToHHMMSS(totalSegundos);
 
     // 3. Verificar si el usuario tiene una jornada activa hoy (entrada sin salida)
     const [jornadaActiva] = await db.query(`
