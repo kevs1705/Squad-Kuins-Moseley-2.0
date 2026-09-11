@@ -54,36 +54,64 @@
         <thead class="thead">
           <tr>
             <th>Fecha</th>
-            <th>Inicio</th>
-            <th>Fin</th>
-            <th>Motivo</th>
+            <th>Horario / Horas</th>
+            <th>Informe de Actividades</th>
+            <th>Foto / Evidencia</th>
             <th>Estado</th>
-            <th class="muted">Creado</th>
+            <th>Observación Admin</th>
+            <th class="muted">Enviado</th>
           </tr>
         </thead>
         <tbody id="tbody">
-        <% notifs.forEach(n => { %>
+        <% notifs.forEach(n => { 
+          const tareaTxt = n.tarea || n.motivo || '';
+        %>
           <tr class="tr"
               data-estado="<%= Number(n.estado) %>"
               data-fecha="<%- n.fecha_solicitada %>"
-              data-motivo="<%- (n.motivo||'').toLowerCase().replace(/"/g,'&quot;') %>">
-            <td class="td"><%= n.fecha_solicitada %></td>
-            <td class="td"><%= (n.hora_inicio||'').slice(0,5) %></td>
-            <td class="td"><%= (n.hora_fin||'').slice(0,5) %></td>
-            <td class="td muted"><%- n.motivo %></td>
+              data-motivo="<%- tareaTxt.toLowerCase().replace(/"/g,'&quot;') %>">
+            <td class="td fw-semibold"><%= n.fecha_solicitada %></td>
+            <td class="td">
+              <span class="badge bg-warning text-dark px-2 py-1 mb-1 d-inline-block fw-bold" style="font-size: 11.5px;">
+                <%= n.horas_cantidad ? n.horas_cantidad + ' hrs' : ((n.hora_inicio||'').slice(0,5) + ' - ' + (n.hora_fin||'').slice(0,5)) %>
+              </span>
+              <div class="fs-8 text-muted"><%= (n.hora_inicio||'').slice(0,5) %> a <%= (n.hora_fin||'').slice(0,5) %></div>
+            </td>
+            <td class="td" style="max-width: 260px;">
+              <div style="max-height: 70px; overflow-y: auto; white-space: pre-wrap; font-size: 12.5px; background: #f8fafc; padding: 6px 8px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                <%= tareaTxt %>
+              </div>
+            </td>
+            <td class="td">
+              <% if (n.comprobante) { %>
+                <a href="<%= n.comprobante %>" target="_blank" class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1 shadow-xs" 
+                   style="background-color: #0b6bcb; border-color: #0b6bcb; color: #ffffff !important; font-weight: 600; border-radius: 8px; padding: 5px 14px; font-size: 13px; text-decoration: none;" 
+                   title="Ver fotografía de evidencia">
+                  <i class="bi bi-eye-fill" style="color: #ffffff !important;"></i> <span style="color: #ffffff !important;">Ver</span>
+                </a>
+              <% } else { %>
+                <span class="text-muted fs-8">Sin foto</span>
+              <% } %>
+            </td>
             <td class="td">
               <span class="chip <%= n.estado==1?'chip--pend':(n.estado==2?'chip--ok':'chip--err') %>">
-                <%= n.estado==1?'Pendiente':(n.estado==2?'Aprobado':'Rechazado') %>
+                <%= n.estado==1?'⏳ En Revisión':(n.estado==2?'✅ Horas Sumadas':'❌ Observado') %>
               </span>
             </td>
-            <td class="td muted"><%= new Date(n.creado_en).toLocaleString('es-BO') %></td>
+            <td class="td" style="max-width: 200px;">
+              <% if (n.observacion_admin) { %>
+                <span class="text-danger fs-8 fw-medium" style="display: block; line-height: 1.3;">
+                  <%= n.observacion_admin %>
+                </span>
+              <% } else { %>
+                <span class="text-muted fs-8">—</span>
+              <% } %>
+            </td>
+            <td class="td muted fs-8"><%= new Date(n.creado_en).toLocaleString('es-BO') %></td>
           </tr>
         <% }) %>
         </tbody>
       </table>
-    </div>
-
-   
     </div>
     <% } %>
   </section>
