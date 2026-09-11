@@ -64,7 +64,182 @@ router.get('/admin/reportes', requireAdmin, async (req, res) => {
     console.error(e);
     res.status(500).send('Error al cargar la vista de reportes.');
   }
-});
+});// Helper para consultar Asistencias y Horas Extras Aprobadas de manera independiente (evita conflictos de colación SQL)
+async function fetchCombinedRecords({ id_carrera, estado_duracion, id_usuario, id_lugar, nombre, fechasRaw, modalidad }) {
+  const mod = (modalidad || '').trim().toUpperCase();
+
+  // 1. Consulta de Asistencias Ordinarias + Teletrabajo
+  let rowsA = [];
+  if (mod !== 'HORA_EXTRA' && mod !== 'HORAS_EXTRAS') {
+    const whereA = ["a.estado != 'ANULADO'"];
+    const paramsA = [];
+
+    if (id_carrera) {
+      whereA.push('u.id_carrera = ?');
+      paramsA.push(id_carrera);
+    }
+    if (id_usuario) {
+      whereA.push('a.id_usuario = ?');
+      paramsA.push(id_usuario);
+    } else if (nombre) {
+      whereA.push('u.nombre LIKE ?');
+      paramsA.push(`%${nombre}%`);
+    }
+    if (id_lugar) {
+      whereA.push('a.id_lugar = ?');
+      paramsA.push(id_lugar);
+    }
+    if (estado_duracion === 'FINALIZADO') {
+      whereA.push("a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL AND a.estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO')");
+    } else if (estado_duracion === 'EN_CURSO') {
+      whereA.push("a.hora_salida IS NULL AND a.fecha = CURDATE() AND a.estado NOT IN ('ANULADO', 'RECHAZADO')");
+    } else if (estado_duracion === 'OBSERVADO') {
+      whereA.push("(a.estado = 'OBSERVADO' OR (a.hora_salida IS NULL AND a.fecha < CURDATE()))");
+    }
+
+    if (mod === 'PRESENCIAL') {
+      whereA.push("(ag.modalidad = 'PRESENCIAL' OR ag.modalidad IS NULL)");
+    } else if (mod === 'TELETRABAJO') {
+      whereA.push("ag.modalidad = 'TELETRABAJO'");
+    }
+
+    if (fechasRaw) {
+      if (fechasRaw.includes(' to ') || fechasRaw.includes(' a ')) {
+        const parts = fechasRaw.split(/\s+(?:to|a)\s+/);
+        if (parts.length === 2 && parts[0] && parts[1]) {
+          whereA.push('a.fecha BETWEEN ? AND ?');
+          paramsA.push(parts[0].trim(), parts[1].trim());
+        } else if (parts[0]) {
+          whereA.push('a.fecha = ?');
+          paramsA.push(parts[0].trim());
+        }
+      } else {
+        const dateList = fechasRaw.split(/[,;\s]+/).map(d => d.trim()).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d));
+        if (dateList.length === 1) {
+          whereA.push('a.fecha = ?');
+          paramsA.push(dateList[0]);
+        } else if (dateList.length > 1) {
+          whereA.push(`a.fecha IN (${dateList.map(() => '?').join(', ')})`);
+          paramsA.push(...dateList);
+        }
+      }
+    }
+
+    const [resA] = await db.query(
+      `SELECT
+        CAST(a.id_asistencia AS CHAR) AS id_asistencia,
+        u.id_usuario,
+        u.nombre AS usuario_nombre,
+        u.CI AS usuario_ci,
+        u.id_carrera,
+        DATE_FORMAT(a.fecha, '%Y-%m-%d') AS fecha,
+        l.id_lugar,
+        l.nombre AS lugar_nombre,
+        l.tipo AS lugar_tipo,
+        COALESCE(ag.modalidad, 'PRESENCIAL') AS modalidad,
+        TIME_FORMAT(a.hora_entrada, '%H:%i') AS hora_entrada,
+        TIME_FORMAT(a.hora_salida, '%H:%i') AS hora_salida,
+        IF(a.hora_salida IS NOT NULL AND a.hora_entrada IS NOT NULL,
+           TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)),
+           NULL
+        ) AS duracion_segundos,
+        a.estado AS asistencia_estado,
+        r.id_reporte,
+        r.tarea,
+        r.comprobante,
+        COALESCE(r.observacion, a.observacion) AS observacion
+      FROM asistencias a
+      INNER JOIN usuarios u ON u.id_usuario = a.id_usuario
+      LEFT JOIN asistencias_geo ag ON ag.id_asistencia = a.id_asistencia
+      LEFT JOIN lugares l ON l.id_lugar = a.id_lugar
+      LEFT JOIN reportes r ON r.id_asistencia = a.id_asistencia
+      ${whereA.length ? 'WHERE ' + whereA.join(' AND ') : ''}`,
+      paramsA
+    );
+    rowsA = resA || [];
+  }
+
+  // 2. Consulta de Horas Extras Aprobadas
+  let rowsB = [];
+  const includeHE = mod !== 'PRESENCIAL' && mod !== 'TELETRABAJO' && !id_lugar && estado_duracion !== 'OBSERVADO' && estado_duracion !== 'EN_CURSO';
+
+  if (includeHE) {
+    const whereB = ["n.estado = 2"];
+    const paramsB = [];
+
+    if (id_carrera) {
+      whereB.push('u.id_carrera = ?');
+      paramsB.push(id_carrera);
+    }
+    if (id_usuario) {
+      whereB.push('n.id_usuario = ?');
+      paramsB.push(id_usuario);
+    } else if (nombre) {
+      whereB.push('u.nombre LIKE ?');
+      paramsB.push(`%${nombre}%`);
+    }
+    if (fechasRaw) {
+      if (fechasRaw.includes(' to ') || fechasRaw.includes(' a ')) {
+        const parts = fechasRaw.split(/\s+(?:to|a)\s+/);
+        if (parts.length === 2 && parts[0] && parts[1]) {
+          whereB.push('n.fecha_solicitada BETWEEN ? AND ?');
+          paramsB.push(parts[0].trim(), parts[1].trim());
+        } else if (parts[0]) {
+          whereB.push('n.fecha_solicitada = ?');
+          paramsB.push(parts[0].trim());
+        }
+      } else {
+        const dateList = fechasRaw.split(/[,;\s]+/).map(d => d.trim()).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d));
+        if (dateList.length === 1) {
+          whereB.push('n.fecha_solicitada = ?');
+          paramsB.push(dateList[0]);
+        } else if (dateList.length > 1) {
+          whereB.push(`n.fecha_solicitada IN (${dateList.map(() => '?').join(', ')})`);
+          paramsB.push(...dateList);
+        }
+      }
+    }
+
+    const [resB] = await db.query(
+      `SELECT
+        CONCAT('he_', n.id_notificacion) AS id_asistencia,
+        u.id_usuario,
+        u.nombre AS usuario_nombre,
+        u.CI AS usuario_ci,
+        u.id_carrera,
+        DATE_FORMAT(n.fecha_solicitada, '%Y-%m-%d') AS fecha,
+        NULL AS id_lugar,
+        'Horas Extras' AS lugar_nombre,
+        'HORA_EXTRA' AS lugar_tipo,
+        'HORA_EXTRA' AS modalidad,
+        TIME_FORMAT(n.hora_inicio, '%H:%i') AS hora_entrada,
+        TIME_FORMAT(n.hora_fin, '%H:%i') AS hora_salida,
+        IF(n.hora_fin IS NOT NULL AND n.hora_inicio IS NOT NULL,
+           TIMESTAMPDIFF(SECOND, TIMESTAMP(n.fecha_solicitada, n.hora_inicio), TIMESTAMP(n.fecha_solicitada, n.hora_fin)),
+           NULL
+        ) AS duracion_segundos,
+        'FINALIZADO' AS asistencia_estado,
+        NULL AS id_reporte,
+        n.tarea,
+        n.comprobante,
+        n.observacion_admin AS observacion
+      FROM notificaciones n
+      INNER JOIN usuarios u ON u.id_usuario = n.id_usuario
+      ${whereB.length ? 'WHERE ' + whereB.join(' AND ') : ''}`,
+      paramsB
+    );
+    rowsB = resB || [];
+  }
+
+  const allRows = [...rowsA, ...rowsB];
+  allRows.sort((a, b) => {
+    const keyA = `${a.fecha || ''} ${a.hora_entrada || ''}`;
+    const keyB = `${b.fecha || ''} ${b.hora_entrada || ''}`;
+    return keyB.localeCompare(keyA);
+  });
+
+  return allRows;
+}
 
 /* ==========================================================================
    API: LISTAR JORNADAS Y BITÁCORAS (PAGINADO Y FILTRADO)
@@ -73,6 +248,7 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
   try {
     const id_carrera = req.query.id_carrera ? parseInt(req.query.id_carrera, 10) : (req.query.carrera ? parseInt(req.query.carrera, 10) || null : null);
     const estado_duracion = (req.query.estado_duracion || '').trim();
+    const modalidad = (req.query.modalidad || '').trim();
     const id_usuario = req.query.id_usuario ? parseInt(req.query.id_usuario, 10) : null;
     const id_lugar = req.query.id_lugar ? parseInt(req.query.id_lugar, 10) : null;
     const nombre = (req.query.nombre || req.query.q || '').trim();
@@ -82,89 +258,30 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
     size = Math.min(size, 200);
 
     const offset = (page - 1) * size;
-    const where = ["a.estado != 'ANULADO'"];
-    const params = [];
 
-    if (id_carrera) {
-      where.push('u.id_carrera = ?');
-      params.push(id_carrera);
-    }
-    if (estado_duracion === 'FINALIZADO') {
-      where.push("a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL AND a.estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO')");
-    } else if (estado_duracion === 'EN_CURSO') {
-      where.push("a.hora_salida IS NULL AND a.fecha = CURDATE() AND a.estado NOT IN ('ANULADO', 'RECHAZADO')");
-    } else if (estado_duracion === 'OBSERVADO') {
-      where.push("(a.estado = 'OBSERVADO' OR (a.hora_salida IS NULL AND a.fecha < CURDATE()))");
-    }
+    // 1. Obtener registros combinados sin colisiones de colación SQL
+    const allRows = await fetchCombinedRecords({
+      id_carrera,
+      estado_duracion,
+      id_usuario,
+      id_lugar,
+      nombre,
+      fechasRaw,
+      modalidad
+    });
 
-    if (id_usuario) {
-      where.push('a.id_usuario = ?');
-      params.push(id_usuario);
-    } else if (nombre) {
-      where.push('u.nombre LIKE ?');
-      params.push(`%${nombre}%`);
-    }
-    if (id_lugar) {
-      where.push('a.id_lugar = ?');
-      params.push(id_lugar);
-    }
-    if (fechasRaw) {
-      if (fechasRaw.includes(' to ') || fechasRaw.includes(' a ')) {
-        const parts = fechasRaw.split(/\s+(?:to|a)\s+/);
-        if (parts.length === 2 && parts[0] && parts[1]) {
-          where.push('a.fecha BETWEEN ? AND ?');
-          params.push(parts[0].trim(), parts[1].trim());
-        } else if (parts[0]) {
-          where.push('a.fecha = ?');
-          params.push(parts[0].trim());
-        }
-      } else {
-        const dateList = fechasRaw.split(/[,;\s]+/).map(d => d.trim()).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d));
-        if (dateList.length === 1) {
-          where.push('a.fecha = ?');
-          params.push(dateList[0]);
-        } else if (dateList.length > 1) {
-          where.push(`a.fecha IN (${dateList.map(() => '?').join(', ')})`);
-          params.push(...dateList);
-        }
+    const total = allRows.length;
+
+    // 2. Total de horas acumuladas calculadas en segundos para el filtro actual (Excluye OBSERVADO, RECHAZADO, ANULADO)
+    let totalSegundos = 0;
+    for (const r of allRows) {
+      if (r.duracion_segundos != null && !['ANULADO', 'OBSERVADO', 'RECHAZADO'].includes(r.asistencia_estado)) {
+        totalSegundos += Number(r.duracion_segundos) || 0;
       }
     }
-
-    const whereSQL = where.length ? `WHERE ${where.join(' AND ')}` : '';
-
-    // Total de registros coincidentes
-    const [countRows] = await db.query(
-      `SELECT COUNT(*) AS total
-       FROM asistencias a
-       INNER JOIN usuarios u ON u.id_usuario = a.id_usuario
-       ${whereSQL}`,
-      params
-    );
-    const total = countRows[0]?.total || 0;
-
-    // Total de horas acumuladas calculadas en segundos para el filtro actual (Excluye OBSERVADO, RECHAZADO, ANULADO)
-    const [totalsRows] = await db.query(
-      `SELECT COALESCE(
-         SUM(
-           TIMESTAMPDIFF(
-             SECOND,
-             TIMESTAMP(a.fecha, a.hora_entrada),
-             TIMESTAMP(a.fecha, a.hora_salida)
-           )
-         ), 0
-       ) AS total_segundos
-       FROM asistencias a
-       INNER JOIN usuarios u ON u.id_usuario = a.id_usuario
-       ${whereSQL}
-       AND a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL
-       AND a.estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO')`,
-      params
-    );
-
-    const totalSegundos = totalsRows[0]?.total_segundos || 0;
     const totalAcumulada = formatSecondsToHHMMSS(totalSegundos);
 
-    // Consulta de información del usuario si está seleccionado
+    // 3. Consulta de información del usuario si está seleccionado
     let usuarioInfo = null;
     if (id_usuario) {
       const [uRows] = await db.query(
@@ -179,57 +296,22 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
       }
     }
 
-    // Consulta unificada: Asistencia + Modalidad (asistencias_geo) + Lugar + Bitácora (Reporte)
-    const [rows] = await db.query(
-      `SELECT
-         a.id_asistencia,
-         u.id_usuario,
-         u.nombre AS usuario_nombre,
-         u.CI AS usuario_ci,
-         DATE_FORMAT(a.fecha, '%Y-%m-%d') AS fecha,
-         l.nombre AS lugar_nombre,
-         l.tipo AS lugar_tipo,
-         COALESCE(ag.modalidad, 'PRESENCIAL') AS modalidad,
-         
-         -- Horarios de entrada y salida
-         TIME_FORMAT(a.hora_entrada, '%H:%i') AS hora_entrada,
-         TIME_FORMAT(a.hora_salida, '%H:%i') AS hora_salida,
-         
-         -- Duración en segundos si hay salida registrada
-         IF(a.hora_salida IS NOT NULL AND a.hora_entrada IS NOT NULL,
-            TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)),
-            NULL
-         ) AS duracion_segundos,
-         
-         a.estado AS asistencia_estado,
-         
-         -- Campos provenientes de la bitácora
-         r.id_reporte,
-         r.tarea,
-         r.comprobante,
-         COALESCE(r.observacion, a.observacion) AS observacion
-       FROM asistencias a
-       INNER JOIN usuarios u ON u.id_usuario = a.id_usuario
-       LEFT JOIN asistencias_geo ag ON ag.id_asistencia = a.id_asistencia
-       LEFT JOIN lugares l ON l.id_lugar = a.id_lugar
-       LEFT JOIN reportes r ON r.id_asistencia = a.id_asistencia
-       ${whereSQL}
-       ORDER BY a.fecha DESC, a.id_asistencia DESC
-       LIMIT ? OFFSET ?`,
-      [...params, size, offset]
-    );
+    // 4. Registros paginados
+    const pagedRows = allRows.slice(offset, offset + size);
 
     // Formato de fecha actual YYYY-MM-DD para comparación estricta de cadenas
     const now = new Date();
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-    const formattedRows = rows.map((r) => {
+    const formattedRows = pagedRows.map((r) => {
       const isPast = Boolean(r.fecha && r.fecha < todayStr);
       let estadoCalculado = 'FINALIZADO';
       let horasDiaText = '00:00';
 
-      // 1. Si el estado en BD es explícitamente OBSERVADO (ej. Teletrabajo pendiente de aprobación)
-      if (r.asistencia_estado === 'OBSERVADO') {
+      if (r.modalidad === 'HORA_EXTRA') {
+        estadoCalculado = 'FINALIZADO';
+        horasDiaText = r.duracion_segundos != null ? formatSecondsToHHMM(r.duracion_segundos) : '00:00';
+      } else if (r.asistencia_estado === 'OBSERVADO') {
         estadoCalculado = 'OBSERVADO';
         horasDiaText = 'Observación';
       } else if (r.asistencia_estado === 'RECHAZADO') {
@@ -253,104 +335,117 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
       };
     });
 
-    // Estadísticas adicionales dinámicas para el panel lateral derecho:
+    // 5. Estadísticas dinámicas para el panel lateral derecho:
     let statsData = {};
 
     if (id_usuario || (usuarioInfo && usuarioInfo.id_usuario)) {
-      const targetUserId = id_usuario || usuarioInfo.id_usuario;
-      // 1. Estadísticas del usuario individual
-      const [userStats] = await db.query(
-        `SELECT
-           COUNT(*) AS total_asistencias,
-           SUM(IF(a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL AND a.estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO'), 1, 0)) AS asistencias_finalizadas,
-           SUM(IF(a.hora_salida IS NULL AND a.estado NOT IN ('ANULADO', 'RECHAZADO'), 1, 0)) AS asistencias_en_curso,
-           AVG(IF(a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL AND a.estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO'),
-                  TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)),
-                  NULL
-           )) AS promedio_segundos,
-           SUM(IF(r.tarea IS NOT NULL AND TRIM(r.tarea) != '', 1, 0)) AS bitacoras_completadas,
-           SUM(IF(r.comprobante IS NOT NULL AND TRIM(r.comprobante) != '', 1, 0)) AS comprobantes_subidos
-         FROM asistencias a
-         LEFT JOIN reportes r ON r.id_asistencia = a.id_asistencia
-         WHERE a.id_usuario = ? AND a.estado != 'ANULADO'`,
-        [targetUserId]
-      );
+      // 5.1. Estadísticas del usuario individual calculadas sobre los registros
+      const finalizadas = allRows.filter(r => r.duracion_segundos != null && !['ANULADO', 'OBSERVADO', 'RECHAZADO'].includes(r.asistencia_estado));
+      const enCurso = allRows.filter(r => !r.hora_salida && !['ANULADO', 'RECHAZADO'].includes(r.asistencia_estado));
+      const completadasBit = allRows.filter(r => r.tarea && r.tarea.trim());
+      const compSubidos = allRows.filter(r => r.comprobante && r.comprobante.trim());
 
-      // Desglose por obra / lugar (horas aprobadas)
-      const [lugaresDesglose] = await db.query(
-        `SELECT
-           COALESCE(l.nombre, 'Sin lugar asignado') AS lugar_nombre,
-           l.tipo AS lugar_tipo,
-           COUNT(a.id_asistencia) AS total_dias,
-           COALESCE(SUM(
-             IF(a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL AND a.estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO'),
-                TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)),
-                0)
-           ), 0) AS total_segundos
-         FROM asistencias a
-         LEFT JOIN lugares l ON l.id_lugar = a.id_lugar
-         WHERE a.id_usuario = ? AND a.estado != 'ANULADO'
-         GROUP BY l.id_lugar, l.nombre, l.tipo
-         ORDER BY total_segundos DESC`,
-        [targetUserId]
-      );
-
-      const totalSeg = totalSegundos || 1;
-      const formattedLugares = lugaresDesglose.map(l => ({
-        ...l,
-        horas_formateadas: formatSecondsToHHMM(l.total_segundos),
-        horas_decimal: (l.total_segundos / 3600).toFixed(1),
-        porcentaje: Math.min(100, Math.round((l.total_segundos / (totalSegundos || 1)) * 100))
-      }));
-
-      const promSeg = Math.round(userStats[0]?.promedio_segundos || 0);
+      const sumFinalizadas = finalizadas.reduce((acc, curr) => acc + (Number(curr.duracion_segundos) || 0), 0);
+      const promSeg = finalizadas.length > 0 ? Math.round(sumFinalizadas / finalizadas.length) : 0;
       const promHoras = (promSeg / 3600).toFixed(1);
+
+      // Desglose por obra / lugar (incluye Horas Extras)
+      const lugarMap = {};
+      allRows.forEach(r => {
+        const key = r.lugar_nombre || 'Sin lugar asignado';
+        if (!lugarMap[key]) {
+          lugarMap[key] = {
+            lugar_nombre: key,
+            lugar_tipo: r.lugar_tipo || '',
+            total_dias: 0,
+            total_segundos: 0
+          };
+        }
+        lugarMap[key].total_dias += 1;
+        if (r.duracion_segundos != null && !['ANULADO', 'OBSERVADO', 'RECHAZADO'].includes(r.asistencia_estado)) {
+          lugarMap[key].total_segundos += Number(r.duracion_segundos) || 0;
+        }
+      });
+
+      const formattedLugares = Object.values(lugarMap)
+        .sort((a, b) => b.total_segundos - a.total_segundos)
+        .map(l => ({
+          ...l,
+          horas_formateadas: formatSecondsToHHMM(l.total_segundos),
+          horas_decimal: (l.total_segundos / 3600).toFixed(1),
+          porcentaje: Math.min(100, Math.round((l.total_segundos / (totalSegundos || 1)) * 100))
+        }));
 
       statsData = {
         tipo: 'usuario',
-        total_asistencias: userStats[0]?.total_asistencias || 0,
-        asistencias_finalizadas: userStats[0]?.asistencias_finalizadas || 0,
-        asistencias_en_curso: userStats[0]?.asistencias_en_curso || 0,
+        total_asistencias: allRows.length,
+        asistencias_finalizadas: finalizadas.length,
+        asistencias_en_curso: enCurso.length,
         promedio_horas_dia: `${promHoras} hrs/día`,
-        bitacoras_completadas: userStats[0]?.bitacoras_completadas || 0,
-        comprobantes_subidos: userStats[0]?.comprobantes_subidos || 0,
+        bitacoras_completadas: completadasBit.length,
+        comprobantes_subidos: compSubidos.length,
         lugares_desglose: formattedLugares
       };
     } else {
-      // 2. Estadísticas globales (Ranking de horas oficiales por pasante y resumen general)
-      const [topUsers] = await db.query(
-        `SELECT
-           u.id_usuario,
-           u.nombre,
-           u.CI,
-           COALESCE(c.nombre, '') AS carrera,
-           u.universidad,
-           COUNT(a.id_asistencia) AS total_dias,
-           COALESCE(
-             SUM(
-               IF(a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL AND a.estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO'),
-                  TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)),
-                  0)
-             ), 0
-           ) AS total_segundos
+      // 5.2. Estadísticas globales (Ranking de horas oficiales por pasante sin UNION colaciones)
+      const [users] = await db.query(
+        `SELECT u.id_usuario, u.nombre, u.CI, u.universidad, COALESCE(c.nombre, '') AS carrera
          FROM usuarios u
          LEFT JOIN carreras c ON u.id_carrera = c.id_carrera
-         LEFT JOIN asistencias a ON a.id_usuario = u.id_usuario AND a.estado != 'ANULADO'
-         WHERE u.rol = 0
-         GROUP BY u.id_usuario, u.nombre, u.CI, c.nombre, u.universidad
-         ORDER BY total_segundos DESC
-         LIMIT 6`
+         WHERE u.rol = 0`
       );
 
-      const maxSegundos = topUsers.length > 0 && topUsers[0].total_segundos > 0 ? topUsers[0].total_segundos : 1;
+      const [userAsistencias] = await db.query(
+        `SELECT 
+           id_usuario,
+           COUNT(id_asistencia) AS total_dias,
+           COALESCE(SUM(IF(hora_entrada IS NOT NULL AND hora_salida IS NOT NULL AND estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO'),
+                           TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha, hora_entrada), TIMESTAMP(fecha, hora_salida)),
+                           0)), 0) AS total_segundos
+         FROM asistencias
+         WHERE estado != 'ANULADO'
+         GROUP BY id_usuario`
+      );
 
-      const formattedTop = topUsers.map((u, idx) => ({
-        id_usuario: u.id_usuario,
-        nombre: u.nombre,
-        CI: u.CI,
-        carrera: u.carrera,
-        universidad: u.universidad,
-        total_dias: u.total_dias,
+      const [userHE] = await db.query(
+        `SELECT 
+           id_usuario,
+           COUNT(id_notificacion) AS total_dias_he,
+           COALESCE(SUM(IF(hora_inicio IS NOT NULL AND hora_fin IS NOT NULL,
+                           TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha_solicitada, hora_inicio), TIMESTAMP(fecha_solicitada, hora_fin)),
+                           0)), 0) AS total_segundos_he
+         FROM notificaciones
+         WHERE estado = 2
+         GROUP BY id_usuario`
+      );
+
+      const mapAsist = {};
+      (userAsistencias || []).forEach(a => { mapAsist[a.id_usuario] = a; });
+      const mapHE = {};
+      (userHE || []).forEach(h => { mapHE[h.id_usuario] = h; });
+
+      const userRankList = (users || []).map(u => {
+        const a = mapAsist[u.id_usuario] || { total_dias: 0, total_segundos: 0 };
+        const h = mapHE[u.id_usuario] || { total_dias_he: 0, total_segundos_he: 0 };
+        const totalSeg = (Number(a.total_segundos) || 0) + (Number(h.total_segundos_he) || 0);
+        const totalDias = (Number(a.total_dias) || 0) + (Number(h.total_dias_he) || 0);
+        return {
+          id_usuario: u.id_usuario,
+          nombre: u.nombre,
+          CI: u.CI,
+          carrera: u.carrera,
+          universidad: u.universidad,
+          total_dias: totalDias,
+          total_segundos: totalSeg
+        };
+      });
+
+      userRankList.sort((a, b) => b.total_segundos - a.total_segundos);
+      const top6 = userRankList.slice(0, 6);
+      const maxSegundos = top6.length > 0 && top6[0].total_segundos > 0 ? top6[0].total_segundos : 1;
+
+      const formattedTop = top6.map((u, idx) => ({
+        ...u,
         horas_formateadas: formatSecondsToHHMMSS(u.total_segundos),
         horas_decimal: (u.total_segundos / 3600).toFixed(1),
         porcentaje_relativo: Math.min(100, Math.round((u.total_segundos / maxSegundos) * 100)),
@@ -360,66 +455,65 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
       statsData = {
         tipo: 'global',
         top_usuarios: formattedTop,
-        total_pasantes_ranking: topUsers.length
+        total_pasantes_ranking: users.length
       };
     }
 
-    // 3. Series temporales para gráficos interactivos (Horas oficiales por Semana y por Día de la Semana)
-    const [semanasRows] = await db.query(
-      `SELECT
-         DATE_FORMAT(DATE_SUB(a.fecha, INTERVAL WEEKDAY(a.fecha) DAY), '%Y-%m-%d') AS semana_inicio,
-         CONCAT('Sem ', DATE_FORMAT(a.fecha, '%v')) AS semana_label,
-         ROUND(SUM(TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida))) / 3600, 1) AS horas,
-         COUNT(a.id_asistencia) AS total_dias
-       FROM asistencias a
-       INNER JOIN usuarios u ON u.id_usuario = a.id_usuario
-       ${whereSQL}
-       AND a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL
-       AND a.estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO')
-       GROUP BY semana_inicio, semana_label
-       ORDER BY semana_inicio ASC
-       LIMIT 15`,
-      params
-    );
-
+    // 5.3. Series temporales para gráficos interactivos (Horas oficiales por Semana y por Día de la Semana)
+    const weekMap = {};
     const diasNombresList = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-    const [diasSemanaRows] = await db.query(
-      `SELECT
-         WEEKDAY(a.fecha) AS dia_idx,
-         ROUND(SUM(TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida))) / 3600, 1) AS total_horas,
-         ROUND(AVG(TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida))) / 3600, 1) AS promedio_horas,
-         COUNT(a.id_asistencia) AS total_asistencias
-       FROM asistencias a
-       INNER JOIN usuarios u ON u.id_usuario = a.id_usuario
-       ${whereSQL}
-       AND a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL
-       AND a.estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO')
-       GROUP BY dia_idx
-       ORDER BY dia_idx ASC`,
-      params
-    );
-
-    const diasMap = {};
-    diasSemanaRows.forEach(d => {
-      diasMap[d.dia_idx] = d;
-    });
-
-    const seriesDias = [0, 1, 2, 3, 4, 5, 6].map(idx => ({
+    const diaStats = [0, 1, 2, 3, 4, 5, 6].map(idx => ({
       dia_idx: idx,
       dia_nombre: diasNombresList[idx],
-      total_horas: diasMap[idx] ? Number(diasMap[idx].total_horas) : 0,
-      promedio_horas: diasMap[idx] ? Number(diasMap[idx].promedio_horas) : 0,
-      total_asistencias: diasMap[idx] ? diasMap[idx].total_asistencias : 0
+      total_horas: 0,
+      promedio_horas: 0,
+      total_asistencias: 0
     }));
 
-    statsData.series_semanal = semanasRows.map(s => ({
-      semana_inicio: s.semana_inicio,
-      semana_label: s.semana_label,
-      horas: Number(s.horas || 0),
-      total_dias: s.total_dias
-    }));
+    allRows.forEach(r => {
+      if (r.duracion_segundos != null && !['ANULADO', 'OBSERVADO', 'RECHAZADO'].includes(r.asistencia_estado) && r.fecha) {
+        const d = new Date(r.fecha + 'T12:00:00');
+        if (!isNaN(d.getTime())) {
+          // Semana inicio (Lunes)
+          const day = d.getDay();
+          const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+          const mon = new Date(d);
+          mon.setDate(diff);
+          const monStr = `${mon.getFullYear()}-${String(mon.getMonth() + 1).padStart(2, '0')}-${String(mon.getDate()).padStart(2, '0')}`;
+          if (!weekMap[monStr]) {
+            weekMap[monStr] = {
+              semana_inicio: monStr,
+              semana_label: `Sem ${monStr.slice(5)}`,
+              horas: 0,
+              total_dias: 0
+            };
+          }
+          weekMap[monStr].horas += Number((r.duracion_segundos / 3600).toFixed(2));
+          weekMap[monStr].total_dias += 1;
 
-    statsData.series_dias_semana = seriesDias;
+          // Día de la semana (0=Lunes ... 6=Domingo)
+          const diaIdx = (day === 0 ? 6 : day - 1);
+          diaStats[diaIdx].total_horas += Number((r.duracion_segundos / 3600).toFixed(2));
+          diaStats[diaIdx].total_asistencias += 1;
+        }
+      }
+    });
+
+    const series_semanal = Object.values(weekMap)
+      .sort((a, b) => a.semana_inicio.localeCompare(b.semana_inicio))
+      .slice(-15)
+      .map(s => ({
+        ...s,
+        horas: Number(s.horas.toFixed(1))
+      }));
+
+    diaStats.forEach(d => {
+      d.total_horas = Number(d.total_horas.toFixed(1));
+      d.promedio_horas = d.total_asistencias > 0 ? Number((d.total_horas / d.total_asistencias).toFixed(1)) : 0;
+    });
+
+    statsData.series_semanal = series_semanal;
+    statsData.series_dias_semana = diaStats;
 
     res.json({
       ok: true,
@@ -444,14 +538,36 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
    ========================================================================== */
 router.post('/api/admin/reportes/:id_asistencia', requireAdmin, async (req, res) => {
   try {
-    const id_asistencia = parseInt(req.params.id_asistencia, 10);
+    const rawId = String(req.params.id_asistencia || '').trim();
     const { observacion, hora_entrada, hora_salida } = req.body || {};
 
-    if (!id_asistencia) return res.status(400).json({ ok: false, msg: 'ID de asistencia no válido' });
+    if (!rawId) return res.status(400).json({ ok: false, msg: 'ID no válido' });
 
     const valEntrada = hora_entrada && hora_entrada.trim() ? hora_entrada.trim() : null;
     const valSalida = hora_salida && hora_salida.trim() && hora_salida.trim() !== '-' ? hora_salida.trim() : null;
     const valObs = observacion && observacion.trim() ? observacion.trim() : null;
+
+    if (rawId.startsWith('he_')) {
+      const idNotif = parseInt(rawId.replace('he_', ''), 10);
+      await db.query(
+        `UPDATE notificaciones 
+         SET hora_inicio = ?, hora_fin = ?, observacion_admin = ?
+         WHERE id_notificacion = ?`,
+        [valEntrada, valSalida, valObs, idNotif]
+      );
+      // Actualizar también en reportes si existe bitácora insertada
+      await db.query(
+        `UPDATE reportes r
+         INNER JOIN notificaciones n ON n.id_usuario = r.id_usuario AND n.fecha_solicitada = r.fecha
+         SET r.hora_inicio = ?, r.hora_fin = ?, r.observacion = ?
+         WHERE n.id_notificacion = ? AND r.id_asistencia IS NULL`,
+        [valEntrada, valSalida, valObs, idNotif]
+      );
+      return res.json({ ok: true, msg: 'Horas extras actualizadas correctamente' });
+    }
+
+    const id_asistencia = parseInt(rawId, 10);
+    if (!id_asistencia) return res.status(400).json({ ok: false, msg: 'ID de asistencia no válido' });
 
     // Actualizar horas y observación en la tabla asistencias activando candado EDITADO_ADMIN
     await db.query(
@@ -475,11 +591,26 @@ router.post('/api/admin/reportes/:id_asistencia', requireAdmin, async (req, res)
 });
 
 /* ==========================================================================
-   API: ANULAR / ELIMINAR ASISTENCIA (CANDADO ANULADO)
+   API: ANULAR / ELIMINAR ASISTENCIA O HORAS EXTRAS (CANDADO ANULADO)
    ========================================================================== */
 router.delete('/api/admin/reportes/:id_asistencia', requireAdmin, async (req, res) => {
   try {
-    const id_asistencia = parseInt(req.params.id_asistencia, 10);
+    const rawId = String(req.params.id_asistencia || '').trim();
+    if (!rawId) return res.status(400).json({ ok: false, msg: 'ID no válido' });
+
+    if (rawId.startsWith('he_')) {
+      const idNotif = parseInt(rawId.replace('he_', ''), 10);
+      await db.query("UPDATE notificaciones SET estado = 3 WHERE id_notificacion = ?", [idNotif]);
+      await db.query(
+        `DELETE r FROM reportes r
+         INNER JOIN notificaciones n ON n.id_usuario = r.id_usuario AND n.fecha_solicitada = r.fecha
+         WHERE n.id_notificacion = ? AND r.id_asistencia IS NULL`,
+        [idNotif]
+      );
+      return res.json({ ok: true, msg: 'Registro de horas extras anulado correctamente' });
+    }
+
+    const id_asistencia = parseInt(rawId, 10);
     if (!id_asistencia) return res.status(400).json({ ok: false, msg: 'ID de asistencia no válido' });
 
     await db.query("UPDATE asistencias SET estado = 'ANULADO' WHERE id_asistencia = ?", [id_asistencia]);
@@ -666,57 +797,21 @@ router.get('/admin/reportes/export', requireAdmin, async (req, res) => {
   try {
     const id_carrera = req.query.id_carrera ? parseInt(req.query.id_carrera, 10) : (req.query.carrera ? parseInt(req.query.carrera, 10) || null : null);
     const estado_duracion = (req.query.estado_duracion || '').trim();
+    const modalidad = (req.query.modalidad || '').trim();
     const id_usuario = req.query.id_usuario ? parseInt(req.query.id_usuario, 10) : null;
     const id_lugar = req.query.id_lugar ? parseInt(req.query.id_lugar, 10) : null;
     const nombre = (req.query.nombre || req.query.q || '').trim();
     const fechasRaw = (req.query.fechas || req.query.fecha || '').trim();
 
-    const where = ["a.estado != 'ANULADO'"];
-    const params = [];
-    if (id_carrera) {
-      where.push('u.id_carrera = ?');
-      params.push(id_carrera);
-    }
-    if (estado_duracion === 'FINALIZADO') {
-      where.push("a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL AND a.estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO')");
-    } else if (estado_duracion === 'EN_CURSO') {
-      where.push("a.hora_salida IS NULL AND a.fecha = CURDATE() AND a.estado NOT IN ('ANULADO', 'RECHAZADO')");
-    } else if (estado_duracion === 'OBSERVADO') {
-      where.push("(a.estado = 'OBSERVADO' OR (a.hora_salida IS NULL AND a.fecha < CURDATE()))");
-    }
-    if (id_usuario) {
-      where.push('a.id_usuario = ?');
-      params.push(id_usuario);
-    } else if (nombre) {
-      where.push('u.nombre LIKE ?');
-      params.push(`%${nombre}%`);
-    }
-    if (id_lugar) {
-      where.push('a.id_lugar = ?');
-      params.push(id_lugar);
-    }
-    if (fechasRaw) {
-      if (fechasRaw.includes(' to ') || fechasRaw.includes(' a ')) {
-        const parts = fechasRaw.split(/\s+(?:to|a)\s+/);
-        if (parts.length === 2 && parts[0] && parts[1]) {
-          where.push('a.fecha BETWEEN ? AND ?');
-          params.push(parts[0].trim(), parts[1].trim());
-        } else if (parts[0]) {
-          where.push('a.fecha = ?');
-          params.push(parts[0].trim());
-        }
-      } else {
-        const dateList = fechasRaw.split(/[,;\s]+/).map(d => d.trim()).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d));
-        if (dateList.length === 1) {
-          where.push('a.fecha = ?');
-          params.push(dateList[0]);
-        } else if (dateList.length > 1) {
-          where.push(`a.fecha IN (${dateList.map(() => '?').join(', ')})`);
-          params.push(...dateList);
-        }
-      }
-    }
-    const whereSQL = where.length ? `WHERE ${where.join(' AND ')}` : '';
+    const reports = await fetchCombinedRecords({
+      id_carrera,
+      estado_duracion,
+      id_usuario,
+      id_lugar,
+      nombre,
+      fechasRaw,
+      modalidad
+    });
 
     let userTitle = 'Reporte General de Asistencias y Bitácoras';
     let fileSuffix = 'general';
@@ -742,51 +837,23 @@ router.get('/admin/reportes/export', requireAdmin, async (req, res) => {
       fileSuffix = `usuario_${nombre.replace(/\s+/g, '_').toLowerCase()}`;
     }
 
-    const [reports] = await db.query(
-      `SELECT
-         u.nombre, 
-         u.CI,
-         DATE_FORMAT(a.fecha, '%Y-%m-%d') AS fecha,
-         l.nombre AS lugar,
-         COALESCE(ag.modalidad, 'PRESENCIAL') AS modalidad,
-         a.estado AS asistencia_estado,
-         TIME_FORMAT(a.hora_entrada, '%H:%i:%s') AS hora_entrada,
-         TIME_FORMAT(a.hora_salida, '%H:%i:%s') AS hora_salida,
-         IF(a.hora_salida IS NOT NULL AND a.hora_entrada IS NOT NULL,
-            TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)),
-            NULL
-         ) AS duracion_segundos,
-         r.tarea, 
-         COALESCE(r.observacion, a.observacion) AS observacion
-       FROM asistencias a
-       INNER JOIN usuarios u ON u.id_usuario = a.id_usuario
-       LEFT JOIN asistencias_geo ag ON ag.id_asistencia = a.id_asistencia
-       LEFT JOIN lugares l ON l.id_lugar = a.id_lugar
-       LEFT JOIN reportes r ON r.id_asistencia = a.id_asistencia
-       ${whereSQL}
-       ORDER BY a.fecha DESC, a.id_asistencia DESC`,
-      params
-    );
+    if (modalidad === 'HORA_EXTRA' || modalidad === 'HORAS_EXTRAS') {
+      userTitle += ' [Horas Extras Aprobadas]';
+      fileSuffix += '_horas_extras';
+    } else if (modalidad === 'TELETRABAJO') {
+      userTitle += ' [Teletrabajo]';
+      fileSuffix += '_teletrabajo';
+    } else if (modalidad === 'PRESENCIAL') {
+      userTitle += ' [Presencial]';
+      fileSuffix += '_presencial';
+    }
 
-    const [totalsRows] = await db.query(
-      `SELECT COALESCE(
-         SUM(
-           TIMESTAMPDIFF(
-             SECOND,
-             TIMESTAMP(a.fecha, a.hora_entrada),
-             TIMESTAMP(a.fecha, a.hora_salida)
-           )
-         ), 0
-       ) AS total_segundos
-       FROM asistencias a
-       INNER JOIN usuarios u ON u.id_usuario = a.id_usuario
-       ${whereSQL}
-       AND a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL
-       AND a.estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO')`,
-      params
-    );
-
-    const totalSegundos = totalsRows[0]?.total_segundos || 0;
+    let totalSegundos = 0;
+    for (const r of reports) {
+      if (r.duracion_segundos != null && !['ANULADO', 'OBSERVADO', 'RECHAZADO'].includes(r.asistencia_estado)) {
+        totalSegundos += Number(r.duracion_segundos) || 0;
+      }
+    }
     const totalAcum = formatSecondsToHHMMSS(totalSegundos);
 
     const wb = new ExcelJS.Workbook();
@@ -803,7 +870,7 @@ router.get('/admin/reportes/export', requireAdmin, async (req, res) => {
     ws.getCell('A2').alignment = { vertical: 'middle' };
 
     ws.addRow([]);
-    ws.addRow(['Usuario', 'CI', 'Fecha', 'Lugar / Obra', 'Hora Entrada', 'Hora Salida', 'Duración', 'Tarea (Bitácora)', 'Observación Admin']);
+    ws.addRow(['Usuario', 'CI', 'Fecha', 'Lugar / Modalidad', 'Hora Entrada', 'Hora Salida', 'Duración', 'Tarea (Bitácora)', 'Observación Admin']);
 
     const headerRow = ws.getRow(4);
     headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
@@ -817,7 +884,7 @@ router.get('/admin/reportes/export', requireAdmin, async (req, res) => {
       { key: 'nombre', width: 26 },
       { key: 'ci', width: 14 },
       { key: 'fecha', width: 14 },
-      { key: 'lugar', width: 22 },
+      { key: 'lugar', width: 25 },
       { key: 'hora_entrada', width: 14 },
       { key: 'hora_salida', width: 14 },
       { key: 'horas_trabajadas', width: 14 },
@@ -829,8 +896,17 @@ router.get('/admin/reportes/export', requireAdmin, async (req, res) => {
       ws.addRow(['Sin registros coincidentes', '', '', '', '', '', '', '', '']);
     } else {
       for (const r of reports) {
+        let lugarTexto = r.lugar_nombre || 'N/A';
+        if (r.modalidad === 'HORA_EXTRA') {
+          lugarTexto = '⚡ Horas Extras (Aprobadas)';
+        } else if (r.modalidad === 'TELETRABAJO') {
+          lugarTexto = 'Teletrabajo (Remoto)';
+        }
+
         let horasTexto = 'En curso';
-        if (r.asistencia_estado === 'OBSERVADO') {
+        if (r.modalidad === 'HORA_EXTRA') {
+          horasTexto = r.duracion_segundos != null ? formatSecondsToHHMMSS(r.duracion_segundos) : '00:00:00';
+        } else if (r.asistencia_estado === 'OBSERVADO') {
           horasTexto = 'Observación';
         } else if (r.asistencia_estado === 'RECHAZADO') {
           horasTexto = 'Rechazado';
@@ -839,10 +915,10 @@ router.get('/admin/reportes/export', requireAdmin, async (req, res) => {
         }
 
         ws.addRow({
-          nombre: r.nombre,
-          ci: r.CI,
+          nombre: r.usuario_nombre,
+          ci: r.usuario_ci,
           fecha: r.fecha,
-          lugar: r.modalidad === 'TELETRABAJO' ? 'Teletrabajo (Remoto)' : (r.lugar || 'N/A'),
+          lugar: lugarTexto,
           hora_entrada: r.hora_entrada || '-',
           hora_salida: r.hora_salida || '-',
           horas_trabajadas: horasTexto,
@@ -874,7 +950,7 @@ router.get('/admin/reportes/export', requireAdmin, async (req, res) => {
     await wb.xlsx.write(res);
     res.end();
   } catch (e) {
-    console.error(e);
+    console.error('Error al exportar Excel:', e);
     res.status(500).send('No se pudo generar el Excel.');
   }
 });

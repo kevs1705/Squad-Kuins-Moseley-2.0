@@ -64,7 +64,24 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
         AND hora_salida IS NOT NULL
     `, [userId]);
 
-    const totalSegundos = totals[0]?.total_segundos || 0;
+    const [totalsHE] = await db.query(`
+      SELECT COALESCE(
+        SUM(
+          TIMESTAMPDIFF(
+            SECOND,
+            TIMESTAMP(fecha_solicitada, hora_inicio),
+            TIMESTAMP(fecha_solicitada, hora_fin)
+          )
+        ), 0
+      ) AS total_segundos_he
+      FROM notificaciones
+      WHERE id_usuario = ?
+        AND estado = 2
+        AND hora_inicio IS NOT NULL
+        AND hora_fin IS NOT NULL
+    `, [userId]);
+
+    const totalSegundos = (totals[0]?.total_segundos || 0) + (totalsHE[0]?.total_segundos_he || 0);
     const total_acumulada = formatSecondsToHHMMSS(totalSegundos);
 
     // 2.1. Total de horas EN OBSERVACIÓN (Teletrabajo pendiente de revisión de bitácora)
@@ -162,35 +179,54 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
     `, [userId]);
     const horaExtraActiva = heActivaRows.length > 0 ? heActivaRows[0] : null;
 
-    // 3. JORNADAS UNIFICADAS: Asistencias vinculadas a Reportes por FK (id_asistencia)
+    // 3. JORNADAS UNIFICADAS: Asistencias ordinarias + Teletrabajo + Horas Extras Aprobadas
     const [jornadas] = await db.query(`
-      SELECT 
-        a.id_asistencia,
-        DATE_FORMAT(a.fecha, '%Y-%m-%d') AS fecha,
-        a.estado AS asistencia_estado,
-        COALESCE(ag.modalidad, 'PRESENCIAL') AS modalidad,
-        l.nombre AS lugar_nombre,
-        l.tipo AS lugar_tipo,
-        
-        -- Horas unificadas
-        TIME_FORMAT(a.hora_entrada, '%H:%i') AS hora_entrada_f,
-        TIME_FORMAT(a.hora_salida, '%H:%i') AS hora_salida_f,
-        a.hora_entrada,
-        a.hora_salida,
+      SELECT * FROM (
+        SELECT 
+          CAST(a.id_asistencia AS CHAR) AS id_asistencia,
+          DATE_FORMAT(a.fecha, '%Y-%m-%d') AS fecha,
+          a.estado AS asistencia_estado,
+          COALESCE(ag.modalidad, 'PRESENCIAL') AS modalidad,
+          l.nombre AS lugar_nombre,
+          l.tipo AS lugar_tipo,
+          TIME_FORMAT(a.hora_entrada, '%H:%i') AS hora_entrada_f,
+          TIME_FORMAT(a.hora_salida, '%H:%i') AS hora_salida_f,
+          a.hora_entrada,
+          a.hora_salida,
+          r.id_reporte,
+          r.tarea,
+          r.comprobante,
+          COALESCE(r.observacion, a.observacion) AS observacion
+        FROM asistencias a
+        LEFT JOIN asistencias_geo ag ON a.id_asistencia = ag.id_asistencia
+        LEFT JOIN lugares l ON a.id_lugar = l.id_lugar
+        LEFT JOIN reportes r ON a.id_asistencia = r.id_asistencia
+        WHERE a.id_usuario = ?
+          AND a.estado != 'ANULADO'
 
-        -- Datos del Reporte de la jornada
-        r.id_reporte,
-        r.tarea,
-        r.comprobante,
-        r.observacion
-      FROM asistencias a
-      LEFT JOIN asistencias_geo ag ON a.id_asistencia = ag.id_asistencia
-      LEFT JOIN lugares l ON a.id_lugar = l.id_lugar
-      LEFT JOIN reportes r ON a.id_asistencia = r.id_asistencia
-      WHERE a.id_usuario = ?
-        AND a.estado != 'ANULADO'
-      ORDER BY a.fecha DESC, a.id_asistencia DESC
-    `, [userId]);
+        UNION ALL
+
+        SELECT
+          CONCAT('he_', n.id_notificacion) AS id_asistencia,
+          DATE_FORMAT(n.fecha_solicitada, '%Y-%m-%d') AS fecha,
+          'FINALIZADO' AS asistencia_estado,
+          'HORA_EXTRA' AS modalidad,
+          'Horas Extras' AS lugar_nombre,
+          'HORA_EXTRA' AS lugar_tipo,
+          TIME_FORMAT(n.hora_inicio, '%H:%i') AS hora_entrada_f,
+          TIME_FORMAT(n.hora_fin, '%H:%i') AS hora_salida_f,
+          n.hora_inicio AS hora_entrada,
+          n.hora_fin AS hora_salida,
+          NULL AS id_reporte,
+          n.tarea,
+          n.comprobante,
+          n.observacion_admin AS observacion
+        FROM notificaciones n
+        WHERE n.id_usuario = ?
+          AND n.estado = 2
+      ) AS q
+      ORDER BY fecha DESC, hora_entrada DESC
+    `, [userId, userId]);
     const jornadasProcesadas = jornadas.map(j => ({
       ...j,
       hora_entrada_vis: j.hora_entrada_f || '-',
@@ -535,25 +571,43 @@ router.get('/reportes/export', requireAuth, async (req, res) => {
     if (!urows || urows.length === 0) return res.status(404).send('Usuario no encontrado');
     const usuario = urows[0];
 
-    // Consulta unificada uniendo asistencias con reportes
+    // Consulta unificada uniendo asistencias con reportes y horas extras
     const [reports] = await db.query(`
-      SELECT
-        DATE_FORMAT(a.fecha, '%Y-%m-%d') AS fecha,
-        l.nombre AS lugar,
-        TIME_FORMAT(a.hora_entrada, '%H:%i:%s') AS hora_entrada,
-        TIME_FORMAT(a.hora_salida, '%H:%i:%s') AS hora_salida,
-        IF(a.hora_salida IS NOT NULL AND a.hora_entrada IS NOT NULL, 
-           TIME_FORMAT(TIMEDIFF(a.hora_salida, a.hora_entrada), '%H:%i:%s'), 
-           '00:00:00') AS horas_trabajadas,
-        r.tarea, 
-        r.observacion
-      FROM asistencias a
-      LEFT JOIN lugares l ON a.id_lugar = l.id_lugar
-      LEFT JOIN reportes r ON a.id_asistencia = r.id_asistencia
-      WHERE a.id_usuario = ?
-        AND a.estado != 'ANULADO'
-      ORDER BY a.fecha DESC
-    `, [userId]);
+      SELECT * FROM (
+        SELECT
+          DATE_FORMAT(a.fecha, '%Y-%m-%d') AS fecha,
+          l.nombre AS lugar,
+          TIME_FORMAT(a.hora_entrada, '%H:%i:%s') AS hora_entrada,
+          TIME_FORMAT(a.hora_salida, '%H:%i:%s') AS hora_salida,
+          IF(a.hora_salida IS NOT NULL AND a.hora_entrada IS NOT NULL, 
+             TIME_FORMAT(TIMEDIFF(a.hora_salida, a.hora_entrada), '%H:%i:%s'), 
+             '00:00:00') AS horas_trabajadas,
+          r.tarea, 
+          COALESCE(r.observacion, a.observacion) AS observacion
+        FROM asistencias a
+        LEFT JOIN lugares l ON a.id_lugar = l.id_lugar
+        LEFT JOIN reportes r ON a.id_asistencia = r.id_asistencia
+        WHERE a.id_usuario = ?
+          AND a.estado != 'ANULADO'
+
+        UNION ALL
+
+        SELECT
+          DATE_FORMAT(n.fecha_solicitada, '%Y-%m-%d') AS fecha,
+          '⚡ Horas Extras (Aprobadas)' AS lugar,
+          TIME_FORMAT(n.hora_inicio, '%H:%i:%s') AS hora_entrada,
+          TIME_FORMAT(n.hora_fin, '%H:%i:%s') AS hora_salida,
+          IF(n.hora_fin IS NOT NULL AND n.hora_inicio IS NOT NULL,
+             TIME_FORMAT(TIMEDIFF(n.hora_fin, n.hora_inicio), '%H:%i:%s'),
+             '00:00:00') AS horas_trabajadas,
+          n.tarea,
+          n.observacion_admin AS observacion
+        FROM notificaciones n
+        WHERE n.id_usuario = ?
+          AND n.estado = 2
+      ) AS q
+      ORDER BY fecha DESC, hora_entrada DESC
+    `, [userId, userId]);
 
     const [totals] = await db.query(`
       SELECT COALESCE(
@@ -567,11 +621,30 @@ router.get('/reportes/export', requireAuth, async (req, res) => {
       ) AS total_segundos
       FROM asistencias
       WHERE id_usuario = ? 
-        AND estado != 'ANULADO'
+        AND estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO')
         AND hora_entrada IS NOT NULL
         AND hora_salida IS NOT NULL
     `, [userId]);
-    const totalAcum = formatSecondsToHHMMSS(totals[0]?.total_segundos || 0);
+
+    const [totalsHE] = await db.query(`
+      SELECT COALESCE(
+        SUM(
+          TIMESTAMPDIFF(
+            SECOND,
+            TIMESTAMP(fecha_solicitada, hora_inicio),
+            TIMESTAMP(fecha_solicitada, hora_fin)
+          )
+        ), 0
+      ) AS total_segundos_he
+      FROM notificaciones
+      WHERE id_usuario = ?
+        AND estado = 2
+        AND hora_inicio IS NOT NULL
+        AND hora_fin IS NOT NULL
+    `, [userId]);
+
+    const totalSegundos = (totals[0]?.total_segundos || 0) + (totalsHE[0]?.total_segundos_he || 0);
+    const totalAcum = formatSecondsToHHMMSS(totalSegundos);
 
     const toExcelDate = (ymd) => {
       if (!ymd) return null;
