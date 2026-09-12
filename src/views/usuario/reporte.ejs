@@ -220,7 +220,7 @@
                   </div>
                 </div>
 
-                <div class="jornada-banner-right">
+                <div class="jornada-banner-right" style="gap: 16px;">
                   <div class="jornada-banner-divider"></div>
                   <div class="jornada-banner-circle">
                     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor"
@@ -234,12 +234,18 @@
                     <span class="jornada-hours-val">
                       <%= total_acumulada %> <small>hrs</small>
                     </span>
-                    <% if (typeof total_observadas !=='undefined' && total_observadas && total_observadas !=='00:00:00'
-                      ) { %>
-                      <small class="d-block text-warning fw-semibold" style="font-size: 0.75rem;">
-                        <i class="bi bi-clock-history me-1"></i>+<%= total_observadas %> hrs en observación
+                    
+                    <% const horasCongeladasVis = (typeof total_congeladas !== 'undefined' && total_congeladas) ? total_congeladas : ((typeof total_observadas !== 'undefined' && total_observadas) ? total_observadas : '00:00:00'); %>
+                    <% const horasDisponiblesVis = (typeof total_disponibles !== 'undefined' && total_disponibles) ? total_disponibles : total_acumulada; %>
+
+                    <div class="d-flex flex-column gap-1 mt-1">
+                      <small class="d-inline-flex align-items-center fw-semibold text-danger" style="font-size: 0.76rem;">
+                        <i class="bi bi-snowflake me-1"></i>Horas congeladas: <strong><%= horasCongeladasVis %></strong> hrs
                       </small>
-                      <% } %>
+                      <small class="d-inline-flex align-items-center fw-bold text-success" style="font-size: 0.78rem; background: rgba(34, 197, 94, 0.1); padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(34, 197, 94, 0.25);">
+                        <i class="bi bi-check-circle-fill me-1 text-success"></i>Horas disponibles: <%= horasDisponiblesVis %> hrs
+                      </small>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -483,7 +489,68 @@
 
               </div>
             </div>
+          <% 
+            const hoyBoliviaStr = (typeof hoyBolivia !== 'undefined' && hoyBolivia) ? hoyBolivia : new Date().toLocaleDateString('sv-SE', { timeZone: 'America/La_Paz' });
+            let bitacorasPendientes = 0;
+            if (jornadas && jornadas.length > 0) {
+              bitacorasPendientes = jornadas.filter(j => {
+                const faltaT = !j.tarea || j.tarea.trim() === '';
+                const faltaC = !j.comprobante || j.comprobante.trim() === '';
+                return faltaT || faltaC;
+              }).length;
+            }
+          %>
 
+          <!-- AVISO DE BITÁCORAS PENDIENTES DEL USUARIO Y CONTADOR DE CIERRE 00:00 -->
+          <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px; background: #ffffff; border: 1px solid #e2e8f0 !important; overflow: hidden;">
+            <div class="card-body p-3 d-flex align-items-center justify-content-between flex-wrap gap-3">
+              
+              <!-- Lado Izquierdo: Icono + Títulos -->
+              <div class="d-flex align-items-center gap-3">
+                <div class="d-flex align-items-center justify-content-center rounded-3" 
+                     style="width: 44px; height: 44px; background-color: <%= bitacorasPendientes > 0 ? '#fee2e2' : '#dcfce7' %>; color: <%= bitacorasPendientes > 0 ? '#dc2626' : '#15803d' %>; flex-shrink: 0;">
+                  <i class="bi <%= bitacorasPendientes > 0 ? 'bi-journal-exclamation' : 'bi-journal-check' %> fs-4"></i>
+                </div>
+                <div>
+                  <h6 class="mb-0 fw-bold text-dark" style="font-size: 0.95rem; letter-spacing: -0.2px;">Control y Estado de Bitácoras</h6>
+                  <small class="text-muted" style="font-size: 0.82rem;">Registros de actividades y comprobantes de tus jornadas</small>
+                </div>
+              </div>
+
+              <!-- Lado Derecho: Badge de Estado -->
+              <div>
+                <% if (bitacorasPendientes > 0) { %>
+                  <div class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-pill shadow-sm" 
+                       style="background-color: #fff1f2; border: 1px solid #fecdd3; color: #e11d48; font-size: 0.85rem; font-weight: 700;">
+                    <i class="bi bi-exclamation-triangle-fill" style="font-size: 0.95rem;"></i>
+                    <span>Tienes <strong><%= bitacorasPendientes %></strong> bitácora(s) pendiente(s) por llenar</span>
+                  </div>
+                <% } else { %>
+                  <div class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-pill shadow-sm" 
+                       style="background-color: #f0fdf4; border: 1px solid #bbf7d0; color: #16a34a; font-size: 0.85rem; font-weight: 700;">
+                    <i class="bi bi-check-circle-fill" style="font-size: 0.95rem;"></i>
+                    <span>Todas las bitácoras al día</span>
+                  </div>
+                <% } %>
+              </div>
+
+            </div>
+
+            <!-- Notificación de Cuenta Regresiva antes de las 12:00 AM (Medianoche) -->
+            <div class="px-3 py-2 d-flex align-items-center justify-content-between flex-wrap gap-2" 
+                 style="background: #fffbeb; border-top: 1px solid #fef3c7; font-size: 0.82rem; color: #92400e;">
+              <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-hourglass-split text-warning fs-6"></i>
+                <span><strong>Cierre de Jornada:</strong> Las bitácoras se bloquean a las <strong>12:00 AM (medianoche)</strong> y las horas no justificadas se congelan automáticamente.</span>
+              </div>
+              <div class="d-inline-flex align-items-center gap-1 fw-bold text-danger bg-white px-2 py-1 rounded border border-warning shadow-sm">
+                <i class="bi bi-clock-history"></i>
+                <span>Tiempo restante hoy: </span>
+                <span id="countdownMedianocheTicker" class="font-monospace" style="font-size: 0.88rem;">--:--:--</span>
+              </div>
+            </div>
+          </div>
+            
             <!-- Tabla de Jornadas (Asistencia + Bitácora) -->
             <div class="card-historial-reporte">
               <h5 class="historial-reporte-title">
@@ -515,6 +582,7 @@
                   </div>
                 </div>
               </div>
+         
 
               <div class="table-reporte-wrapper">
                 <table class="table table-reporte align-middle">
@@ -525,108 +593,203 @@
                       <th>Entrada</th>
                       <th>Salida</th>
                       <th>Horas Turno</th>
-                      <th class="text-center">Bitacora</th>
+                      <th class="text-center">Bitácora y Comprobante</th>
                     </tr>
                   </thead>
-                  <tbody>
-                    <% if (jornadas && jornadas.length> 0) { %>
-                      <% jornadas.forEach(j=> { %>
-                        <tr>
-                          <td><i class="bi bi-calendar2-event me-2 text-primary"></i><strong>
-                              <%= j.fecha %>
-                            </strong></td>
+                <!-- TABLA DE JORNADAS -->
+<tbody>
+  <% if (jornadas && jornadas.length > 0) { %>
+    <% jornadas.forEach(j => { %>
+      <% 
+        const tieneTarea = Boolean(j.tarea && j.tarea.trim() !== '');
+        const tieneComp = Boolean(j.comprobante && j.comprobante.trim() !== '');
+        const faltaBitacora = !tieneTarea;
+        const faltaComprobante = !tieneComp;
+        const faltaAmbos = faltaBitacora && faltaComprobante;
+        const tienePendiente = faltaBitacora || faltaComprobante;
+        
+        const esFechaPasada = Boolean(j.fecha && j.fecha < hoyBoliviaStr);
+        const esReactivada = (j.asistencia_estado === 'HABILITADO_EDICION');
+        const esBloqueada = esFechaPasada && !esReactivada;
+        
+        const esCongelado = (j.asistencia_estado === 'CONGELADO');
+        const esObservado = (j.asistencia_estado === 'OBSERVADO') || esCongelado || (tienePendiente && esFechaPasada);
+      %>
+      
+      <!-- FILA CON BORDE IZQUIERDO ROJO SI TIENE OBSERVACIÓN / REGISTRO PENDIENTE -->
+      <tr class="<%= esObservado ? 'table-danger-custom' : '' %>" 
+          style="<%= esObservado ? 'border-left: 4px solid #d90429 !important; background-color: #fff8f8;' : '' %>">
+        
+        <td>
+          <i class="bi bi-calendar2-event me-2 text-primary"></i>
+          <strong><%= j.fecha %></strong>
+        </td>
 
-                          <td>
-                            <% if (j.modalidad==='TELETRABAJO' ) { %>
-                              <span class="badge-modalidad-teletrabajo mb-1">
-                                <i class="bi bi-house-door"></i> Teletrabajo
-                              </span>
-                              <br><small class="text-muted">
-                                <%= j.lugar_nombre || 'Ubicación Remota' %>
-                              </small>
-                              <% } else { %>
-                                <strong style="color: #1e293b;">
-                                  <%= j.lugar_nombre || 'N/A' %>
-                                </strong>
-                                <% if(j.lugar_tipo) { %>
-                                  <br><small class="text-muted">(<%= j.lugar_tipo %>)</small>
-                                  <% } %>
-                                    <% } %>
-                          </td>
+        <td>
+          <% if (j.modalidad === 'TELETRABAJO') { %>
+            <span class="badge-modalidad-teletrabajo mb-1">
+              <i class="bi bi-house-door"></i> Teletrabajo
+            </span>
+            <br><small class="text-muted"><%= j.lugar_nombre || 'Ubicación Remota' %></small>
+          <% } else if (j.modalidad === 'HORA_EXTRA') { %>
+            <span class="badge mb-1" style="background-color: #f3e8ff; color: #7c3aed; border: 1px solid #ddd6fe; font-size: 0.78rem;">
+              <i class="bi bi-lightning-charge-fill"></i> Horas Extras
+            </span>
+          <% } else { %>
+            <strong style="color: #1e293b;"><%= j.lugar_nombre || 'N/A' %></strong>
+            <% if(j.lugar_tipo) { %>
+              <br><small class="text-muted">(<%= j.lugar_tipo %>)</small>
+            <% } %>
+          <% } %>
+        </td>
 
-                          <!-- HORA ENTRADA -->
-                          <td>
-                            <%= j.hora_entrada_vis || j.hora_entrada || '-' %>
-                          </td>
+        <!-- HORA ENTRADA -->
+        <td><%= j.hora_entrada_vis || j.hora_entrada || '-' %></td>
 
-                          <!-- HORA SALIDA -->
-                          <td>
-                            <%= j.hora_salida_vis || j.hora_salida || '-' %>
-                          </td>
+        <!-- HORA SALIDA -->
+        <td><%= j.hora_salida_vis || j.hora_salida || '-' %></td>
 
-                          <!-- HORAS TRANSCURRIDAS POR FECHA -->
-                          <td>
-                            <% if (j.horas_dia==='En curso' ) { %>
-                              <span class="badge-turno-curso">
-                                <i class="bi bi-clock-history"></i> En curso
-                              </span>
-                              <% } else { %>
-                                <span class="badge-turno-finalizado">
-                                  <i class="bi bi-stopwatch"></i>
-                                  <%= j.horas_dia %>
-                                </span>
-                                <% } %>
-                                  <% if (j.asistencia_estado==='OBSERVADO' ) { %>
-                                    <br><span class="badge-estado-observado"
-                                      title="Pendiente de aprobación de bitácora por el Administrador">
-                                      <i class="bi bi-clock-history"></i> En Observación
-                                    </span>
-                                    <% } %>
-                          </td>
+        <!-- HORAS TURNO / ESTADO DE OBSERVACIÓN -->
+        <td class="align-middle">
+          <% if (j.horas_dia === 'En curso') { %>
+            <span class="badge-turno-curso">
+              <i class="bi bi-clock-history"></i> En curso
+            </span>
+          <% } else if (esCongelado) { %>
+            <!-- BADGE DE HORAS CONGELADAS -->
+            <span class="badge d-inline-flex align-items-center gap-1" 
+                  style="background-color: #eff6ff !important; 
+                         color: #1d4ed8 !important; 
+                         border: 1px solid #bfdbfe !important; 
+                         border-radius: 8px !important; 
+                         padding: 4px 10px !important; 
+                         font-size: 0.78rem !important; 
+                         font-weight: 700 !important;">
+              <i class="bi bi-snowflake" style="font-size: 0.85rem; color: #1d4ed8;"></i>
+              <span>Horas Congeladas</span>
+            </span>
+            <br>
+            <small class="text-secondary text-decoration-line-through fw-semibold d-block mt-1" style="font-size: 0.72rem;">
+              <i class="bi bi-dash-circle me-1"></i><%= j.horas_dia %> (descontadas)
+            </small>
+          <% } else if (esObservado) { %>
+            <!-- BADGE DE OBSERVACIÓN -->
+            <span class="badge d-inline-flex align-items-center gap-1" 
+                  style="background-color: #fff5f5 !important; 
+                         color: #d90429 !important; 
+                         border: 1px solid #ffb3b3 !important; 
+                         border-radius: 8px !important; 
+                         padding: 4px 10px !important; 
+                         font-size: 0.78rem !important; 
+                         font-weight: 700 !important;">
+              <i class="bi bi-exclamation-circle" style="font-size: 0.85rem; color: #d90429;"></i>
+              <span>Observación</span>
+            </span>
+            <br>
+            <!-- HORAS CONGELADAS / EN OBSERVACIÓN -->
+            <small class="text-secondary text-decoration-line-through fw-semibold d-block mt-1" style="font-size: 0.72rem;">
+              <i class="bi bi-snowflake me-1"></i><%= j.horas_dia %> (congeladas)
+            </small>
+          <% } else { %>
+            <span class="badge-turno-finalizado">
+              <i class="bi bi-stopwatch"></i> <%= j.horas_dia %>
+            </span>
+          <% } %>
+        </td>
 
-                          <td class="text-center">
-                            <% if (j.tarea || j.comprobante) { %>
-                              <div class="d-inline-flex align-items-center justify-content-center gap-2">
-                                <button type="button" class="btn-ojito-bitacora btn-ver-detalle-bitacora"
-                                  data-tarea="<%= j.tarea || '' %>" data-fecha="<%= j.fecha %>"
-                                  data-lugar="<%= j.lugar_nombre || '' %>" data-comprobante="<%= j.comprobante || '' %>"
-                                  title="Ver detalle">
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                    viewBox="0 0 16 16">
-                                    <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z" />
-                                    <path
-                                      d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" />
-                                  </svg>
-                                </button>
+        <!-- ACCIONES / BITÁCORA / COMPROBANTE -->
+        <td class="text-center align-middle">
+          
+          <!-- Estado detallado del registro -->
+          <div class="mb-1">
+            <% if (faltaAmbos) { %>
+              <span class="badge d-inline-flex align-items-center gap-1" style="background-color: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; font-size: 0.74rem; font-weight: 600;">
+                <i class="bi bi-exclamation-circle-fill"></i> Bitácora y comprobante pendientes
+              </span>
+            <% } else if (faltaBitacora) { %>
+              <span class="badge d-inline-flex align-items-center gap-1" style="background-color: #fffbeb; color: #b45309; border: 1px solid #fde68a; font-size: 0.74rem; font-weight: 600;">
+                <i class="bi bi-file-earmark-text"></i> Bitácora pendiente
+              </span>
+            <% } else if (faltaComprobante) { %>
+              <span class="badge d-inline-flex align-items-center gap-1" style="background-color: #fffbeb; color: #b45309; border: 1px solid #fde68a; font-size: 0.74rem; font-weight: 600;">
+                <i class="bi bi-camera"></i> Comprobante pendiente
+              </span>
+            <% } else { %>
+              <span class="badge d-inline-flex align-items-center gap-1" style="background-color: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; font-size: 0.74rem; font-weight: 600;">
+                <i class="bi bi-check-circle-fill"></i> Bitácora y comprobante al día
+              </span>
+            <% } %>
+          </div>
 
-                                <button class="btn-reporte-action btn-reporte py-1 px-2"
-                                  data-asistencia="<%= j.id_asistencia %>" data-tarea="<%= j.tarea || '' %>"
-                                  data-comprobante="<%= j.comprobante || '' %>" data-fecha="<%= j.fecha %>"
-                                  title="Editar bitácora" style="font-size: 0.8rem;">
-                                  <i class="bi bi-pencil-square me-1"></i> Editar
-                                </button>
-                              </div>
-                              <% } else { %>
-                                <button class="btn-reporte-action btn-reporte" data-asistencia="<%= j.id_asistencia %>"
-                                  data-tarea="" data-comprobante="" data-fecha="<%= j.fecha %>"
-                                  title="Registrar bitácora">
-                                  <i class="bi bi-plus-circle me-1"></i> Registrar
-                                </button>
-                                <% } %>
-                                  <% if(j.observacion) { %>
-                                    <br><small class="text-danger">Obs: <%= j.observacion %></small>
-                                    <% } %>
-                          </td>
-                        </tr>
-                        <% }); %>
-                          <% } else { %>
-                            <tr>
-                              <td colspan="6" class="text-center py-4 text-muted fw-semibold">No se encontraron
-                                registros de
-                                jornadas.</td>
-                            </tr>
-                            <% } %>
-                  </tbody>
+          <!-- Botones de Acción (Respetando Bloqueo a las 00:00 y Reactivación Admin) -->
+          <div class="d-inline-flex align-items-center justify-content-center gap-2 flex-wrap mt-1">
+            <% if (tieneTarea || tieneComp) { %>
+              <button type="button" class="btn-ojito-bitacora btn-ver-detalle-bitacora"
+                data-tarea="<%= j.tarea || '' %>" 
+                data-fecha="<%= j.fecha %>"
+                data-lugar="<%= j.lugar_nombre || '' %>" 
+                data-comprobante="<%= j.comprobante || '' %>"
+                title="Ver detalle de actividades y evidencia">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                  <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z" />
+                  <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" />
+                </svg>
+              </button>
+            <% } %>
+
+            <% if (esReactivada) { %>
+              <!-- REACTIVADA POR EL ADMINISTRADOR: PERMITE EDITAR / COMPLETAR AUNQUE SEA DÍA PASADO -->
+              <button class="btn btn-warning btn-reporte-action btn-reporte py-1 px-2 fw-bold text-dark shadow-sm"
+                data-asistencia="<%= j.id_asistencia %>" 
+                data-tarea="<%= j.tarea || '' %>"
+                data-comprobante="<%= j.comprobante || '' %>" 
+                data-fecha="<%= j.fecha %>"
+                title="Bitácora reactivada por el Administrador. Puedes editarla ahora." style="font-size: 0.8rem;">
+                <i class="bi bi-unlock-fill me-1"></i> <%= (tieneTarea || tieneComp) ? 'Editar (Reactivada)' : 'Registrar (Reactivada)' %>
+              </button>
+            <% } else if (esBloqueada) { %>
+              <!-- BLOQUEADA POR HORARIO 00:00 -->
+              <span class="badge bg-secondary text-white py-1 px-2 d-inline-flex align-items-center gap-1 shadow-sm" 
+                    style="font-size: 0.77rem; font-weight: 600; cursor: not-allowed;" 
+                    title="Esta bitácora quedó bloqueada. Solicita al administrador su reactivación si requieres modificarla.">
+                <i class="bi bi-lock-fill"></i> Bloqueada
+              </span>
+            <% } else { %>
+              <!-- JORNADA DEL DÍA O EN CURSO: HABILITADA NORMALMENTE -->
+              <% if (tieneTarea || tieneComp) { %>
+                <button class="btn-reporte-action btn-reporte py-1 px-2"
+                  data-asistencia="<%= j.id_asistencia %>" 
+                  data-tarea="<%= j.tarea || '' %>"
+                  data-comprobante="<%= j.comprobante || '' %>" 
+                  data-fecha="<%= j.fecha %>"
+                  title="Editar bitácora" style="font-size: 0.8rem;">
+                  <i class="bi bi-pencil-square me-1"></i> Editar
+                </button>
+              <% } else { %>
+                <button class="btn btn-success btn-reporte-action btn-reporte px-3 rounded-pill fw-bold shadow-sm" 
+                  data-asistencia="<%= j.id_asistencia %>"
+                  data-tarea="" 
+                  data-comprobante="" 
+                  data-fecha="<%= j.fecha %>"
+                  title="Registrar bitácora de la jornada">
+                  <i class="bi bi-plus-circle me-1"></i> Registrar
+                </button>
+              <% } %>
+            <% } %>
+          </div>
+
+          <% if(j.observacion) { %>
+            <div class="mt-1"><small class="text-danger fw-semibold">Obs: <%= j.observacion %></small></div>
+          <% } %>
+        </td>
+      </tr>
+    <% }); %>
+  <% } else { %>
+    <tr>
+      <td colspan="6" class="text-center py-4 text-muted fw-semibold">No se encontraron registros de jornadas.</td>
+    </tr>
+  <% } %>
+</tbody>
                 </table>
               </div>
             </div>
@@ -901,7 +1064,7 @@
                   <small class="text-muted d-block" style="font-size: 0.76rem; line-height: 1.2;">Adjunta captura o fotografía del entregable o avance realizado (PNG, JPG hasta 5MB).</small>
                 </div>
                 <div class="card-body p-3">
-                  <input type="file" name="comprobante" id="he_fin_comprobante" class="form-control" accept="image/png, image/jpeg, image/jpg" style="border-radius: 8px; border-color: #cbd5e1;" required />
+                 <input type="file" name="comprobante" id="modal_comprobante" accept="image/png, image/jpeg, image/jpg, image/webp" class="d-none">
                   
                   <!-- Contenedor de Vista Previa -->
                   <div id="he_fin_preview_container" class="mt-3 text-center p-2 rounded-3 border bg-light" style="display: none;">
@@ -935,105 +1098,93 @@
     <% } %>
 
     <!-- MODAL: REGISTRAR / EDITAR BITÁCORA -->
-    <div class="modal fade" id="modalReporte" tabindex="-1">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <form id="formReporte">
-            <div class="modal-header">
-              <h5 class="modal-title fw-bold">Bitácora de Trabajo</h5>
-              <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Cerrar">
-                <i class="bi bi-x-lg"></i>
-              </button>
-            </div>
-            <div class="modal-body">
-              <input type="hidden" name="id_asistencia" id="modal_id_asistencia">
-
-              <!-- Fecha de la jornada seleccionada -->
-              <div class="d-flex align-items-center justify-content-between p-2 mb-3 bg-light rounded border">
-                <span class="text-muted fs-7"><i class="bi bi-calendar2-event me-1 text-primary"></i> Fecha de la
-                  jornada:</span>
-                <span id="modal_reporte_fecha"
-                  class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1"
-                  style="font-size: 0.82rem; font-weight: 600;"></span>
-              </div>
-
-              <div class="mb-3">
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                  <label class="form-label fw-semibold mb-0">Descripción de la Tarea / Avance <span
-                      class="text-danger">*</span></label>
-                  <small class="text-muted" style="font-size: 0.78rem;"><span id="modal_tarea_count">0</span>/350
-                    letras</small>
-                </div>
-                <textarea class="form-control" name="tarea" id="modal_tarea" rows="4" maxlength="350" required
-                  style="resize: none; width: 100%; font-family: 'Montserrat', sans-serif !important; font-weight: 300 !important;"
-                  placeholder="Describe las actividades realizadas en la jornada..."></textarea>
-              </div>
-
-              <!-- Comprobante existente si aplica -->
-              <div id="preview_existing_container" class="mb-3 p-2 bg-light rounded border" style="display: none;">
-                <div class="d-flex align-items-center justify-content-between">
-                  <span class="text-muted fs-7"><i class="bi bi-image me-1"></i> Comprobante guardado:</span>
-                  <a href="#" id="preview_existing_link" target="_blank"
-                    class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 12px;">
-                    <i class="bi bi-box-arrow-up-right me-1"></i> Ver comprobante actual
-                  </a>
-                </div>
-              </div>
-
-              <div class="mb-3">
-                <label class="form-label fw-semibold mb-2">Adjuntar Comprobante (PNG / JPG / WEBP)</label>
-
-                <!-- Input file real 100% oculto -->
-                <input type="file" name="comprobante" id="modal_comprobante"
-                  accept="image/png, image/jpeg, image/jpg, image/webp" style="display: none !important;">
-
-                <!-- Contenedor con UN SOLO BOTÓN BONITO y texto del archivo -->
-                <div class="d-flex align-items-center gap-2 p-2 rounded-3 border" style="background-color: #f8fafc;">
-                  <button type="button" id="btn_seleccionar_comprobante"
-                    class="btn btn-sm btn-primary px-3 py-2 fw-semibold rounded-2 d-inline-flex align-items-center gap-2 shadow-sm"
-                    style="background-color: #0b6bcb; border-color: #0b6bcb; font-size: 0.85rem; flex-shrink: 0;">
-                    <i class="bi bi-cloud-arrow-up-fill fs-6"></i> Seleccionar archivo
-                  </button>
-                  <span id="upload_file_info" class="text-muted text-truncate ps-1" style="font-size: 0.83rem;">
-                    Ningún archivo seleccionado
-                  </span>
-                </div>
-
-                <small class="text-muted d-block mt-1" style="font-size: 0.78rem;">
-                  <i class="bi bi-shield-check text-success me-1"></i>Las imágenes se subirán automáticamente a
-                  Cloudinary.
-                </small>
-              </div>
-
-              <!-- Previsualización de nueva imagen seleccionada -->
-              <div id="preview_new_container" class="mb-3 text-center" style="display: none;">
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                  <small class="text-muted fw-semibold">Previsualización de nueva imagen:</small>
-                  <button type="button" id="btn_quitar_img" class="btn btn-sm btn-link text-danger p-0"
-                    style="font-size: 12px;">Quitar</button>
-                </div>
-                <img id="preview_new_img" src="" alt="Previsualización" class="img-fluid rounded border shadow-sm"
-                  style="max-height: 180px; object-fit: contain;">
-              </div>
-
-              <!-- Estado de carga / spinner -->
-              <div id="upload_feedback" class="alert alert-info py-2 px-3 align-items-center gap-2 mb-0"
-                style="display: none; font-size: 0.875rem;">
-                <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
-                <span id="upload_feedback_text">Subiendo imagen a Cloudinary...</span>
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-              <button type="submit" id="btnGuardarReporte" class="btn btn-primary"
-                style="background-color: #0b6bcb; border-color: #0b6bcb;">
-                <i class="bi bi-check2-circle me-1"></i> Guardar Bitácora
-              </button>
-            </div>
-          </form>
+   <div class="modal fade" id="modalReporte" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="formReporte">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold">Bitácora de Trabajo</h5>
+          <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Cerrar">
+            <i class="bi bi-x-lg"></i>
+          </button>
         </div>
-      </div>
+        <div class="modal-body">
+          <input type="hidden" name="id_asistencia" id="modal_id_asistencia">
+
+          <!-- Fecha de la jornada seleccionada -->
+          <div class="d-flex align-items-center justify-content-between p-2 mb-3 bg-light rounded border">
+            <span class="text-muted fs-7"><i class="bi bi-calendar2-event me-1 text-primary"></i> Fecha de la jornada:</span>
+            <span id="modal_reporte_fecha" class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1" style="font-size: 0.82rem; font-weight: 600;"></span>
+          </div>
+
+          <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label fw-semibold mb-0">Descripción de la Tarea / Avance <span class="text-danger">*</span></label>
+              <small class="text-muted" style="font-size: 0.78rem;"><span id="modal_tarea_count">0</span>/350 letras</small>
+            </div>
+            <textarea class="form-control" name="tarea" id="modal_tarea" rows="4" maxlength="350" required
+              style="resize: none; width: 100%; font-family: 'Montserrat', sans-serif !important; font-weight: 300 !important;"
+              placeholder="Describe las actividades realizadas en la jornada..."></textarea>
+          </div>
+
+          <!-- Comprobante existente si aplica -->
+          <div id="preview_existing_container" class="mb-3 p-2 bg-light rounded border" style="display: none;">
+            <div class="d-flex align-items-center justify-content-between">
+              <span class="text-muted fs-7"><i class="bi bi-image me-1"></i> Comprobante guardado:</span>
+              <a href="#" id="preview_existing_link" target="_blank" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 12px;">
+                <i class="bi bi-box-arrow-up-right me-1"></i> Ver comprobante actual
+              </a>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold mb-2">
+              Adjuntar Comprobante (PNG / JPG / WEBP) <span class="text-danger">*</span>
+            </label>
+
+            <!-- Input file real 100% oculto (SIN el atributo required) -->  
+            <input type="file" name="comprobante" id="modal_comprobante"
+              accept="image/png, image/jpeg, image/jpg, image/webp" style="display: none !important;">
+
+            <!-- Contenedor con UN SOLO BOTÓN y texto del archivo / alerta -->
+            <div class="d-flex align-items-center gap-2 p-2 rounded-3 border" style="background-color: #f8fafc;">
+              <button type="button" id="btn_seleccionar_comprobante"
+                class="btn btn-sm btn-primary px-3 py-2 fw-semibold rounded-2 d-inline-flex align-items-center gap-2 shadow-sm"
+                style="background-color: #0b6bcb; border-color: #0b6bcb; font-size: 0.85rem; flex-shrink: 0;">
+                <i class="bi bi-cloud-arrow-up-fill fs-6"></i> Seleccionar archivo
+              </button>
+
+             <span id="upload_file_info" class="text-danger fw-semibold text-truncate ps-1" style="font-size: 0.83rem; color: #dc3545 !important;">
+  <i class="bi bi-exclamation-triangle-fill me-1 text-danger"></i>No has subido ninguna imagen
+</span>
+            </div>
+          </div>
+
+          <!-- Previsualización de nueva imagen seleccionada -->
+          <div id="preview_new_container" class="mb-3 text-center" style="display: none;">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <small class="text-muted fw-semibold">Previsualización de nueva imagen:</small>
+              <button type="button" id="btn_quitar_img" class="btn btn-sm btn-link text-danger p-0" style="font-size: 12px;">Quitar</button>
+            </div>
+            <img id="preview_new_img" src="" alt="Previsualización" class="img-fluid rounded border shadow-sm" style="max-height: 180px; object-fit: contain;">
+          </div>
+
+          <!-- Estado de carga / spinner -->
+          <div id="upload_feedback" class="alert alert-info py-2 px-3 align-items-center gap-2 mb-0" style="display: none; font-size: 0.875rem;">
+            <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+            <span id="upload_feedback_text">Subiendo imagen a Cloudinary...</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" id="btnGuardarReporte" class="btn btn-primary" style="background-color: #0b6bcb; border-color: #0b6bcb;">
+            <i class="bi bi-check2-circle me-1"></i> Guardar Bitácora
+          </button>
+        </div>
+      </form>
     </div>
+  </div>
+</div>
 
     <!-- MODAL INTERACTIVO: VER BITÁCORA DETALLADA (CENTRADOS) -->
     <div class="modal fade" id="modalVerBitacora" tabindex="-1" aria-labelledby="modalVerBitacoraLabel"
@@ -1142,6 +1293,7 @@
           const modalEl = document.getElementById('modalReporte');
           const modalReporte = new bootstrap.Modal(modalEl);
           const formReporte = document.getElementById('formReporte');
+          const uploadFileInfo = document.getElementById('upload_file_info');
           const fileInput = document.getElementById('modal_comprobante');
           const previewNewContainer = document.getElementById('preview_new_container');
           const previewNewImg = document.getElementById('preview_new_img');
@@ -1195,81 +1347,103 @@
               if (modalVerBitacora) modalVerBitacora.show();
             });
           });
-
-          const btnSeleccionarComprobante = document.getElementById('btn_seleccionar_comprobante');
-          const uploadFileInfo = document.getElementById('upload_file_info');
-
-          if (btnSeleccionarComprobante) {
-            btnSeleccionarComprobante.addEventListener('click', () => {
-              fileInput.click();
+          document.getElementById('modal_comprobante').addEventListener('change', function(e) {
+              const fileInfo = document.getElementById('upload_file_info');
+              if (this.files && this.files.length > 0) {
+                fileInfo.className = 'text-success fw-semibold text-truncate ps-1';
+                fileInfo.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i>${this.files[0].name}`;
+              } else {
+                fileInfo.className = 'text-danger fw-semibold text-truncate ps-1';
+                fileInfo.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-1"></i>No has subido ninguna imagen`;
+              }
             });
-          }
 
+         const btnSeleccionarComprobante = document.getElementById('btn_seleccionar_comprobante');
+            if (btnSeleccionarComprobante) {
+              btnSeleccionarComprobante.addEventListener('click', () => {
+                fileInput.click();
+              });
+            }
           // Helper para previsualizar imagen seleccionada
           fileInput.addEventListener('change', () => {
-            if (fileInput.files && fileInput.files[0]) {
-              const file = fileInput.files[0];
-              if (uploadFileInfo) {
-                uploadFileInfo.innerHTML = `<span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1"><i class="bi bi-check2-circle me-1"></i>${file.name}</span>`;
-              }
-              const reader = new FileReader();
-              reader.onload = (e) => {
-                previewNewImg.src = e.target.result;
-                previewNewContainer.style.display = 'block';
-              };
-              reader.readAsDataURL(file);
-            } else {
-              limpiarPreviewNueva();
-            }
-          });
+  if (fileInput.files && fileInput.files[0]) {
+    const file = fileInput.files[0];
+    
+    // CAMBIO A VERDE CUANDO SÍ HAY ARCHIVO
+    if (uploadFileInfo) {
+      uploadFileInfo.className = 'text-success fw-semibold text-truncate ps-1';
+      uploadFileInfo.style.color = '#198754'; // Verde estándar de Bootstrap
+      uploadFileInfo.innerHTML = `<i class="bi bi-check-circle-fill me-1 text-success"></i>${file.name}`;
+    }
 
-          function limpiarPreviewNueva() {
-            fileInput.value = '';
-            previewNewImg.src = '';
-            previewNewContainer.style.display = 'none';
-            if (uploadFileInfo) {
-              uploadFileInfo.textContent = 'Ningún archivo seleccionado';
-            }
-          }
+    // Previsualización de la imagen
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      previewNewImg.src = e.target.result;
+      previewNewContainer.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  } else {
+    limpiarPreviewNueva();
+  }
+});
+
+   function limpiarPreviewNueva() {
+  fileInput.value = '';
+  previewNewImg.src = '';
+  previewNewContainer.style.display = 'none';
+  
+  if (uploadFileInfo) {
+    uploadFileInfo.className = 'text-danger fw-semibold text-truncate ps-1';
+    uploadFileInfo.style.color = '#dc3545'; // Rojo estándar de Bootstrap
+    uploadFileInfo.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-1 text-danger"></i>No has subido ninguna imagen`;
+  }
+}
 
           if (btnQuitarImg) {
             btnQuitarImg.addEventListener('click', limpiarPreviewNueva);
           }
 
-          // Abrir Modal de Bitácora
           document.querySelectorAll('.btn-reporte').forEach(btn => {
-            btn.addEventListener('click', () => {
-              formReporte.reset();
-              limpiarPreviewNueva();
-              uploadFeedback.style.display = 'none';
+  btn.addEventListener('click', () => {
+    formReporte.reset();
+    limpiarPreviewNueva();
+    uploadFeedback.style.display = 'none';
 
-              const asistenciaId = btn.dataset.asistencia;
-              const tareaTexto = btn.dataset.tarea || '';
-              const comprobanteActual = btn.dataset.comprobante || '';
-              const fechaJornada = btn.dataset.fecha || '';
+    const asistenciaId = btn.dataset.asistencia;
+    const tareaTexto = btn.dataset.tarea || '';
+    const comprobanteActual = btn.dataset.comprobante || '';
+    const fechaJornada = btn.dataset.fecha || '';
 
-              document.getElementById('modal_id_asistencia').value = asistenciaId;
-              const modalFechaEl = document.getElementById('modal_reporte_fecha');
-              if (modalFechaEl) {
-                modalFechaEl.textContent = fechaJornada;
-              }
+    document.getElementById('modal_id_asistencia').value = asistenciaId;
+    const modalFechaEl = document.getElementById('modal_reporte_fecha');
+    if (modalFechaEl) {
+      modalFechaEl.textContent = fechaJornada;
+    }
 
-              const inputTarea = document.getElementById('modal_tarea');
-              inputTarea.value = tareaTexto;
-              const charCountEl = document.getElementById('modal_tarea_count');
-              if (charCountEl) charCountEl.textContent = inputTarea.value.length;
+    const inputTarea = document.getElementById('modal_tarea');
+    inputTarea.value = tareaTexto;
+    const charCountEl = document.getElementById('modal_tarea_count');
+    if (charCountEl) charCountEl.textContent = inputTarea.value.length;
 
-              if (comprobanteActual && comprobanteActual.trim() !== '') {
-                previewExistingContainer.style.display = 'block';
-                previewExistingLink.href = comprobanteActual.trim();
-              } else {
-                previewExistingContainer.style.display = 'none';
-                previewExistingLink.href = '#';
-              }
+    // Si ya existe un comprobante previo registrado
+    if (comprobanteActual && comprobanteActual.trim() !== '') {
+      previewExistingContainer.style.display = 'block';
+      previewExistingLink.href = comprobanteActual.trim();
+      
+      // Si ya hay un comprobante existente, ajustar el texto informativo
+      if (uploadFileInfo) {
+        uploadFileInfo.className = 'text-muted fw-semibold text-truncate ps-1';
+        uploadFileInfo.innerHTML = `<i class="bi bi-info-circle me-1"></i>Opcional: Subir nuevo comprobante para reemplazar`;
+      }
+    } else {
+      previewExistingContainer.style.display = 'none';
+      previewExistingLink.href = '#';
+    }
 
-              modalReporte.show();
-            });
-          });
+    modalReporte.show();
+  });
+});
 
           const modalTareaInput = document.getElementById('modal_tarea');
           const modalTareaCountSpan = document.getElementById('modal_tarea_count');
@@ -1305,79 +1479,83 @@
           }
 
           // Enviar Formulario
-          formReporte.addEventListener('submit',
-            async (e) => {
-              e.preventDefault();
-              const id_asistencia = document.getElementById('modal_id_asistencia').value;
-              const tarea = document.getElementById('modal_tarea').value.trim();
-              const file = fileInput.files && fileInput.files[0];
+          formReporte.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const id_asistencia = document.getElementById('modal_id_asistencia').value;
+  const tarea = document.getElementById('modal_tarea').value.trim();
+  const file = fileInput.files && fileInput.files[0];
+  const tieneComprobantePrevio = previewExistingContainer.style.display !== 'none';
 
-              if (!id_asistencia || !tarea) {
-                mostrarAlerta('Por favor completa la descripción de la tarea.', 'warning');
-                return;
-              }
+  if (!id_asistencia || !tarea) {
+    mostrarAlerta('Por favor completa la descripción de la tarea.', 'warning');
+    return;
+  }
 
-              try {
-                btnGuardar.disabled = true;
-                let comprobanteUrl = null;
+  // Validación: Si no hay un archivo nuevo cargado ni existe uno previo
+  if (!file && !tieneComprobantePrevio) {
+    mostrarAlerta('Debes adjuntar un comprobante de la jornada para guardar la bitácora.', 'warning');
+    return;
+  }
 
-                // 1. Si se seleccionó archivo, subir a Cloudinary
-                if (file) {
-                  uploadFeedback.style.display = 'flex';
-                  uploadFeedbackText.textContent = 'Subiendo comprobante a Cloudinary...';
+  try {
+    btnGuardar.disabled = true;
+    let comprobanteUrl = null;
 
-                  try {
-                    comprobanteUrl = await subirACloudinary(file);
-                  } catch (cloudErr) {
-                    console.warn('Fallo en Cloudinary, intentando subida directa por servidor:', cloudErr);
-                  }
-                }
+    // 1. Si se seleccionó archivo nuevo, subir a Cloudinary
+    if (file) {
+      uploadFeedback.style.display = 'flex';
+      uploadFeedbackText.textContent = 'Subiendo comprobante a Cloudinary...';
 
-                // 2. Guardar en backend
-                uploadFeedback.style.display = 'flex';
-                uploadFeedbackText.textContent = 'Guardando bitácora en el sistema...';
+      try {
+        comprobanteUrl = await subirACloudinary(file);
+      } catch (cloudErr) {
+        console.warn('Fallo en Cloudinary, intentando subida directa por servidor:', cloudErr);
+      }
+    }
 
-                let res;
-                if (comprobanteUrl) {
-                  // Se subió a Cloudinary exitosamente
-                  res = await fetch('/reportes/guardar', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id_asistencia, tarea, comprobante: comprobanteUrl })
-                  });
-                } else {
-                  // Fallback con FormData (Multer local si Cloudinary no respondió)
-                  const fd = new FormData();
-                  fd.append('id_asistencia', id_asistencia);
-                  fd.append('tarea', tarea);
-                  if (file) {
-                    fd.append('comprobante', file);
-                  }
-                  res = await fetch('/reportes/guardar', {
-                    method: 'POST',
-                    body: fd
-                  });
-                }
+    // 2. Guardar en backend
+    uploadFeedback.style.display = 'flex';
+    uploadFeedbackText.textContent = 'Guardando bitácora en el sistema...';
 
-                const data = await res.json();
+    let res;
+    if (comprobanteUrl) {
+      res = await fetch('/reportes/guardar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id_asistencia, tarea, comprobante: comprobanteUrl })
+      });
+    } else {
+      const fd = new FormData();
+      fd.append('id_asistencia', id_asistencia);
+      fd.append('tarea', tarea);
+      if (file) {
+        fd.append('comprobante', file);
+      }
+      res = await fetch('/reportes/guardar', {
+        method: 'POST',
+        body: fd
+      });
+    }
 
-                if (data.ok) {
-                  modalReporte.hide();
-                  mostrarAlerta(data.msg || 'Bitácora guardada correctamente', 'success');
-                  setTimeout(() => {
-                    location.reload();
-                  }, 1000);
-                } else {
-                  mostrarAlerta(data.error || 'Error al guardar la bitácora', 'error');
-                }
-              } catch (err) {
-                console.error(err);
-                mostrarAlerta('Error de conexión al procesar la bitácora: ' + err.message, 'error');
-              } finally {
-                btnGuardar.disabled = false;
-                uploadFeedback.style.display = 'none';
-              }
-            });
+    const data = await res.json();
+
+    if (data.ok) {
+      modalReporte.hide();
+      mostrarAlerta(data.msg || 'Bitácora guardada correctamente', 'success');
+      setTimeout(() => {
+        location.reload();
+      }, 1000);
+    } else {
+      mostrarAlerta(data.error || 'Error al guardar la bitácora', 'error');
+    }
+  } catch (err) {
+    console.error(err);
+    mostrarAlerta('Error de conexión al procesar la bitácora: ' + err.message, 'error');
+  } finally {
+    btnGuardar.disabled = false;
+    uploadFeedback.style.display = 'none';
+  }
+});
 
           // =========================================================================
           // LÓGICA DE TELETRABAJO (SOLICITAR Y LISTAR)
@@ -1817,6 +1995,56 @@
               }
             }
           });
+
+          // 6. CUENTA REGRESIVA EN VIVO HASTA LAS 12 DE LA NOCHE (00:00)
+          function initCountdownMedianoche() {
+            const tickerEl = document.getElementById('countdownMedianocheTicker');
+            if (!tickerEl) return;
+
+            function update() {
+              const now = new Date();
+              const midnight = new Date(now);
+              midnight.setHours(24, 0, 0, 0);
+
+              const diffMs = midnight - now;
+              if (diffMs <= 0) {
+                tickerEl.textContent = '00h 00m 00s (Bloqueado)';
+                return;
+              }
+
+              const totalSec = Math.floor(diffMs / 1000);
+              const hrs = Math.floor(totalSec / 3600);
+              const mins = Math.floor((totalSec % 3600) / 60);
+              const secs = totalSec % 60;
+
+              tickerEl.textContent = `${String(hrs).padStart(2, '0')}h ${String(mins).padStart(2, '0')}m ${String(secs).padStart(2, '0')}s`;
+            }
+
+            update();
+            setInterval(update, 1000);
+          }
+          initCountdownMedianoche();
+
+          // 7. ALERTA EMERGENTE AUTOMÁTICA AL ENTRAR A LA PESTAÑA
+          const totalPendientes = <%= bitacorasPendientes || 0 %>;
+          if (typeof Swal !== 'undefined' && totalPendientes > 0) {
+            Swal.fire({
+              icon: 'warning',
+              title: '⚠️ Aviso de Bitácoras Pendientes',
+              html: `
+                <div style="font-size: 14px; text-align: left; color: #1e293b; line-height: 1.5;">
+                  Tienes <b style="color: #dc2626; font-size: 16px;">${totalPendientes}</b> bitácora(s) o comprobante(s) pendiente(s) de registro.
+                  <br><br>
+                  <div style="background: #fff5f5; border: 1px solid #fecaca; border-radius: 8px; padding: 12px; font-size: 13px; color: #991b1b;">
+                    ⏰ <b>Recuerda:</b> Tienes hasta las <b>12:00 AM (medianoche)</b> para registrar tu bitácora del día.<br>
+                    Pasada esa hora, la bitácora quedará <b>bloqueada</b> y las horas se <b>congelarán automáticamente</b> (no sumarán a tus horas disponibles hasta que el administrador las reactive).
+                  </div>
+                </div>
+              `,
+              confirmButtonText: 'Entendido, voy a registrar',
+              confirmButtonColor: '#0b6bcb'
+            });
+          }
         })();
       </script>
       </body>

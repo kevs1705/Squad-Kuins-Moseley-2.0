@@ -272,14 +272,31 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
 
     const total = allRows.length;
 
-    // 2. Total de horas acumuladas calculadas en segundos para el filtro actual (Excluye OBSERVADO, RECHAZADO, ANULADO)
+    // 2. Total de horas acumuladas y congeladas calculadas en segundos para el filtro actual
+    // Formato de fecha actual YYYY-MM-DD para comparación estricta de cadenas (Bolivia UTC-4)
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
     let totalSegundos = 0;
+    let totalSegundosCongelados = 0;
     for (const r of allRows) {
-      if (r.duracion_segundos != null && !['ANULADO', 'OBSERVADO', 'RECHAZADO'].includes(r.asistencia_estado)) {
+      if (r.duracion_segundos != null && !['ANULADO', 'RECHAZADO'].includes(r.asistencia_estado)) {
         totalSegundos += Number(r.duracion_segundos) || 0;
+        const sinTarea = !r.tarea || !r.tarea.trim();
+        const esPasada = r.fecha && r.fecha < todayStr;
+        const estaCongeladaUObs = ['CONGELADO', 'OBSERVADO'].includes(r.asistencia_estado);
+        const estaBloqueadaSinBitacora = esPasada && sinTarea && r.asistencia_estado !== 'HABILITADO_EDICION';
+
+        if (estaCongeladaUObs || estaBloqueadaSinBitacora) {
+          totalSegundosCongelados += Number(r.duracion_segundos) || 0;
+        }
       }
     }
+    const totalSegundosDisponibles = Math.max(0, totalSegundos - totalSegundosCongelados);
+
     const totalAcumulada = formatSecondsToHHMMSS(totalSegundos);
+    const totalCongeladas = formatSecondsToHHMMSS(totalSegundosCongelados);
+    const totalDisponibles = formatSecondsToHHMMSS(totalSegundosDisponibles);
 
     // 3. Consulta de información del usuario si está seleccionado
     let usuarioInfo = null;
@@ -299,24 +316,30 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
     // 4. Registros paginados
     const pagedRows = allRows.slice(offset, offset + size);
 
-    // Formato de fecha actual YYYY-MM-DD para comparación estricta de cadenas
-    const now = new Date();
-    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-
     const formattedRows = pagedRows.map((r) => {
       const isPast = Boolean(r.fecha && r.fecha < todayStr);
+      const sinTarea = !r.tarea || !r.tarea.trim();
       let estadoCalculado = 'FINALIZADO';
       let horasDiaText = '00:00';
 
       if (r.modalidad === 'HORA_EXTRA') {
         estadoCalculado = 'FINALIZADO';
         horasDiaText = r.duracion_segundos != null ? formatSecondsToHHMM(r.duracion_segundos) : '00:00';
+      } else if (r.asistencia_estado === 'CONGELADO') {
+        estadoCalculado = 'CONGELADO';
+        horasDiaText = r.duracion_segundos != null ? formatSecondsToHHMM(r.duracion_segundos) : 'Congelada';
+      } else if (r.asistencia_estado === 'HABILITADO_EDICION') {
+        estadoCalculado = 'HABILITADO_EDICION';
+        horasDiaText = r.duracion_segundos != null ? formatSecondsToHHMM(r.duracion_segundos) : 'Reactivada';
       } else if (r.asistencia_estado === 'OBSERVADO') {
         estadoCalculado = 'OBSERVADO';
         horasDiaText = 'Observación';
       } else if (r.asistencia_estado === 'RECHAZADO') {
         estadoCalculado = 'RECHAZADO';
         horasDiaText = 'Rechazado';
+      } else if (isPast && sinTarea && r.asistencia_estado !== 'HABILITADO_EDICION') {
+        estadoCalculado = 'OBSERVADO';
+        horasDiaText = r.duracion_segundos != null ? formatSecondsToHHMM(r.duracion_segundos) : 'Observación';
       } else if (r.duracion_segundos != null) {
         estadoCalculado = 'FINALIZADO';
         horasDiaText = formatSecondsToHHMM(r.duracion_segundos);
@@ -514,6 +537,10 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
 
     statsData.series_semanal = series_semanal;
     statsData.series_dias_semana = diaStats;
+    statsData.total_congeladas = totalCongeladas;
+    statsData.total_congeladas_decimal = (totalSegundosCongelados / 3600).toFixed(1);
+    statsData.total_disponibles = totalDisponibles;
+    statsData.total_disponibles_decimal = (totalSegundosDisponibles / 3600).toFixed(1);
 
     res.json({
       ok: true,
@@ -524,12 +551,159 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
       totalPages: Math.max(1, Math.ceil(total / size)),
       total_acumulada: totalAcumulada,
       total_horas_decimal: (totalSegundos / 3600).toFixed(1),
+      total_congeladas: totalCongeladas,
+      total_congeladas_decimal: (totalSegundosCongelados / 3600).toFixed(1),
+      total_disponibles: totalDisponibles,
+      total_disponibles_decimal: (totalSegundosDisponibles / 3600).toFixed(1),
       usuario_info: usuarioInfo,
       stats: statsData
     });
   } catch (e) {
     console.error('Error en /api/admin/reportes:', e);
     res.status(500).json({ ok: false, error: 'Error al consultar asistencias y reportes' });
+  }
+});
+
+/* ==========================================================================
+   API: ACTIVAR / DESACTIVAR (CONGELAR / REACTIVAR) BITÁCORA Y HORAS
+   ========================================================================== */
+router.post('/api/admin/reportes/:id_asistencia/toggle-estado', requireAdmin, async (req, res) => {
+  try {
+    const rawId = String(req.params.id_asistencia || '').trim();
+    if (!rawId) return res.status(400).json({ ok: false, msg: 'ID de asistencia no válido' });
+
+    if (rawId.startsWith('he_')) {
+      return res.status(400).json({ ok: false, msg: 'Las horas extras se gestionan mediante su aprobación.' });
+    }
+
+    const id_asistencia = parseInt(rawId, 10);
+    if (!id_asistencia) return res.status(400).json({ ok: false, msg: 'ID numérico inválido' });
+
+    const [rows] = await db.query(
+      `SELECT a.id_asistencia, a.estado, a.fecha, r.tarea 
+       FROM asistencias a 
+       LEFT JOIN reportes r ON a.id_asistencia = r.id_asistencia 
+       WHERE a.id_asistencia = ? 
+       LIMIT 1`, 
+      [id_asistencia]
+    );
+    if (!rows.length) return res.status(404).json({ ok: false, msg: 'Asistencia no encontrada' });
+
+    const row = rows[0];
+    const estaInactivo = ['CONGELADO', 'OBSERVADO'].includes(row.estado) || (!row.tarea && row.estado !== 'HABILITADO_EDICION');
+
+    if (estaInactivo) {
+      // Activar / Reactivar -> HABILITADO_EDICION (permite editar bitácora y descongela horas)
+      await db.query(
+        `UPDATE asistencias 
+         SET estado = 'HABILITADO_EDICION',
+             observacion = 'Bitácora reactivada por el Administrador. Horas habilitadas.',
+             actualizado_en = NOW()
+         WHERE id_asistencia = ?`,
+        [id_asistencia]
+      );
+      return res.json({
+        ok: true,
+        nuevo_estado: 'HABILITADO_EDICION',
+        accion: 'activar',
+        msg: 'Bitácora activada con éxito. El pasante ya puede registrarla y las horas están disponibles.'
+      });
+    } else {
+      // Desactivar -> CONGELADO (bloquea edición y congela horas)
+      await db.query(
+        `UPDATE asistencias 
+         SET estado = 'CONGELADO',
+             actualizado_en = NOW()
+         WHERE id_asistencia = ?`,
+        [id_asistencia]
+      );
+      return res.json({
+        ok: true,
+        nuevo_estado: 'CONGELADO',
+        accion: 'desactivar',
+        msg: 'Bitácora desactivada. Las horas han sido congeladas.'
+      });
+    }
+  } catch (e) {
+    console.error('Error al cambiar estado de bitácora:', e);
+    res.status(500).json({ ok: false, msg: 'Error interno al cambiar el estado de la bitácora' });
+  }
+});
+
+/* ==========================================================================
+   API: REACTIVAR BITÁCORA OBSERVADA / BLOQUEADA DESDE ADMINISTRADOR
+   ========================================================================== */
+router.post('/api/admin/reportes/:id_asistencia/reactivar', requireAdmin, async (req, res) => {
+  try {
+    const rawId = String(req.params.id_asistencia || '').trim();
+    if (!rawId) return res.status(400).json({ ok: false, msg: 'ID de asistencia no válido' });
+
+    if (rawId.startsWith('he_')) {
+      return res.status(400).json({ ok: false, msg: 'Las horas extras no requieren reactivación manual.' });
+    }
+
+    const id_asistencia = parseInt(rawId, 10);
+    if (!id_asistencia) return res.status(400).json({ ok: false, msg: 'ID numérico inválido' });
+
+    // Actualizar estado a HABILITADO_EDICION para permitir que el usuario edite/envíe su bitácora
+    await db.query(
+      `UPDATE asistencias 
+       SET estado = 'HABILITADO_EDICION',
+           observacion = 'Bitácora reactivada por el Administrador para su registro/edición.',
+           actualizado_en = NOW()
+       WHERE id_asistencia = ?`,
+      [id_asistencia]
+    );
+
+    res.json({
+      ok: true,
+      msg: 'Bitácora reactivada exitosamente. El usuario ya tiene permiso para completarla o editarla.'
+    });
+  } catch (e) {
+    console.error('Error al reactivar bitácora:', e);
+    res.status(500).json({ ok: false, msg: 'Error interno al reactivar la bitácora' });
+  }
+});
+
+/* ==========================================================================
+   API: CONGELAR / DESCONGELAR HORAS DE UNA JORNADA
+   ========================================================================== */
+router.post('/api/admin/reportes/:id_asistencia/congelar', requireAdmin, async (req, res) => {
+  try {
+    const rawId = String(req.params.id_asistencia || '').trim();
+    if (!rawId) return res.status(400).json({ ok: false, msg: 'ID de asistencia no válido' });
+
+    if (rawId.startsWith('he_')) {
+      return res.status(400).json({ ok: false, msg: 'No se puede congelar una hora extra individualmente.' });
+    }
+
+    const id_asistencia = parseInt(rawId, 10);
+    if (!id_asistencia) return res.status(400).json({ ok: false, msg: 'ID numérico inválido' });
+
+    const [rows] = await db.query('SELECT id_asistencia, estado FROM asistencias WHERE id_asistencia = ? LIMIT 1', [id_asistencia]);
+    if (!rows.length) return res.status(404).json({ ok: false, msg: 'Asistencia no encontrada' });
+
+    const estadoActual = rows[0].estado;
+    if (estadoActual === 'CONGELADO') {
+      // Descongelar -> pasar a PRESENTE
+      await db.query(`UPDATE asistencias SET estado = 'PRESENTE', actualizado_en = NOW() WHERE id_asistencia = ?`, [id_asistencia]);
+      return res.json({
+        ok: true,
+        accion: 'descongelar',
+        msg: 'Horas descongeladas con éxito. Ahora se contabilizan como disponibles.'
+      });
+    } else {
+      // Congelar
+      await db.query(`UPDATE asistencias SET estado = 'CONGELADO', actualizado_en = NOW() WHERE id_asistencia = ?`, [id_asistencia]);
+      return res.json({
+        ok: true,
+        accion: 'congelar',
+        msg: 'Horas congeladas con éxito. Han sido descontadas de las horas disponibles.'
+      });
+    }
+  } catch (e) {
+    console.error('Error al congelar/descongelar horas:', e);
+    res.status(500).json({ ok: false, msg: 'Error interno al procesar las horas' });
   }
 });
 
