@@ -95,11 +95,11 @@
           <!-- Desglose de Horas Congeladas y Disponibles -->
           <div style="display: flex; gap: 8px; width: 100%; border-top: 1px solid var(--color-border); padding-top: 8px; margin-top: 2px;">
             <div style="flex: 1; background: #FEF2F2; padding: 4px 8px; border-radius: 6px; border: 1px solid #FECACA;">
-              <span style="font-size: 10.5px; color: #DC2626; font-weight: 600; display: block;">❄️ Total Congeladas:</span>
+              <span style="font-size: 10.5px; color: #DC2626; font-weight: 600; display: flex; align-items: center; gap: 4px;"><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M4.93 19.07l14.14-14.14"/></svg> Total Congeladas:</span>
               <span id="stat-hours-congeladas" style="font-size: 12px; font-weight: 700; color: #DC2626;">00:00:00</span>
             </div>
             <div style="flex: 1; background: #F0FDF4; padding: 4px 8px; border-radius: 6px; border: 1px solid #BBF7D0;">
-              <span style="font-size: 10.5px; color: #16A34A; font-weight: 600; display: block;">✅ Total Disponibles:</span>
+              <span style="font-size: 10.5px; color: #16A34A; font-weight: 600; display: flex; align-items: center; gap: 4px;"><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Total Disponibles:</span>
               <span id="stat-hours-disponibles" style="font-size: 12px; font-weight: 700; color: #16A34A;">00:00:00</span>
             </div>
           </div>
@@ -181,11 +181,11 @@
               <div class="chart-type-toggle">
                 <button type="button" class="btn-chart-toggle active" id="btnChartSemanal"
                   onclick="cambiarModoGrafico('semanal')">
-                  📅 Por Semanas
+                  Por Semanas
                 </button>
                 <button type="button" class="btn-chart-toggle" id="btnChartDiario"
                   onclick="cambiarModoGrafico('diario')">
-                  📆 Por Día (Lun - Dom)
+                  Por Día (Lun - Dom)
                 </button>
               </div>
               <div class="chart-summary-badge" id="chartSummaryBadge">
@@ -305,9 +305,9 @@
             <div class="select-icon-wrap">
               <select id="filterModalidad" name="modalidad" class="filter-select-custom">
                 <option value="">Todas las jornadas</option>
-                <option value="PRESENCIAL">🏢 Presencial (Obra/Oficina)</option>
-                <option value="TELETRABAJO">🏠 Teletrabajo (Remoto)</option>
-                <option value="HORA_EXTRA">⚡ Horas Extras (Aprobadas)</option>
+                <option value="PRESENCIAL">Presencial (Obra/Oficina)</option>
+                <option value="TELETRABAJO">Teletrabajo (Remoto)</option>
+                <option value="HORA_EXTRA">Horas Extras (Aprobadas)</option>
               </select>
             </div>
           </div>
@@ -336,6 +336,7 @@
                 <option value="FINALIZADO">Finalizadas</option>
                 <option value="EN_CURSO">En curso</option>
                 <option value="OBSERVADO">Observaciones</option>
+                <option value="CONGELADO">H. Congeladas</option>
               </select>
             </div>
           </div>
@@ -1821,7 +1822,7 @@
               lugaresHTML += `
                 <div class="user-stat-place-item">
                   <div class="user-stat-place-header">
-                    <span class="user-stat-place-name">📍 ${escapeHTML(l.lugar_nombre)} ${l.lugar_tipo ? '<small style="color:var(--color-text-muted);">(' + escapeHTML(l.lugar_tipo) + ')</small>' : ''}</span>
+                    <span class="user-stat-place-name">${escapeHTML(l.lugar_nombre)} ${l.lugar_tipo ? '<small style="color:var(--color-text-muted);">(' + escapeHTML(l.lugar_tipo) + ')</small>' : ''}</span>
                     <span class="user-stat-place-val"><strong>${escapeHTML(l.horas_decimal)} hrs</strong> (${l.total_dias} ${l.total_dias === 1 ? 'jornada' : 'jornadas'})</span>
                   </div>
                   <div class="progress-bar-bg">
@@ -1879,7 +1880,7 @@
           let rowsHTML = '';
           if (stats.top_usuarios && stats.top_usuarios.length > 0) {
             stats.top_usuarios.forEach(u => {
-              const medal = u.ranking === 1 ? '🥇' : u.ranking === 2 ? '🥈' : u.ranking === 3 ? '🥉' : `#${u.ranking}`;
+              const medal = `#${u.ranking}`;
               rowsHTML += `
                 <div class="ranking-user-item" onclick="seleccionarUsuarioDesdeRanking(${u.id_usuario}, '${escapeHTML(u.nombre)}', '${escapeHTML(u.CI)}')" title="Clic para ver detalle de ${escapeHTML(u.nombre)}">
                   <div class="ranking-badge ${u.ranking <= 3 ? 'top-rank' : ''}">${medal}</div>
@@ -2119,17 +2120,20 @@
             badgesHTML += `<span class="badge-indicador badge-obs" title="Tiene observación del administrador"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Obs</span>`;
           }
           if (sinTarea && sinFoto) {
-            badgesHTML += `<span class="badge-indicador badge-missing" title="Bitácora y comprobante pendientes">⚠️ Sin Bitácora ni Foto</span>`;
+            badgesHTML += `<span class="badge-indicador badge-missing" title="Bitácora y comprobante pendientes"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Sin Bitácora ni Foto</span>`;
           } else if (sinTarea) {
-            badgesHTML += `<span class="badge-indicador badge-missing" title="Bitácora de actividades pendiente">⚠️ Sin Bitácora</span>`;
+            badgesHTML += `<span class="badge-indicador badge-missing" title="Bitácora de actividades pendiente"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Sin Bitácora</span>`;
           } else if (sinFoto) {
-            badgesHTML += `<span class="badge-indicador badge-missing" title="Comprobante fotográfico pendiente">⚠️ Sin Foto</span>`;
+            badgesHTML += `<span class="badge-indicador badge-missing" title="Comprobante fotográfico pendiente"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Sin Foto</span>`;
           }
           if (esCongelado) {
-            badgesHTML += `<span class="badge-indicador badge-congelado" title="Horas congeladas / retenidas">❄️ Congelada</span>`;
+            badgesHTML += `<span class="badge-indicador badge-congelado" title="Horas congeladas / retenidas"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M4.93 19.07l14.14-14.14"/></svg> Congelada</span>`;
+          }
+          if (esObservado && item.tarea && item.tarea.trim()) {
+            badgesHTML += `<span class="badge-indicador" style="background-color: #fef3c7; color: #b45309; border: 1px solid #fde68a; font-weight: 600;" title="Bitácora regularizada fuera de plazo. Requiere validación del Administrador."><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Regularizada (Pendiente)</span>`;
           }
           if (esReactivado) {
-            badgesHTML += `<span class="badge-indicador badge-reactivado" title="Bitácora reactivada para edición">⚡ Reactivada</span>`;
+            badgesHTML += `<span class="badge-indicador badge-reactivado" title="Bitácora reactivada para edición"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Reactivada</span>`;
           }
 
           // Renderizado de Estado como Botón Interactivo (De gris a rojo para observaciones/bloqueos)
@@ -2137,19 +2141,20 @@
           if (item.modalidad === 'HORA_EXTRA') {
             estadoHTML = `
               <span class="hours-pill" style="background: rgba(124, 58, 237, 0.1); color: #7c3aed; border-color: rgba(124, 58, 237, 0.28); font-weight: 600;" title="Horas extras aprobadas">
-                ⚡ ${item.horas_dia}
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; vertical-align: -1px;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>${item.horas_dia}
               </span>
             `;
           } else if (item.estado_calculado === 'HABILITADO_EDICION') {
             estadoHTML = `
               <button type="button" class="btn-estado-toggle estado-amarillo" onclick="toggleEstadoBitacora('${item.id_asistencia}', '${usuarioSeguro}', '${item.fecha || ''}', '${item.estado_calculado}')" title="Bitácora reactivada para edición. Clic para Desactivar / Congelar">
-                ⚡ ${item.horas_dia} (Reactivada)
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; vertical-align: -1px;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>${item.horas_dia} (Reactivada)
               </button>
             `;
           } else if (item.estado_calculado === 'OBSERVADO' || item.estado_calculado === 'CONGELADO' || item.estado_calculado === 'RECHAZADO') {
-            const labelTexto = item.estado_calculado === 'CONGELADO' ? `❄️ ${item.horas_dia} (Congelada)` : `⚠️ ${item.horas_dia || 'Observación'}`;
+            const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; vertical-align: -1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+            const labelTexto = `${iconSvg}${item.horas_dia || 'Observación'}`;
             estadoHTML = `
-              <button type="button" class="btn-estado-toggle estado-rojo" onclick="toggleEstadoBitacora('${item.id_asistencia}', '${usuarioSeguro}', '${item.fecha || ''}', '${item.estado_calculado}')" title="Jornada en observación / congelada. Clic para Activar / Habilitar bitácora">
+              <button type="button" class="btn-estado-toggle estado-rojo" onclick="toggleEstadoBitacora('${item.id_asistencia}', '${usuarioSeguro}', '${item.fecha || ''}', '${item.estado_calculado}')" title="${item.estado_calculado === 'CONGELADO' ? 'H. Congeladas por bitácora. Clic para Aprobar y Descongelar' : 'Jornada en observación de asistencia. Clic para Gestionar'}">
                 ${labelTexto}
               </button>
             `;
@@ -2314,13 +2319,13 @@
         paginador.appendChild(btnNext);
       }
 
-      // Acción unificada para Activar (descongelar) o Desactivar (congelar) bitácora desde la columna Estado
+      // Acción unificada para Activar / Aprobar (descongelar) o Desactivar (congelar) bitácora desde la columna Estado
       async function toggleEstadoBitacora(id, usuario, fecha, estadoCalculado) {
         const esInactivo = ['OBSERVADO', 'CONGELADO', 'RECHAZADO'].includes(estadoCalculado);
         const accion = esInactivo ? 'activar' : 'desactivar';
-        const titulo = esInactivo ? '¿Activar bitácora y habilitar horas?' : '¿Desactivar y congelar bitácora?';
+        const titulo = esInactivo ? '¿Aprobar bitácora y descongelar horas?' : '¿Desactivar y congelar bitácora?';
         const textoHtml = esInactivo
-          ? `¿Deseas <b>activar</b> la bitácora de <b>${escapeHTML(usuario)}</b> del <b>${fecha}</b>?<br><small style="color: #64748b;">Se desbloqueará el formulario en la vista del pasante y sus horas quedarán disponibles.</small>`
+          ? `¿Deseas <b>aprobar</b> la bitácora de <b>${escapeHTML(usuario)}</b> del <b>${fecha}</b>?<br><small style="color: #64748b;">Las horas se descongelarán inmediatamente y se sumarán al balance disponible.</small>`
           : `¿Deseas <b>desactivar</b> la bitácora de <b>${escapeHTML(usuario)}</b> del <b>${fecha}</b>?<br><small style="color: #64748b;">Se bloqueará el formulario para el pasante y sus horas quedarán congeladas.</small>`;
 
         const result = await Swal.fire({
@@ -2330,7 +2335,7 @@
           showCancelButton: true,
           confirmButtonColor: esInactivo ? '#16a34a' : '#dc2626',
           cancelButtonColor: '#64748b',
-          confirmButtonText: esInactivo ? 'Sí, activar' : 'Sí, desactivar',
+          confirmButtonText: esInactivo ? 'Sí, aprobar y descongelar' : 'Sí, desactivar',
           cancelButtonText: 'Cancelar'
         });
 

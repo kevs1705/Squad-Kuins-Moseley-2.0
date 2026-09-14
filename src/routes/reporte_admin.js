@@ -90,11 +90,13 @@ async function fetchCombinedRecords({ id_carrera, estado_duracion, id_usuario, i
       paramsA.push(id_lugar);
     }
     if (estado_duracion === 'FINALIZADO') {
-      whereA.push("a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL AND a.estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO')");
+      whereA.push("a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL AND a.estado NOT IN ('ANULADO', 'OBSERVADO', 'CONGELADO', 'RECHAZADO')");
     } else if (estado_duracion === 'EN_CURSO') {
       whereA.push("a.hora_salida IS NULL AND a.fecha = CURDATE() AND a.estado NOT IN ('ANULADO', 'RECHAZADO')");
     } else if (estado_duracion === 'OBSERVADO') {
-      whereA.push("(a.estado = 'OBSERVADO' OR (a.hora_salida IS NULL AND a.fecha < CURDATE()))");
+      whereA.push("(a.hora_salida IS NULL AND a.fecha < CURDATE())");
+    } else if (estado_duracion === 'CONGELADO') {
+      whereA.push("(a.estado = 'CONGELADO' OR (a.fecha < CURDATE() AND (r.tarea IS NULL OR TRIM(r.tarea) = '') AND a.estado != 'HABILITADO_EDICION') OR (a.estado = 'OBSERVADO' AND r.tarea IS NOT NULL AND TRIM(r.tarea) != ''))");
     }
 
     if (mod === 'PRESENCIAL') {
@@ -161,7 +163,7 @@ async function fetchCombinedRecords({ id_carrera, estado_duracion, id_usuario, i
 
   // 2. Consulta de Horas Extras Aprobadas
   let rowsB = [];
-  const includeHE = mod !== 'PRESENCIAL' && mod !== 'TELETRABAJO' && !id_lugar && estado_duracion !== 'OBSERVADO' && estado_duracion !== 'EN_CURSO';
+  const includeHE = mod !== 'PRESENCIAL' && mod !== 'TELETRABAJO' && !id_lugar && estado_duracion !== 'OBSERVADO' && estado_duracion !== 'EN_CURSO' && estado_duracion !== 'CONGELADO';
 
   if (includeHE) {
     const whereB = ["n.estado = 2"];
@@ -325,30 +327,27 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
       if (r.modalidad === 'HORA_EXTRA') {
         estadoCalculado = 'FINALIZADO';
         horasDiaText = r.duracion_segundos != null ? formatSecondsToHHMM(r.duracion_segundos) : '00:00';
-      } else if (r.asistencia_estado === 'CONGELADO') {
-        estadoCalculado = 'CONGELADO';
-        horasDiaText = r.duracion_segundos != null ? formatSecondsToHHMM(r.duracion_segundos) : 'Congelada';
-      } else if (r.asistencia_estado === 'HABILITADO_EDICION') {
-        estadoCalculado = 'HABILITADO_EDICION';
-        horasDiaText = r.duracion_segundos != null ? formatSecondsToHHMM(r.duracion_segundos) : 'Reactivada';
-      } else if (r.asistencia_estado === 'OBSERVADO') {
-        estadoCalculado = 'OBSERVADO';
-        horasDiaText = 'Observación';
-      } else if (r.asistencia_estado === 'RECHAZADO') {
-        estadoCalculado = 'RECHAZADO';
-        horasDiaText = 'Rechazado';
-      } else if (isPast && sinTarea && r.asistencia_estado !== 'HABILITADO_EDICION') {
-        estadoCalculado = 'OBSERVADO';
-        horasDiaText = r.duracion_segundos != null ? formatSecondsToHHMM(r.duracion_segundos) : 'Observación';
-      } else if (r.duracion_segundos != null) {
-        estadoCalculado = 'FINALIZADO';
-        horasDiaText = formatSecondsToHHMM(r.duracion_segundos);
       } else if (!r.hora_salida && isPast) {
         estadoCalculado = 'OBSERVADO';
-        horasDiaText = 'Observación';
+        horasDiaText = 'Sin salida';
       } else if (!r.hora_salida) {
         estadoCalculado = 'EN_CURSO';
         horasDiaText = 'En curso';
+      } else if (r.asistencia_estado === 'CONGELADO' || (r.asistencia_estado === 'OBSERVADO' && isPast) || (isPast && sinTarea && r.asistencia_estado !== 'HABILITADO_EDICION')) {
+        estadoCalculado = 'CONGELADO';
+        horasDiaText = r.duracion_segundos != null ? formatSecondsToHHMM(r.duracion_segundos) : '00:00';
+      } else if (r.asistencia_estado === 'HABILITADO_EDICION') {
+        estadoCalculado = 'HABILITADO_EDICION';
+        horasDiaText = r.duracion_segundos != null ? formatSecondsToHHMM(r.duracion_segundos) : 'Reactivada';
+      } else if (r.asistencia_estado === 'RECHAZADO') {
+        estadoCalculado = 'RECHAZADO';
+        horasDiaText = 'Rechazado';
+      } else if (r.asistencia_estado === 'OBSERVADO') {
+        estadoCalculado = 'OBSERVADO';
+        horasDiaText = r.duracion_segundos != null ? formatSecondsToHHMM(r.duracion_segundos) : '00:00';
+      } else if (r.duracion_segundos != null) {
+        estadoCalculado = 'FINALIZADO';
+        horasDiaText = formatSecondsToHHMM(r.duracion_segundos);
       }
 
       return {
@@ -593,20 +592,27 @@ router.post('/api/admin/reportes/:id_asistencia/toggle-estado', requireAdmin, as
     const estaInactivo = ['CONGELADO', 'OBSERVADO'].includes(row.estado) || (!row.tarea && row.estado !== 'HABILITADO_EDICION');
 
     if (estaInactivo) {
-      // Activar / Reactivar -> HABILITADO_EDICION (permite editar bitácora y descongela horas)
+      const tieneTarea = Boolean(row.tarea && row.tarea.trim());
+      const nuevoEstado = tieneTarea ? 'PRESENTE' : 'HABILITADO_EDICION';
+      const observacionMsg = tieneTarea 
+        ? 'Bitácora y horas aprobadas por el Administrador.' 
+        : 'Bitácora reactivada por el Administrador. Horas habilitadas.';
+
       await db.query(
         `UPDATE asistencias 
-         SET estado = 'HABILITADO_EDICION',
-             observacion = 'Bitácora reactivada por el Administrador. Horas habilitadas.',
+         SET estado = ?,
+             observacion = ?,
              actualizado_en = NOW()
          WHERE id_asistencia = ?`,
-        [id_asistencia]
+        [nuevoEstado, observacionMsg, id_asistencia]
       );
       return res.json({
         ok: true,
-        nuevo_estado: 'HABILITADO_EDICION',
+        nuevo_estado: nuevoEstado,
         accion: 'activar',
-        msg: 'Bitácora activada con éxito. El pasante ya puede registrarla y las horas están disponibles.'
+        msg: tieneTarea 
+          ? 'Bitácora aprobada con éxito. Las horas han sido descongeladas y sumadas.'
+          : 'Bitácora activada con éxito. El pasante ya puede registrarla y las horas están disponibles.'
       });
     } else {
       // Desactivar -> CONGELADO (bloquea edición y congela horas)

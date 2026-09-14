@@ -383,7 +383,7 @@ router.post('/reportes/guardar', requireAuth, handleUploadOptional, async (req, 
 
     // 1. Obtener datos de la asistencia y validar permisos y bloqueo a las 00:00
     const [[asistencia]] = await db.query(
-      'SELECT id_asistencia, DATE_FORMAT(fecha, "%Y-%m-%d") AS fecha_fmt, fecha, estado FROM asistencias WHERE id_asistencia = ? AND id_usuario = ?',
+      `SELECT id_asistencia, DATE_FORMAT(fecha, '%Y-%m-%d') AS fecha_fmt, fecha, estado FROM asistencias WHERE id_asistencia = ? AND id_usuario = ?`,
       [id_asistencia, userId]
     );
 
@@ -394,13 +394,10 @@ router.post('/reportes/guardar', requireAuth, handleUploadOptional, async (req, 
     const { fecha: hoyBolivia } = getBoliviaDateTime();
     const fechaAsistencia = asistencia.fecha_fmt || (asistencia.fecha instanceof Date ? asistencia.fecha.toISOString().slice(0, 10) : String(asistencia.fecha).slice(0, 10));
 
-    // Bloqueo a las 00:00: Si la jornada es de un día anterior y no ha sido reactivada por el Administrador
-    if (fechaAsistencia < hoyBolivia && asistencia.estado !== 'HABILITADO_EDICION') {
-      return res.status(403).json({
-        ok: false,
-        error: 'La bitácora de esta jornada está bloqueada (venció a las 00:00). Solicita al administrador su reactivación para regularizarla.'
-      });
-    }
+    // Determinar si es registro fuera de plazo (jornada de fecha pasada sin habilitación previa)
+    const esFechaPasada = fechaAsistencia < hoyBolivia;
+    const esReactivadaAdmin = asistencia.estado === 'HABILITADO_EDICION';
+    const esAutoRegularizada = esFechaPasada && !esReactivadaAdmin;
 
     // Ruta de la imagen cargada por Multer o enviada desde Cloudinary
     const publicPath = req.file ? '/uploads/comprobantes/' + req.file.filename : null;
@@ -410,15 +407,24 @@ router.post('/reportes/guardar', requireAuth, handleUploadOptional, async (req, 
 
     // Verificar si ya existe un reporte registrado para esta asistencia
     const [reportes] = await db.query(
-      'SELECT id_reporte, comprobante FROM reportes WHERE id_asistencia = ? AND id_usuario = ? LIMIT 1',
+      'SELECT id_reporte, comprobante, tarea FROM reportes WHERE id_asistencia = ? AND id_usuario = ? LIMIT 1',
       [id_asistencia, userId]
     );
 
     const reporteExistente = reportes.length > 0 ? reportes[0] : null;
 
+    // Si la jornada es de una fecha pasada y ya estaba cerrada y al día (estado regular y con bitácora), no permitir edición sin reactivación del Admin
+    if (esFechaPasada && !esReactivadaAdmin && asistencia.estado === 'PRESENTE' && reporteExistente && reporteExistente.tarea && reporteExistente.comprobante) {
+      return res.status(403).json({
+        ok: false,
+        error: 'Esta jornada ya fue completada y cerrada dentro del plazo. Solicita al administrador su reactivación si necesitas modificarla.'
+      });
+    }
+    let imgFinal = null;
+
     if (reporteExistente) {
       // Si subió nueva imagen usa comprobanteUrl, de lo contrario conserva la imagen previa
-      const imgFinal = comprobanteUrl !== null ? comprobanteUrl : reporteExistente.comprobante;
+      imgFinal = comprobanteUrl !== null ? comprobanteUrl : reporteExistente.comprobante;
 
       await db.query(`
         UPDATE reportes
@@ -427,34 +433,64 @@ router.post('/reportes/guardar', requireAuth, handleUploadOptional, async (req, 
             actualizado_en = CURRENT_TIMESTAMP
         WHERE id_reporte = ? AND id_usuario = ?
       `, [tarea, imgFinal, reporteExistente.id_reporte, userId]);
-
-      // Si la asistencia estaba en estado HABILITADO_EDICION, restaurar a estado regular
-      if (asistencia.estado === 'HABILITADO_EDICION') {
-        await db.query(`
-          UPDATE asistencias
-          SET estado = 'PRESENTE', actualizado_en = CURRENT_TIMESTAMP
-          WHERE id_asistencia = ? AND id_usuario = ?
-        `, [id_asistencia, userId]);
-      }
-
-      return res.json({ ok: true, msg: 'Bitácora actualizada con éxito', comprobante: imgFinal });
     } else {
-      // Inserción respetando el esquema
+      imgFinal = comprobanteUrl;
       await db.query(`
         INSERT INTO reportes (id_usuario, id_asistencia, fecha, tarea, comprobante)
         VALUES (?, ?, ?, ?, ?)
-      `, [userId, id_asistencia, fechaAsistencia, tarea, comprobanteUrl]);
+      `, [userId, id_asistencia, fechaAsistencia, tarea, imgFinal]);
+    }
 
-      // Si la asistencia estaba en estado HABILITADO_EDICION, restaurar a estado regular
-      if (asistencia.estado === 'HABILITADO_EDICION') {
+    // Actualización de estado en asistencias:
+    if (esAutoRegularizada) {
+      // Si es auto-regularización fuera de plazo: queda en OBSERVADO y horas congeladas hasta revisión del Admin
+      await db.query(`
+        UPDATE asistencias
+        SET estado = 'OBSERVADO',
+            observacion = NULL,
+            actualizado_en = CURRENT_TIMESTAMP
+        WHERE id_asistencia = ? AND id_usuario = ?
+      `, [id_asistencia, userId]);
+
+      return res.json({
+        ok: true,
+        es_regularizada: true,
+        msg: 'Bitácora regularizada fuera de plazo con éxito. Tus horas permanecerán en observación y congeladas hasta la aprobación del Administrador.',
+        comprobante: imgFinal
+      });
+    } else if (esReactivadaAdmin) {
+      // Si fue previamente reactivada por el Admin, pasa a PRESENTE y se limpian observaciones
+      await db.query(`
+        UPDATE asistencias
+        SET estado = 'PRESENTE',
+            observacion = NULL,
+            actualizado_en = CURRENT_TIMESTAMP
+        WHERE id_asistencia = ? AND id_usuario = ?
+      `, [id_asistencia, userId]);
+
+      return res.json({
+        ok: true,
+        es_regularizada: false,
+        msg: 'Bitácora guardada con éxito. La jornada ha sido regularizada.',
+        comprobante: imgFinal
+      });
+    } else {
+      // Jornada en curso / regular del día de hoy
+      if (asistencia.estado !== 'ANULADO') {
         await db.query(`
           UPDATE asistencias
-          SET estado = 'PRESENTE', actualizado_en = CURRENT_TIMESTAMP
+          SET estado = 'PRESENTE',
+              actualizado_en = CURRENT_TIMESTAMP
           WHERE id_asistencia = ? AND id_usuario = ?
         `, [id_asistencia, userId]);
       }
 
-      return res.json({ ok: true, msg: 'Bitácora creada con éxito', comprobante: comprobanteUrl });
+      return res.json({
+        ok: true,
+        es_regularizada: false,
+        msg: 'Bitácora registrada con éxito.',
+        comprobante: imgFinal
+      });
     }
 
   } catch (err) {
