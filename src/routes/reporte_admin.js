@@ -282,12 +282,9 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
     for (const r of allRows) {
       if (r.duracion_segundos != null && !['ANULADO', 'RECHAZADO'].includes(r.asistencia_estado)) {
         totalSegundos += Number(r.duracion_segundos) || 0;
-        const sinTarea = !r.tarea || !r.tarea.trim();
-        const esPasada = r.fecha && r.fecha < todayStr;
         const estaCongeladaUObs = ['CONGELADO', 'OBSERVADO'].includes(r.asistencia_estado);
-        const estaBloqueadaSinBitacora = esPasada && sinTarea && r.asistencia_estado !== 'HABILITADO_EDICION';
 
-        if (estaCongeladaUObs || estaBloqueadaSinBitacora) {
+        if (estaCongeladaUObs) {
           totalSegundosCongelados += Number(r.duracion_segundos) || 0;
         }
       }

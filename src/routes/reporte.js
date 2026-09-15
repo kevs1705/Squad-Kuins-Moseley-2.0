@@ -84,7 +84,7 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
     const totalSegundosAcumulados = (Number(totals[0]?.total_segundos) || 0) + (Number(totalsHE[0]?.total_segundos_he) || 0);
     const total_acumulada = formatSecondsToHHMMSS(totalSegundosAcumulados);
 
-    // 2.1. Total de horas CONGELADAS / EN OBSERVACIÓN (incluye estado CONGELADO, OBSERVADO y jornadas pasadas sin bitácora)
+    // 2.1. Total de horas CONGELADAS / EN OBSERVACIÓN (únicamente cuando el Administrador colocó explícitamente estado CONGELADO u OBSERVADO)
     const [totalsObs] = await db.query(`
       SELECT COALESCE(
         SUM(
@@ -101,14 +101,7 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
         AND a.estado NOT IN ('ANULADO', 'RECHAZADO')
         AND a.hora_entrada IS NOT NULL
         AND a.hora_salida IS NOT NULL
-        AND (
-          a.estado IN ('OBSERVADO', 'CONGELADO')
-          OR (
-            a.fecha < CURDATE()
-            AND (r.tarea IS NULL OR TRIM(r.tarea) = '')
-            AND a.estado != 'HABILITADO_EDICION'
-          )
-        )
+        AND a.estado IN ('OBSERVADO', 'CONGELADO')
     `, [userId]);
 
     const totalSegundosCongelados = Number(totalsObs[0]?.total_segundos_obs) || 0;
@@ -394,11 +387,11 @@ router.post('/reportes/guardar', requireAuth, handleUploadOptional, async (req, 
     const { fecha: hoyBolivia } = getBoliviaDateTime();
     const fechaAsistencia = asistencia.fecha_fmt || (asistencia.fecha instanceof Date ? asistencia.fecha.toISOString().slice(0, 10) : String(asistencia.fecha).slice(0, 10));
 
-    // Bloqueo a las 00:00: Si la jornada es de un día anterior y no ha sido reactivada por el Administrador
-    if (fechaAsistencia < hoyBolivia && asistencia.estado !== 'HABILITADO_EDICION') {
+    // Si la asistencia fue anulada expresamente por el admin, impedir edición
+    if (asistencia.estado === 'ANULADO') {
       return res.status(403).json({
         ok: false,
-        error: 'La bitácora de esta jornada está bloqueada (venció a las 00:00). Solicita al administrador su reactivación para regularizarla.'
+        error: 'Esta jornada se encuentra anulada. Contacta al administrador.'
       });
     }
 
