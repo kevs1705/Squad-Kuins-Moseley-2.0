@@ -1,13 +1,34 @@
 // sincronizar_biometrico.js
 require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
 const db = require('./src/config/bd'); // Pool MySQL
 const Zkteco = require('zkteco-js-with-restart');
 
 const BIOMETRICO_IP = process.env.BIOMETRICO_IP || '192.168.1.250';
 const BIOMETRICO_PORT = Number(process.env.BIOMETRICO_PORT) || 4370;
-const ID_LUGAR_DEFECTO = 3; // ID de lugar por defecto en la tabla lugares
+const ID_LUGAR_DEFECTO = 3; // ID de lugar por defecto en la tabla lugares (Oficina / Biométrico)
+const INTERVALO_MINUTOS = 5; // Frecuencia de sincronización en modo continuo
+const LOG_FILE = path.join(__dirname, 'sincronizacion.log');
 
-// Función para formatear fechas a YYYY-MM-DD y YYYY-MM-DD HH:mm:ss
+// Si se pasa --full procesa todo el historial, por defecto solo procesa el DÍA DE HOY (y ayer por margen)
+const SINCRONIZAR_TODO = process.argv.includes('--full') || process.argv.includes('-f');
+
+let sincronizandoEnCurso = false;
+
+// Función de log dual (consola + archivo)
+function logMensaje(texto) {
+  const linea = `[${new Date().toLocaleString()}] ${texto}`;
+  console.log(texto);
+  try {
+    if (fs.existsSync(LOG_FILE) && fs.statSync(LOG_FILE).size > 2 * 1024 * 1024) {
+      fs.renameSync(LOG_FILE, path.join(__dirname, 'sincronizacion.prev.log'));
+    }
+    fs.appendFileSync(LOG_FILE, linea + '\n', 'utf8');
+  } catch (e) { }
+}
+
+// Función para formatear fechas a YYYY-MM-DD y HH:mm:ss
 function formatearFecha(fechaObj) {
   const pad = (n) => String(n).padStart(2, '0');
   const yyyy = fechaObj.getFullYear();
@@ -19,19 +40,32 @@ function formatearFecha(fechaObj) {
 
   return {
     fecha: `${yyyy}-${mm}-${dd}`,
+    horaStr: `${hh}:${mi}:${ss}`,
     fechaHoraSql: `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`
   };
 }
 
-async function sincronizarBiometricoCompleto() {
-  console.log('=================================================================');
-  console.log(' 🔄 SINCRONIZACIÓN INTEGRAL: USUARIOS Y ASISTENCIAS K14 <---> BD ');
-  console.log('=================================================================\n');
+async function ejecutarSincronizacion() {
+  if (sincronizandoEnCurso) {
+    logMensaje('⚠️ Ciclo anterior aún en progreso. Omitiendo este turno...');
+    return;
+  }
+
+  sincronizandoEnCurso = true;
+  const horaInicio = new Date().toLocaleString();
+  const modoFiltro = SINCRONIZAR_TODO ? 'HISTORIAL COMPLETO' : 'SOLO EL DÍA DE HOY';
+
+  logMensaje('=================================================================');
+  logMensaje(` 🔄 CICLO DE SINCRONIZACIÓN [${modoFiltro}] - [${horaInicio}]`);
+  logMensaje('=================================================================');
 
   let dispositivoZk;
 
   try {
-    console.log('1. Cargando catálogo de carreras y lugares...');
+    // 1. CARGA DE DATOS DE MYSQL (1 SOLA CONSULTA OPTIMIZADA)
+    logMensaje('1. Consultando catálogo y asistencias recientes en MySQL...');
+    
+    // 1A. Carreras y Lugares
     const [carrerasBD] = await db.query('SELECT id_carrera, nombre, siglas FROM carreras');
     const [lugaresBD] = await db.query('SELECT id_lugar, nombre FROM lugares WHERE id_lugar = ? LIMIT 1', [ID_LUGAR_DEFECTO]);
     const idLugarDefecto = lugaresBD.length > 0 ? lugaresBD[0].id_lugar : ID_LUGAR_DEFECTO;
@@ -41,31 +75,46 @@ async function sincronizarBiometricoCompleto() {
       if (c.siglas) mapCarrerasBySigla.set(String(c.siglas).trim().toUpperCase(), c.id_carrera);
     });
 
-    console.log('2. Consultando usuarios registrados en MySQL...');
+    // 1B. Usuarios
     const [usuariosBD] = await db.query(`
-      SELECT u.*, c.siglas AS carrera_siglas 
+      SELECT u.id_usuario, u.nombre, u.apellido_paterno, u.CI, u.id_carrera, u.estado, u.rol, u.contrasena,
+             c.siglas AS carrera_siglas 
       FROM usuarios u
       LEFT JOIN carreras c ON u.id_carrera = c.id_carrera
     `);
 
-    console.log('3. Conectando al equipo biométrico K14...');
+    const mapUsuariosPorId = new Map();
+    const mapUsuariosPorCI = new Map();
+    usuariosBD.forEach(u => {
+      if (u.id_usuario) mapUsuariosPorId.set(String(u.id_usuario), u);
+      if (u.CI) mapUsuariosPorCI.set(String(u.CI).trim(), u);
+    });
+
+    // 1C. Traer solo asistencias de hoy (o últimos 2 días por margen) a memoria RAM
+    const queryAsistencias = SINCRONIZAR_TODO
+      ? `SELECT id_asistencia, id_usuario, DATE_FORMAT(fecha, '%Y-%m-%d') AS fecha, hora_entrada, hora_salida, estado FROM asistencias`
+      : `SELECT id_asistencia, id_usuario, DATE_FORMAT(fecha, '%Y-%m-%d') AS fecha, hora_entrada, hora_salida, estado FROM asistencias WHERE fecha >= CURDATE() - INTERVAL 1 DAY`;
+
+    const [asistenciasBD] = await db.query(queryAsistencias);
+
+    const mapAsistenciasRAM = new Map();
+    asistenciasBD.forEach(a => {
+      const key = `${a.id_usuario}_${a.fecha}`;
+      mapAsistenciasRAM.set(key, a);
+    });
+
+    // 2. CONEXIÓN AL BIOMÉTRICO K14
+    logMensaje(`2. Conectando al equipo biométrico K14 en ${BIOMETRICO_IP}:${BIOMETRICO_PORT}...`);
     dispositivoZk = new Zkteco(BIOMETRICO_IP, BIOMETRICO_PORT, 5200, 5000);
     await dispositivoZk.createSocket();
-    console.log('   --> Conexión TCP establecida.\n');
+    logMensaje('   --> ✅ Conexión TCP con K14 establecida.');
 
     // -----------------------------------------------------------------
-    // ETAPA A: SINCRONIZACIÓN DE USUARIOS
+    // ETAPA A: SINCRONIZACIÓN DE USUARIOS (Cloud <---> K14)
     // -----------------------------------------------------------------
-    console.log('--- [ETAPA A: SINCRONIZACIÓN DE USUARIOS] ---');
+    logMensaje('--- [ETAPA A: USUARIOS PENDIENTES] ---');
     const responseBio = await dispositivoZk.getUsers();
     const usuariosBio = responseBio.data || [];
-
-    // Mapear usuarios de la BD por id_usuario y por CI para búsqueda rápida
-    const mapBD = new Map();
-    usuariosBD.forEach(u => {
-      if (u.id_usuario) mapBD.set(String(u.id_usuario), u);
-      if (u.CI) mapBD.set(String(u.CI).trim(), u);
-    });
 
     const mapBio = new Map();
     usuariosBio.forEach(u => {
@@ -78,9 +127,10 @@ async function sincronizarBiometricoCompleto() {
     let creadosEnBD = 0;
     let creadosEnBio = 0;
 
-    // 1. Usuarios en Biométrico que NO están en la BD -> Importar a BD
+    // A1. K14 -> BD
     for (const [idBio, bioUser] of mapBio.entries()) {
-      if (!mapBD.has(idBio)) {
+      const existe = mapUsuariosPorId.has(idBio) || mapUsuariosPorCI.has(idBio);
+      if (!existe) {
         const nombreTemp = String(bioUser.name || `Usuario_${idBio}`).trim().slice(0, 100);
         const pwdTemp = String(bioUser.password || '123456');
         const ciTemp = idBio;
@@ -97,18 +147,20 @@ async function sincronizarBiometricoCompleto() {
 
         const rolBD = Number(bioUser.role) > 0 ? 1 : 0;
 
-        await db.query(
+        const [resIns] = await db.query(
           `INSERT INTO usuarios (nombre, CI, universidad, id_carrera, celular, estado, rol, contrasena)
            VALUES (?, ?, 'UNIVALLE', ?, NULL, 1, ?, ?)`,
           [nombreTemp, ciTemp, idCarreraBD, rolBD, pwdTemp]
         );
-        // Actualizar mapBD local para evitar duplicados en la misma corrida
-        mapBD.set(String(ciTemp), { CI: ciTemp, nombre: nombreTemp });
+        const nuevoU = { id_usuario: resIns.insertId, CI: ciTemp, nombre: nombreTemp };
+        mapUsuariosPorId.set(String(resIns.insertId), nuevoU);
+        mapUsuariosPorCI.set(String(ciTemp), nuevoU);
         creadosEnBD++;
+        logMensaje(`   📥 Usuario importado a BD: [CI: ${ciTemp}] ${nombreTemp}`);
       }
     }
 
-    // 2. Usuarios en BD que NO están en Biométrico -> Exportar a Biométrico
+    // A2. BD -> K14
     for (const dbUser of usuariosBD) {
       const idSearchCI = String(dbUser.CI || '').trim();
       const idSearchId = String(dbUser.id_usuario || '').trim();
@@ -117,164 +169,183 @@ async function sincronizarBiometricoCompleto() {
 
       if (!yaEnBio && Number(dbUser.estado) === 1) {
         const bioUid = Number(dbUser.id_usuario);
-        const bioUserId = String(dbUser.CI || dbUser.id_usuario).trim().slice(0, 9);
-        // Normalizar nombre sin acentos para compatibilidad con el firmware ZK
-        const bioName = String(dbUser.nombre || 'Usuario')
+        const bioUserId = String(dbUser.id_usuario);
+        
+        const nombreCompleto = `${dbUser.nombre || ''} ${dbUser.apellido_paterno || ''}`.trim();
+        const bioName = nombreCompleto
           .normalize('NFD')
           .replace(/[\u0300-\u036f]/g, '')
           .trim()
-          .slice(0, 24);
+          .slice(0, 24) || `User_${bioUserId}`;
 
         let bioPassword = String(dbUser.contrasena || '123456').replace(/\D/g, '').slice(0, 8);
         if (!bioPassword) bioPassword = '123456';
 
         const bioRole = Number(dbUser.rol) === 1 ? 14 : 0;
+        const bioDept = Number(dbUser.id_carrera) || 1;
 
         try {
-          await dispositivoZk.setUser(bioUid, bioUserId, bioName, bioPassword, bioRole, 0);
+          await dispositivoZk.setUser(bioUid, bioUserId, bioName, bioPassword, bioRole, 0, bioDept);
           mapBio.set(bioUserId, { uid: bioUid, userId: bioUserId, name: bioName });
           creadosEnBio++;
-          console.log(`   ✅ Usuario enviado al K14: [ID/CI: ${bioUserId}] ${bioName}`);
+          logMensaje(`   🚀 Usuario enviado al K14: [ID: ${bioUserId}] ${bioName}`);
         } catch (errSet) {
-          console.error(`   ❌ Error enviando usuario ${bioUserId} (${bioName}) al K14:`, errSet.message);
+          logMensaje(`   ❌ Error enviando usuario al K14: ${errSet.message}`);
         }
       }
     }
 
-    console.log(`   --> Usuarios K14 -> BD: ${creadosEnBD} | BD -> K14: ${creadosEnBio}\n`);
+    logMensaje(`   --> Resumen Usuarios: K14 -> BD: ${creadosEnBD} | BD -> K14: ${creadosEnBio}`);
 
     // -----------------------------------------------------------------
-    // ETAPA B: SINCRONIZACIÓN DE MARCAS
+    // ETAPA B: SINCRONIZACIÓN DE MARCAS (FILTRADO POR EL DÍA DE HOY)
     // -----------------------------------------------------------------
-    console.log('--- [ETAPA B: SINCRONIZACIÓN DE MARCAS DE ASISTENCIA] ---');
-
+    logMensaje('--- [ETAPA B: MARCAS DE ASISTENCIA] ---');
     const responseAttendances = await dispositivoZk.getAttendances();
     const marcasBio = responseAttendances.data || [];
-    console.log(`   --> Total de marcas extraídas del K14: ${marcasBio.length}`);
+    logMensaje(`   --> Total registros en memoria del K14: ${marcasBio.length}`);
 
-    // Filtrar únicamente las marcas correspondientes al año 2026
-    const marcasBio2026 = marcasBio.filter(m => {
+    // Obtener la fecha de hoy en formato YYYY-MM-DD
+    const hoyObj = new Date();
+    const { fecha: fechaHoyStr } = formatearFecha(hoyObj);
+    
+    // Ayer por margen de seguridad para turnos nocturnos
+    const ayerObj = new Date();
+    ayerObj.setDate(ayerObj.getDate() - 1);
+    const { fecha: fechaAyerStr } = formatearFecha(ayerObj);
+
+    // FILTRO: Solo procesar marcas de HOY (y ayer)
+    const marcasValidas = marcasBio.filter(m => {
       const rawTime = m.record_time ?? m.recordTime ?? m.timestamp ?? m.time;
       const d = new Date(rawTime);
-      return !isNaN(d.getTime()) && d.getFullYear() === 2026;
+      if (isNaN(d.getTime())) return false;
+      
+      if (SINCRONIZAR_TODO) {
+        return d.getFullYear() >= (hoyObj.getFullYear() - 1);
+      } else {
+        const { fecha: fechaMarca } = formatearFecha(d);
+        return fechaMarca === fechaHoyStr || fechaMarca === fechaAyerStr;
+      }
     });
-    console.log(`   --> Total de marcas del año 2026 a procesar: ${marcasBio2026.length}`);
+
+    logMensaje(`   --> Marcas correspondientes a hoy a evaluar: ${marcasValidas.length}`);
 
     let marcasProcesadas = 0;
-    let marcasOmitidas = marcasBio.length - marcasBio2026.length;
+    let marcasOmitidas = 0;
 
-    if (marcasBio2026.length > 0) {
-      // Ordenar marcas de más antigua a más reciente
-      marcasBio2026.sort((a, b) => {
+    if (marcasValidas.length > 0) {
+      marcasValidas.sort((a, b) => {
         const timeA = new Date(a.record_time || a.recordTime || a.timestamp).getTime();
         const timeB = new Date(b.record_time || b.recordTime || b.timestamp).getTime();
         return timeA - timeB;
       });
 
-      for (const marca of marcasBio2026) {
+      for (const marca of marcasValidas) {
         try {
           const rawId = String(marca.user_id ?? marca.userId ?? marca.deviceUserId ?? marca.uid).trim();
-
           if (!rawId || rawId === 'undefined') {
-            console.log(`   ⚠️ ID inválido en marca:`, marca);
             marcasOmitidas++;
             continue;
           }
 
-          // 1. Buscar el id_usuario real en MySQL por id_usuario O por CI
-          const [checkUser] = await db.query(
-            'SELECT id_usuario FROM usuarios WHERE id_usuario = ? OR CI = ? LIMIT 1',
-            [rawId, rawId]
-          );
-
-          if (checkUser.length === 0) {
-            console.log(`   ⚠️ El usuario con ID/CI '${rawId}' no existe en la base de datos MySQL.`);
+          // Buscar usuario en RAM
+          const usuarioEncontrado = mapUsuariosPorId.get(rawId) || mapUsuariosPorCI.get(rawId);
+          if (!usuarioEncontrado) {
             marcasOmitidas++;
             continue;
           }
 
-          const idUsuarioBD = checkUser[0].id_usuario;
-
-          // Parseo de fecha
+          const idUsuarioBD = usuarioEncontrado.id_usuario;
           const rawTime = marca.record_time ?? marca.recordTime ?? marca.timestamp ?? marca.time;
           const fechaHoraObj = new Date(rawTime);
+          const { fecha, horaStr } = formatearFecha(fechaHoraObj);
 
-          if (isNaN(fechaHoraObj.getTime()) || fechaHoraObj.getFullYear() !== 2026) {
-            console.log(`   ⚠️ Fecha no válida/fuera de 2026 para el usuario ${rawId}:`, rawTime);
-            marcasOmitidas++;
-            continue;
-          }
+          // Buscar en RAM
+          const keyRAM = `${idUsuarioBD}_${fecha}`;
+          const asis = mapAsistenciasRAM.get(keyRAM);
 
-          const { fecha, fechaHoraSql } = formatearFecha(fechaHoraObj);
-          const horaStr = fechaHoraSql.split(' ')[1] || '00:00:00';
-
-          // Asignar idLugarDefecto (3 - Oficina / Biométrico)
-          const idLugar = idLugarDefecto;
-
-          // 2. Verificar si ya existe un registro de asistencia para este usuario y fecha
-          const [asistenciaExistente] = await db.query(
-            'SELECT id_asistencia, hora_entrada, hora_salida, estado FROM asistencias WHERE id_usuario = ? AND fecha = ? LIMIT 1',
-            [idUsuarioBD, fecha]
-          );
-
-          if (asistenciaExistente.length > 0) {
-            const asis = asistenciaExistente[0];
-
-            // 🛡️ CANDADO DE PROTECCIÓN: Si el admin editó o anuló esta fila, NO TOCAR
+          if (asis) {
             if (asis.estado === 'EDITADO_ADMIN' || asis.estado === 'ANULADO') {
               marcasOmitidas++;
               continue;
             }
 
-            // Si es un registro normal PRESENTE:
             if (!asis.hora_entrada) {
-              // Si no tenía entrada, asignar esta marca como entrada
               await db.query(
                 'UPDATE asistencias SET hora_entrada = ?, id_lugar = ? WHERE id_asistencia = ?',
-                [horaStr, idLugar, asis.id_asistencia]
+                [horaStr, idLugarDefecto, asis.id_asistencia]
               );
+              asis.hora_entrada = horaStr;
+              marcasProcesadas++;
+              logMensaje(`   ⏱️  Entrada registrada: Usuario ID ${idUsuarioBD} a las ${horaStr}`);
             } else if (horaStr > asis.hora_entrada) {
-              // Si la nueva marca es posterior a la entrada, registrar o actualizar la salida
               if (!asis.hora_salida || horaStr > asis.hora_salida) {
                 await db.query(
                   'UPDATE asistencias SET hora_salida = ?, id_lugar = ? WHERE id_asistencia = ?',
-                  [horaStr, idLugar, asis.id_asistencia]
+                  [horaStr, idLugarDefecto, asis.id_asistencia]
                 );
+                asis.hora_salida = horaStr;
+                marcasProcesadas++;
+                logMensaje(`   ⏱️  Salida actualizada: Usuario ID ${idUsuarioBD} a las ${horaStr}`);
+              } else {
+                marcasOmitidas++;
               }
+            } else {
+              marcasOmitidas++;
             }
-            marcasProcesadas++;
-
           } else {
-            // No existe asistencia para este día: Insertar nueva asistencia con hora_entrada
-            await db.query(
+            // Primera entrada del día
+            const [insRes] = await db.query(
               'INSERT INTO asistencias (id_usuario, id_lugar, fecha, hora_entrada, estado) VALUES (?, ?, ?, ?, ?)',
-              [idUsuarioBD, idLugar, fecha, horaStr, 'PRESENTE']
+              [idUsuarioBD, idLugarDefecto, fecha, horaStr, 'PRESENTE']
             );
+            mapAsistenciasRAM.set(keyRAM, {
+              id_asistencia: insRes.insertId,
+              id_usuario: idUsuarioBD,
+              fecha: fecha,
+              hora_entrada: horaStr,
+              hora_salida: null,
+              estado: 'PRESENTE'
+            });
             marcasProcesadas++;
+            logMensaje(`   ⏱️  Nueva entrada del día: Usuario ID ${idUsuarioBD} a las ${horaStr}`);
           }
-
         } catch (errReg) {
-          console.error(`   ❌ Error SQL insertando marca de usuario ${marca.user_id}: ${errReg.message}`);
+          // Ignorar silenciosamente si ya estaba duplicada por clave única
+          if (errReg.code !== 'ER_DUP_ENTRY') {
+            logMensaje(`   ❌ Error en marca: ${errReg.message}`);
+          }
           marcasOmitidas++;
         }
       }
     }
 
-    console.log(`\n==================== RESUMEN GENERAL ====================`);
-    console.log(`📥 Usuarios importados de K14 a BD: ${creadosEnBD}`);
-    console.log(`🚀 Usuarios exportados de BD a K14: ${creadosEnBio}`);
-    console.log(`⏱️  Marcas procesadas con éxito:     ${marcasProcesadas}`);
-    console.log(`⚠️  Marcas omitidas o con error:     ${marcasOmitidas}`);
-    console.log('=========================================================\n');
+    logMensaje(`==================== RESUMEN GENERAL ====================`);
+    logMensaje(`📥 Usuarios K14 -> BD:        ${creadosEnBD}`);
+    logMensaje(`🚀 Usuarios BD -> K14:        ${creadosEnBio}`);
+    logMensaje(`⏱️  Marcas nuevas procesadas:  ${marcasProcesadas}`);
+    logMensaje(`⏭️  Marcas ya registradas:     ${marcasOmitidas}`);
+    logMensaje(`=========================================================\n`);
 
   } catch (error) {
-    console.error('❌ Error crítico durante el proceso:', error?.message || error);
+    logMensaje(`❌ Error durante la sincronización: ${error?.message || error}`);
   } finally {
     if (dispositivoZk) {
       try { await dispositivoZk.disconnect(); } catch (e) { }
     }
-    process.exit(0);
+    sincronizandoEnCurso = false;
   }
 }
 
-sincronizarBiometricoCompleto();
+// Control de modo de ejecución (Manual o Bucle Continuo)
+const esDaemon = process.argv.includes('--daemon') || process.argv.includes('-d');
+
+if (esDaemon) {
+  logMensaje(`🤖 Modo Servicio activado: sincronización periódica cada ${INTERVALO_MINUTOS} minutos.`);
+  ejecutarSincronizacion();
+  setInterval(ejecutarSincronizacion, INTERVALO_MINUTOS * 60 * 1000);
+} else {
+  ejecutarSincronizacion().then(() => {
+    process.exit(0);
+  });
+}
