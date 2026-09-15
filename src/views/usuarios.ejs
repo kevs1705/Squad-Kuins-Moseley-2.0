@@ -9,11 +9,27 @@
 
   <div class="toolbar" style="gap:12px;">
 
-    <input
-      id="q"
-      class="search"
-      placeholder="Buscar por nombre o CI"
-    >
+    <div style="display:flex; gap:12px; flex:1; min-width:280px; align-items:center; flex-wrap:wrap;">
+      <input
+        id="q"
+        class="search"
+        placeholder="Buscar por nombre, apellido o CI"
+        style="flex:1; min-width:200px;"
+      >
+
+      <select id="filterCarrera" class="page-select" style="height:42px; min-width:180px; font-weight:500;">
+        <option value="">Todas las carreras</option>
+        <% (carreras || []).forEach(c => { %>
+          <option value="<%= c.id_carrera %>"><%= c.nombre %></option>
+        <% }) %>
+      </select>
+
+      <select id="filterEstado" class="page-select" style="height:42px; min-width:140px; font-weight:500;">
+        <option value="">Todos los estados</option>
+        <option value="1">Activos</option>
+        <option value="0">Inactivos</option>
+      </select>
+    </div>
 
     <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
       <div class="page-select-wrap">
@@ -47,9 +63,9 @@
           <th>CI</th>
           <th>Universidad</th>
           <th>Carrera</th>
+          <th>Fecha Inicio</th>
           <th>Celular</th>
           <th>Estado</th>
-          <th>Rol</th>
           <th>Acciones</th>
         </tr>
       </thead>
@@ -67,6 +83,7 @@
             data-ci="<%- (u.CI || '').replace(/"/g, '&quot;') %>"
             data-universidad="<%- (u.universidad || '').replace(/"/g, '&quot;') %>"
             data-id_carrera="<%= u.id_carrera || '' %>"
+            data-fecha_inicio_pasantia="<%- (u.fecha_inicio_pasantia || '').replace(/"/g, '&quot;') %>"
             data-celular="<%- (u.celular || '').replace(/"/g, '&quot;') %>"
             data-estado="<%= Number(u.estado) || 0 %>"
             data-rol="<%= Number(u.rol) || 0 %>"
@@ -99,6 +116,10 @@
               <%= u.carrera_nombre || u.carrera_siglas || '-' %>
             </td>
 
+            <td class="c-fecha_inicio">
+              <%= u.fecha_inicio_pasantia || '-' %>
+            </td>
+
             <td class="c-cel">
               <%= u.celular || '-' %>
             </td>
@@ -109,20 +130,14 @@
               </span>
             </td>
 
-            <td class="c-rol">
-              <span class="chip role">
-                <%= u.rol ? 'Admin' : 'Usuario' %>
-              </span>
-            </td>
-
             <td class="actions">
 
               <button class="btn secondary btnEdit">
-                Editar
+                <i class="bi bi-pencil-square"></i> Editar
               </button>
 
               <button class="btn secondary btnDel">
-                Eliminar
+                <i class="bi bi-trash3"></i> Eliminar
               </button>
 
             </td>
@@ -324,6 +339,8 @@
 <script>
 
   const q = document.getElementById('q');
+  const filterCarrera = document.getElementById('filterCarrera');
+  const filterEstado = document.getElementById('filterEstado');
   const tbody = document.getElementById('tbody');
   const btnNew = document.getElementById('btnNew');
   const backdrop = document.getElementById('modal-backdrop');
@@ -346,14 +363,36 @@
 
   function renderPagination() {
     const filterVal = q ? q.value.toLowerCase().trim() : '';
+    const selectedCarrera = filterCarrera ? filterCarrera.value.trim() : '';
+    const selectedEstado = filterEstado ? filterEstado.value.trim() : '';
     const pageSize = parseInt(pageSizeSelect ? pageSizeSelect.value : 10, 10) || 10;
     const allRows = [...tbody.rows];
 
-    // Filtrar filas que coincidan con la búsqueda
+    // Filtrar filas que coincidan con la búsqueda (por nombre, apellido o CI), carrera y estado
     const matchingRows = allRows.filter(tr => {
+      // Filtro por Carrera
+      if (selectedCarrera && String(tr.dataset.id_carrera || '').trim() !== selectedCarrera) {
+        return false;
+      }
+
+      // Filtro por Estado (1: Activo, 0: Inactivo)
+      if (selectedEstado !== '' && String(tr.dataset.estado ?? '').trim() !== selectedEstado) {
+        return false;
+      }
+
+      // Filtro por Texto (Nombre, Apellidos o CI)
+      if (!filterVal) return true;
+
       const name = tr.querySelector('.c-nombre')?.textContent.toLowerCase() || '';
+      const apePat = tr.querySelector('.c-apellido_paterno')?.textContent.toLowerCase() || '';
+      const apeMat = tr.querySelector('.c-apellido_materno')?.textContent.toLowerCase() || '';
       const ci = tr.querySelector('.c-ci')?.textContent.toLowerCase() || '';
-      return name.includes(filterVal) || ci.includes(filterVal);
+
+      const fullText = `${name} ${apePat} ${apeMat} ${ci}`.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+      const cleanFilter = filterVal.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const searchTerms = cleanFilter.split(/\s+/).filter(Boolean);
+
+      return searchTerms.every(term => fullText.includes(term));
     });
 
     const totalMatching = matchingRows.length;
@@ -444,6 +483,20 @@
     currentPage = 1;
     renderPagination();
   });
+
+  if (filterCarrera) {
+    filterCarrera.addEventListener('change', () => {
+      currentPage = 1;
+      renderPagination();
+    });
+  }
+
+  if (filterEstado) {
+    filterEstado.addEventListener('change', () => {
+      currentPage = 1;
+      renderPagination();
+    });
+  }
 
   if (pageSizeSelect) {
     pageSizeSelect.addEventListener('change', () => {
@@ -543,6 +596,10 @@
 
 
         tr.remove();
+        const headerCount = document.getElementById('header-user-count');
+        if (headerCount) {
+          headerCount.textContent = tbody.rows.length;
+        }
 
 
       } catch (e) {
@@ -1024,6 +1081,8 @@
 
       <td class="c-carr"></td>
 
+      <td class="c-fecha_inicio"></td>
+
       <td class="c-cel"></td>
 
       <td class="c-est">
@@ -1032,20 +1091,14 @@
         </span>
       </td>
 
-      <td class="c-rol">
-        <span class="chip role">
-          ${u.rol ? 'Admin' : 'Usuario'}
-        </span>
-      </td>
-
       <td class="actions">
 
         <button class="btn secondary btnEdit">
-          Editar
+          <i class="bi bi-pencil-square"></i> Editar
         </button>
 
         <button class="btn secondary btnDel">
-          Eliminar
+          <i class="bi bi-trash3"></i> Eliminar
         </button>
 
       </td>
@@ -1065,6 +1118,10 @@
       );
 
       tbody.prepend(tr);
+      const headerCount = document.getElementById('header-user-count');
+      if (headerCount) {
+        headerCount.textContent = tbody.rows.length;
+      }
 
     }
 
@@ -1104,6 +1161,9 @@
       u.carrera || '';*/
     tr.querySelector('.c-carr').textContent = u.carrera_nombre || u.carrera_siglas || '-';
 
+    tr.querySelector('.c-fecha_inicio').textContent =
+      u.fecha_inicio_pasantia || '-';
+
     tr.querySelector('.c-cel').textContent =
       u.celular || '-';
 
@@ -1135,6 +1195,9 @@
     /*tr.dataset.carrera =
       u.carrera || '';*/
     tr.dataset.id_carrera = u.id_carrera || '';
+
+    tr.dataset.fecha_inicio_pasantia =
+      u.fecha_inicio_pasantia || '';
 
     tr.dataset.celular =
       u.celular || '';
