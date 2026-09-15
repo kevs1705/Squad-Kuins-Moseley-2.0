@@ -1473,7 +1473,7 @@ body.reportes-admin-page .badge-time-out {
   box-sizing: border-box;
 }
 
-/* Botón interactivo de Actividades en Tabla */
+/* Botón interactivo de Actividades en Tabla (Diseño Limpio) */
 body.reportes-admin-page .btn-bitacora-modal {
   display: inline-flex;
   flex-direction: column;
@@ -1495,26 +1495,12 @@ body.reportes-admin-page .btn-bitacora-modal:hover {
   box-shadow: 0 4px 10px rgba(15, 95, 166, 0.1);
 }
 
-body.reportes-admin-page .btn-bitacora-modal.has-obs {
-  border-color: #FCA5A5;
-  background: #FFF5F5;
-}
-
-body.reportes-admin-page .btn-bitacora-modal.has-obs:hover {
-  border-color: #EF4444;
-  background: #FEF2F2;
-}
-
 body.reportes-admin-page .btn-bitacora-title {
   display: inline-flex;
   align-items: center;
   font-size: 12.5px;
   font-weight: 700;
   color: var(--color-primary);
-}
-
-body.reportes-admin-page .btn-bitacora-modal.has-obs .btn-bitacora-title {
-  color: #DC2626;
 }
 
 body.reportes-admin-page .btn-bitacora-badges {
@@ -1545,6 +1531,88 @@ body.reportes-admin-page .badge-indicador.badge-foto {
 body.reportes-admin-page .badge-indicador.badge-obs {
   background: #FEE2E2;
   color: #DC2626;
+}
+
+body.reportes-admin-page .badge-indicador.badge-missing {
+  background: #FFF1F2;
+  color: #E11D48;
+  border: 1px solid #FECDD3;
+}
+
+body.reportes-admin-page .badge-indicador.badge-congelado {
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border: 1px solid #BFDBFE;
+}
+
+body.reportes-admin-page .badge-indicador.badge-reactivado {
+  background: #FEF3C7;
+  color: #B45309;
+  border: 1px solid #FDE68A;
+}
+
+/* Botón interactivo en la Columna de Estado (De gris a rojo para observaciones/congelados) */
+body.reportes-admin-page .btn-estado-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border-radius: 9999px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  border: 1px solid transparent;
+  line-height: 1.2;
+  text-align: center;
+}
+
+body.reportes-admin-page .btn-estado-toggle:hover {
+  transform: translateY(-1px) scale(1.03);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+}
+
+body.reportes-admin-page .btn-estado-toggle.estado-rojo {
+  background: #FEE2E2;
+  color: #DC2626;
+  border-color: #FCA5A5;
+}
+
+body.reportes-admin-page .btn-estado-toggle.estado-rojo:hover {
+  background: #FECACA;
+  color: #991B1B;
+  border-color: #EF4444;
+}
+
+body.reportes-admin-page .btn-estado-toggle.estado-gris {
+  background: #F1F5F9;
+  color: #475569;
+  border-color: #CBD5E1;
+}
+
+body.reportes-admin-page .btn-estado-toggle.estado-gris:hover {
+  background: #E2E8F0;
+  color: #1E293B;
+  border-color: #94A3B8;
+}
+
+body.reportes-admin-page .btn-estado-toggle.estado-amarillo {
+  background: #FEF3C7;
+  color: #92400E;
+  border-color: #FDE68A;
+}
+
+body.reportes-admin-page .btn-estado-toggle.estado-amarillo:hover {
+  background: #FDE68A;
+  color: #78350F;
+}
+
+body.reportes-admin-page .btn-estado-toggle.estado-en-curso {
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border-color: #BFDBFE;
 }
 
 /* ---------- Barra Superior de la Tabla y Toggle de Columnas ---------- */

@@ -46,7 +46,7 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
     if (users.length === 0) return res.status(404).send('Usuario no encontrado');
     const userDB = users[0];
 
-    // 2. Total acumulado de horas OFICIALES / APROBADAS (Excluye OBSERVADO y ANULADO)
+    // 2. Total acumulado de horas (Todas las asistencias válidas no anuladas ni rechazadas)
     const [totals] = await db.query(`
       SELECT COALESCE(
         SUM(
@@ -59,7 +59,7 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
       ) AS total_segundos
       FROM asistencias
       WHERE id_usuario = ?
-        AND estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO')
+        AND estado NOT IN ('ANULADO', 'RECHAZADO')
         AND hora_entrada IS NOT NULL
         AND hora_salida IS NOT NULL
     `, [userId]);
@@ -81,28 +81,43 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
         AND hora_fin IS NOT NULL
     `, [userId]);
 
-    const totalSegundos = (Number(totals[0]?.total_segundos) || 0) + (Number(totalsHE[0]?.total_segundos_he) || 0);
-    const total_acumulada = formatSecondsToHHMMSS(totalSegundos);
+    const totalSegundosAcumulados = (Number(totals[0]?.total_segundos) || 0) + (Number(totalsHE[0]?.total_segundos_he) || 0);
+    const total_acumulada = formatSecondsToHHMMSS(totalSegundosAcumulados);
 
-    // 2.1. Total de horas EN OBSERVACIÓN (Teletrabajo pendiente de revisión de bitácora)
+    // 2.1. Total de horas CONGELADAS / EN OBSERVACIÓN (incluye estado CONGELADO, OBSERVADO y jornadas pasadas sin bitácora)
     const [totalsObs] = await db.query(`
       SELECT COALESCE(
         SUM(
           TIMESTAMPDIFF(
             SECOND,
-            TIMESTAMP(fecha, hora_entrada),
-            TIMESTAMP(fecha, hora_salida)
+            TIMESTAMP(a.fecha, a.hora_entrada),
+            TIMESTAMP(a.fecha, a.hora_salida)
           )
         ), 0
       ) AS total_segundos_obs
-      FROM asistencias
-      WHERE id_usuario = ?
-        AND estado = 'OBSERVADO'
-        AND hora_entrada IS NOT NULL
-        AND hora_salida IS NOT NULL
+      FROM asistencias a
+      LEFT JOIN reportes r ON a.id_asistencia = r.id_asistencia
+      WHERE a.id_usuario = ?
+        AND a.estado NOT IN ('ANULADO', 'RECHAZADO')
+        AND a.hora_entrada IS NOT NULL
+        AND a.hora_salida IS NOT NULL
+        AND (
+          a.estado IN ('OBSERVADO', 'CONGELADO')
+          OR (
+            a.fecha < CURDATE()
+            AND (r.tarea IS NULL OR TRIM(r.tarea) = '')
+            AND a.estado != 'HABILITADO_EDICION'
+          )
+        )
     `, [userId]);
 
-    const total_observadas = formatSecondsToHHMMSS(totalsObs[0]?.total_segundos_obs || 0);
+    const totalSegundosCongelados = Number(totalsObs[0]?.total_segundos_obs) || 0;
+    const total_congeladas = formatSecondsToHHMMSS(totalSegundosCongelados);
+    const total_observadas = total_congeladas;
+
+    // 2.2. Total de horas DISPONIBLES = Acumuladas - Congeladas
+    const totalSegundosDisponibles = Math.max(0, totalSegundosAcumulados - totalSegundosCongelados);
+    const total_disponibles = formatSecondsToHHMMSS(totalSegundosDisponibles);
 
     // 2.2. Verificar si el usuario tiene permiso de teletrabajo aprobado para hoy
     const [teletrabajoAprobadoRows] = await db.query(`
@@ -244,10 +259,15 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
       rol: userDB.rol
     };
 
+    const { fecha: hoyBolivia } = getBoliviaDateTime();
+
     res.render('usuario/reporte', {
       user,
       total_acumulada,
+      total_congeladas,
+      total_disponibles,
       total_observadas,
+      hoyBolivia,
       teletrabajoHoy,
       jornadaActiva,
       jornadaHoy,
@@ -307,6 +327,14 @@ function formatSecondsToHHMMSS(totalSeconds) {
   return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
+// Helper: Obtener Fecha y Hora de Bolivia (La Paz, UTC-4)
+function getBoliviaDateTime() {
+  const ahora = new Date();
+  const fecha = ahora.toLocaleDateString('sv-SE', { timeZone: 'America/La_Paz' }); // YYYY-MM-DD
+  const hora = ahora.toLocaleTimeString('en-GB', { timeZone: 'America/La_Paz' }); // HH:MM:SS
+  return { fecha, hora, ahora };
+}
+
 /* ==========================================================================
    ENDPOINTS API PARA BITÁCORAS / REPORTES DE TRABAJO
    ========================================================================== */
@@ -353,6 +381,27 @@ router.post('/reportes/guardar', requireAuth, handleUploadOptional, async (req, 
       return res.status(400).json({ ok: false, error: 'Debe seleccionar una asistencia y describir la tarea.' });
     }
 
+    // 1. Obtener datos de la asistencia y validar permisos y bloqueo a las 00:00
+    const [[asistencia]] = await db.query(
+      'SELECT id_asistencia, DATE_FORMAT(fecha, "%Y-%m-%d") AS fecha_fmt, fecha, estado FROM asistencias WHERE id_asistencia = ? AND id_usuario = ?',
+      [id_asistencia, userId]
+    );
+
+    if (!asistencia) {
+      return res.status(404).json({ ok: false, error: 'Asistencia no encontrada' });
+    }
+
+    const { fecha: hoyBolivia } = getBoliviaDateTime();
+    const fechaAsistencia = asistencia.fecha_fmt || (asistencia.fecha instanceof Date ? asistencia.fecha.toISOString().slice(0, 10) : String(asistencia.fecha).slice(0, 10));
+
+    // Bloqueo a las 00:00: Si la jornada es de un día anterior y no ha sido reactivada por el Administrador
+    if (fechaAsistencia < hoyBolivia && asistencia.estado !== 'HABILITADO_EDICION') {
+      return res.status(403).json({
+        ok: false,
+        error: 'La bitácora de esta jornada está bloqueada (venció a las 00:00). Solicita al administrador su reactivación para regularizarla.'
+      });
+    }
+
     // Ruta de la imagen cargada por Multer o enviada desde Cloudinary
     const publicPath = req.file ? '/uploads/comprobantes/' + req.file.filename : null;
     const comprobanteUrl = (comprobante && typeof comprobante === 'string' && comprobante.trim() !== '') 
@@ -379,23 +428,31 @@ router.post('/reportes/guardar', requireAuth, handleUploadOptional, async (req, 
         WHERE id_reporte = ? AND id_usuario = ?
       `, [tarea, imgFinal, reporteExistente.id_reporte, userId]);
 
-      return res.json({ ok: true, msg: 'Bitácora actualizada con éxito', comprobante: imgFinal });
-    } else {
-      // Obtener la fecha correspondiente a la asistencia seleccionada
-      const [[asistencia]] = await db.query(
-        'SELECT fecha FROM asistencias WHERE id_asistencia = ? AND id_usuario = ?',
-        [id_asistencia, userId]
-      );
-
-      if (!asistencia) {
-        return res.status(404).json({ ok: false, error: 'Asistencia no encontrada' });
+      // Si la asistencia estaba en estado HABILITADO_EDICION, restaurar a estado regular
+      if (asistencia.estado === 'HABILITADO_EDICION') {
+        await db.query(`
+          UPDATE asistencias
+          SET estado = 'PRESENTE', actualizado_en = CURRENT_TIMESTAMP
+          WHERE id_asistencia = ? AND id_usuario = ?
+        `, [id_asistencia, userId]);
       }
 
+      return res.json({ ok: true, msg: 'Bitácora actualizada con éxito', comprobante: imgFinal });
+    } else {
       // Inserción respetando el esquema
       await db.query(`
         INSERT INTO reportes (id_usuario, id_asistencia, fecha, tarea, comprobante)
         VALUES (?, ?, ?, ?, ?)
-      `, [userId, id_asistencia, asistencia.fecha, tarea, comprobanteUrl]);
+      `, [userId, id_asistencia, fechaAsistencia, tarea, comprobanteUrl]);
+
+      // Si la asistencia estaba en estado HABILITADO_EDICION, restaurar a estado regular
+      if (asistencia.estado === 'HABILITADO_EDICION') {
+        await db.query(`
+          UPDATE asistencias
+          SET estado = 'PRESENTE', actualizado_en = CURRENT_TIMESTAMP
+          WHERE id_asistencia = ? AND id_usuario = ?
+        `, [id_asistencia, userId]);
+      }
 
       return res.json({ ok: true, msg: 'Bitácora creada con éxito', comprobante: comprobanteUrl });
     }
@@ -405,15 +462,6 @@ router.post('/reportes/guardar', requireAuth, handleUploadOptional, async (req, 
     return res.status(500).json({ ok: false, error: 'No se pudo guardar la bitácora de trabajo' });
   }
 });
-
-
-// Helper: Obtener Fecha y Hora de Bolivia (La Paz, UTC-4)
-function getBoliviaDateTime() {
-  const ahora = new Date();
-  const fecha = ahora.toLocaleDateString('sv-SE', { timeZone: 'America/La_Paz' }); // YYYY-MM-DD
-  const hora = ahora.toLocaleTimeString('en-GB', { timeZone: 'America/La_Paz' }); // HH:MM:SS
-  return { fecha, hora, ahora };
-}
 
 /* ==========================================================================
    HORAS EXTRAS EN TIEMPO REAL: INICIAR, CANCELAR Y FINALIZAR (ZONA HORARIA BOLIVIA)
