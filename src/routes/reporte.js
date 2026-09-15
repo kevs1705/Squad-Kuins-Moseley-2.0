@@ -374,9 +374,9 @@ router.post('/reportes/guardar', requireAuth, handleUploadOptional, async (req, 
       return res.status(400).json({ ok: false, error: 'Debe seleccionar una asistencia y describir la tarea.' });
     }
 
-    // 1. Obtener datos de la asistencia y validar permisos y bloqueo a las 00:00
+    // 1. Obtener datos de la asistencia y validar permisos
     const [[asistencia]] = await db.query(
-      'SELECT id_asistencia, DATE_FORMAT(fecha, "%Y-%m-%d") AS fecha_fmt, fecha, estado FROM asistencias WHERE id_asistencia = ? AND id_usuario = ?',
+      `SELECT id_asistencia, DATE_FORMAT(fecha, '%Y-%m-%d') AS fecha_fmt, fecha, estado FROM asistencias WHERE id_asistencia = ? AND id_usuario = ?`,
       [id_asistencia, userId]
     );
 
