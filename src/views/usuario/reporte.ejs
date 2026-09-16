@@ -6,6 +6,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.min.css">
     <link rel="stylesheet" href="/css/reporte.css">
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
       #modal_tarea,
       #modal_tarea::placeholder {
@@ -119,7 +121,7 @@
             </button>
             <!-- Botón de Horas Extras (Solo si no hay una sesión activa) -->
             <% if (typeof horaExtraActiva==='undefined' || !horaExtraActiva) { %>
-              <button type="button" class="btn-horas-extra-custom" id="btnIniciarHorasExtra">
+              <button type="button" class="btn-horas-extra-custom" id="btnIniciarHorasExtra" onclick="window.iniciarHorasExtraGlobal(event)">
                 <i class="bi bi-play-circle-fill me-1"></i> Iniciar Horas Extra
               </button>
               <% } %>
@@ -208,7 +210,7 @@
                 <i class="bi bi-stop-circle-fill"></i>
                 <span>Finalizar y Reportar</span>
               </button>
-              <button type="button" class="btn-he-descartar" id="btnCancelarHorasExtra"
+              <button type="button" class="btn-he-descartar" id="btnCancelarHorasExtra" onclick="window.cancelarHorasExtraGlobal(event)"
                 title="Descartar sesión en curso sin guardar">
                 <i class="bi bi-trash3-fill"></i>
                 <span>Descartar Sesión</span>
@@ -1487,7 +1489,7 @@
         <div class="modal fade" id="modalFinalizarHorasExtra" tabindex="-1" aria-labelledby="modalFinalizarHorasExtraLabel" aria-hidden="true">
           <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
             <div class="modal-content shadow-lg border-0" style="border-radius: 16px; overflow: hidden;">
-              <form id="formFinalizarHorasExtra" enctype="multipart/form-data">
+              <form id="formFinalizarHorasExtra" enctype="multipart/form-data" onsubmit="return window.finalizarHorasExtraGlobal(event)">
                 <input type="hidden" name="id_notificacion" value="<%= horaExtraActiva.id_notificacion %>">
                 
                 <!-- HEADER DEL MODAL (ESTILO HOMOGÉNEO A LOS OTROS MODALES) -->
@@ -1564,7 +1566,7 @@
                       <h6 class="fw-bold text-dark mb-0" style="font-size: 0.92rem; line-height: 1.2;">
                         <i class="bi bi-camera-fill text-success me-1"></i> Fotografía / Comprobante de Evidencia <span class="text-danger">*</span>
                       </h6>
-                      <small class="text-muted d-block" style="font-size: 0.76rem; line-height: 1.2;">Adjunta captura o fotografía del entregable o avance realizado (PNG, JPG hasta 5MB).</small>
+                      <small class="text-muted d-block" style="font-size: 0.76rem; line-height: 1.2;">Adjunta captura o fotografía del entregable o avance realizado (PNG, JPG hasta 25MB).</small>
                     </div>
                     <div class="card-body p-3">
                       <input type="file" name="comprobante" id="he_fin_comprobante" class="form-control" accept="image/png, image/jpeg, image/jpg" style="border-radius: 8px; border-color: #cbd5e1;" required />
@@ -2205,63 +2207,112 @@
                 setInterval(updateTickerHE, 1000);
               }
 
-              // 2. INICIAR HORAS EXTRA
-              btnIniciar?.addEventListener('click', async () => {
-                const result = await Swal.fire({
-                  title: '¿Iniciar Horas Extras ahora?',
-                  text: 'Se registrará tu hora exacta de inicio y el cronómetro comenzará a correr en tiempo real.',
-                  icon: 'question',
-                  showCancelButton: true,
-                  confirmButtonText: 'Sí, Iniciar Ahora',
-                  cancelButtonText: 'Cancelar',
-                  confirmButtonColor: '#f59e0b',
-                  cancelButtonColor: '#64748b'
-                });
+              // 2. INICIAR HORAS EXTRA (FUNCIÓN GLOBAL Y ROBUSTA)
+              window.iniciarHorasExtraGlobal = async function (e) {
+                if (e && e.preventDefault) e.preventDefault();
+                console.log('[Horas Extras] Iniciar click detectado');
+                const btn = document.getElementById('btnIniciarHorasExtra') || (e && e.currentTarget);
 
-                if (!result.isConfirmed) return;
+                let confirmado = false;
+                if (typeof Swal !== 'undefined') {
+                  const result = await Swal.fire({
+                    title: '¿Iniciar Horas Extras ahora?',
+                    text: 'Se registrará tu hora exacta de inicio y el cronómetro comenzará a correr en tiempo real.',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, Iniciar Ahora',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#f59e0b',
+                    cancelButtonColor: '#64748b'
+                  });
+                  confirmado = result.isConfirmed;
+                } else {
+                  confirmado = window.confirm('¿Iniciar Horas Extras ahora? Se registrará tu hora exacta de inicio y el cronómetro comenzará a correr.');
+                }
+
+                if (!confirmado) return;
 
                 try {
-                  btnIniciar.disabled = true;
-                  const res = await fetch('/api/horas-extras/iniciar', { method: 'POST' });
+                  if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Iniciando...';
+                  }
+
+                  const res = await fetch('/api/horas-extras/iniciar', { 
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                  });
                   const data = await res.json();
 
                   if (data.ok) {
-                    await Swal.fire({
-                      icon: 'success',
-                      title: '¡Sesión Iniciada!',
-                      text: data.msg || 'Tu cronómetro de horas extras está corriendo.',
-                      timer: 1500,
-                      showConfirmButton: false
-                    });
-                    location.reload();
+                    if (typeof Swal !== 'undefined') {
+                      await Swal.fire({
+                        icon: 'success',
+                        title: '¡Sesión Iniciada!',
+                        text: data.msg || 'Tu cronómetro de horas extras está corriendo.',
+                        timer: 1500,
+                        showConfirmButton: false
+                      });
+                    } else {
+                      alert(data.msg || 'Sesión iniciada con éxito');
+                    }
+                    window.location.reload();
                   } else {
-                    mostrarAlerta(data.msg || 'No se pudo iniciar la sesión', 'error');
-                    btnIniciar.disabled = false;
+                    if (typeof mostrarAlerta === 'function') {
+                      mostrarAlerta(data.msg || 'No se pudo iniciar la sesión', 'error');
+                    } else {
+                      alert(data.msg || 'No se pudo iniciar la sesión');
+                    }
+                    if (btn) {
+                      btn.disabled = false;
+                      btn.innerHTML = '<i class="bi bi-play-circle-fill me-1"></i> Iniciar Horas Extra';
+                    }
                   }
                 } catch (err) {
-                  console.error(err);
-                  mostrarAlerta('Error de conexión al iniciar horas extras', 'error');
-                  btnIniciar.disabled = false;
+                  console.error('Error al iniciar horas extras:', err);
+                  if (typeof mostrarAlerta === 'function') {
+                    mostrarAlerta('Error de conexión al iniciar horas extras', 'error');
+                  } else {
+                    alert('Error de conexión al iniciar horas extras');
+                  }
+                  if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-play-circle-fill me-1"></i> Iniciar Horas Extra';
+                  }
                 }
-              });
+              };
 
-              // 3. CANCELAR / DESCARTAR SESIÓN ACTIVA
-              btnCancelar?.addEventListener('click', async () => {
-                const result = await Swal.fire({
-                  title: '¿Descartar Sesión de Horas Extras?',
-                  text: 'Se cancelará el cronómetro en curso y no se registrará ningún tiempo extraordinario.',
-                  icon: 'warning',
-                  showCancelButton: true,
-                  confirmButtonText: 'Sí, Descartar',
-                  cancelButtonText: 'Seguir Trabajando',
-                  confirmButtonColor: '#ef4444',
-                  cancelButtonColor: '#64748b'
-                });
+              if (btnIniciar) {
+                btnIniciar.addEventListener('click', window.iniciarHorasExtraGlobal);
+              }
 
-                if (!result.isConfirmed) return;
+              // 3. CANCELAR / DESCARTAR SESIÓN ACTIVA (FUNCIÓN GLOBAL Y ROBUSTA)
+              window.cancelarHorasExtraGlobal = async function (e) {
+                if (e && e.preventDefault) e.preventDefault();
+                console.log('[Horas Extras] Descartar click detectado');
+                const btn = document.getElementById('btnCancelarHorasExtra') || (e && e.currentTarget);
+
+                let confirmado = false;
+                if (typeof Swal !== 'undefined') {
+                  const result = await Swal.fire({
+                    title: '¿Descartar Sesión de Horas Extras?',
+                    text: 'Se cancelará el cronómetro en curso y no se registrará ningún tiempo extraordinario.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, Descartar',
+                    cancelButtonText: 'Seguir Trabajando',
+                    confirmButtonColor: '#ef4444',
+                    cancelButtonColor: '#64748b'
+                  });
+                  confirmado = result.isConfirmed;
+                } else {
+                  confirmado = window.confirm('¿Descartar sesión de horas extras en curso?');
+                }
+
+                if (!confirmado) return;
 
                 try {
-                  btnCancelar.disabled = true;
+                  if (btn) btn.disabled = true;
                   const res = await fetch('/api/horas-extras/cancelar', {
                     method: 'POST',
                     headers: {
@@ -2271,43 +2322,68 @@
                   });
                   const data = await res.json();
                   if (data.ok) {
-                    await Swal.fire({
-                      icon: 'info',
-                      title: 'Sesión Descartada',
-                      text: data.msg || 'La sesión de horas extras fue cancelada correctamente.',
-                      timer: 1500,
-                      showConfirmButton: false
-                    });
-                    location.reload();
+                    if (typeof Swal !== 'undefined') {
+                      await Swal.fire({
+                        icon: 'info',
+                        title: 'Sesión Descartada',
+                        text: data.msg || 'La sesión de horas extras fue cancelada correctamente.',
+                        timer: 1500,
+                        showConfirmButton: false
+                      });
+                    } else {
+                      alert(data.msg || 'Sesión descartada');
+                    }
+                    window.location.reload();
                   } else {
-                    mostrarAlerta(data.msg || 'No se pudo descartar la sesión', 'error');
-                    btnCancelar.disabled = false;
+                    if (typeof mostrarAlerta === 'function') {
+                      mostrarAlerta(data.msg || 'No se pudo descartar la sesión', 'error');
+                    } else {
+                      alert(data.msg || 'No se pudo descartar la sesión');
+                    }
+                    if (btn) btn.disabled = false;
                   }
                 } catch (err) {
-                  console.error(err);
-                  mostrarAlerta('Error de conexión al descartar', 'error');
-                  btnCancelar.disabled = false;
+                  console.error('Error al descartar:', err);
+                  if (typeof mostrarAlerta === 'function') {
+                    mostrarAlerta('Error de conexión al descartar', 'error');
+                  } else {
+                    alert('Error de conexión al descartar');
+                  }
+                  if (btn) btn.disabled = false;
                 }
-              });
+              };
+
+              if (btnCancelar) {
+                btnCancelar.addEventListener('click', window.cancelarHorasExtraGlobal);
+              }
 
               // 4. VISTA PREVIA DE FOTO EN EL MODAL DE FINALIZACIÓN
               fileFin?.addEventListener('change', (e) => {
                 const file = e.target.files?.[0];
                 if (file) {
-                  if (file.size > 5 * 1024 * 1024) {
-                    mostrarAlerta('La imagen de evidencia no debe superar los 5 MB.', 'warning');
+                  if (file.size > 25 * 1024 * 1024) {
+                    if (typeof Swal !== 'undefined') {
+                      Swal.fire({
+                        icon: 'warning',
+                        title: 'Imagen muy pesada',
+                        text: 'La imagen seleccionada supera los 25 MB. Por favor elige una imagen más liviana.',
+                        confirmButtonColor: '#f59e0b'
+                      });
+                    } else {
+                      alert('La imagen de evidencia no debe superar los 25 MB.');
+                    }
                     fileFin.value = '';
-                    previewContainer.style.display = 'none';
+                    if (previewContainer) previewContainer.style.display = 'none';
                     return;
                   }
                   const reader = new FileReader();
                   reader.onload = (re) => {
-                    previewImg.src = re.target.result;
-                    previewContainer.style.display = 'block';
+                    if (previewImg) previewImg.src = re.target.result;
+                    if (previewContainer) previewContainer.style.display = 'block';
                   };
                   reader.readAsDataURL(file);
                 } else {
-                  previewContainer.style.display = 'none';
+                  if (previewContainer) previewContainer.style.display = 'none';
                 }
               });
 
@@ -2325,57 +2401,154 @@
                 if (previewContainer) previewContainer.style.display = 'none';
               });
 
-              // 5. FINALIZAR HORAS EXTRAS (ENVIAR INFORME + FOTO OBLIGATORIA)
-              formFinHE?.addEventListener('submit', async (e) => {
-                e.preventDefault();
+              // 5. FINALIZAR HORAS EXTRAS (FUNCIÓN GLOBAL ROBUSTA)
+              window.finalizarHorasExtraGlobal = async function (e) {
+                if (e && e.preventDefault) e.preventDefault();
+                console.log('[Horas Extras] Finalizar click detectado');
 
-                const tarea = document.getElementById('he_fin_tarea')?.value.trim() || '';
-                if (tarea.length < 5) {
-                  mostrarAlerta('Debes redactar un informe de actividades de al menos 5 caracteres.', 'warning');
-                  return;
+                const form = document.getElementById('formFinalizarHorasExtra');
+                const tareaInput = document.getElementById('he_fin_tarea') || form?.querySelector('textarea[name="tarea"]');
+                const fileInput = document.getElementById('he_fin_comprobante') || form?.querySelector('input[type="file"]') || document.querySelector('#modalFinalizarHorasExtra input[type="file"]');
+                const btnSubmit = document.getElementById('he_fin_btn_submit') || form?.querySelector('button[type="submit"]');
+
+                const tarea = tareaInput ? tareaInput.value.trim() : '';
+                if (!tarea || tarea.length < 5) {
+                  if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                      icon: 'warning',
+                      title: 'Informe incompleto',
+                      text: 'Debes redactar un informe de actividades detallado (mínimo 5 caracteres).',
+                      confirmButtonColor: '#f59e0b'
+                    });
+                  } else {
+                    alert('Debes redactar un informe de actividades detallado (mínimo 5 caracteres).');
+                  }
+                  if (tareaInput) tareaInput.focus();
+                  return false;
                 }
 
-                if (!fileFin?.files || fileFin.files.length === 0) {
-                  mostrarAlerta('Es obligatorio adjuntar una fotografía o comprobante de evidencia del trabajo realizado.', 'warning');
-                  return;
+                const file = fileInput && fileInput.files && fileInput.files.length > 0 ? fileInput.files[0] : null;
+                if (!file) {
+                  if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                      icon: 'warning',
+                      title: 'Fotografía obligatoria',
+                      text: 'Es obligatorio adjuntar una fotografía o comprobante de evidencia del trabajo realizado.',
+                      confirmButtonColor: '#f59e0b'
+                    });
+                  } else {
+                    alert('Es obligatorio adjuntar una fotografía o comprobante de evidencia del trabajo realizado.');
+                  }
+                  if (fileInput) fileInput.focus();
+                  return false;
                 }
-
-                const formData = new FormData(formFinHE);
 
                 try {
-                  if (btnSubmitFin) {
-                    btnSubmitFin.disabled = true;
-                    btnSubmitFin.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Enviando informe...';
+                  if (btnSubmit) {
+                    btnSubmit.disabled = true;
+                    btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Subiendo evidencia...';
                   }
 
-                  const res = await fetch('/api/horas-extras/finalizar', {
-                    method: 'POST',
-                    body: formData
-                  });
+                  let comprobanteUrl = null;
+
+                  // 1. Intentar subir a Cloudinary si está disponible
+                  const cloudName = '<%= cloudinaryCloudName %>';
+                  const uploadPreset = '<%= cloudinaryUploadPreset %>';
+                  if (cloudName && uploadPreset) {
+                    try {
+                      const cldData = new FormData();
+                      cldData.append('file', file);
+                      cldData.append('upload_preset', uploadPreset);
+                      const cldRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+                        method: 'POST',
+                        body: cldData
+                      });
+                      if (cldRes.ok) {
+                        const cldJson = await cldRes.json();
+                        comprobanteUrl = cldJson.secure_url || cldJson.url;
+                      }
+                    } catch (cldErr) {
+                      console.warn('Cloudinary upload warning:', cldErr);
+                    }
+                  }
+
+                  if (btnSubmit) {
+                    btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Guardando informe...';
+                  }
+
+                  let res;
+                  if (comprobanteUrl) {
+                    const idNotif = form ? form.querySelector('[name="id_notificacion"]')?.value : '';
+                    res = await fetch('/api/horas-extras/finalizar', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        id_notificacion: idNotif,
+                        tarea,
+                        comprobante: comprobanteUrl
+                      })
+                    });
+                  } else {
+                    const formData = new FormData(form);
+                    res = await fetch('/api/horas-extras/finalizar', {
+                      method: 'POST',
+                      body: formData
+                    });
+                  }
 
                   const data = await res.json();
 
                   if (data.ok) {
-                    await Swal.fire({
-                      icon: 'success',
-                      title: '¡Horas Extras Finalizadas!',
-                      text: data.msg || 'Tu informe y fotografía fueron enviados con éxito para evaluación del administrador.',
-                      confirmButtonColor: '#10b981'
-                    });
-                    location.reload();
+                    if (typeof Swal !== 'undefined') {
+                      await Swal.fire({
+                        icon: 'success',
+                        title: '¡Horas Extras Finalizadas!',
+                        text: data.msg || 'Tu informe y fotografía fueron enviados con éxito para evaluación del administrador.',
+                        confirmButtonColor: '#10b981'
+                      });
+                    } else {
+                      alert(data.msg || 'Horas extras enviadas a evaluación');
+                    }
+                    window.location.reload();
                   } else {
-                    mostrarAlerta(data.msg || 'Error al finalizar las horas extras', 'error');
+                    if (typeof Swal !== 'undefined') {
+                      Swal.fire({
+                        icon: 'error',
+                        title: 'No se pudo finalizar',
+                        text: data.msg || 'Error al finalizar las horas extras',
+                        confirmButtonColor: '#ef4444'
+                      });
+                    } else {
+                      alert(data.msg || 'Error al finalizar las horas extras');
+                    }
+                    if (btnSubmit) {
+                      btnSubmit.disabled = false;
+                      btnSubmit.innerHTML = '<i class="bi bi-send-fill me-1"></i> Finalizar y Enviar a Evaluación';
+                    }
                   }
                 } catch (err) {
                   console.error('Error finalizando horas extra:', err);
-                  mostrarAlerta('Error de red al enviar el reporte', 'error');
-                } finally {
-                  if (btnSubmitFin) {
-                    btnSubmitFin.disabled = false;
-                    btnSubmitFin.innerHTML = '<i class="bi bi-send-fill me-1"></i> Finalizar y Enviar a Evaluación';
+                  if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                      icon: 'error',
+                      title: 'Error de red',
+                      text: 'Error de conexión al enviar el reporte: ' + err.message,
+                      confirmButtonColor: '#ef4444'
+                    });
+                  } else {
+                    alert('Error de conexión al enviar el reporte: ' + err.message);
+                  }
+                  if (btnSubmit) {
+                    btnSubmit.disabled = false;
+                    btnSubmit.innerHTML = '<i class="bi bi-send-fill me-1"></i> Finalizar y Enviar a Evaluación';
                   }
                 }
-              });
+                return false;
+              };
+
+              if (formFinHE) {
+                formFinHE.addEventListener('submit', window.finalizarHorasExtraGlobal);
+              }
 
               // 6. CUENTA REGRESIVA EN VIVO HASTA LAS 12 DE LA NOCHE (00:00)
               function initCountdownMedianoche() {

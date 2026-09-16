@@ -27,7 +27,7 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 } // 5 MB
+  limits: { fileSize: 25 * 1024 * 1024 } // 25 MB
 });
 
 /* ==========================================================================
@@ -266,6 +266,8 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
       const faltaC = !j.comprobante || j.comprobante.trim() === '';
       return faltaT || faltaC;
     }).length;
+
+    const { fecha: hoyBolivia } = getBoliviaDateTime();
 
     res.render('usuario/reporte', {
       user,
