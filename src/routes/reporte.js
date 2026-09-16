@@ -81,7 +81,8 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
         AND hora_fin IS NOT NULL
     `, [userId]);
 
-    const totalSegundosAcumulados = (Number(totals[0]?.total_segundos) || 0) + (Number(totalsHE[0]?.total_segundos_he) || 0);
+    const totalSegundosHE = (Number(totalsHE[0]?.total_segundos_he) || 0) * 2;
+    const totalSegundosAcumulados = (Number(totals[0]?.total_segundos) || 0) + totalSegundosHE;
     const total_acumulada = formatSecondsToHHMMSS(totalSegundosAcumulados);
 
     // 2.1. Total de horas CONGELADAS / EN OBSERVACIÓN (incluye estado CONGELADO, OBSERVADO y jornadas pasadas sin bitácora)
@@ -259,7 +260,12 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
       rol: userDB.rol
     };
 
-    const { fecha: hoyBolivia } = getBoliviaDateTime();
+    const bitacorasPendientes = jornadas.filter(j => {
+      if (j.modalidad === 'HORA_EXTRA') return false;
+      const faltaT = !j.tarea || j.tarea.trim() === '';
+      const faltaC = !j.comprobante || j.comprobante.trim() === '';
+      return faltaT || faltaC;
+    }).length;
 
     res.render('usuario/reporte', {
       user,
@@ -267,6 +273,7 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
       total_congeladas,
       total_disponibles,
       total_observadas,
+      bitacorasPendientes,
       hoyBolivia,
       teletrabajoHoy,
       jornadaActiva,
@@ -302,18 +309,30 @@ function calcularHorasTranscurridas(j) {
       fin.setDate(fin.getDate() + 1);
     }
 
-    const diffMs = fin - inicio;
+    let diffMs = fin - inicio;
     if (isNaN(diffMs) || diffMs < 0) return '0 hrs';
+
+    const esHE = (j.modalidad === 'HORA_EXTRA');
+    if (esHE) {
+      diffMs = diffMs * 2; // Horas Extras valen x2
+    }
 
     const totalMinutos = Math.floor(diffMs / (1000 * 60));
     const horas = Math.floor(totalMinutos / 60);
     const minutos = totalMinutos % 60;
 
-    // Retorna formateado, por ejemplo: "8h 30m" o "8 hrs"
+    let res = '';
     if (minutos === 0) {
-      return `${horas} hrs`;
+      res = `${horas} hrs`;
+    } else {
+      res = `${horas}h ${minutos}m`;
     }
-    return `${horas}h ${minutos}m`;
+
+    if (esHE) {
+      res += ' (x2)';
+    }
+
+    return res;
   } catch (err) {
     return '0 hrs';
   }
@@ -610,11 +629,11 @@ router.post('/api/horas-extras/finalizar', requireAuth, handleUploadOptional, as
     const s = sesiones[0];
     const { fecha: fechaFinBolivia, hora: horaFinBolivia } = getBoliviaDateTime();
 
-    // Calcular duración exacta
+    // Calcular duración exacta (Horas extras valen x2)
     const inicioDate = new Date(`${s.fecha_solicitada}T${s.hora_inicio}`);
     const finDate = new Date(`${fechaFinBolivia}T${horaFinBolivia}`);
-    const diffSeg = Math.max(0, Math.floor((finDate.getTime() - inicioDate.getTime()) / 1000));
-    const horasCantidad = Math.round((diffSeg / 3600) * 100) / 100;
+    const diffSegReal = Math.max(0, Math.floor((finDate.getTime() - inicioDate.getTime()) / 1000));
+    const horasCantidad = Math.round(((diffSegReal * 2) / 3600) * 100) / 100;
 
     // Actualizar con hora_fin de Bolivia, estado = 1 (En Revisión del Administrador)
     await db.query(`
@@ -680,11 +699,11 @@ router.get('/reportes/export', requireAuth, async (req, res) => {
     const [heReports] = await db.query(`
       SELECT
         DATE_FORMAT(n.fecha_solicitada, '%Y-%m-%d') AS fecha,
-        '⚡ Horas Extras (Aprobadas)' AS lugar,
+        '⚡ Horas Extras (Aprobadas - Valen x2)' AS lugar,
         TIME_FORMAT(n.hora_inicio, '%H:%i:%s') AS hora_entrada,
         TIME_FORMAT(n.hora_fin, '%H:%i:%s') AS hora_salida,
         IF(n.hora_fin IS NOT NULL AND n.hora_inicio IS NOT NULL,
-           TIME_FORMAT(TIMEDIFF(n.hora_fin, n.hora_inicio), '%H:%i:%s'),
+           SEC_TO_TIME(TIMESTAMPDIFF(SECOND, TIMESTAMP(n.fecha_solicitada, n.hora_inicio), TIMESTAMP(n.fecha_solicitada, n.hora_fin)) * 2),
            '00:00:00') AS horas_trabajadas,
         n.tarea,
         n.observacion_admin AS observacion
@@ -733,7 +752,7 @@ router.get('/reportes/export', requireAuth, async (req, res) => {
         AND hora_fin IS NOT NULL
     `, [userId]);
 
-    const totalSegundos = (Number(totals[0]?.total_segundos) || 0) + (Number(totalsHE[0]?.total_segundos_he) || 0);
+    const totalSegundos = (Number(totals[0]?.total_segundos) || 0) + ((Number(totalsHE[0]?.total_segundos_he) || 0) * 2);
     const totalAcum = formatSecondsToHHMMSS(totalSegundos);
 
     const toExcelDate = (ymd) => {

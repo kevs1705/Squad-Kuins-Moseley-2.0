@@ -62,7 +62,8 @@ router.get('/usuario/horario', async (req, res) => {
               AND hora_fin IS NOT NULL
         `, [id_usuario]);
 
-        const totalSegundos = (Number(resultadoHoras[0]?.total_segundos) || 0) + (Number(resultadoHE[0]?.total_segundos_he) || 0);
+        const totalSegundosHE = (Number(resultadoHE[0]?.total_segundos_he) || 0) * 2;
+        const totalSegundos = (Number(resultadoHoras[0]?.total_segundos) || 0) + totalSegundosHE;
         const totalHorasSistema = Math.round(totalSegundos / 3600);
 
         res.render('usuario/horario', {

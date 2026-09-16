@@ -56,7 +56,8 @@ router.get('/usuario/asistencia', requireAuth, async (req, res) => {
         AND hora_fin IS NOT NULL
     `, [userId]);
 
-    const totalSegundos = (Number(totals[0]?.total_segundos) || 0) + (Number(totalsHE[0]?.total_segundos_he) || 0);
+    const totalSegundosHE = (Number(totalsHE[0]?.total_segundos_he) || 0) * 2;
+    const totalSegundos = (Number(totals[0]?.total_segundos) || 0) + totalSegundosHE;
     const total_acumulada = formatSecondsToHHMMSS(totalSegundos);
 
     // 3. Verificar si el usuario tiene una jornada activa hoy (entrada sin salida)

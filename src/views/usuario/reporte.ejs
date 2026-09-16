@@ -734,7 +734,7 @@
                                       <% } else if (j.modalidad==='HORA_EXTRA' ) { %>
                                         <span class="badge mb-1"
                                           style="background-color: #f3e8ff; color: #7c3aed; border: 1px solid #ddd6fe; font-size: 0.78rem;">
-                                          <i class="bi bi-lightning-charge-fill"></i> Horas Extras
+                                          <i class="bi bi-lightning-charge-fill"></i> Horas Extras (x2)
                                         </span>
                                         <% } else { %>
                                           <strong style="color: #1e293b;">
@@ -1481,6 +1481,124 @@
             </div>
           </div>
         </div>
+
+        <!-- MODAL: FINALIZAR HORAS EXTRAS (INFORME Y FOTO OBLIGATORIA) -->
+        <% if (typeof horaExtraActiva !== 'undefined' && horaExtraActiva) { %>
+        <div class="modal fade" id="modalFinalizarHorasExtra" tabindex="-1" aria-labelledby="modalFinalizarHorasExtraLabel" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+            <div class="modal-content shadow-lg border-0" style="border-radius: 16px; overflow: hidden;">
+              <form id="formFinalizarHorasExtra" enctype="multipart/form-data">
+                <input type="hidden" name="id_notificacion" value="<%= horaExtraActiva.id_notificacion %>">
+                
+                <!-- HEADER DEL MODAL (ESTILO HOMOGÉNEO A LOS OTROS MODALES) -->
+                <div class="modal-header" style="background-color: #f0f5fc; border-bottom: 1px solid #e2e8f0; padding: 1.25rem 1.5rem; display: flex; align-items: flex-start; justify-content: space-between;">
+                  <div>
+                    <h5 class="modal-title fw-bold" id="modalFinalizarHorasExtraLabel" style="color: #0b3c5d; font-size: 1.2rem; margin: 0; display: flex; align-items: center; gap: 8px;">
+                      <i class="bi bi-stopwatch-fill text-danger fs-4"></i> Finalizar y Reportar Horas Extras
+                    </h5>
+                    <small class="text-muted d-block mt-1" style="font-size: 0.82rem; font-weight: 400;">
+                      Ingresa tu informe de actividades y la foto de evidencia para enviar a revisión del administrador.
+                    </small>
+                  </div>
+                  <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Cerrar">
+                    <i class="bi bi-x-lg"></i>
+                  </button>
+                </div>
+
+                <!-- CUERPO DEL MODAL (CON TARJETAS ORGANIZADAS Y SCROLLBAR SUAVE) -->
+                <div class="modal-body p-4" style="background: #ffffff;">
+                  
+                  <!-- TARJETA 1: Resumen de Tiempo Transcurrido -->
+                  <div class="card border-0 mb-3" style="border-radius: 12px; background: #ffffff; border: 1px solid #e2e8f0 !important; overflow: hidden;">
+                    <div class="card-header py-2 px-3 d-flex align-items-center justify-content-between" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0 !important;">
+                      <div>
+                        <h6 class="fw-bold text-dark mb-0" style="font-size: 0.92rem; line-height: 1.2;">
+                          <i class="bi bi-clock-history text-danger me-1"></i> Resumen de Tiempo Registrado
+                        </h6>
+                        <small class="text-muted d-block" style="font-size: 0.76rem; line-height: 1.2;">Sincronizado con la hora oficial de Bolivia (UTC-4).</small>
+                      </div>
+                      <span class="badge bg-danger text-white rounded-pill px-2 py-0 fs-8">
+                        ● EN VIVO
+                      </span>
+                    </div>
+                    <div class="card-body p-3">
+                      <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+                        <div class="he-time-stat-box">
+                          <span class="he-time-stat-label"><i class="bi bi-play-circle me-1"></i>Hora Inicio</span>
+                          <span class="he-time-stat-val text-dark"><%= horaExtraActiva.hora_inicio %> hrs</span>
+                        </div>
+                        <div class="he-time-stat-box" style="border-color: #fecaca; background: #fff5f5;">
+                          <span class="he-time-stat-label text-danger"><i class="bi bi-stop-circle me-1"></i>Hora Fin (Actual)</span>
+                          <span id="modal_hora_fin_live" class="he-time-stat-val text-danger">00:00:00</span>
+                        </div>
+                        <div class="he-time-stat-box" style="border-color: #fed7aa; background: #fffbeb;">
+                          <span class="he-time-stat-label text-warning" style="color: #d97706 !important;"><i class="bi bi-hourglass-split me-1"></i>Duración Total</span>
+                          <span id="modal_duracion_live" class="he-time-stat-val" style="color: #b45309;">00:00:00</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- TARJETA 2: Informe de Actividades / Bitácora OBLIGATORIO -->
+                  <div class="card border-0 mb-3" style="border-radius: 12px; background: #ffffff; border: 1px solid #e2e8f0 !important; overflow: hidden;">
+                    <div class="card-header py-2 px-3" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0 !important;">
+                      <h6 class="fw-bold text-dark mb-0" style="font-size: 0.92rem; line-height: 1.2;">
+                        <i class="bi bi-card-checklist text-primary me-1"></i> Informe de Actividades Realizadas <span class="text-danger">*</span>
+                      </h6>
+                      <small class="text-muted d-block" style="font-size: 0.76rem; line-height: 1.2;">Describe los trabajos, planos, cálculos o tareas desarrolladas durante estas horas extras.</small>
+                    </div>
+                    <div class="card-body p-3">
+                      <textarea name="tarea" id="he_fin_tarea" rows="4" class="form-control" required
+                        style="border-radius: 8px; border-color: #cbd5e1; resize: vertical; font-family: 'Montserrat', sans-serif !important; font-weight: 300 !important; font-size: 0.9rem;"
+                        placeholder="Describe detalladamente las tareas realizadas..."></textarea>
+                      <div class="d-flex justify-content-between align-items-center mt-1">
+                        <small class="text-muted" style="font-size: 0.76rem;">Mínimo 5 caracteres. El administrador evaluará este informe para aprobar las horas.</small>
+                        <small class="text-muted" style="font-size: 0.76rem;" id="charCounterHE">0/500</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- TARJETA 3: Fotografía / Comprobante de Evidencia OBLIGATORIO -->
+                  <div class="card border-0 mb-2" style="border-radius: 12px; background: #ffffff; border: 1px solid #e2e8f0 !important; overflow: hidden;">
+                    <div class="card-header py-2 px-3" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0 !important;">
+                      <h6 class="fw-bold text-dark mb-0" style="font-size: 0.92rem; line-height: 1.2;">
+                        <i class="bi bi-camera-fill text-success me-1"></i> Fotografía / Comprobante de Evidencia <span class="text-danger">*</span>
+                      </h6>
+                      <small class="text-muted d-block" style="font-size: 0.76rem; line-height: 1.2;">Adjunta captura o fotografía del entregable o avance realizado (PNG, JPG hasta 5MB).</small>
+                    </div>
+                    <div class="card-body p-3">
+                      <input type="file" name="comprobante" id="he_fin_comprobante" class="form-control" accept="image/png, image/jpeg, image/jpg" style="border-radius: 8px; border-color: #cbd5e1;" required />
+                      
+                      <!-- Contenedor de Vista Previa -->
+                      <div id="he_fin_preview_container" class="mt-3 text-center p-2 rounded-3 border bg-light" style="display: none;">
+                        <div class="d-flex justify-content-between align-items-center mb-1 px-2">
+                          <small class="text-muted fw-semibold">Vista previa de evidencia:</small>
+                          <button type="button" id="he_fin_btn_quitar_foto" class="btn btn-sm btn-link text-danger p-0 text-decoration-none fw-semibold" style="font-size: 0.8rem;">
+                            <i class="bi bi-trash me-1"></i> Quitar imagen
+                          </button>
+                        </div>
+                        <img id="he_fin_preview_img" src="" alt="Vista previa" class="img-fluid rounded-3 shadow-sm border" style="max-height: 220px; object-fit: contain; width: auto;" />
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+                <!-- FOOTER DEL MODAL -->
+                <div class="modal-footer px-4 py-3 bg-light border-top d-flex justify-content-between align-items-center">
+                  <button type="button" class="btn btn-light border px-4 py-2 text-secondary fw-semibold" style="border-radius: 10px; background: #f1f5f9; border-color: #cbd5e1 !important;" data-bs-dismiss="modal">
+                    <i class="bi bi-arrow-left me-1"></i> Seguir Trabajando
+                  </button>
+                  <button type="submit" id="he_fin_btn_submit" class="btn btn-danger px-4 py-2 fw-semibold d-inline-flex align-items-center gap-2" style="background: #ef4444; border-color: #dc2626; border-radius: 10px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);">
+                    <i class="bi bi-send-fill"></i>
+                    <span>Finalizar y Enviar a Evaluación</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+        <% } %>
 
         <!-- ========================================================================= -->
         <!-- INICIO: INCLUSIÓN DEL COMPONENTE DE ALERTA REUTILIZABLE -->
