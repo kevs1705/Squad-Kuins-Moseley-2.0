@@ -50,6 +50,15 @@ app.use(
 const LoginRoutes = require('./src/routes/login');
 app.use(LoginRoutes);
 
+// Middleware para forzar cambio de contraseña
+app.use((req, res, next) => {
+  if (req.session && req.session.user && req.session.requiereCambioClave) {
+    // Si intenta acceder a cualquier otra ruta, lo redirigimos
+    return res.redirect('/cambiar-password');
+  }
+  next();
+});
+
 const DashboardRoutes = require('./src/routes/Dashboard');
 app.use(DashboardRoutes);
 
