@@ -53,8 +53,9 @@ app.use(LoginRoutes);
 // Middleware para forzar cambio de contraseña
 app.use((req, res, next) => {
   if (req.session && req.session.user && req.session.requiereCambioClave) {
-    // Si intenta acceder a cualquier otra ruta, lo redirigimos
-    return res.redirect('/cambiar-password');
+    if (req.path !== '/cambiar-password' && req.path !== '/logout') {
+      return res.redirect('/cambiar-password');
+    }
   }
   next();
 });
