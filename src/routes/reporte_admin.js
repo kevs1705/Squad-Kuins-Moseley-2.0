@@ -217,7 +217,7 @@ async function fetchCombinedRecords({ id_carrera, estado_duracion, id_usuario, i
         TIME_FORMAT(n.hora_inicio, '%H:%i') AS hora_entrada,
         TIME_FORMAT(n.hora_fin, '%H:%i') AS hora_salida,
         IF(n.hora_fin IS NOT NULL AND n.hora_inicio IS NOT NULL,
-           TIMESTAMPDIFF(SECOND, TIMESTAMP(n.fecha_solicitada, n.hora_inicio), TIMESTAMP(n.fecha_solicitada, n.hora_fin)),
+           TIMESTAMPDIFF(SECOND, TIMESTAMP(n.fecha_solicitada, n.hora_inicio), TIMESTAMP(n.fecha_solicitada, n.hora_fin)) * 2,
            NULL
         ) AS duracion_segundos,
         'FINALIZADO' AS asistencia_estado,
@@ -446,7 +446,7 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
       const userRankList = (users || []).map(u => {
         const a = mapAsist[u.id_usuario] || { total_dias: 0, total_segundos: 0 };
         const h = mapHE[u.id_usuario] || { total_dias_he: 0, total_segundos_he: 0 };
-        const totalSeg = (Number(a.total_segundos) || 0) + (Number(h.total_segundos_he) || 0);
+        const totalSeg = (Number(a.total_segundos) || 0) + ((Number(h.total_segundos_he) || 0) * 2);
         const totalDias = (Number(a.total_dias) || 0) + (Number(h.total_dias_he) || 0);
         return {
           id_usuario: u.id_usuario,
