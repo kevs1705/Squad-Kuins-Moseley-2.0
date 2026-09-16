@@ -52,6 +52,46 @@
         display: block;
         pointer-events: none;
       }
+
+      .obs-pill-card {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        color: #475569;
+        border-radius: 6px;
+        padding: 3px 8px;
+        font-size: 0.72rem;
+        font-weight: 500;
+        max-width: 250px;
+        text-align: left;
+        line-height: 1.25;
+      }
+
+      .obs-pill-card svg {
+        color: #0b6bcb;
+        flex-shrink: 0;
+      }
+
+      .obs-pill-card .obs-text {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .badge-turno-congelado {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 0.35rem !important;
+        background-color: #fde9ec !important;
+        color: #9d0404 !important;
+        border: 1px solid #e26060 !important;
+        font-weight: 700 !important;
+        padding: 0.3rem 0.75rem !important;
+        border-radius: 20px !important;
+        font-size: 0.82rem !important;
+      }
     </style>
 
     <div class="reporte-wrapper py-3">
@@ -301,7 +341,7 @@
                                   <path d="M8 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4" />
                                 </svg>
                                 <span>
-                                  <%= jHoy.modalidad==='TELETRABAJO' ? '🏠 Teletrabajo (Remoto)' : (jHoy.lugar_nombre
+                                  <%= jHoy.modalidad==='TELETRABAJO' ? 'Teletrabajo (Remoto)' : (jHoy.lugar_nombre
                                     || 'Ubicación' ) %>
                                 </span>
                               </div>
@@ -526,8 +566,24 @@
                       <div class="d-flex align-items-center gap-3">
                         <div class="d-flex align-items-center justify-content-center rounded-3"
                           style="width: 44px; height: 44px; background-color: <%= bitacorasPendientes > 0 ? '#fee2e2' : '#dcfce7' %>; color: <%= bitacorasPendientes > 0 ? '#dc2626' : '#15803d' %>; flex-shrink: 0;">
-                          <i
-                            class="bi <%= bitacorasPendientes > 0 ? 'bi-journal-exclamation' : 'bi-journal-check' %> fs-4"></i>
+                          <% if (bitacorasPendientes> 0) { %>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
+                              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                              stroke-linejoin="round">
+                              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                              <line x1="12" y1="8" x2="12" y2="12" />
+                              <line x1="12" y1="16" x2="12.01" y2="16" />
+                            </svg>
+                            <% } else { %>
+                              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                                <polyline points="9 11 12 14 17 9" />
+                              </svg>
+                              <% } %>
                         </div>
                         <div>
                           <h6 class="mb-0 fw-bold text-dark" style="font-size: 0.95rem; letter-spacing: -0.2px;">Control
@@ -542,7 +598,14 @@
                         <% if (bitacorasPendientes> 0) { %>
                           <div class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-pill shadow-sm"
                             style="background-color: #fff1f2; border: 1px solid #fecdd3; color: #e11d48; font-size: 0.85rem; font-weight: 700;">
-                            <i class="bi bi-exclamation-triangle-fill" style="font-size: 0.95rem;"></i>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                              fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+                              stroke-linejoin="round">
+                              <path
+                                d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                              <line x1="12" y1="9" x2="12" y2="13" />
+                              <line x1="12" y1="17" x2="12.01" y2="17" />
+                            </svg>
                             <span>Tienes <strong>
                                 <%= bitacorasPendientes %>
                               </strong> bitácora(s) pendiente(s) por llenar</span>
@@ -550,7 +613,12 @@
                           <% } else { %>
                             <div class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-pill shadow-sm"
                               style="background-color: #f0fdf4; border: 1px solid #bbf7d0; color: #16a34a; font-size: 0.85rem; font-weight: 700;">
-                              <i class="bi bi-check-circle-fill" style="font-size: 0.95rem;"></i>
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                <polyline points="22 4 12 14.01 9 11.01" />
+                              </svg>
                               <span>Todas las bitácoras al día</span>
                             </div>
                             <% } %>
@@ -562,13 +630,22 @@
                     <div class="px-3 py-2 d-flex align-items-center justify-content-between flex-wrap gap-2"
                       style="background: #fffbeb; border-top: 1px solid #fef3c7; font-size: 0.82rem; color: #92400e;">
                       <div class="d-flex align-items-center gap-2">
-                        <i class="bi bi-hourglass-split text-warning fs-6"></i>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                          stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                          style="flex-shrink: 0;">
+                          <path
+                            d="M5 22h14M5 2h14M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2" />
+                        </svg>
                         <span><strong>Cierre de Jornada:</strong> Las bitácoras se bloquean a las <strong>12:00 AM
                             (medianoche)</strong> y las horas no justificadas se congelan automáticamente.</span>
                       </div>
                       <div
                         class="d-inline-flex align-items-center gap-1 fw-bold text-danger bg-white px-2 py-1 rounded border border-warning shadow-sm">
-                        <i class="bi bi-clock-history"></i>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <circle cx="12" cy="12" r="10" />
+                          <polyline points="12 6 12 12 16 14" />
+                        </svg>
                         <span>Tiempo restante hoy: </span>
                         <span id="countdownMedianocheTicker" class="font-monospace"
                           style="font-size: 0.88rem;">--:--:--</span>
@@ -631,17 +708,17 @@
                                 faltaAmbos=faltaBitacora && faltaComprobante; const tienePendiente=faltaBitacora ||
                                 faltaComprobante; const esFechaPasada=Boolean(j.fecha && j.fecha < hoyBoliviaStr); const
                                 esReactivada=(j.asistencia_estado==='HABILITADO_EDICION' ); const
-                                esBloqueada=(j.asistencia_estado==='CONGELADO' || j.asistencia_estado==='ANULADO') && !esReactivada; const
+                                esBloqueada=esFechaPasada && !esReactivada; const
                                 esCongelado=(j.asistencia_estado==='CONGELADO' ); const
-                                esObservado=(j.asistencia_estado==='OBSERVADO' ) || esCongelado; %>
+                                esObservado=(j.asistencia_estado==='OBSERVADO' ) || esCongelado || (tienePendiente &&
+                                esFechaPasada); %>
 
                                 <!-- FILA CON BORDE IZQUIERDO ROJO SI TIENE OBSERVACIÓN / REGISTRO PENDIENTE -->
                                 <tr class="<%= esObservado ? 'table-danger-custom' : '' %>"
                                   style="<%= esObservado ? 'border-left: 4px solid #d90429 !important; background-color: #fff8f8;' : '' %>">
 
                                   <td>
-                                    <i class="bi bi-calendar2-event me-2 text-primary"></i>
-                                    <strong>
+                                    <strong style="font-weight: 600;">
                                       <%= j.fecha %>
                                     </strong>
                                   </td>
@@ -683,54 +760,26 @@
                                   <td class="align-middle">
                                     <% if (j.horas_dia==='En curso' ) { %>
                                       <span class="badge-turno-curso">
-                                        <i class="bi bi-clock-history"></i> En curso
+                                        En curso
                                       </span>
-                                      <% } else if (esCongelado) { %>
-                                        <!-- BADGE DE HORAS CONGELADAS -->
-                                        <span class="badge d-inline-flex align-items-center gap-1" style="background-color: #eff6ff !important; 
-                         color: #1d4ed8 !important; 
-                         border: 1px solid #bfdbfe !important; 
-                         border-radius: 8px !important; 
-                         padding: 4px 10px !important; 
-                         font-size: 0.78rem !important; 
-                         font-weight: 700 !important;">
-                                          <i class="bi bi-snowflake" style="font-size: 0.85rem; color: #1d4ed8;"></i>
-                                          <span>Horas Congeladas</span>
+                                      <% } else if (esObservado || esCongelado) { %>
+                                        <span class="badge-turno-congelado"
+                                          title="H. Congeladas (pendiente de aprobación o regularización)">
+                                          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                                            stroke-linecap="round" stroke-linejoin="round"
+                                            style="vertical-align: -1px; margin-right: 2px;">
+                                            <circle cx="12" cy="12" r="10" />
+                                            <line x1="12" y1="8" x2="12" y2="12" />
+                                            <line x1="12" y1="16" x2="12.01" y2="16" />
+                                          </svg>
+                                          <%= j.horas_dia %>
                                         </span>
-                                        <br>
-                                        <small
-                                          class="text-secondary text-decoration-line-through fw-semibold d-block mt-1"
-                                          style="font-size: 0.72rem;">
-                                          <i class="bi bi-dash-circle me-1"></i>
-                                          <%= j.horas_dia %> (descontadas)
-                                        </small>
-                                        <% } else if (esObservado) { %>
-                                          <!-- BADGE DE OBSERVACIÓN -->
-                                          <span class="badge d-inline-flex align-items-center gap-1" style="background-color: #fff5f5 !important; 
-                         color: #d90429 !important; 
-                         border: 1px solid #ffb3b3 !important; 
-                         border-radius: 8px !important; 
-                         padding: 4px 10px !important; 
-                         font-size: 0.78rem !important; 
-                         font-weight: 700 !important;">
-                                            <i class="bi bi-exclamation-circle"
-                                              style="font-size: 0.85rem; color: #d90429;"></i>
-                                            <span>Observación</span>
+                                        <% } else { %>
+                                          <span class="badge-turno-finalizado">
+                                            <%= j.horas_dia %>
                                           </span>
-                                          <br>
-                                          <!-- HORAS CONGELADAS / EN OBSERVACIÓN -->
-                                          <small
-                                            class="text-secondary text-decoration-line-through fw-semibold d-block mt-1"
-                                            style="font-size: 0.72rem;">
-                                            <i class="bi bi-snowflake me-1"></i>
-                                            <%= j.horas_dia %> (congeladas)
-                                          </small>
-                                          <% } else { %>
-                                            <span class="badge-turno-finalizado">
-                                              <i class="bi bi-stopwatch"></i>
-                                              <%= j.horas_dia %>
-                                            </span>
-                                            <% } %>
+                                          <% } %>
                                   </td>
 
                                   <!-- ACCIONES / BITÁCORA / COMPROBANTE -->
@@ -741,25 +790,56 @@
                                       <% if (faltaAmbos) { %>
                                         <span class="badge d-inline-flex align-items-center gap-1"
                                           style="background-color: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; font-size: 0.74rem; font-weight: 600;">
-                                          <i class="bi bi-exclamation-circle-fill"></i> Bitácora y comprobante
-                                          pendientes
+                                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                                            <circle cx="12" cy="12" r="10" />
+                                            <line x1="12" y1="8" x2="12" y2="12" />
+                                            <line x1="12" y1="16" x2="12.01" y2="16" />
+                                          </svg> Bitácora y comprobante pendientes
                                         </span>
                                         <% } else if (faltaBitacora) { %>
                                           <span class="badge d-inline-flex align-items-center gap-1"
                                             style="background-color: #fffbeb; color: #b45309; border: 1px solid #fde68a; font-size: 0.74rem; font-weight: 600;">
-                                            <i class="bi bi-file-earmark-text"></i> Bitácora pendiente
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                                              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                              <polyline points="14 2 14 8 20 8" />
+                                              <line x1="16" y1="13" x2="8" y2="13" />
+                                            </svg> Bitácora pendiente
                                           </span>
                                           <% } else if (faltaComprobante) { %>
                                             <span class="badge d-inline-flex align-items-center gap-1"
                                               style="background-color: #fffbeb; color: #b45309; border: 1px solid #fde68a; font-size: 0.74rem; font-weight: 600;">
-                                              <i class="bi bi-camera"></i> Comprobante pendiente
+                                              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2.2">
+                                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                                <circle cx="8.5" cy="8.5" r="1.5" />
+                                                <polyline points="21 15 16 10 5 21" />
+                                              </svg> Comprobante pendiente
                                             </span>
-                                            <% } else { %>
+                                            <% } else if (esObservado || esCongelado) { %>
                                               <span class="badge d-inline-flex align-items-center gap-1"
-                                                style="background-color: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; font-size: 0.74rem; font-weight: 600;">
-                                                <i class="bi bi-check-circle-fill"></i> Bitácora y comprobante al día
+                                                style="background-color: #fffbeb; color: #b45309; border: 1px solid #fde68a; font-size: 0.74rem; font-weight: 600;"
+                                                title="Bitácora registrada pendiente de aprobación del Administrador">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                                                  viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                  stroke-width="2.2">
+                                                  <circle cx="12" cy="12" r="10" />
+                                                  <line x1="12" y1="8" x2="12" y2="12" />
+                                                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                                                </svg> Regularizada (Pendiente)
                                               </span>
-                                              <% } %>
+                                              <% } else { %>
+                                                <span class="badge d-inline-flex align-items-center gap-1"
+                                                  style="background-color: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; font-size: 0.74rem; font-weight: 600;">
+                                                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                                                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                    stroke-width="2.2">
+                                                    <polyline points="20 6 9 17 4 12" />
+                                                  </svg> Bitácora y comprobante al día
+                                                </span>
+                                                <% } %>
                                     </div>
 
                                     <!-- Botones de Acción (Respetando Bloqueo a las 00:00 y Reactivación Admin) -->
@@ -770,6 +850,7 @@
                                           data-tarea="<%= j.tarea || '' %>" data-fecha="<%= j.fecha %>"
                                           data-lugar="<%= j.lugar_nombre || '' %>"
                                           data-comprobante="<%= j.comprobante || '' %>"
+                                          data-obs="<%= j.observacion || '' %>"
                                           title="Ver detalle de actividades y evidencia">
                                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
                                             fill="currentColor" viewBox="0 0 16 16">
@@ -788,44 +869,92 @@
                                               data-comprobante="<%= j.comprobante || '' %>" data-fecha="<%= j.fecha %>"
                                               title="Bitácora reactivada por el Administrador. Puedes editarla ahora."
                                               style="font-size: 0.8rem;">
-                                              <i class="bi bi-unlock-fill me-1"></i>
+                                              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                                                stroke-linecap="round" stroke-linejoin="round"
+                                                style="margin-right: 4px; vertical-align: -1px;">
+                                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                                              </svg>
                                               <%= (tieneTarea || tieneComp) ? 'Editar (Reactivada)'
                                                 : 'Registrar (Reactivada)' %>
                                             </button>
-                                            <% } else if (esBloqueada) { %>
-                                              <!-- BLOQUEADA POR HORARIO 00:00 -->
-                                              <span
-                                                class="badge bg-secondary text-white py-1 px-2 d-inline-flex align-items-center gap-1 shadow-sm"
-                                                style="font-size: 0.77rem; font-weight: 600; cursor: not-allowed;"
-                                                title="Esta bitácora quedó bloqueada. Solicita al administrador su reactivación si requieres modificarla.">
-                                                <i class="bi bi-lock-fill"></i> Bloqueada
-                                              </span>
-                                              <% } else { %>
-                                                <!-- JORNADA DEL DÍA O EN CURSO: HABILITADA NORMALMENTE -->
-                                                <% if (tieneTarea || tieneComp) { %>
-                                                  <button class="btn-reporte-action btn-reporte py-1 px-2"
-                                                    data-asistencia="<%= j.id_asistencia %>"
-                                                    data-tarea="<%= j.tarea || '' %>"
-                                                    data-comprobante="<%= j.comprobante || '' %>"
-                                                    data-fecha="<%= j.fecha %>" title="Editar bitácora"
-                                                    style="font-size: 0.8rem;">
-                                                    <i class="bi bi-pencil-square me-1"></i> Editar
-                                                  </button>
-                                                  <% } else { %>
-                                                    <button
-                                                      class="btn btn-success btn-reporte-action btn-reporte px-3 rounded-pill fw-bold shadow-sm"
-                                                      data-asistencia="<%= j.id_asistencia %>" data-tarea=""
-                                                      data-comprobante="" data-fecha="<%= j.fecha %>"
-                                                      title="Registrar bitácora de la jornada">
-                                                      <i class="bi bi-plus-circle me-1"></i> Registrar
+                                            <% } else if (esFechaPasada && (tienePendiente || esObservado ||
+                                              esCongelado)) { %>
+                                              <!-- AUTO-REGULARIZACIÓN DIRECTA SOLO PARA DÍAS PASADOS PENDIENTES O EN OBSERVACIÓN -->
+                                              <button
+                                                class="btn btn-reporte-action btn-reporte py-1 px-2 fw-semibold shadow-sm"
+                                                data-asistencia="<%= j.id_asistencia %>"
+                                                data-tarea="<%= j.tarea || '' %>"
+                                                data-comprobante="<%= j.comprobante || '' %>"
+                                                data-fecha="<%= j.fecha %>"
+                                                style="font-size: 0.8rem; background-color: #fffbeb; color: #b45309; border: 1px solid #fde68a;"
+                                                title="Regularizar bitácora fuera de plazo (permanecerá en observación con horas congeladas hasta su aprobación)">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13"
+                                                  viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                  stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
+                                                  style="margin-right: 4px; vertical-align: -1px;">
+                                                  <path
+                                                    d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                                </svg>
+                                                Regularizar
+                                              </button>
+                                              <% } else if (esFechaPasada) { %>
+                                                <!-- DÍA PASADO COMPLETADO A TIEMPO: YA ESTÁ CERRADO Y NO REQUIERE EDICIÓN -->
+                                                <% } else { %>
+                                                  <!-- JORNADA DEL DÍA O EN CURSO: HABILITADA NORMALMENTE -->
+                                                  <% if (tieneTarea || tieneComp) { %>
+                                                    <button class="btn-reporte-action btn-reporte py-1 px-2"
+                                                      data-asistencia="<%= j.id_asistencia %>"
+                                                      data-tarea="<%= j.tarea || '' %>"
+                                                      data-comprobante="<%= j.comprobante || '' %>"
+                                                      data-fecha="<%= j.fecha %>" title="Editar bitácora"
+                                                      style="font-size: 0.8rem;">
+                                                      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13"
+                                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                        stroke-width="2.2" stroke-linecap="round"
+                                                        stroke-linejoin="round"
+                                                        style="margin-right: 4px; vertical-align: -1px;">
+                                                        <path
+                                                          d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                                        <path
+                                                          d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                                      </svg> Editar
                                                     </button>
-                                                    <% } %>
+                                                    <% } else { %>
+                                                      <button
+                                                        class="btn btn-success btn-reporte-action btn-reporte px-3 rounded-pill fw-bold shadow-sm"
+                                                        data-asistencia="<%= j.id_asistencia %>" data-tarea=""
+                                                        data-comprobante="" data-fecha="<%= j.fecha %>"
+                                                        title="Registrar bitácora de la jornada">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13"
+                                                          viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                          stroke-width="2.2" stroke-linecap="round"
+                                                          stroke-linejoin="round"
+                                                          style="margin-right: 4px; vertical-align: -1px;">
+                                                          <line x1="12" y1="5" x2="12" y2="19" />
+                                                          <line x1="5" y1="12" x2="19" y2="12" />
+                                                        </svg> Registrar
+                                                      </button>
                                                       <% } %>
+                                                        <% } %>
                                     </div>
 
-                                    <% if(j.observacion) { %>
-                                      <div class="mt-1"><small class="text-danger fw-semibold">Obs: <%= j.observacion %>
-                                            </small></div>
+                                    <% if(j.observacion && !j.observacion.includes('regularizada fuera de plazo')) { %>
+                                      <div class="mt-1 d-flex justify-content-center">
+                                        <div class="obs-pill-card" title="<%= j.observacion %>">
+                                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <circle cx="12" cy="12" r="10" />
+                                            <line x1="12" y1="16" x2="12" y2="12" />
+                                            <line x1="12" y1="8" x2="12.01" y2="8" />
+                                          </svg>
+                                          <span class="obs-text">
+                                            <%= j.observacion %>
+                                          </span>
+                                        </div>
+                                      </div>
                                       <% } %>
                                   </td>
                                 </tr>
@@ -1196,6 +1325,16 @@
                       style="font-size: 0.82rem; font-weight: 600;"></span>
                   </div>
 
+                  <!-- Alerta informativa si es una jornada pasada (auto-regularización) -->
+                  <div id="modal_alerta_fecha_pasada" class="alert py-2 px-3 mb-3 d-flex align-items-center gap-2"
+                    style="display: none; background-color: #fffbeb; border: 1px solid #fde68a; color: #92400e; font-size: 0.82rem; border-radius: 8px;">
+                    <i class="bi bi-exclamation-triangle-fill text-warning fs-6"></i>
+                    <div>
+                      <strong>Jornada fuera de plazo:</strong> Al guardar tu bitácora, quedará en <b>observación</b> con
+                      horas <b>congeladas</b> hasta que el Administrador las revise y apruebe.
+                    </div>
+                  </div>
+
                   <div class="mb-3">
                     <div class="d-flex justify-content-between align-items-center mb-1">
                       <label class="form-label fw-semibold mb-0">Descripción de la Tarea / Avance <span
@@ -1298,6 +1437,21 @@
                 <label class="form-label fw-bold text-dark mb-2">Descripción Completa:</label>
                 <div id="modalVerBitacoraTexto" class="p-3 bg-light rounded border mb-3"
                   style="max-height: 200px; overflow-y: auto; word-break: break-word; white-space: pre-wrap; font-size: 0.93rem; color: #1e293b; line-height: 1.5;">
+                </div>
+
+                <!-- Sección Observación del Administrador dentro del Modal -->
+                <div id="modalVerBitacoraObsWrap" class="p-3 mb-3 rounded-3"
+                  style="display: none; background-color: #f8fafc; border: 1px solid #e2e8f0;">
+                  <div class="d-flex align-items-center gap-2 mb-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                      stroke="#0b6bcb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="16" x2="12" y2="12" />
+                      <line x1="12" y1="8" x2="12.01" y2="8" />
+                    </svg>
+                    <strong style="font-size: 0.83rem; color: #1e293b;">Observación / Validación:</strong>
+                  </div>
+                  <div id="modalVerBitacoraObs" style="font-size: 0.86rem; color: #475569;"></div>
                 </div>
 
                 <!-- Sección Comprobante Adjunto dentro del Modal -->
@@ -1403,9 +1557,19 @@
                   const fecha = btn.dataset.fecha || '';
                   const lugar = btn.dataset.lugar || '';
                   const comprobante = btn.dataset.comprobante || '';
+                  const obs = btn.dataset.obs || '';
 
                   document.getElementById('modalVerBitacoraFecha').textContent = fecha;
                   document.getElementById('modalVerBitacoraTexto').textContent = tarea;
+
+                  const obsWrap = document.getElementById('modalVerBitacoraObsWrap');
+                  const obsEl = document.getElementById('modalVerBitacoraObs');
+                  if (obs && obs.trim() !== '') {
+                    obsEl.textContent = obs.trim();
+                    obsWrap.style.display = 'block';
+                  } else {
+                    obsWrap.style.display = 'none';
+                  }
 
                   const lugarWrap = document.getElementById('modalVerBitacoraLugarWrap');
                   const lugarEl = document.getElementById('modalVerBitacoraLugar');
@@ -1508,6 +1672,16 @@
                   const modalFechaEl = document.getElementById('modal_reporte_fecha');
                   if (modalFechaEl) {
                     modalFechaEl.textContent = fechaJornada;
+                  }
+
+                  const alertaFechaPasada = document.getElementById('modal_alerta_fecha_pasada');
+                  const hoyBolivia = '<%= hoyBolivia %>';
+                  if (alertaFechaPasada) {
+                    if (fechaJornada && fechaJornada < hoyBolivia) {
+                      alertaFechaPasada.style.display = 'flex';
+                    } else {
+                      alertaFechaPasada.style.display = 'none';
+                    }
                   }
 
                   const inputTarea = document.getElementById('modal_tarea');

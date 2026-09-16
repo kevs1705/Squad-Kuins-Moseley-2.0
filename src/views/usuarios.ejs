@@ -294,14 +294,15 @@
 
 
         <label>
-          Contraseña
-          <small>(obligatoria al crear)</small>
+          Contraseña predeterminada
+          <small>(Se asigna automáticamente al crear. El usuario deberá cambiarla en su primer inicio de sesión.)</small>
 
           <input
-            id="f-pass"
-            name="contrasena"
-            type="password"
-            placeholder="Contraseña"
+            id="f-pass-readonly"
+            type="text"
+            value="12345678"
+            readonly
+            style="background-color: #e9ecef; cursor: not-allowed; color: #6c757d;"
           >
 
         </label>
@@ -347,6 +348,7 @@
   const form = document.getElementById('user-form');
   const modalTitle = document.getElementById('modal-title');
   const btnCancel = document.getElementById('btn-cancel');
+  const btnSave = document.getElementById('btn-save');
 
   let editId = null;
 
@@ -523,7 +525,7 @@
 
     openModal('Nuevo usuario');
 
-    document.getElementById('f-pass').required = true;
+    document.getElementById('f-rol').value = '0';
 
   });
 
@@ -553,7 +555,7 @@
 
       openModal(`Editar #${user.id_usuario}`);
 
-      document.getElementById('f-pass').required = false;
+      document.getElementById('f-rol').value = user.rol;
 
       return;
     }
@@ -677,9 +679,6 @@
     document.getElementById('f-rol').value =
       Number(u.rol ?? 0);
 
-    document.getElementById('f-pass').value =
-      '';
-
   }
 
 
@@ -728,6 +727,9 @@
 
     if (!payload) return;
 
+    btnSave.disabled = true;
+    const originalText = btnSave.textContent;
+    btnSave.textContent = 'Guardando...';
 
     try {
 
@@ -803,6 +805,9 @@
         'No se pudo guardar el usuario'
       );
 
+    } finally {
+      btnSave.disabled = false;
+      btnSave.textContent = originalText;
     }
 
   }
@@ -863,9 +868,9 @@
       );
 
 
-    const contrasena =
-      document.getElementById('f-pass')
-        .value;
+    // La contraseña ya no se envía desde el formulario de admin, 
+    // se maneja automáticamente en la creación y el usuario la cambia.
+    const contrasena = "";
 
 
     /* VALIDACIONES */
@@ -915,20 +920,8 @@
     }
 
 
-    /* Contraseña obligatoria solamente al crear */
-
-    if (
-      requirePass &&
-      !contrasena
-    ) {
-
-      alert(
-        'Contraseña obligatoria al crear'
-      );
-
-      return false;
-
-    }
+    /* Contraseña no es obligatoria al crear, se asigna 12345678 automáticamente */
+    // if (requirePass && !contrasena) { ... }
 
 
     return {

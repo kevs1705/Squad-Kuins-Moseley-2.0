@@ -62,7 +62,7 @@ router.get('/usuarios', requireAuth, requireAdmin, async (req, res) => {
 // =========================================================================
 router.post('/api/usuarios', requireAuth, requireAdmin, async (req, res) => {
   try {
-    let { nombre, apellido_paterno, apellido_materno, CI, universidad, id_carrera, celular, estado, rol, contrasena } = req.body;
+    let { nombre, apellido_paterno, apellido_materno, CI, universidad, id_carrera, celular, estado, rol } = req.body;
 
     nombre = String(nombre || '').trim().slice(0, 100);
     apellido_paterno = String(apellido_paterno || '').trim().slice(0, 100);
@@ -73,10 +73,12 @@ router.post('/api/usuarios', requireAuth, requireAdmin, async (req, res) => {
     celular = String(celular || '').trim().slice(0, 20);
     estado = Number(estado) ? 1 : 0;
     rol = Number(rol) ? 1 : 0;
-    contrasena = String(contrasena || '').slice(0, 255);
+    
+    // Contraseña automática para nuevos usuarios
+    const contrasena = '12345678';
 
-    if (!nombre || !CI || !universidad || !id_carrera || !contrasena) {
-      return res.status(400).json({ ok: false, msg: 'Campos obligatorios: nombre, CI, universidad, carrera, contraseña' });
+    if (!nombre || !CI || !universidad || !id_carrera) {
+      return res.status(400).json({ ok: false, msg: 'Campos obligatorios: nombre, CI, universidad, carrera' });
     }
     if (!/^[0-9.\-]{5,32}$/.test(CI)) {
       return res.status(400).json({ ok: false, msg: 'CI inválido (5–32, dígitos/punto/guion)' });
