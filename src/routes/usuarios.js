@@ -106,18 +106,28 @@ router.post('/api/usuarios', requireAuth, requireAdmin, async (req, res) => {
         // Obtenemos el ID de Departamento (id_carrera directo asignado en la BD)
         const deptoBiometrico = id_carrera ? Number(id_carrera) : 1;
 
+        const nombreCompleto = `${nombre || ''} ${apellido_paterno || ''}`.trim();
+        const bioName = nombreCompleto
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .trim()
+          .slice(0, 24) || `User_${idUsuario}`;
+
+        let bioPassword = String(contrasena || '123456').replace(/\D/g, '').slice(0, 8);
+        if (!bioPassword) bioPassword = '123456';
+
         await dispositivoZk.setUser(
           Number(idUsuario),   // 1. uid
           String(idUsuario),   // 2. userid
-          nombre.slice(0, 24), // 3. name
-          String(contrasena),  // 4. password
+          bioName,             // 3. name
+          bioPassword,         // 4. password
           rolBiometrico,       // 5. role
           0,                   // 6. cardno
           deptoBiometrico      // 7. deptid (Número de departamento creado en el K14)
         );
 
         await dispositivoZk.disconnect();
-        console.log(`🚀 Usuario [${nombre}] registrado en el K14 con ID: ${idUsuario} y Depto ID: ${deptoBiometrico}`);
+        console.log(`🚀 Usuario [${bioName}] registrado en el K14 con ID: ${idUsuario} y Depto ID: ${deptoBiometrico}`);
       } catch (bioError) {
         console.error('⚠️ Usuario guardado en MySQL, pero falló envío al biométrico:', bioError.message);
       }
@@ -200,22 +210,32 @@ router.post('/api/usuarios/:id', requireAuth, requireAdmin, async (req, res) => 
         const dispositivoZk = new Zkteco(BIOMETRICO_IP, BIOMETRICO_PORT, 5200, 5000);
         await dispositivoZk.createSocket();
 
-        if (estado === 1) {
-          const rolBiometrico = rol === 1 ? 14 : 0;
+        if (Number(estado) === 1) {
+          const rolBiometrico = Number(rol) === 1 ? 14 : 0;
           const deptoBiometrico = id_carrera ? Number(id_carrera) : 1;
 
+          const nombreCompleto = `${nombre || ''} ${apellido_paterno || ''}`.trim();
+          const bioName = nombreCompleto
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .trim()
+            .slice(0, 24) || `User_${id}`;
+
+          let bioPassword = String(contrasenaFinal || '123456').replace(/\D/g, '').slice(0, 8);
+          if (!bioPassword) bioPassword = '123456';
+
           await dispositivoZk.setUser(
-            id,
-            id.toString(),
-            nombre.slice(0, 24),
-            contrasenaFinal,
+            Number(id),
+            String(id),
+            bioName,
+            bioPassword,
             rolBiometrico,
             0,
             deptoBiometrico // <--- Se envía el Depto ID correspondiente
           );
-          console.log(`🔄 Usuario [${nombre}] actualizado en el K14 con ID: ${id} y Depto ID: ${deptoBiometrico}`);
+          console.log(`🔄 Usuario [${bioName}] actualizado en el K14 con ID: ${id} y Depto ID: ${deptoBiometrico}`);
         } else {
-          await dispositivoZk.deleteUser(id);
+          await dispositivoZk.deleteUser(Number(id));
           console.log(`🚫 Usuario [${nombre}] desactivado. Removido del K14.`);
         }
 

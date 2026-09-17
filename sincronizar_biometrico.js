@@ -112,22 +112,28 @@ async function ejecutarSincronizacion() {
     // -----------------------------------------------------------------
     // ETAPA A: SINCRONIZACIÓN DE USUARIOS (Cloud <---> K14)
     // -----------------------------------------------------------------
-    logMensaje('--- [ETAPA A: USUARIOS PENDIENTES] ---');
+    logMensaje('--- [ETAPA A: GESTIÓN Y SINCRONIZACIÓN DE USUARIOS] ---');
     const responseBio = await dispositivoZk.getUsers();
     const usuariosBio = responseBio.data || [];
 
     const mapBio = new Map();
+    const mapBioByUid = new Map();
+
     usuariosBio.forEach(u => {
       const id = String(u.user_id || u.userId || u.uid || u.deviceUserId || '').trim();
       if (id && id !== 'undefined') mapBio.set(id, u);
-      const uid = String(u.uid || '').trim();
-      if (uid && uid !== 'undefined') mapBio.set(uid, u);
+      const uidNum = Number(u.uid);
+      if (!isNaN(uidNum) && uidNum > 0) {
+        mapBioByUid.set(uidNum, u);
+      }
     });
 
     let creadosEnBD = 0;
     let creadosEnBio = 0;
+    let editadosEnBio = 0;
+    let eliminadosEnBio = 0;
 
-    // A1. K14 -> BD
+    // A1. K14 -> BD (Nuevos usuarios inscritos en el biométrico)
     for (const [idBio, bioUser] of mapBio.entries()) {
       const existe = mapUsuariosPorId.has(idBio) || mapUsuariosPorCI.has(idBio);
       if (!existe) {
@@ -160,42 +166,84 @@ async function ejecutarSincronizacion() {
       }
     }
 
-    // A2. BD -> K14
+    // A2. BD -> K14 (Crear, Editar nombres/datos o Eliminar inactivos)
     for (const dbUser of usuariosBD) {
       const idSearchCI = String(dbUser.CI || '').trim();
       const idSearchId = String(dbUser.id_usuario || '').trim();
+      const bioUid = Number(dbUser.id_usuario);
+      const bioUserId = String(dbUser.id_usuario);
 
-      const yaEnBio = (idSearchCI && mapBio.has(idSearchCI)) || (idSearchId && mapBio.has(idSearchId));
+      const existingBio = (idSearchId && mapBio.get(idSearchId)) ||
+                          (bioUid && mapBioByUid.get(bioUid)) ||
+                          (idSearchCI && mapBio.get(idSearchCI)) || null;
 
-      if (!yaEnBio && Number(dbUser.estado) === 1) {
-        const bioUid = Number(dbUser.id_usuario);
-        const bioUserId = String(dbUser.id_usuario);
-        
-        const nombreCompleto = `${dbUser.nombre || ''} ${dbUser.apellido_paterno || ''}`.trim();
-        const bioName = nombreCompleto
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '')
-          .trim()
-          .slice(0, 24) || `User_${bioUserId}`;
+      const nombreCompleto = `${dbUser.nombre || ''} ${dbUser.apellido_paterno || ''}`.trim();
+      const bioName = nombreCompleto
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim()
+        .slice(0, 24) || `User_${bioUserId}`;
 
-        let bioPassword = String(dbUser.contrasena || '123456').replace(/\D/g, '').slice(0, 8);
-        if (!bioPassword) bioPassword = '123456';
+      let bioPassword = String(dbUser.contrasena || '123456').replace(/\D/g, '').slice(0, 8);
+      if (!bioPassword) bioPassword = '123456';
 
-        const bioRole = Number(dbUser.rol) === 1 ? 14 : 0;
-        const bioDept = Number(dbUser.id_carrera) || 1;
+      const bioRole = Number(dbUser.rol) === 1 ? 14 : 0;
+      const bioDept = Number(dbUser.id_carrera) || 1;
 
-        try {
-          await dispositivoZk.setUser(bioUid, bioUserId, bioName, bioPassword, bioRole, 0, bioDept);
-          mapBio.set(bioUserId, { uid: bioUid, userId: bioUserId, name: bioName });
-          creadosEnBio++;
-          logMensaje(`   🚀 Usuario enviado al K14: [ID: ${bioUserId}] ${bioName}`);
-        } catch (errSet) {
-          logMensaje(`   ❌ Error enviando usuario al K14: ${errSet.message}`);
+      if (Number(dbUser.estado) === 1) {
+        // Usuario ACTIVO: Crear o Editar
+        if (!existingBio) {
+          try {
+            await dispositivoZk.setUser(bioUid, bioUserId, bioName, bioPassword, bioRole, 0, bioDept);
+            mapBio.set(bioUserId, { uid: bioUid, userId: bioUserId, name: bioName, role: bioRole, password: bioPassword });
+            creadosEnBio++;
+            logMensaje(`   🚀 Usuario enviado al K14: [ID: ${bioUserId}] ${bioName}`);
+          } catch (errSet) {
+            logMensaje(`   ❌ Error enviando usuario al K14: ${errSet.message}`);
+          }
+        } else {
+          // Ya existe en K14: Verificar si cambió nombre, rol, clave o carrera para EDITAR
+          const currentBioName = String(existingBio.name || '').trim();
+          const currentBioRole = Number(existingBio.role) || 0;
+          const currentBioPass = String(existingBio.password || '').trim();
+
+          const nameChanged = currentBioName !== bioName;
+          const roleChanged = currentBioRole !== bioRole;
+          const passChanged = bioPassword && currentBioPass && currentBioPass !== bioPassword;
+
+          if (nameChanged || roleChanged || passChanged) {
+            try {
+              const targetUid = Number(existingBio.uid) || bioUid;
+              await dispositivoZk.setUser(targetUid, bioUserId, bioName, bioPassword, bioRole, 0, bioDept);
+              existingBio.name = bioName;
+              existingBio.role = bioRole;
+              existingBio.password = bioPassword;
+              editadosEnBio++;
+              logMensaje(`   ✏️ Usuario actualizado en K14: [ID: ${bioUserId}] "${currentBioName}" -> "${bioName}"`);
+            } catch (errEdit) {
+              logMensaje(`   ❌ Error editando usuario en K14: ${errEdit.message}`);
+            }
+          }
+        }
+      } else {
+        // Usuario INACTIVO: Si aún está en K14, ELIMINARLO
+        if (existingBio) {
+          try {
+            const targetUid = Number(existingBio.uid) || bioUid;
+            await dispositivoZk.deleteUser(targetUid);
+            mapBio.delete(bioUserId);
+            mapBioByUid.delete(targetUid);
+            if (idSearchCI) mapBio.delete(idSearchCI);
+            eliminadosEnBio++;
+            logMensaje(`   🗑️ Usuario inactivo eliminado del K14: [UID: ${targetUid}] ${nombreCompleto}`);
+          } catch (errDel) {
+            logMensaje(`   ❌ Error eliminando usuario inactivo del K14: ${errDel.message}`);
+          }
         }
       }
     }
 
-    logMensaje(`   --> Resumen Usuarios: K14 -> BD: ${creadosEnBD} | BD -> K14: ${creadosEnBio}`);
+    logMensaje(`   --> Resumen Usuarios: K14 -> BD: ${creadosEnBD} | Creados en K14: ${creadosEnBio} | Editados en K14: ${editadosEnBio} | Eliminados de K14: ${eliminadosEnBio}`);
 
     // -----------------------------------------------------------------
     // ETAPA B: SINCRONIZACIÓN DE MARCAS (FILTRADO POR EL DÍA DE HOY)
@@ -322,7 +370,9 @@ async function ejecutarSincronizacion() {
 
     logMensaje(`==================== RESUMEN GENERAL ====================`);
     logMensaje(`📥 Usuarios K14 -> BD:        ${creadosEnBD}`);
-    logMensaje(`🚀 Usuarios BD -> K14:        ${creadosEnBio}`);
+    logMensaje(`🚀 Usuarios BD -> K14 creados:${creadosEnBio}`);
+    logMensaje(`✏️  Usuarios K14 actualizados: ${editadosEnBio}`);
+    logMensaje(`🗑️  Usuarios K14 eliminados:   ${eliminadosEnBio}`);
     logMensaje(`⏱️  Marcas nuevas procesadas:  ${marcasProcesadas}`);
     logMensaje(`⏭️  Marcas ya registradas:     ${marcasOmitidas}`);
     logMensaje(`=========================================================\n`);
