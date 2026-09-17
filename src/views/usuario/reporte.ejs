@@ -789,7 +789,38 @@
 
                                     <!-- Estado detallado del registro -->
                                     <div class="mb-1">
-                                      <% if (faltaAmbos) { %>
+                                      <% if (j.modalidad === 'HORA_EXTRA') { %>
+                                        <% if (j.he_estado === 1 || j.asistencia_estado === 'OBSERVADO') { %>
+                                          <span class="badge d-inline-flex align-items-center gap-1"
+                                            style="background-color: #fffbeb; color: #b45309; border: 1px solid #fde68a; font-size: 0.74rem; font-weight: 600;"
+                                            title="Horas extras finalizadas y enviadas. En revisión y evaluación por el Administrador.">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                                              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                                              <circle cx="12" cy="12" r="10" />
+                                              <polyline points="12 6 12 12 16 14" />
+                                            </svg> En Revisión / Observado
+                                          </span>
+                                        <% } else if (j.he_estado === 2 || j.asistencia_estado === 'FINALIZADO') { %>
+                                          <span class="badge d-inline-flex align-items-center gap-1"
+                                            style="background-color: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; font-size: 0.74rem; font-weight: 600;"
+                                            title="Horas extras aprobadas y sumadas con multiplicador x2.">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                                              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                                              <polyline points="20 6 9 17 4 12" />
+                                            </svg> Aprobado (x2)
+                                          </span>
+                                        <% } else if (j.he_estado === 3 || j.asistencia_estado === 'RECHAZADO') { %>
+                                          <span class="badge d-inline-flex align-items-center gap-1"
+                                            style="background-color: #fef2f2; color: #dc2626; border: 1px solid #fecaca; font-size: 0.74rem; font-weight: 600;"
+                                            title="Horas extras rechazadas u observadas por el Administrador.">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                                              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                                              <line x1="18" y1="6" x2="6" y2="18" />
+                                              <line x1="6" y1="6" x2="18" y2="18" />
+                                            </svg> Rechazado
+                                          </span>
+                                        <% } %>
+                                      <% } else if (faltaAmbos) { %>
                                         <span class="badge d-inline-flex align-items-center gap-1"
                                           style="background-color: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; font-size: 0.74rem; font-weight: 600;">
                                           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
@@ -809,39 +840,39 @@
                                               <line x1="16" y1="13" x2="8" y2="13" />
                                             </svg> Bitácora pendiente
                                           </span>
-                                          <% } else if (faltaComprobante) { %>
-                                            <span class="badge d-inline-flex align-items-center gap-1"
-                                              style="background-color: #fffbeb; color: #b45309; border: 1px solid #fde68a; font-size: 0.74rem; font-weight: 600;">
-                                              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
-                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                stroke-width="2.2">
-                                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                                                <circle cx="8.5" cy="8.5" r="1.5" />
-                                                <polyline points="21 15 16 10 5 21" />
-                                              </svg> Comprobante pendiente
-                                            </span>
-                                            <% } else if (esObservado || esCongelado) { %>
-                                              <span class="badge d-inline-flex align-items-center gap-1"
-                                                style="background-color: #fffbeb; color: #b45309; border: 1px solid #fde68a; font-size: 0.74rem; font-weight: 600;"
-                                                title="Bitácora registrada pendiente de aprobación del Administrador">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
-                                                  viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                  stroke-width="2.2">
-                                                  <circle cx="12" cy="12" r="10" />
-                                                  <line x1="12" y1="8" x2="12" y2="12" />
-                                                  <line x1="12" y1="16" x2="12.01" y2="16" />
-                                                </svg> Regularizada (Pendiente)
-                                              </span>
-                                              <% } else { %>
-                                                <span class="badge d-inline-flex align-items-center gap-1"
-                                                  style="background-color: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; font-size: 0.74rem; font-weight: 600;">
-                                                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
-                                                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                    stroke-width="2.2">
-                                                    <polyline points="20 6 9 17 4 12" />
-                                                  </svg> Bitácora y comprobante al día
-                                                </span>
-                                                <% } %>
+                                        <% } else if (faltaComprobante) { %>
+                                          <span class="badge d-inline-flex align-items-center gap-1"
+                                            style="background-color: #fffbeb; color: #b45309; border: 1px solid #fde68a; font-size: 0.74rem; font-weight: 600;">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                                              viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                              stroke-width="2.2">
+                                              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                              <circle cx="8.5" cy="8.5" r="1.5" />
+                                              <polyline points="21 15 16 10 5 21" />
+                                            </svg> Comprobante pendiente
+                                          </span>
+                                        <% } else if (esObservado || esCongelado) { %>
+                                          <span class="badge d-inline-flex align-items-center gap-1"
+                                            style="background-color: #fffbeb; color: #b45309; border: 1px solid #fde68a; font-size: 0.74rem; font-weight: 600;"
+                                            title="Bitácora registrada pendiente de aprobación del Administrador">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                                              viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                              stroke-width="2.2">
+                                              <circle cx="12" cy="12" r="10" />
+                                              <line x1="12" y1="8" x2="12" y2="12" />
+                                              <line x1="12" y1="16" x2="12.01" y2="16" />
+                                            </svg> Regularizada (Pendiente)
+                                          </span>
+                                        <% } else { %>
+                                          <span class="badge d-inline-flex align-items-center gap-1"
+                                            style="background-color: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; font-size: 0.74rem; font-weight: 600;">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                                              viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                              stroke-width="2.2">
+                                              <polyline points="20 6 9 17 4 12" />
+                                            </svg> Bitácora y comprobante al día
+                                          </span>
+                                        <% } %>
                                     </div>
 
                                     <!-- Botones de Acción (Respetando Bloqueo a las 00:00 y Reactivación Admin) -->
@@ -861,85 +892,87 @@
                                               d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" />
                                           </svg>
                                         </button>
-                                        <% } %>
+                                      <% } %>
 
-                                          <% if (esReactivada) { %>
-                                            <!-- REACTIVADA POR EL ADMINISTRADOR: PERMITE EDITAR / COMPLETAR AUNQUE SEA DÍA PASADO -->
-                                            <button
-                                              class="btn btn-warning btn-reporte-action btn-reporte py-1 px-2 fw-bold text-dark shadow-sm"
-                                              data-asistencia="<%= j.id_asistencia %>" data-tarea="<%= j.tarea || '' %>"
-                                              data-comprobante="<%= j.comprobante || '' %>" data-fecha="<%= j.fecha %>"
-                                              title="Bitácora reactivada por el Administrador. Puedes editarla ahora."
-                                              style="font-size: 0.8rem;">
-                                              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13"
-                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-                                                stroke-linecap="round" stroke-linejoin="round"
-                                                style="margin-right: 4px; vertical-align: -1px;">
-                                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                                              </svg>
-                                              <%= (tieneTarea || tieneComp) ? 'Editar (Reactivada)'
-                                                : 'Registrar (Reactivada)' %>
-                                            </button>
-                                            <% } else if (esFechaPasada && (tienePendiente || esObservado ||
-                                              esCongelado)) { %>
-                                              <!-- AUTO-REGULARIZACIÓN DIRECTA SOLO PARA DÍAS PASADOS PENDIENTES O EN OBSERVACIÓN -->
-                                              <button
-                                                class="btn btn-reporte-action btn-reporte py-1 px-2 fw-semibold shadow-sm"
-                                                data-asistencia="<%= j.id_asistencia %>"
-                                                data-tarea="<%= j.tarea || '' %>"
-                                                data-comprobante="<%= j.comprobante || '' %>"
-                                                data-fecha="<%= j.fecha %>"
-                                                style="font-size: 0.8rem; background-color: #fffbeb; color: #b45309; border: 1px solid #fde68a;"
-                                                title="Regularizar bitácora fuera de plazo (permanecerá en observación con horas congeladas hasta su aprobación)">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13"
-                                                  viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                  stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
-                                                  style="margin-right: 4px; vertical-align: -1px;">
-                                                  <path
-                                                    d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                                                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                                                </svg>
-                                                Regularizar
-                                              </button>
-                                              <% } else if (esFechaPasada) { %>
-                                                <!-- DÍA PASADO COMPLETADO A TIEMPO: YA ESTÁ CERRADO Y NO REQUIERE EDICIÓN -->
-                                                <% } else { %>
-                                                  <!-- JORNADA DEL DÍA O EN CURSO: HABILITADA NORMALMENTE -->
-                                                  <% if (tieneTarea || tieneComp) { %>
-                                                    <button class="btn-reporte-action btn-reporte py-1 px-2"
-                                                      data-asistencia="<%= j.id_asistencia %>"
-                                                      data-tarea="<%= j.tarea || '' %>"
-                                                      data-comprobante="<%= j.comprobante || '' %>"
-                                                      data-fecha="<%= j.fecha %>" title="Editar bitácora"
-                                                      style="font-size: 0.8rem;">
-                                                      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13"
-                                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                        stroke-width="2.2" stroke-linecap="round"
-                                                        stroke-linejoin="round"
-                                                        style="margin-right: 4px; vertical-align: -1px;">
-                                                        <path
-                                                          d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                                                        <path
-                                                          d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                                                      </svg> Editar
-                                                    </button>
-                                                    <% } else { %>
-                                                      <button
-                                                        class="btn btn-success btn-reporte-action btn-reporte px-3 rounded-pill fw-bold shadow-sm"
-                                                        data-asistencia="<%= j.id_asistencia %>" data-tarea=""
-                                                        data-comprobante="" data-fecha="<%= j.fecha %>"
-                                                        title="Registrar bitácora de la jornada">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13"
-                                                          viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                          stroke-width="2.2" stroke-linecap="round"
-                                                          stroke-linejoin="round"
-                                                          style="margin-right: 4px; vertical-align: -1px;">
-                                                          <line x1="12" y1="5" x2="12" y2="19" />
-                                                          <line x1="5" y1="12" x2="19" y2="12" />
-                                                        </svg> Registrar
-                                                      </button>
-                                                      <% } %>
-                                                        <% } %>
+                                      <% if (j.modalidad === 'HORA_EXTRA') { %>
+                                        <!-- Horas extras no requieren botón de registrar/editar bitácora regular -->
+                                      <% } else if (esReactivada) { %>
+                                        <!-- REACTIVADA POR EL ADMINISTRADOR: PERMITE EDITAR / COMPLETAR AUNQUE SEA DÍA PASADO -->
+                                        <button
+                                          class="btn btn-warning btn-reporte-action btn-reporte py-1 px-2 fw-bold text-dark shadow-sm"
+                                          data-asistencia="<%= j.id_asistencia %>" data-tarea="<%= j.tarea || '' %>"
+                                          data-comprobante="<%= j.comprobante || '' %>" data-fecha="<%= j.fecha %>"
+                                          title="Bitácora reactivada por el Administrador. Puedes editarla ahora."
+                                          style="font-size: 0.8rem;">
+                                          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                                            stroke-linecap="round" stroke-linejoin="round"
+                                            style="margin-right: 4px; vertical-align: -1px;">
+                                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                                          </svg>
+                                          <%= (tieneTarea || tieneComp) ? 'Editar (Reactivada)'
+                                            : 'Registrar (Reactivada)' %>
+                                        </button>
+                                      <% } else if (esFechaPasada && (tienePendiente || esObservado ||
+                                        esCongelado)) { %>
+                                        <!-- AUTO-REGULARIZACIÓN DIRECTA SOLO PARA DÍAS PASADOS PENDIENTES O EN OBSERVACIÓN -->
+                                        <button
+                                          class="btn btn-reporte-action btn-reporte py-1 px-2 fw-semibold shadow-sm"
+                                          data-asistencia="<%= j.id_asistencia %>"
+                                          data-tarea="<%= j.tarea || '' %>"
+                                          data-comprobante="<%= j.comprobante || '' %>"
+                                          data-fecha="<%= j.fecha %>"
+                                          style="font-size: 0.8rem; background-color: #fffbeb; color: #b45309; border: 1px solid #fde68a;"
+                                          title="Regularizar bitácora fuera de plazo (permanecerá en observación con horas congeladas hasta su aprobación)">
+                                          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                            stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
+                                            style="margin-right: 4px; vertical-align: -1px;">
+                                            <path
+                                              d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                          </svg>
+                                          Regularizar
+                                        </button>
+                                      <% } else if (esFechaPasada) { %>
+                                        <!-- DÍA PASADO COMPLETADO A TIEMPO: YA ESTÁ CERRADO Y NO REQUIERE EDICIÓN -->
+                                      <% } else { %>
+                                        <!-- JORNADA DEL DÍA O EN CURSO: HABILITADA NORMALMENTE -->
+                                        <% if (tieneTarea || tieneComp) { %>
+                                          <button class="btn-reporte-action btn-reporte py-1 px-2"
+                                            data-asistencia="<%= j.id_asistencia %>"
+                                            data-tarea="<%= j.tarea || '' %>"
+                                            data-comprobante="<%= j.comprobante || '' %>"
+                                            data-fecha="<%= j.fecha %>" title="Editar bitácora"
+                                            style="font-size: 0.8rem;">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13"
+                                              viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                              stroke-width="2.2" stroke-linecap="round"
+                                              stroke-linejoin="round"
+                                              style="margin-right: 4px; vertical-align: -1px;">
+                                              <path
+                                                d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                              <path
+                                                d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                            </svg> Editar
+                                          </button>
+                                        <% } else { %>
+                                          <button
+                                            class="btn btn-success btn-reporte-action btn-reporte px-3 rounded-pill fw-bold shadow-sm"
+                                            data-asistencia="<%= j.id_asistencia %>" data-tarea=""
+                                            data-comprobante="" data-fecha="<%= j.fecha %>"
+                                            title="Registrar bitácora de la jornada">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13"
+                                              viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                              stroke-width="2.2" stroke-linecap="round"
+                                              stroke-linejoin="round"
+                                              style="margin-right: 4px; vertical-align: -1px;">
+                                              <line x1="12" y1="5" x2="12" y2="19" />
+                                              <line x1="5" y1="12" x2="19" y2="12" />
+                                            </svg> Registrar
+                                          </button>
+                                        <% } %>
+                                      <% } %>
                                     </div>
 
                                     <% if(j.observacion && !j.observacion.includes('regularizada fuera de plazo')) { %>
@@ -1163,8 +1196,8 @@
         aria-labelledby="modalFinalizarHorasExtraLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
           <div class="modal-content shadow-lg border-0" style="border-radius: 16px; overflow: hidden;">
-            <form id="formFinalizarHorasExtra" enctype="multipart/form-data">
-              <input type="hidden" name="id_notificacion" value="<%= horaExtraActiva.id_notificacion %>">
+            <form id="formFinalizarHorasExtra" onsubmit="event.preventDefault(); window.finalizarHorasExtraGlobal(event); return false;" enctype="multipart/form-data">
+              <input type="hidden" name="id_notificacion" id="he_fin_id_notificacion" value="<%= horaExtraActiva.id_notificacion %>">
 
               <!-- HEADER DEL MODAL (ESTILO HOMOGÉNEO A LOS OTROS MODALES) -->
               <div class="modal-header"
@@ -1258,18 +1291,29 @@
                         class="text-danger">*</span>
                     </h6>
                     <small class="text-muted d-block" style="font-size: 0.76rem; line-height: 1.2;">Adjunta captura o
-                      fotografía del entregable o avance realizado (PNG, JPG hasta 5MB).</small>
+                      fotografía del entregable o avance realizado (PNG, JPG hasta 25MB).</small>
                   </div>
                   <div class="card-body p-3">
-                    <input type="file" name="comprobante" id="modal_comprobante"
-                      accept="image/png, image/jpeg, image/jpg, image/webp" class="d-none">
+                    <input type="file" name="comprobante" id="he_fin_comprobante"
+                      accept="image/png, image/jpeg, image/jpg, image/webp" style="display: none !important;" onchange="window.heHandleFileChange(this)">
+
+                    <div class="d-flex align-items-center gap-2 p-2 rounded-3 border" style="background-color: #f8fafc;">
+                      <button type="button" onclick="document.getElementById('he_fin_comprobante').click()"
+                        class="btn btn-sm btn-primary px-3 py-2 fw-semibold rounded-2 d-inline-flex align-items-center gap-2 shadow-sm"
+                        style="background-color: #0b6bcb; border-color: #0b6bcb; font-size: 0.85rem; flex-shrink: 0;">
+                        <i class="bi bi-cloud-arrow-up-fill fs-6"></i> Seleccionar foto / captura
+                      </button>
+                      <span id="he_fin_file_info" class="text-danger fw-semibold text-truncate ps-1" style="font-size: 0.83rem;">
+                        <i class="bi bi-exclamation-triangle-fill me-1 text-danger"></i>No has subido ninguna imagen
+                      </span>
+                    </div>
 
                     <!-- Contenedor de Vista Previa -->
                     <div id="he_fin_preview_container" class="mt-3 text-center p-2 rounded-3 border bg-light"
                       style="display: none;">
                       <div class="d-flex justify-content-between align-items-center mb-1 px-2">
                         <small class="text-muted fw-semibold">Vista previa de evidencia:</small>
-                        <button type="button" id="he_fin_btn_quitar_foto"
+                        <button type="button" id="he_fin_btn_quitar_foto" onclick="window.heQuitarFoto()"
                           class="btn btn-sm btn-link text-danger p-0 text-decoration-none fw-semibold"
                           style="font-size: 0.8rem;">
                           <i class="bi bi-trash me-1"></i> Quitar imagen
@@ -1291,7 +1335,7 @@
                   data-bs-dismiss="modal">
                   <i class="bi bi-arrow-left me-1"></i> Seguir Trabajando
                 </button>
-                <button type="submit" id="he_fin_btn_submit"
+                <button type="button" id="he_fin_btn_submit" onclick="window.finalizarHorasExtraGlobal(event)"
                   class="btn btn-danger px-4 py-2 fw-semibold d-inline-flex align-items-center gap-2"
                   style="background: #ef4444; border-color: #dc2626; border-radius: 10px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);">
                   <i class="bi bi-send-fill"></i>
@@ -1569,7 +1613,7 @@
                       <small class="text-muted d-block" style="font-size: 0.76rem; line-height: 1.2;">Adjunta captura o fotografía del entregable o avance realizado (PNG, JPG hasta 25MB).</small>
                     </div>
                     <div class="card-body p-3">
-                      <input type="file" name="comprobante" id="he_fin_comprobante" class="form-control" accept="image/png, image/jpeg, image/jpg" style="border-radius: 8px; border-color: #cbd5e1;" required />
+                      <input type="file" name="comprobante" id="he_fin_comprobante" class="form-control" accept="image/*" onchange="window.heHandleFileChange(this)" required />
                       <div id="he_fin_file_info" class="mt-2 text-muted fw-semibold" style="font-size: 0.82rem;">
                         <i class="bi bi-info-circle me-1"></i>Ningún archivo seleccionado todavía
                       </div>
@@ -1578,7 +1622,7 @@
                       <div id="he_fin_preview_container" class="mt-3 text-center p-2 rounded-3 border bg-light" style="display: none;">
                         <div class="d-flex justify-content-between align-items-center mb-1 px-2">
                           <small class="text-muted fw-semibold">Vista previa de evidencia:</small>
-                          <button type="button" id="he_fin_btn_quitar_foto" class="btn btn-sm btn-link text-danger p-0 text-decoration-none fw-semibold" style="font-size: 0.8rem;">
+                          <button type="button" id="he_fin_btn_quitar_foto" onclick="window.heQuitarFoto()" class="btn btn-sm btn-link text-danger p-0 text-decoration-none fw-semibold" style="font-size: 0.8rem;">
                             <i class="bi bi-trash me-1"></i> Quitar imagen
                           </button>
                         </div>
@@ -1594,7 +1638,7 @@
                   <button type="button" class="btn btn-light border px-4 py-2 text-secondary fw-semibold" style="border-radius: 10px; background: #f1f5f9; border-color: #cbd5e1 !important;" data-bs-dismiss="modal">
                     <i class="bi bi-arrow-left me-1"></i> Seguir Trabajando
                   </button>
-                  <button type="submit" id="he_fin_btn_submit" class="btn btn-danger px-4 py-2 fw-semibold d-inline-flex align-items-center gap-2" style="background: #ef4444; border-color: #dc2626; border-radius: 10px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);">
+                  <button type="button" id="he_fin_btn_submit" onclick="window.finalizarHorasExtraGlobal(event)" class="btn btn-danger px-4 py-2 fw-semibold d-inline-flex align-items-center gap-2" style="background: #ef4444; border-color: #dc2626; border-radius: 10px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);">
                     <i class="bi bi-send-fill"></i>
                     <span>Finalizar y Enviar a Evaluación</span>
                   </button>
@@ -2360,13 +2404,16 @@
                 btnCancelar.addEventListener('click', window.cancelarHorasExtraGlobal);
               }
 
-              // 4. VISTA PREVIA DE FOTO EN EL MODAL DE FINALIZACIÓN (CON CACHÉ EN MEMORIA)
-              let selectedEvidenceFile = null;
-              let selectedEvidenceBase64 = null;
-              const fileInfoHE = document.getElementById('he_fin_file_info');
+              // 4. VISTA PREVIA DE FOTO EN EL MODAL DE FINALIZACIÓN (CON ESTADO GLOBAL)
+              window.selectedEvidenceFile = null;
+              window.selectedEvidenceBase64 = null;
 
-              fileFin?.addEventListener('change', (e) => {
-                const file = e.target.files?.[0];
+              window.heHandleFileChange = function (input) {
+                const file = input && input.files && input.files[0];
+                const fileInfoHE = document.getElementById('he_fin_file_info');
+                const previewContainer = document.getElementById('he_fin_preview_container');
+                const previewImg = document.getElementById('he_fin_preview_img');
+
                 if (file) {
                   if (file.size > 25 * 1024 * 1024) {
                     if (typeof Swal !== 'undefined') {
@@ -2379,9 +2426,9 @@
                     } else {
                       alert('La imagen de evidencia no debe superar los 25 MB.');
                     }
-                    fileFin.value = '';
-                    selectedEvidenceFile = null;
-                    selectedEvidenceBase64 = null;
+                    if (input) input.value = '';
+                    window.selectedEvidenceFile = null;
+                    window.selectedEvidenceBase64 = null;
                     if (fileInfoHE) {
                       fileInfoHE.className = 'mt-2 text-danger fw-semibold';
                       fileInfoHE.innerHTML = '<i class="bi bi-exclamation-triangle-fill text-danger me-1"></i> Archivo muy pesado (máx 25 MB)';
@@ -2390,7 +2437,7 @@
                     return;
                   }
 
-                  selectedEvidenceFile = file;
+                  window.selectedEvidenceFile = file;
                   if (fileInfoHE) {
                     const mbSize = (file.size / (1024 * 1024)).toFixed(2);
                     fileInfoHE.className = 'mt-2 text-success fw-bold';
@@ -2399,21 +2446,60 @@
 
                   const reader = new FileReader();
                   reader.onload = (re) => {
-                    selectedEvidenceBase64 = re.target.result;
+                    window.selectedEvidenceBase64 = re.target.result;
                     if (previewImg) previewImg.src = re.target.result;
                     if (previewContainer) previewContainer.style.display = 'block';
                   };
                   reader.readAsDataURL(file);
                 } else {
-                  selectedEvidenceFile = null;
-                  selectedEvidenceBase64 = null;
+                  window.selectedEvidenceFile = null;
+                  window.selectedEvidenceBase64 = null;
                   if (fileInfoHE) {
                     fileInfoHE.className = 'mt-2 text-muted fw-semibold';
                     fileInfoHE.innerHTML = '<i class="bi bi-info-circle me-1"></i>Ningún archivo seleccionado todavía';
                   }
                   if (previewContainer) previewContainer.style.display = 'none';
                 }
-              });
+              };
+
+              window.heQuitarFoto = function () {
+                const fileInput = document.getElementById('he_fin_comprobante');
+                if (fileInput) fileInput.value = '';
+                window.selectedEvidenceFile = null;
+                window.selectedEvidenceBase64 = null;
+                const fileInfoHE = document.getElementById('he_fin_file_info');
+                const previewContainer = document.getElementById('he_fin_preview_container');
+                if (fileInfoHE) {
+                  fileInfoHE.className = 'mt-2 text-muted fw-semibold';
+                  fileInfoHE.innerHTML = '<i class="bi bi-info-circle me-1"></i>Ningún archivo seleccionado todavía';
+                }
+                if (previewContainer) previewContainer.style.display = 'none';
+              };
+
+              // Helper global para subir a Cloudinary
+              window.subirACloudinaryDirecto = async function (file) {
+                const cloudName = '<%= typeof cloudinaryCloudName !== "undefined" ? cloudinaryCloudName : "" %>';
+                const uploadPreset = '<%= typeof cloudinaryUploadPreset !== "undefined" ? cloudinaryUploadPreset : "" %>';
+
+                if (!cloudName || !uploadPreset) return null;
+
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('upload_preset', uploadPreset);
+
+                const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+                  method: 'POST',
+                  body: formData
+                });
+
+                if (!res.ok) {
+                  const errorData = await res.json().catch(() => ({}));
+                  throw new Error(errorData.error?.message || 'Error en Cloudinary');
+                }
+
+                const data = await res.json();
+                return data.secure_url || data.url;
+              };
 
               // Contador de caracteres para informe de horas extras
               const textareaFinHE = document.getElementById('he_fin_tarea');
@@ -2424,17 +2510,6 @@
                 });
               }
 
-              btnQuitarFoto?.addEventListener('click', () => {
-                if (fileFin) fileFin.value = '';
-                selectedEvidenceFile = null;
-                selectedEvidenceBase64 = null;
-                if (fileInfoHE) {
-                  fileInfoHE.className = 'mt-2 text-muted fw-semibold';
-                  fileInfoHE.innerHTML = '<i class="bi bi-info-circle me-1"></i>Ningún archivo seleccionado todavía';
-                }
-                if (previewContainer) previewContainer.style.display = 'none';
-              });
-
               // 5. FINALIZAR HORAS EXTRAS (FUNCIÓN GLOBAL ROBUSTA)
               window.finalizarHorasExtraGlobal = async function (e) {
                 if (e && e.preventDefault) e.preventDefault();
@@ -2443,7 +2518,7 @@
                 const form = document.getElementById('formFinalizarHorasExtra');
                 const tareaInput = document.getElementById('he_fin_tarea') || form?.querySelector('textarea[name="tarea"]');
                 const fileInput = document.getElementById('he_fin_comprobante') || form?.querySelector('input[type="file"]') || document.querySelector('#modalFinalizarHorasExtra input[type="file"]');
-                const btnSubmit = document.getElementById('he_fin_btn_submit') || form?.querySelector('button[type="submit"]');
+                const btnSubmit = document.getElementById('he_fin_btn_submit') || form?.querySelector('#he_fin_btn_submit');
 
                 const tarea = tareaInput ? tareaInput.value.trim() : '';
                 if (!tarea || tarea.length < 5) {
@@ -2461,8 +2536,13 @@
                   return false;
                 }
 
-                const file = (fileInput && fileInput.files && fileInput.files.length > 0 ? fileInput.files[0] : null) || selectedEvidenceFile;
-                if (!file && !selectedEvidenceBase64) {
+                // Obtener archivo desde input activo o desde estado en memoria
+                const fileFromInput = fileInput && fileInput.files && fileInput.files.length > 0 ? fileInput.files[0] : null;
+                const file = fileFromInput || window.selectedEvidenceFile;
+
+                console.log('[Horas Extras] Archivo obtenido para envío:', file ? file.name : 'Ninguno', 'Base64 presente:', Boolean(window.selectedEvidenceBase64));
+
+                if (!file && !window.selectedEvidenceBase64) {
                   if (typeof Swal !== 'undefined') {
                     Swal.fire({
                       icon: 'warning',
@@ -2486,23 +2566,12 @@
                   let comprobanteUrl = null;
 
                   // 1. Intentar subir a Cloudinary si está disponible
-                  const cloudName = '<%= cloudinaryCloudName %>';
-                  const uploadPreset = '<%= cloudinaryUploadPreset %>';
-                  if (cloudName && uploadPreset) {
+                  if (file && typeof window.subirACloudinaryDirecto === 'function') {
                     try {
-                      const cldData = new FormData();
-                      cldData.append('file', file);
-                      cldData.append('upload_preset', uploadPreset);
-                      const cldRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-                        method: 'POST',
-                        body: cldData
-                      });
-                      if (cldRes.ok) {
-                        const cldJson = await cldRes.json();
-                        comprobanteUrl = cldJson.secure_url || cldJson.url;
-                      }
+                      comprobanteUrl = await window.subirACloudinaryDirecto(file);
+                      console.log('[Horas Extras] Subido a Cloudinary:', comprobanteUrl);
                     } catch (cldErr) {
-                      console.warn('Cloudinary upload warning:', cldErr);
+                      console.warn('[Horas Extras] Error Cloudinary, subiendo directo al backend:', cldErr);
                     }
                   }
 
@@ -2523,7 +2592,13 @@
                       })
                     });
                   } else {
-                    const formData = new FormData(form);
+                    const formData = new FormData(form || undefined);
+                    if (form) {
+                      formData.set('tarea', tarea);
+                    }
+                    if (file) {
+                      formData.set('comprobante', file);
+                    }
                     res = await fetch('/api/horas-extras/finalizar', {
                       method: 'POST',
                       body: formData
@@ -2533,6 +2608,16 @@
                   const data = await res.json();
 
                   if (data.ok) {
+                    try {
+                      const modalEl = document.getElementById('modalFinalizarHorasExtra');
+                      if (modalEl && typeof bootstrap !== 'undefined') {
+                        const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                        if (modalInstance) modalInstance.hide();
+                      }
+                    } catch (e) {
+                      console.warn('Error cerrando modal:', e);
+                    }
+
                     if (typeof Swal !== 'undefined') {
                       await Swal.fire({
                         icon: 'success',
@@ -2579,10 +2664,6 @@
                 }
                 return false;
               };
-
-              if (formFinHE) {
-                formFinHE.addEventListener('submit', window.finalizarHorasExtraGlobal);
-              }
 
               // 6. CUENTA REGRESIVA EN VIVO HASTA LAS 12 DE LA NOCHE (00:00)
               function initCountdownMedianoche() {

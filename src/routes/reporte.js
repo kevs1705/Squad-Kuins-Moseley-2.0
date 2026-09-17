@@ -224,7 +224,12 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
       SELECT
         CONCAT('he_', n.id_notificacion) AS id_asistencia,
         DATE_FORMAT(n.fecha_solicitada, '%Y-%m-%d') AS fecha,
-        'FINALIZADO' AS asistencia_estado,
+        CASE 
+          WHEN n.estado = 1 THEN 'OBSERVADO'
+          WHEN n.estado = 2 THEN 'FINALIZADO'
+          WHEN n.estado = 3 THEN 'RECHAZADO'
+          ELSE 'OBSERVADO'
+        END AS asistencia_estado,
         'HORA_EXTRA' AS modalidad,
         'Horas Extras' AS lugar_nombre,
         'HORA_EXTRA' AS lugar_tipo,
@@ -235,10 +240,13 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
         NULL AS id_reporte,
         n.tarea,
         n.comprobante,
-        n.observacion_admin AS observacion
+        n.observacion_admin AS observacion,
+        n.estado AS he_estado
       FROM notificaciones n
       WHERE n.id_usuario = ?
-        AND n.estado = 2
+        AND n.estado IN (1, 2, 3)
+        AND n.hora_inicio IS NOT NULL
+        AND n.hora_fin IS NOT NULL
     `, [userId]);
 
     const jornadas = [...asistenciasRows, ...heRows].sort((a, b) => {
