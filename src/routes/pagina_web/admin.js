@@ -7,7 +7,14 @@ const db = require("../../config/bd");
 
 function ensureAdmin(req, res, next) {
   if (!req.session || !req.session.user || req.session.user.rol !== 1) {
-    return res.status(403).send("No autorizado");
+    if (req.xhr || req.path.startsWith('/api/') || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+      return res.status(403).json({ ok: false, msg: 'No autorizado' });
+    }
+    return res.status(403).render('error', {
+      statusCode: 403,
+      title: 'No autorizado',
+      message: 'No cuentas con permisos para administrar la página web.'
+    });
   }
   next();
 }

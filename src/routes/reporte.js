@@ -295,8 +295,12 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
     });
 
   } catch (e) {
-    console.error(e);
-    res.status(500).send('Error consultando la base de datos');
+    console.error('Error al cargar vista de reporte de usuario:', e);
+    res.status(500).render('error', {
+      statusCode: 500,
+      title: 'Error en la base de datos',
+      message: 'Ocurrió un error al cargar tus asistencias y bitácoras desde la base de datos.'
+    });
   }
 });
 

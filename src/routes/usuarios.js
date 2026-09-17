@@ -21,7 +21,16 @@ function requireAuth(req, res, next) {
 }
 
 function requireAdmin(req, res, next) {
-   if (req.session.user.rol !== 1) return res.status(403).send('No autorizado');
+  if (req.session.user.rol !== 1) {
+    if (req.xhr || req.path.startsWith('/api/') || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+      return res.status(403).json({ ok: false, msg: 'No autorizado' });
+    }
+    return res.status(403).render('error', {
+      statusCode: 403,
+      title: 'No autorizado',
+      message: 'No tienes permisos de administrador para gestionar usuarios.'
+    });
+  }
   next();
 }
 
@@ -53,7 +62,11 @@ router.get('/usuarios', requireAuth, requireAdmin, async (req, res) => {
     });
   } catch (e) {
     console.error('Error al listar usuarios:', e);
-    res.status(500).send('Error interno al cargar usuarios');
+    res.status(500).render('error', {
+      statusCode: 500,
+      title: 'Error en la base de datos',
+      message: 'Error interno al cargar la lista de usuarios desde la base de datos.'
+    });
   }
 });
 

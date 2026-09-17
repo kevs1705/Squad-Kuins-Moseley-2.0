@@ -26,7 +26,16 @@ function formatSecondsToHHMM(totalSecs) {
 
 // Middleware de autorización para el rol de administrador
 function requireAdmin(req, res, next) {
-  if (!req.session.user || req.session.user.rol !== 1) return res.status(403).send('No autorizado');
+  if (!req.session.user || req.session.user.rol !== 1) {
+    if (req.xhr || req.path.startsWith('/api/') || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+      return res.status(403).json({ ok: false, msg: 'No autorizado' });
+    }
+    return res.status(403).render('error', {
+      statusCode: 403,
+      title: 'No autorizado',
+      message: 'No tienes permisos de administrador para acceder a este panel o tu sesión ha expirado.'
+    });
+  }
   next();
 }
 
@@ -35,11 +44,12 @@ function requireAdmin(req, res, next) {
    ========================================================================== */
 router.get('/admin/reportes', requireAdmin, async (req, res) => {
   try {
-    // 1. Consultar usuarios para el autocompletado y filtros (con su carrera asociada)
+    // 1. Consultar usuarios para el autocompletado y filtros (excluyendo administradores)
     const [usuarios] = await db.query(
       `SELECT u.id_usuario, u.nombre, u.CI, u.universidad, u.id_carrera, c.nombre AS carrera_nombre
        FROM usuarios u
        LEFT JOIN carreras c ON u.id_carrera = c.id_carrera
+       WHERE (u.rol = 0 OR u.rol IS NULL)
        ORDER BY u.nombre ASC`
     );
 
@@ -61,17 +71,23 @@ router.get('/admin/reportes', requireAdmin, async (req, res) => {
       carreras: carreras || []
     });
   } catch (e) {
-    console.error(e);
-    res.status(500).send('Error al cargar la vista de reportes.');
+    console.error('Error al cargar la vista de reportes:', e);
+    res.status(500).render('error', {
+      statusCode: 500,
+      title: 'Error en la base de datos',
+      message: 'No se pudo cargar la vista de reportes debido a un problema con la base de datos.'
+    });
   }
-});// Helper para consultar Asistencias y Horas Extras Aprobadas de manera independiente (evita conflictos de colación SQL)
+});
+
+// Helper para consultar Asistencias y Horas Extras Aprobadas de manera independiente (evita conflictos de colación SQL)
 async function fetchCombinedRecords({ id_carrera, estado_duracion, id_usuario, id_lugar, nombre, fechasRaw, modalidad }) {
   const mod = (modalidad || '').trim().toUpperCase();
 
-  // 1. Consulta de Asistencias Ordinarias + Teletrabajo
+  // 1. Consulta de Asistencias Ordinarias + Teletrabajo (Excluir administradores)
   let rowsA = [];
   if (mod !== 'HORA_EXTRA' && mod !== 'HORAS_EXTRAS') {
-    const whereA = ["a.estado != 'ANULADO'"];
+    const whereA = ["a.estado != 'ANULADO'", "(u.rol = 0 OR u.rol IS NULL)"];
     const paramsA = [];
 
     if (id_carrera) {
@@ -161,12 +177,12 @@ async function fetchCombinedRecords({ id_carrera, estado_duracion, id_usuario, i
     rowsA = resA || [];
   }
 
-  // 2. Consulta de Horas Extras Aprobadas
+  // 2. Consulta de Horas Extras Aprobadas (Excluir administradores)
   let rowsB = [];
   const includeHE = mod !== 'PRESENCIAL' && mod !== 'TELETRABAJO' && !id_lugar && estado_duracion !== 'OBSERVADO' && estado_duracion !== 'EN_CURSO' && estado_duracion !== 'CONGELADO';
 
   if (includeHE) {
-    const whereB = ["n.estado = 2"];
+    const whereB = ["n.estado = 2", "(u.rol = 0 OR u.rol IS NULL)"];
     const paramsB = [];
 
     if (id_carrera) {
@@ -1262,7 +1278,11 @@ router.get('/admin/reportes/export', requireAdmin, async (req, res) => {
     res.end();
   } catch (e) {
     console.error('Error al exportar Excel:', e);
-    res.status(500).send('No se pudo generar el Excel.');
+    res.status(500).render('error', {
+      statusCode: 500,
+      title: 'Error en la base de datos',
+      message: 'No se pudo generar el archivo Excel debido a un problema con la base de datos.'
+    });
   }
 });
 

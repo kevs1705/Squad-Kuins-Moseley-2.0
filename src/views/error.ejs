@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title><%= typeof title !== 'undefined' ? title : 'Error' %> — MONSELEY</title>
+  <meta name="color-scheme" content="light" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <style>
+    :root {
+      --primary: #0F5FA6;
+      --primary-hover: #0c4d87;
+      --primary-light: #e0f2fe;
+      --navy: #081426;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --bg-gradient: linear-gradient(135deg, #081426 0%, #0F5FA6 50%, #1e3a8a 100%);
+      --card-bg: #ffffff;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --danger-light: #fef2f2;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-gradient);
+      padding: 20px;
+      color: var(--text-main);
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Patrón sutil de fondo */
+    body::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.08) 0%, transparent 40%),
+                  radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.06) 0%, transparent 40%);
+      pointer-events: none;
+    }
+
+    .error-card {
+      position: relative;
+      background: var(--card-bg);
+      border-radius: 20px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.1);
+      width: 100%;
+      max-width: 520px;
+      padding: 40px 32px;
+      text-align: center;
+      animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 1;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(24px) scale(0.98);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .logo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: #f1f5f9;
+      border-radius: 100px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--navy);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .logo-badge i {
+      color: var(--primary);
+    }
+
+    .icon-container {
+      width: 88px;
+      height: 88px;
+      margin: 0 auto 24px auto;
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      transition: transform 0.3s ease;
+    }
+
+    .icon-container.auth-error {
+      background: #fff1f2;
+      color: #e11d48;
+      border: 2px solid #ffe4e6;
+    }
+
+    .icon-container.db-error {
+      background: #eff6ff;
+      color: var(--primary);
+      border: 2px solid #dbeafe;
+    }
+
+    .icon-container.generic-error {
+      background: #fefce8;
+      color: #ca8a04;
+      border: 2px solid #fef08a;
+    }
+
+    .status-pill {
+      display: inline-block;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+    }
+
+    .status-pill.auth-error {
+      background: #ffe4e6;
+      color: #be123c;
+    }
+
+    .status-pill.db-error {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    .status-pill.generic-error {
+      background: #fef08a;
+      color: #854d0e;
+    }
+
+    .error-title {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--navy);
+      margin-bottom: 12px;
+      line-height: 1.25;
+    }
+
+    .error-desc {
+      font-size: 15px;
+      color: var(--text-muted);
+      line-height: 1.55;
+      margin-bottom: 20px;
+    }
+
+    .help-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-align: left;
+    }
+
+    .help-box i {
+      font-size: 22px;
+      color: var(--primary);
+      flex-shrink: 0;
+    }
+
+    .help-box-text {
+      font-size: 13px;
+      color: #475569;
+      font-weight: 500;
+      line-height: 1.4;
+    }
+
+    .help-box-text strong {
+      color: var(--navy);
+    }
+
+    .actions-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .btn-action {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 13px 20px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+      outline: none;
+      width: 100%;
+    }
+
+    .btn-primary-action {
+      background: var(--primary);
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(15, 95, 166, 0.25);
+    }
+
+    .btn-primary-action:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(15, 95, 166, 0.35);
+      color: #ffffff;
+    }
+
+    .btn-secondary-action {
+      background: #f1f5f9;
+      color: #334155;
+      border: 1px solid #cbd5e1;
+    }
+
+    .btn-secondary-action:hover {
+      background: #e2e8f0;
+      color: var(--navy);
+    }
+
+    .actions-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    @media (max-width: 480px) {
+      .error-card {
+        padding: 30px 20px;
+      }
+      .actions-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="error-card">
+    <div class="logo-badge">
+      <i class="bi bi-shield-lock-fill"></i>
+      <span>BYGGER SRL • MONSELEY</span>
+    </div>
+
+    <% 
+      const code = typeof statusCode !== 'undefined' ? statusCode : 500;
+      const isAuth = code === 401 || code === 403 || (typeof title !== 'undefined' && title.toLowerCase().includes('autorizado'));
+      const isDb = typeof title !== 'undefined' && (title.toLowerCase().includes('base de datos') || title.toLowerCase().includes('bd'));
+      const errorClass = isAuth ? 'auth-error' : (isDb ? 'db-error' : 'generic-error');
+    %>
+
+    <div class="icon-container <%= errorClass %>">
+      <% if (isAuth) { %>
+        <i class="bi bi-shield-slash"></i>
+      <% } else if (isDb) { %>
+        <i class="bi bi-database-exclamation"></i>
+      <% } else { %>
+        <i class="bi bi-exclamation-triangle"></i>
+      <% } %>
+    </div>
+
+    <div class="status-pill <%= errorClass %>">
+      <%= typeof statusLabel !== 'undefined' ? statusLabel : (isAuth ? 'Acceso Restringido · ' + code : 'Error de Sistema · ' + code) %>
+    </div>
+
+    <h1 class="error-title">
+      <%= typeof title !== 'undefined' ? title : (isAuth ? 'No autorizado' : 'Error en el sistema') %>
+    </h1>
+
+    <p class="error-desc">
+      <%= typeof message !== 'undefined' ? message : (isAuth ? 'No cuentas con los permisos administrativos necesarios o tu sesión ha expirado.' : 'Ocurrió un inconveniente temporal al procesar tu solicitud.') %>
+    </p>
+
+    <div class="help-box">
+      <i class="bi bi-info-circle-fill"></i>
+      <div class="help-box-text">
+        <strong>¿Qué puedes hacer?</strong><br>
+        Recarga la página o intenta nuevamente en unos momentos. Si el problema persiste, inicia sesión de nuevo.
+      </div>
+    </div>
+
+    <div class="actions-grid">
+      <button type="button" class="btn-action btn-primary-action" onclick="window.location.reload();">
+        <i class="bi bi-arrow-clockwise"></i>
+        <span>Recargar la página</span>
+      </button>
+
+      <div class="actions-row">
+        <button type="button" class="btn-action btn-secondary-action" onclick="window.history.length > 1 ? window.history.back() : window.location.href='/login';">
+          <i class="bi bi-arrow-left"></i>
+          <span>Intentar nuevamente</span>
+        </button>
+
+        <a href="/login" class="btn-action btn-secondary-action">
+          <i class="bi bi-box-arrow-in-right"></i>
+          <span>Iniciar sesión</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
