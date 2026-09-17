@@ -90,8 +90,14 @@ router.post('/api/usuarios', requireAuth, requireAdmin, async (req, res) => {
     // Contraseña automática para nuevos usuarios
     const contrasena = '12345678';
 
-    if (!nombre || !CI || !universidad || !id_carrera) {
-      return res.status(400).json({ ok: false, msg: 'Campos obligatorios: nombre, CI, universidad, carrera' });
+    if (rol === 1) {
+      if (!nombre || !CI) {
+        return res.status(400).json({ ok: false, msg: 'Campos obligatorios: nombre, CI' });
+      }
+    } else {
+      if (!nombre || !CI || !universidad || !id_carrera) {
+        return res.status(400).json({ ok: false, msg: 'Campos obligatorios: nombre, CI, universidad, carrera' });
+      }
     }
     if (!/^[0-9.\-]{5,32}$/.test(CI)) {
       return res.status(400).json({ ok: false, msg: 'CI inválido (5–32, dígitos/punto/guion)' });
@@ -188,8 +194,14 @@ router.post('/api/usuarios/:id', requireAuth, requireAdmin, async (req, res) => 
     rol = Number(rol) ? 1 : 0;
     contrasena = (contrasena == null) ? '' : String(contrasena).slice(0, 255);
 
-    if (!nombre || !CI || !id_carrera) {
-      return res.status(400).json({ ok: false, msg: 'Campos obligatorios: nombre, CI, carrera' });
+    if (rol === 1) {
+      if (!nombre || !CI) {
+        return res.status(400).json({ ok: false, msg: 'Campos obligatorios: nombre, CI' });
+      }
+    } else {
+      if (!nombre || !CI || !id_carrera) {
+        return res.status(400).json({ ok: false, msg: 'Campos obligatorios: nombre, CI, carrera' });
+      }
     }
     if (!/^[0-9.\-]{5,32}$/.test(CI)) {
       return res.status(400).json({ ok: false, msg: 'CI inválido' });
