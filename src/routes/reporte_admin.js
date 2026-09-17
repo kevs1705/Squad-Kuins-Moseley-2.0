@@ -284,7 +284,10 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
     for (const r of allRows) {
       if (r.duracion_segundos != null && !['ANULADO', 'RECHAZADO'].includes(r.asistencia_estado)) {
         totalSegundos += Number(r.duracion_segundos) || 0;
-        const estaCongeladaUObs = ['CONGELADO', 'OBSERVADO'].includes(r.asistencia_estado);
+        const isPast = Boolean(r.fecha && r.fecha < todayStr);
+        const sinTarea = !r.tarea || !r.tarea.trim();
+        const estaCongeladaUObs = ['CONGELADO', 'OBSERVADO'].includes(r.asistencia_estado) ||
+          (isPast && sinTarea && r.asistencia_estado !== 'HABILITADO_EDICION' && r.modalidad !== 'HORA_EXTRA');
 
         if (estaCongeladaUObs) {
           totalSegundosCongelados += Number(r.duracion_segundos) || 0;
@@ -354,7 +357,146 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
       };
     });
 
-    // 5. Estadísticas dinámicas para el panel lateral derecho:
+    // 5. Estadísticas dinámicas para el panel lateral derecho y avisos de culminación de pasantía:
+    const [usersRanking] = await db.query(
+      `SELECT u.id_usuario, u.nombre, u.CI, u.universidad, COALESCE(c.nombre, '') AS carrera
+       FROM usuarios u
+       LEFT JOIN carreras c ON u.id_carrera = c.id_carrera
+       WHERE u.rol = 0 AND u.estado = 1`
+    );
+
+    const [userAsistencias] = await db.query(
+      `SELECT 
+         id_usuario,
+         COUNT(id_asistencia) AS total_dias,
+         COALESCE(SUM(IF(hora_entrada IS NOT NULL AND hora_salida IS NOT NULL AND estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO'),
+                         TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha, hora_entrada), TIMESTAMP(fecha, hora_salida)),
+                         0)), 0) AS total_segundos
+       FROM asistencias
+       WHERE estado != 'ANULADO'
+       GROUP BY id_usuario`
+    );
+
+    const [userHE] = await db.query(
+      `SELECT 
+         id_usuario,
+         COUNT(id_notificacion) AS total_dias_he,
+         COALESCE(SUM(IF(hora_inicio IS NOT NULL AND hora_fin IS NOT NULL,
+                         TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha_solicitada, hora_inicio), TIMESTAMP(fecha_solicitada, hora_fin)) * 2,
+                         0)), 0) AS total_segundos_he
+       FROM notificaciones
+       WHERE estado = 2
+       GROUP BY id_usuario`
+    );
+
+    const [allHorarios] = await db.query(
+      `SELECT id_usuario, dia_semana, hora_entrada, hora_salida
+       FROM horarios
+       WHERE estado = 'ACTIVO'`
+    );
+
+    const mapHorasPorDiaPorUsuario = {};
+    const mapHorasSemanaPorUsuario = {};
+    (allHorarios || []).forEach(h => {
+      const [hE, mE] = (h.hora_entrada || '0:0').split(':').map(Number);
+      const [hS, mS] = (h.hora_salida || '0:0').split(':').map(Number);
+      const durMin = ((hS * 60) + (mS || 0)) - ((hE * 60) + (mE || 0));
+      if (durMin > 0) {
+        const hrs = durMin / 60;
+        mapHorasSemanaPorUsuario[h.id_usuario] = (mapHorasSemanaPorUsuario[h.id_usuario] || 0) + hrs;
+        if (!mapHorasPorDiaPorUsuario[h.id_usuario]) {
+          mapHorasPorDiaPorUsuario[h.id_usuario] = {};
+        }
+        mapHorasPorDiaPorUsuario[h.id_usuario][Number(h.dia_semana)] = hrs;
+      }
+    });
+
+    const mesesCompletos = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+    function calcularFechaPronostico(id_usuario, horasFaltantes) {
+      if (horasFaltantes <= 0) return 'Meta Cumplida';
+      const horasPorDia = mapHorasPorDiaPorUsuario[id_usuario] || {};
+      const totalHrsSem = Object.values(horasPorDia).reduce((acc, v) => acc + v, 0);
+
+      let cursor = new Date();
+      cursor.setHours(0, 0, 0, 0);
+      let horasRest = horasFaltantes;
+      const MAX_DAYS = 365;
+      let iter = 0;
+
+      if (totalHrsSem <= 0) {
+        while (horasRest > 0 && iter < MAX_DAYS) {
+          const dw = cursor.getDay();
+          if (dw >= 1 && dw <= 5) {
+            horasRest -= 5;
+            if (horasRest <= 0) break;
+          }
+          cursor.setDate(cursor.getDate() + 1);
+          iter++;
+        }
+      } else {
+        while (horasRest > 0 && iter < MAX_DAYS) {
+          const dw = cursor.getDay();
+          const diaBD = (dw === 0) ? 7 : dw; // 1: Lun, ..., 6: Sáb, 7: Dom
+          const hrsHoy = horasPorDia[diaBD] || 0;
+          if (hrsHoy > 0) {
+            horasRest -= hrsHoy;
+            if (horasRest <= 0) break;
+          }
+          cursor.setDate(cursor.getDate() + 1);
+          iter++;
+        }
+      }
+
+      return `${cursor.getDate()} de ${mesesCompletos[cursor.getMonth()]}`;
+    }
+
+    const mapAsist = {};
+    (userAsistencias || []).forEach(a => { mapAsist[a.id_usuario] = a; });
+    const mapHE = {};
+    (userHE || []).forEach(h => { mapHE[h.id_usuario] = h; });
+
+    // Cálculo de Pasantes en fase final / ~1 semana restante / meta alcanzada (Meta estándar: 280 hrs)
+    const pasantesPorFinalizar = [];
+    const HORAS_META_DEFAULT = 280;
+
+    (usersRanking || []).forEach(u => {
+      const a = mapAsist[u.id_usuario] || { total_dias: 0, total_segundos: 0 };
+      const h = mapHE[u.id_usuario] || { total_dias_he: 0, total_segundos_he: 0 };
+      const totalSeg = (Number(a.total_segundos) || 0) + (Number(h.total_segundos_he) || 0);
+      const horasAcum = Number((totalSeg / 3600).toFixed(1));
+      const horasFalt = Math.max(0, Number((HORAS_META_DEFAULT - horasAcum).toFixed(1)));
+      const porc = Math.min(100, Math.round((horasAcum / HORAS_META_DEFAULT) * 100));
+      const hrsSem = mapHorasSemanaPorUsuario[u.id_usuario] || 25;
+      const semRest = hrsSem > 0 ? Number((horasFalt / hrsSem).toFixed(1)) : Number((horasFalt / 25).toFixed(1));
+
+      const esMetaAlcanzada = horasAcum >= HORAS_META_DEFAULT;
+      // Considerar última semana: Faltan <= 30 hrs o <= 1.2 semanas de trabajo, con al menos 80 horas acumuladas
+      const esUltimaSemana = !esMetaAlcanzada && (semRest <= 1.2 || horasFalt <= 30) && (horasAcum >= 80);
+
+      if (esMetaAlcanzada || esUltimaSemana) {
+        const fechaPron = esMetaAlcanzada ? 'Meta Cumplida' : calcularFechaPronostico(u.id_usuario, horasFalt);
+        pasantesPorFinalizar.push({
+          id_usuario: u.id_usuario,
+          nombre: u.nombre,
+          CI: u.CI,
+          carrera: u.carrera,
+          universidad: u.universidad,
+          horas_acumuladas: horasAcum,
+          horas_requeridas: HORAS_META_DEFAULT,
+          horas_faltantes: horasFalt,
+          porcentaje: porc,
+          semanas_restantes: semRest,
+          horas_semana: Number(hrsSem.toFixed(1)),
+          fecha_pronostico: fechaPron,
+          estado_culminacion: esMetaAlcanzada ? 'COMPLETADO' : 'ULTIMA_SEMANA',
+          badge_text: esMetaAlcanzada ? '¡Meta 100% Alcanzada!' : `🎯 Pronóstico: ${fechaPron} (~${semRest} sem)`
+        });
+      }
+    });
+
+    pasantesPorFinalizar.sort((a, b) => b.porcentaje - a.porcentaje);
+
     let statsData = {};
 
     if (id_usuario || (usuarioInfo && usuarioInfo.id_usuario)) {
@@ -395,6 +537,20 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
           porcentaje: Math.min(100, Math.round((l.total_segundos / (totalSegundos || 1)) * 100))
         }));
 
+      // Culminación específica del usuario actual
+      const uTargetId = id_usuario || (usuarioInfo ? usuarioInfo.id_usuario : 0);
+      const uAsist = mapAsist[uTargetId] || { total_dias: 0, total_segundos: 0 };
+      const uHe = mapHE[uTargetId] || { total_dias_he: 0, total_segundos_he: 0 };
+      const uTotalSeg = (Number(uAsist.total_segundos) || 0) + (Number(uHe.total_segundos_he) || 0);
+      const uHorasAcum = Number((uTotalSeg / 3600).toFixed(1));
+      const uHorasFalt = Math.max(0, Number((HORAS_META_DEFAULT - uHorasAcum).toFixed(1)));
+      const uPorc = Math.min(100, Math.round((uHorasAcum / HORAS_META_DEFAULT) * 100));
+      const uHrsSem = mapHorasSemanaPorUsuario[uTargetId] || 25;
+      const uSemRest = uHrsSem > 0 ? Number((uHorasFalt / uHrsSem).toFixed(1)) : Number((uHorasFalt / 25).toFixed(1));
+      const uEsMeta = uHorasAcum >= HORAS_META_DEFAULT;
+      const uEsUltSem = !uEsMeta && (uSemRest <= 1.2 || uHorasFalt <= 30) && (uHorasAcum >= 80);
+      const uFechaPron = uEsMeta ? 'Meta Cumplida' : calcularFechaPronostico(uTargetId, uHorasFalt);
+
       statsData = {
         tipo: 'usuario',
         total_asistencias: allRows.length,
@@ -403,50 +559,27 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
         promedio_horas_dia: `${promHoras} hrs/día`,
         bitacoras_completadas: completadasBit.length,
         comprobantes_subidos: compSubidos.length,
-        lugares_desglose: formattedLugares
+        lugares_desglose: formattedLugares,
+        pasantes_por_finalizar: pasantesPorFinalizar,
+        user_culminacion: {
+          horas_acumuladas: uHorasAcum,
+          horas_requeridas: HORAS_META_DEFAULT,
+          horas_faltantes: uHorasFalt,
+          porcentaje: uPorc,
+          semanas_restantes: uSemRest,
+          horas_semana: Number(uHrsSem.toFixed(1)),
+          fecha_pronostico: uFechaPron,
+          es_meta_alcanzada: uEsMeta,
+          es_ultima_semana: uEsUltSem,
+          estado_culminacion: uEsMeta ? 'COMPLETADO' : (uEsUltSem ? 'ULTIMA_SEMANA' : 'EN_PROGRESO')
+        }
       };
     } else {
-      // 5.2. Estadísticas globales (Ranking de horas oficiales por pasante sin UNION colaciones)
-      const [users] = await db.query(
-        `SELECT u.id_usuario, u.nombre, u.CI, u.universidad, COALESCE(c.nombre, '') AS carrera
-         FROM usuarios u
-         LEFT JOIN carreras c ON u.id_carrera = c.id_carrera
-         WHERE u.rol = 0`
-      );
-
-      const [userAsistencias] = await db.query(
-        `SELECT 
-           id_usuario,
-           COUNT(id_asistencia) AS total_dias,
-           COALESCE(SUM(IF(hora_entrada IS NOT NULL AND hora_salida IS NOT NULL AND estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO'),
-                           TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha, hora_entrada), TIMESTAMP(fecha, hora_salida)),
-                           0)), 0) AS total_segundos
-         FROM asistencias
-         WHERE estado != 'ANULADO'
-         GROUP BY id_usuario`
-      );
-
-      const [userHE] = await db.query(
-        `SELECT 
-           id_usuario,
-           COUNT(id_notificacion) AS total_dias_he,
-           COALESCE(SUM(IF(hora_inicio IS NOT NULL AND hora_fin IS NOT NULL,
-                           TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha_solicitada, hora_inicio), TIMESTAMP(fecha_solicitada, hora_fin)),
-                           0)), 0) AS total_segundos_he
-         FROM notificaciones
-         WHERE estado = 2
-         GROUP BY id_usuario`
-      );
-
-      const mapAsist = {};
-      (userAsistencias || []).forEach(a => { mapAsist[a.id_usuario] = a; });
-      const mapHE = {};
-      (userHE || []).forEach(h => { mapHE[h.id_usuario] = h; });
-
-      const userRankList = (users || []).map(u => {
+      // 5.2. Estadísticas globales (Ranking de horas oficiales por pasante)
+      const userRankList = (usersRanking || []).map(u => {
         const a = mapAsist[u.id_usuario] || { total_dias: 0, total_segundos: 0 };
         const h = mapHE[u.id_usuario] || { total_dias_he: 0, total_segundos_he: 0 };
-        const totalSeg = (Number(a.total_segundos) || 0) + ((Number(h.total_segundos_he) || 0) * 2);
+        const totalSeg = (Number(a.total_segundos) || 0) + (Number(h.total_segundos_he) || 0);
         const totalDias = (Number(a.total_dias) || 0) + (Number(h.total_dias_he) || 0);
         return {
           id_usuario: u.id_usuario,
@@ -474,7 +607,8 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
       statsData = {
         tipo: 'global',
         top_usuarios: formattedTop,
-        total_pasantes_ranking: users.length
+        total_pasantes_ranking: usersRanking.length,
+        pasantes_por_finalizar: pasantesPorFinalizar
       };
     }
 
@@ -580,7 +714,7 @@ router.post('/api/admin/reportes/:id_asistencia/toggle-estado', requireAdmin, as
        FROM asistencias a 
        LEFT JOIN reportes r ON a.id_asistencia = r.id_asistencia 
        WHERE a.id_asistencia = ? 
-       LIMIT 1`, 
+       LIMIT 1`,
       [id_asistencia]
     );
     if (!rows.length) return res.status(404).json({ ok: false, msg: 'Asistencia no encontrada' });
@@ -591,8 +725,8 @@ router.post('/api/admin/reportes/:id_asistencia/toggle-estado', requireAdmin, as
     if (estaInactivo) {
       const tieneTarea = Boolean(row.tarea && row.tarea.trim());
       const nuevoEstado = tieneTarea ? 'PRESENTE' : 'HABILITADO_EDICION';
-      const observacionMsg = tieneTarea 
-        ? 'Bitácora y horas aprobadas por el Administrador.' 
+      const observacionMsg = tieneTarea
+        ? 'Bitácora y horas aprobadas por el Administrador.'
         : 'Bitácora reactivada por el Administrador. Horas habilitadas.';
 
       await db.query(
@@ -607,7 +741,7 @@ router.post('/api/admin/reportes/:id_asistencia/toggle-estado', requireAdmin, as
         ok: true,
         nuevo_estado: nuevoEstado,
         accion: 'activar',
-        msg: tieneTarea 
+        msg: tieneTarea
           ? 'Bitácora aprobada con éxito. Las horas han sido descongeladas y sumadas.'
           : 'Bitácora activada con éxito. El pasante ya puede registrarla y las horas están disponibles.'
       });

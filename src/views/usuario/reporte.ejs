@@ -291,18 +291,18 @@
                           <% const horasDisponiblesVis=(typeof total_disponibles !=='undefined' && total_disponibles) ?
                             total_disponibles : total_acumulada; %>
 
-                            <div class="d-flex flex-column gap-1 mt-1">
-                              <small class="d-inline-flex align-items-center fw-semibold text-danger"
-                                style="font-size: 0.76rem;">
-                                <i class="bi bi-snowflake me-1"></i>Horas congeladas: <strong>
-                                  <%= horasCongeladasVis %>
-                                </strong> hrs
-                              </small>
-                              <small class="d-inline-flex align-items-center fw-bold text-success"
-                                style="font-size: 0.78rem; background: rgba(34, 197, 94, 0.1); padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(34, 197, 94, 0.25);">
-                                <i class="bi bi-check-circle-fill me-1 text-success"></i>Horas disponibles: <%=
-                                  horasDisponiblesVis %> hrs
-                              </small>
+                            <div class="d-flex flex-column gap-1.5 mt-2">
+                              <% const tieneCongeladas = horasCongeladasVis !== '00:00:00' && horasCongeladasVis !== '00:00'; %>
+                              <div class="d-inline-flex align-items-center fw-bold"
+                                style="font-size: 0.82rem; color: <%= tieneCongeladas ? '#dc2626' : '#64748b' %>; background: <%= tieneCongeladas ? '#fef2f2' : '#f8fafc' %>; padding: 4px 10px; border-radius: 8px; border: 1.5px solid <%= tieneCongeladas ? '#fca5a5' : '#e2e8f0' %>; box-shadow: <%= tieneCongeladas ? '0 2px 6px rgba(220, 38, 38, 0.12)' : 'none' %>;">
+                                <i class="bi bi-snowflake me-1.5 <%= tieneCongeladas ? 'text-danger' : 'text-muted' %>" style="font-size: 0.95rem;"></i>
+                                Horas congeladas: &nbsp;<span style="font-size: 0.9rem; letter-spacing: -0.2px;"><%= horasCongeladasVis %></span>&nbsp;hrs
+                              </div>
+                              <div class="d-inline-flex align-items-center fw-bold text-success"
+                                style="font-size: 0.82rem; background: #f0fdf4; padding: 4px 10px; border-radius: 8px; border: 1.5px solid #86efac;">
+                                <i class="bi bi-check-circle-fill me-1.5 text-success" style="font-size: 0.95rem;"></i>
+                                Horas disponibles: &nbsp;<span style="font-size: 0.9rem; letter-spacing: -0.2px;"><%= horasDisponiblesVis %></span>&nbsp;hrs
+                              </div>
                             </div>
                       </div>
                     </div>
@@ -347,14 +347,26 @@
                                     || 'Ubicación' ) %>
                                 </span>
                               </div>
+                              <% 
+                                const isOficinaEntrada = (jHoy.lugar_nombre || '').toUpperCase().includes('OFICINA') || jHoy.id_lugar === 3 || (jHoy.lugar_tipo || '').toUpperCase().includes('OFICINA');
+                                const esBiomEntrada = isOficinaEntrada && jHoy.modalidad !== 'TELETRABAJO';
+                              %>
                               <div
-                                class="step-card-badge <%= jHoy.modalidad === 'TELETRABAJO' ? 'badge-gps-amber' : 'badge-gps-green' %>">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
-                                  viewBox="0 0 16 16">
-                                  <path
-                                    d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425z" />
-                                </svg>
-                                <%= jHoy.modalidad==='TELETRABAJO' ? 'GPS Remoto' : 'GPS verificado' %>
+                                class="step-card-badge <%= jHoy.modalidad === 'TELETRABAJO' ? 'badge-gps-amber' : (esBiomEntrada ? 'badge-gps-blue' : 'badge-gps-green') %>">
+                                <% if (esBiomEntrada) { %>
+                                  <i class="bi bi-fingerprint me-1" style="font-size: 1.05rem;"></i>
+                                  Registro Biométrico
+                                <% } else if (jHoy.modalidad === 'TELETRABAJO') { %>
+                                  <i class="bi bi-house-door-fill me-1"></i>
+                                  GPS Remoto
+                                <% } else { %>
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                                    viewBox="0 0 16 16">
+                                    <path
+                                      d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425z" />
+                                  </svg>
+                                  GPS verificado
+                                <% } %>
                               </div>
                             </div>
                             <% } else { %>
@@ -456,13 +468,22 @@
                                   <%= jHoy.lugar_nombre || 'Ubicación' %>
                                 </span>
                               </div>
-                              <div class="step-card-badge badge-gps-amber">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
-                                  viewBox="0 0 16 16">
-                                  <path
-                                    d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425z" />
-                                </svg>
-                                GPS verificado
+                              <% 
+                                const isOficinaSalida = (jHoy.lugar_nombre || '').toUpperCase().includes('OFICINA') || jHoy.id_lugar === 3 || (jHoy.lugar_tipo || '').toUpperCase().includes('OFICINA');
+                                const esBiomSalida = isOficinaSalida && jHoy.modalidad !== 'TELETRABAJO';
+                              %>
+                              <div class="step-card-badge <%= esBiomSalida ? 'badge-gps-blue' : 'badge-gps-amber' %>">
+                                <% if (esBiomSalida) { %>
+                                  <i class="bi bi-fingerprint me-1" style="font-size: 1.05rem;"></i>
+                                  Registro Biométrico
+                                <% } else { %>
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                                    viewBox="0 0 16 16">
+                                    <path
+                                      d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425z" />
+                                  </svg>
+                                  GPS verificado
+                                <% } %>
                               </div>
                             </div>
                             <% } else { %>
@@ -2671,19 +2692,19 @@
               }
               initCountdownMedianoche();
 
-              // 7. ALERTA EMERGENTE AUTOMÁTICA AL ENTRAR A LA PESTAÑA
+              // 7. ALERTA EMERGENTE AUTOMÁTICA AL ENTRAR A LA PESTAÑA (Solo si tiene más de 3 bitácoras sin llenar)
               const totalPendientes = <%= bitacorasPendientes || 0 %>;
-              if (typeof Swal !== 'undefined' && totalPendientes > 0) {
+              if (typeof Swal !== 'undefined' && totalPendientes > 3) {
                 Swal.fire({
                   icon: 'warning',
                   title: '⚠️ Aviso de Bitácoras Pendientes',
                   html: `
                 <div style="font-size: 14px; text-align: left; color: #1e293b; line-height: 1.5;">
-                  Tienes <b style="color: #dc2626; font-size: 16px;">${totalPendientes}</b> bitácora(s) o comprobante(s) pendiente(s) de registro.
+                  Tienes <b style="color: #dc2626; font-size: 16px;">${totalPendientes}</b> bitácora(s) o comprobante(s) pendiente(s) de registro (más de 3 sin llenar).
                   <br><br>
                   <div style="background: #fff5f5; border: 1px solid #fecaca; border-radius: 8px; padding: 12px; font-size: 13px; color: #991b1b;">
-                    ⏰ <b>Recuerda:</b> Tienes hasta las <b>12:00 AM (medianoche)</b> para registrar tu bitácora del día.<br>
-                    Pasada esa hora, la bitácora quedará <b>bloqueada</b> y las horas se <b>congelarán automáticamente</b> (no sumarán a tus horas disponibles hasta que el administrador las reactive).
+                    ⏰ <b>Recuerda:</b> Tienes hasta las <b>12:00 AM (medianoche)</b> para registrar tus bitácoras.<br>
+                    Las bitácoras pendientes quedan <b>bloqueadas</b> y sus horas se <b>congelan automáticamente</b> (no suman a tus horas disponibles hasta que el administrador las reactive).
                   </div>
                 </div>
               `,

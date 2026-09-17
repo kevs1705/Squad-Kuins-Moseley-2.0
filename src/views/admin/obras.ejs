@@ -1,728 +1,847 @@
-<%
-  pageTitle = 'Obras';
-  pageSubtitle = 'Gestión de obras y proyectos';
-%>
+<% pageTitle='Obras' ; pageSubtitle='Gestión de obras y proyectos' ; %>
 
-<%- include('../partials/header') %>
+  <%- include('../partials/header') %>
 
-<!-- Carga de Leaflet CSS y JS -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Carga de Leaflet CSS y JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<style>
-  #map {
-    width: 100%;
-    height: 260px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-    margin-top: 6px;
-    z-index: 1;
-  }
-</style>
-
-<section class="panel">
-
-  <div class="toolbar" style="gap:12px;">
-    <input
-      id="q"
-      class="search"
-      placeholder="Buscar por nombre o dirección..."
-    >
-
-    <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
-      <div class="page-select-wrap">
-        <span>Mostrar:</span>
-        <select id="pageSize" class="page-select">
-          <option value="10" selected>10</option>
-          <option value="20">20</option>
-          <option value="30">30</option>
-          <option value="50">50</option>
-        </select>
-      </div>
-
-      <button id="btnNew" class="btn">
-        + Nueva Obra
-      </button>
-    </div>
-  </div>
-
-  <div class="table-wrap" style="margin-top:14px;">
-    <table id="tbl">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Nombre</th>
-          <th>Dirección</th>
-          <th>Coordenadas (Lat, Lng)</th>
-          <th>Radio (m)</th>
-          <th>Fecha Inicio</th>
-          <th>Fecha Fin</th>
-          <th>Estado</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-
-      <tbody id="tbody">
-        <% (lugares || []).forEach(o => { %>
-          <tr
-            data-id="<%= o.id_lugar %>"
-            data-nombre="<%- (o.nombre || '').replace(/"/g, '&quot;') %>"
-            data-tipo="<%- (o.tipo || 'OBRA').replace(/"/g, '&quot;') %>"
-            data-direccion="<%- (o.direccion || '').replace(/"/g, '&quot;') %>"
-            data-latitud="<%= o.latitud || '' %>"
-            data-longitud="<%= o.longitud || '' %>"
-            data-radio_metros="<%= o.radio_metros || '' %>"
-            data-estado="<%= Number(o.estado) || 0 %>"
-            data-fecha_inicio="<%= o.fecha_inicio ? new Date(o.fecha_inicio).toISOString().split('T')[0] : '' %>"
-            data-fecha_fin="<%= o.fecha_fin ? new Date(o.fecha_fin).toISOString().split('T')[0] : '' %>"
-            data-descripcion="<%- (o.descripcion || '').replace(/"/g, '&quot;') %>"
-          >
-            <td><%= o.id_lugar %></td>
-
-            <td class="c-nombre">
-              <strong><%= o.nombre || '' %></strong>
-            </td>
-
-            <td class="c-direccion">
-              <%= o.direccion || '-' %>
-            </td>
-
-            <td class="c-coords">
-              <%= (o.latitud && o.longitud) ? `${o.latitud}, ${o.longitud}` : '-' %>
-            </td>
-
-            <td class="c-radio">
-              <%= o.radio_metros ? `${o.radio_metros} m` : '-' %>
-            </td>
-
-            <td class="c-fechas">
-             
-                <%= o.fecha_inicio ? new Date(o.fecha_inicio).toLocaleDateString() : 'N/A' %>
-                
-              
-           
-            </td>
-            <td class="c-fechas"> 
-                <%= o.fecha_fin ? new Date(o.fecha_fin).toLocaleDateString() : 'N/A' %>
-            </td>
-
-            <td class="c-est">
-              <span class="chip <%= o.estado ? 'ok' : 'off' %>">
-                <%= o.estado ? 'Activa' : 'Inactiva' %>
-              </span>
-            </td>
-
-            <td class="actions">
-              <button class="btn secondary btnEdit">
-                <i class="bi bi-pencil-square"></i> Editar
-              </button>
-              <button class="btn secondary btnDel">
-                <i class="bi bi-trash3"></i> Eliminar
-              </button>
-            </td>
-          </tr>
-        <% }) %>
-      </tbody>
-    </table>
-  </div>
-
-  <div class="table-pagination" id="paginationBar">
-    <div class="page-info" id="pageInfo">
-      Mostrando 0 - 0 de 0 obras
-    </div>
-    <div class="page-controls" id="pageControls">
-    </div>
-  </div>
-
-</section>
-
-<!-- MODAL OBRAS -->
-<div class="modal-backdrop" id="modal-backdrop">
-  <div class="modal" style="max-width: 650px;">
-    <h3 id="modal-title">Nueva Obra</h3>
-
-    <form id="obra-form">
-      <div class="form-grid">
-
-        <label class="full-width">
-          Nombre de la Obra *
-          <input
-            id="f-nombre"
-            name="nombre"
-            required
-            placeholder="Ej. Construcción Edificio Central"
-          >
-        </label>
-
-        <label class="full-width">
-          Dirección (Escribe para auto-ubicar en el mapa)
-        <input
-    id="f-direccion"
-    name="direccion"
-    placeholder="Ej. Av. 20 de Octubre, La Paz"
-  >
-        </label>
-
-
-        <label>
-          Latitud
-         <input
-          id="f-latitud"
-          name="latitud"
-          type="number"
-          step="any"
-          readonly
-          placeholder="-16.5000"
-        >
-        </label>
-
-        <label>
-          Longitud
-        <input
-          id="f-longitud"
-          name="longitud"
-          type="number"
-          step="any"
-          readonly
-          placeholder="-68.1333"
-        >
-        </label>
-
-      </div>
-              <!-- MAPA DE SELECCIÓN -->
-        <div class="full-width">
-          <label>Ubicación en el Mapa (Haz clic o arrastra el marcador para ajustar)</label>
-          <div id="map"></div>
-        </div>
-        <br>
-      <div class="form-grid">
-
-        <label>
-          Radio Cobertura (Metros)
-          <input
-            id="f-radio"
-            name="radio_metros"
-            type="number"
-            step="any"
-            placeholder="100"
-            value="100"
-          >
-        </label>
-
-        <label>
-          Estado
-          <select id="f-est" name="estado">
-            <option value="1">Activa</option>
-            <option value="0">Inactiva</option>
-          </select>
-        </label>
-
-        <label>
-          Fecha Inicio
-          <input
-            id="f-fecha-inicio"
-            name="fecha_inicio"
-            type="date"
-          >
-        </label>
-
-        <label>
-          Fecha Fin
-          <input
-            id="f-fecha-fin"
-            name="fecha_fin"
-            type="date"
-          >
-        </label>
-
-        <label class="full-width">
-          Descripción / Observaciones
-          <textarea
-            id="f-descripcion"
-            name="descripcion"
-            rows="3"
-            placeholder="Detalles sobre el proyecto..."
-          ></textarea>
-        </label>
-      </div>
-
-      <div class="modal-actions" style="margin-top: 15px;">
-        <button
-          type="button"
-          class="btn secondary"
-          id="btn-cancel"
-        >
-          Cancelar
-        </button>
-
-        <button
-          type="submit"
-          class="btn"
-          id="btn-save"
-        >
-          Guardar
-        </button>
-      </div>
-
-    </form>
-  </div>
-</div>
-
-<script>
-  const q = document.getElementById('q');
-  const tbody = document.getElementById('tbody');
-  const btnNew = document.getElementById('btnNew');
-  const backdrop = document.getElementById('modal-backdrop');
-  const form = document.getElementById('obra-form');
-  const modalTitle = document.getElementById('modal-title');
-  const btnCancel = document.getElementById('btn-cancel');
-
-  const fDireccion = document.getElementById('f-direccion');
-  const fLatitud = document.getElementById('f-latitud');
-  const fLongitud = document.getElementById('f-longitud');
-  const fRadio = document.getElementById('f-radio');
-
-  let editId = null;
-  let searchTimeout = null;
-
- /* =========================
-   VARIABLES Y LÓGICA DE LEAFLET (MAPA)
-   ========================= */
-let map = null;
-let marker = null;
-let circle = null;
-
-// Coordenadas por defecto centrado en La Paz (Ej. El Prado / Av. 16 de Julio)
-const DEFAULT_COORDS = [-16.5000, -68.1333];
-
-  function setupMap() {
-    if (map) return; // Si ya existe no lo re-inicializamos
-
-    map = L.map('map').setView(DEFAULT_COORDS, 13);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '© OpenStreetMap'
-    }).addTo(map);
-
-    marker = L.marker(DEFAULT_COORDS, { draggable: true }).addTo(map);
-    
-    // Círculo para representar el radio de geocerca
-    circle = L.circle(DEFAULT_COORDS, {
-      color: '#3b82f6',
-      fillColor: '#93c5fd',
-      fillOpacity: 0.3,
-      radius: 100
-    }).addTo(map);
-
-    // Evento: Arrastrar el marcador
-    marker.on('dragend', function (e) {
-      const position = marker.getLatLng();
-      updateInputsAndCircle(position.lat, position.lng);
-      reverseGeocode(position.lat, position.lng);
-    });
-
-    // Evento: Hacer clic directamente en el mapa
-    map.on('click', function (e) {
-      const { lat, lng } = e.latlng;
-      marker.setLatLng([lat, lng]);
-      updateInputsAndCircle(lat, lng);
-      reverseGeocode(lat, lng);
-    });
-  }
-
-  function setMapPosition(lat, lng, zoom = 15) {
-    if (!map) return;
-    const coords = [lat, lng];
-    map.setView(coords, zoom);
-    marker.setLatLng(coords);
-    circle.setLatLng(coords);
-  }
-
-  function updateInputsAndCircle(lat, lng) {
-    fLatitud.value = parseFloat(lat).toFixed(6);
-    fLongitud.value = parseFloat(lng).toFixed(6);
-    circle.setLatLng([lat, lng]);
-  }
-
-  /* Actualizar radio dinámicamente cuando el usuario cambia el input de metros */
-  fRadio.addEventListener('input', () => {
-    const r = parseFloat(fRadio.value) || 0;
-    if (circle) circle.setRadius(r);
-  });
-
-  /* Actualizar posición si el usuario escribe latitud o longitud directamente */
-  [fLatitud, fLongitud].forEach(inp => {
-    inp.addEventListener('change', () => {
-      const lat = parseFloat(fLatitud.value);
-      const lng = parseFloat(fLongitud.value);
-      if (!isNaN(lat) && !isNaN(lng)) {
-        setMapPosition(lat, lng);
+    <style>
+      #map {
+        width: 100%;
+        height: 260px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        margin-top: 6px;
+        z-index: 1;
       }
-    });
-  });
 
-  /* Búsqueda por dirección (Geocodificación con Nominatim) */
- /* Búsqueda por dirección (Geocodificación con Nominatim) */
-fDireccion.addEventListener('input', () => {
-  clearTimeout(searchTimeout);
-  const query = fDireccion.value.trim();
-
-  if (query.length < 3) return;
-
-  searchTimeout = setTimeout(async () => {
-    try {
-      // Agregamos "La Paz Bolivia" para acotar el resultado a la zona de interés
-      const searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', La Paz, Bolivia')}`;
-      const res = await fetch(searchUrl);
-      const data = await res.json();
-
-      if (data && data.length > 0) {
-        const lat = parseFloat(data[0].lat);
-        const lon = parseFloat(data[0].lon);
-
-        setMapPosition(lat, lon, 16);
-        updateInputsAndCircle(lat, lon);
+      .spin {
+        display: inline-block;
+        animation: spinAnim 1s linear infinite;
       }
-    } catch (err) {
-      console.error('Error al geocodificar la dirección:', err);
-    }
-  }, 800);
-});
 
-  /* Obtener dirección textual cuando se mueve el pin (Geocodificación inversa) */
-  async function reverseGeocode(lat, lng) {
-    try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
-      const data = await res.json();
-      if (data && data.display_name) {
-        fDireccion.value = data.display_name;
-      }
-    } catch (err) {
-      console.error('Error al obtener la dirección:', err);
-    }
-  }
+      @keyframes spinAnim {
+        0% {
+          transform: rotate(0deg);
+        }
 
-  const pageSizeSelect = document.getElementById('pageSize');
-  const pageInfo = document.getElementById('pageInfo');
-  const pageControls = document.getElementById('pageControls');
-
-  let currentPage = 1;
-
-  /* =========================
-     PAGINACIÓN Y BÚSQUEDA DE OBRAS
-     ========================= */
-
-  function renderPagination() {
-    const filterVal = q ? q.value.toLowerCase().trim() : '';
-    const pageSize = parseInt(pageSizeSelect ? pageSizeSelect.value : 10, 10) || 10;
-    const allRows = [...tbody.rows];
-
-    // Filtrar filas que coincidan con la búsqueda
-    const matchingRows = allRows.filter(tr => {
-      const name = tr.querySelector('.c-nombre')?.textContent.toLowerCase() || '';
-      const dir = tr.querySelector('.c-direccion')?.textContent.toLowerCase() || '';
-      return name.includes(filterVal) || dir.includes(filterVal);
-    });
-
-    const totalMatching = matchingRows.length;
-    const totalPages = Math.ceil(totalMatching / pageSize) || 1;
-
-    if (currentPage > totalPages) currentPage = totalPages;
-    if (currentPage < 1) currentPage = 1;
-
-    const startIdx = (currentPage - 1) * pageSize;
-    const endIdx = Math.min(startIdx + pageSize, totalMatching);
-
-    // Ocultar todas las filas
-    allRows.forEach(tr => tr.style.display = 'none');
-
-    // Mostrar solo el bloque de filas correspondiente a la página actual
-    matchingRows.forEach((tr, index) => {
-      if (index >= startIdx && index < endIdx) {
-        tr.style.display = '';
-      }
-    });
-
-    // Actualizar texto informativo
-    if (totalMatching === 0) {
-      pageInfo.textContent = 'Sin resultados encontrados';
-    } else {
-      pageInfo.textContent = `Mostrando ${startIdx + 1} - ${endIdx} de ${totalMatching} obras`;
-    }
-
-    // Renderizar botones de control
-    pageControls.innerHTML = '';
-
-    // Botón Anterior
-    const prevBtn = document.createElement('button');
-    prevBtn.className = 'page-btn';
-    prevBtn.type = 'button';
-    prevBtn.textContent = 'Anterior';
-    prevBtn.disabled = currentPage === 1 || totalMatching === 0;
-    prevBtn.addEventListener('click', () => {
-      if (currentPage > 1) {
-        currentPage--;
-        renderPagination();
-      }
-    });
-    pageControls.appendChild(prevBtn);
-
-    // Botones de Páginas Numeradas
-    for (let i = 1; i <= totalPages; i++) {
-      if (totalPages > 7) {
-        if (i !== 1 && i !== totalPages && Math.abs(i - currentPage) > 1) {
-          if (i === 2 || i === totalPages - 1) {
-            const dots = document.createElement('span');
-            dots.textContent = '...';
-            dots.style.padding = '0 4px';
-            dots.style.color = '#94a3b8';
-            pageControls.appendChild(dots);
-          }
-          continue;
+        100% {
+          transform: rotate(360deg);
         }
       }
+    </style>
 
-      const pBtn = document.createElement('button');
-      pBtn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
-      pBtn.type = 'button';
-      pBtn.textContent = i;
-      pBtn.addEventListener('click', () => {
-        currentPage = i;
-        renderPagination();
-      });
-      pageControls.appendChild(pBtn);
-    }
+    <section class="panel">
 
-    // Botón Siguiente
-    const nextBtn = document.createElement('button');
-    nextBtn.className = 'page-btn';
-    nextBtn.type = 'button';
-    nextBtn.textContent = 'Siguiente';
-    nextBtn.disabled = currentPage === totalPages || totalMatching === 0;
-    nextBtn.addEventListener('click', () => {
-      if (currentPage < totalPages) {
-        currentPage++;
-        renderPagination();
-      }
-    });
-    pageControls.appendChild(nextBtn);
-  }
+      <div class="toolbar" style="gap:12px;">
+        <input id="q" class="search" placeholder="Buscar por nombre o dirección...">
 
-  q.addEventListener('input', () => {
-    currentPage = 1;
-    renderPagination();
-  });
+        <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+          <div class="page-select-wrap">
+            <span>Mostrar:</span>
+            <select id="pageSize" class="page-select">
+              <option value="10" selected>10</option>
+              <option value="20">20</option>
+              <option value="30">30</option>
+              <option value="50">50</option>
+            </select>
+          </div>
 
-  if (pageSizeSelect) {
-    pageSizeSelect.addEventListener('change', () => {
-      currentPage = 1;
-      renderPagination();
-    });
-  }
+          <button id="btnNew" class="btn">
+            + Nueva Obra
+          </button>
+        </div>
+      </div>
 
-  // Inicializar paginación al cargar la vista
-  renderPagination();
+      <div class="table-wrap" style="margin-top:14px;">
+        <table id="tbl">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nombre</th>
+              <th>Dirección</th>
+              <th>Coordenadas (Lat, Lng)</th>
+              <th>Radio (m)</th>
+              <th>Fecha Inicio</th>
+              <th>Fecha Fin</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
 
-  /* =========================
-     NUEVA OBRA
-     ========================= */
-  btnNew.addEventListener('click', () => {
-    editId = null;
-    form.dataset.mode = 'create';
-    initFormValues();
-    openModal('Nueva Obra');
-  });
+          <tbody id="tbody">
+            <% (lugares || []).forEach(o=> { %>
+              <tr data-id="<%= o.id_lugar %>" data-nombre="<%- (o.nombre || '').replace(/" /g, '&quot;' ) %>"
+                data-tipo="<%- (o.tipo || 'OBRA' ).replace(/"/g, '&quot;' ) %>"
+                  data-direccion="<%- (o.direccion || '' ).replace(/"/g, '&quot;' ) %>"
+                    data-latitud="<%= o.latitud || '' %>"
+                      data-longitud="<%= o.longitud || '' %>"
+                        data-radio_metros="<%= o.radio_metros || '' %>"
+                          data-estado="<%= Number(o.estado) || 0 %>"
+                            data-fecha_inicio="<%= o.fecha_inicio ? new Date(o.fecha_inicio).toISOString().split('T')[0]
+                              : '' %>"
+                              data-fecha_fin="<%= o.fecha_fin ? new Date(o.fecha_fin).toISOString().split('T')[0] : ''
+                                %>"
+                                data-descripcion="<%- (o.descripcion || '' ).replace(/"/g, '&quot;' ) %>"
+                                  >
+                                  <td>
+                                    <%= o.id_lugar %>
+                                  </td>
 
-  /* =========================
-     EDITAR / ELIMINAR OBRA
-     ========================= */
-  tbody.addEventListener('click', async (ev) => {
-    const tr = ev.target.closest('tr');
-    if (!tr) return;
+                                  <td class="c-nombre">
+                                    <strong>
+                                      <%= o.nombre || '' %>
+                                    </strong>
+                                  </td>
 
-    /* EDITAR */
-    if (ev.target.closest('.btnEdit')) {
-      const obra = rowToObj(tr);
-      editId = obra.id_lugar;
-      form.dataset.mode = 'edit';
-      initFormValues(obra);
-      openModal(`Editar Obra #${obra.id_lugar}`);
-      return;
-    }
+                                  <td class="c-direccion">
+                                    <%= o.direccion || '-' %>
+                                  </td>
 
-    /* ELIMINAR */
-    if (ev.target.closest('.btnDel')) {
-      const id = tr.dataset.id;
-      const conf = confirm(`¿Eliminar la obra #${id}?`);
-      if (!conf) return;
+                                  <td class="c-coords">
+                                    <%= (o.latitud && o.longitud) ? `${o.latitud}, ${o.longitud}` : '-' %>
+                                  </td>
 
-      try {
-        const res = await fetch(`/api/obras/${id}`, {
-          method: 'DELETE',
-          credentials: 'include'
+                                  <td class="c-radio">
+                                    <%= o.radio_metros ? `${o.radio_metros} m` : '-' %>
+                                  </td>
+
+                                  <td class="c-fechas">
+
+                                    <%= o.fecha_inicio ? new Date(o.fecha_inicio).toLocaleDateString() : 'N/A' %>
+
+
+
+                                  </td>
+                                  <td class="c-fechas">
+                                    <%= o.fecha_fin ? new Date(o.fecha_fin).toLocaleDateString() : 'N/A' %>
+                                  </td>
+
+                                  <td class="c-est">
+                                    <span class="chip <%= o.estado ? 'ok' : 'off' %>">
+                                      <%= o.estado ? 'Activa' : 'Inactiva' %>
+                                    </span>
+                                  </td>
+
+                                  <td class="actions">
+                                    <button class="btn secondary btnEdit">
+                                      <i class="bi bi-pencil-square"></i> Editar
+                                    </button>
+                                    <button class="btn secondary btnDel">
+                                      <i class="bi bi-trash3"></i> Eliminar
+                                    </button>
+                                  </td>
+              </tr>
+              <% }) %>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-pagination" id="paginationBar">
+        <div class="page-info" id="pageInfo">
+          Mostrando 0 - 0 de 0 obras
+        </div>
+        <div class="page-controls" id="pageControls">
+        </div>
+      </div>
+
+    </section>
+
+    <!-- MODAL OBRAS -->
+    <div class="modal-backdrop" id="modal-backdrop">
+      <div class="modal" style="max-width: 650px;">
+        <h3 id="modal-title">Nueva Obra</h3>
+
+        <form id="obra-form">
+          <div class="form-grid">
+
+            <label class="full-width">
+              Nombre de la Obra *
+              <input id="f-nombre" name="nombre" required placeholder="Ej. Construcción Edificio Central">
+            </label>
+
+            <label class="full-width">
+              Dirección (Escribe para auto-ubicar en el mapa o se autocompletará con el GPS)
+              <input id="f-direccion" name="direccion" placeholder="Ej. Av. 20 de Octubre, La Paz">
+            </label>
+
+            <!-- HERRAMIENTAS DE CAPTURA RÁPIDA DE UBICACIÓN -->
+            <div class="full-width">
+              <div
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                <span
+                  style="font-size: 0.86rem; font-weight: 700; color: #1e293b; display: inline-flex; align-items: center; gap: 6px;">
+                  <i class="bi bi-geo-alt-fill text-primary"></i> Captura Rápida de Ubicación
+                </span>
+                <button type="button" id="btnGpsActual" class="btn"
+                  style="background-color: #35a4db; color: white; padding: 6px 12px; font-size: 0.82rem; border-radius: 6px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-weight: 600;">
+                  <i class="bi bi-crosshair"></i> Mi Ubicación Actual (GPS)
+                </button>
+              </div>
+
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <input type="text" id="f-google-maps-url"
+                  placeholder="Pega enlace de Google Maps (ej. https://maps.app.goo.gl/... o coordenadas)"
+                  style="flex: 1; padding: 8px 10px; font-size: 0.84rem; border: 1px solid #94a3b8; border-radius: 6px; background: #ffffff;">
+                <button type="button" id="btnProcesarMaps" class="btn secondary"
+                  style="padding: 8px 14px; font-size: 0.82rem; font-weight: 600; white-space: nowrap; cursor: pointer;">
+                  <i class="bi bi-pin-map-fill text-danger me-1"></i> Extraer
+                </button>
+              </div>
+              <small style="font-size: 0.74rem; color: #64748b; margin-top: 5px; display: block;">
+                💡 Puedes pegar enlaces compartidos desde la App de Google Maps (WhatsApp), enlaces de navegador o
+                coordenadas (Lat, Lng).
+              </small>
+            </div>
+            <div>
+              <label>
+                Latitud
+                <input id="f-latitud" name="latitud" type="number" step="any" readonly placeholder="-16.5000">
+              </label>
+
+              <label>
+                Longitud
+                <input id="f-longitud" name="longitud" type="number" step="any" readonly placeholder="-68.1333">
+              </label>
+            </div>
+          </div>
+
+
+          <!-- MAPA DE SELECCIÓN -->
+          <div class="full-width">
+            <label>Ubicación en el Mapa (Haz clic o arrastra el marcador para ajustar)</label>
+            <div id="map"></div>
+          </div>
+          <br>
+          <div class="form-grid">
+
+            <label>
+              Radio Cobertura (Metros)
+              <input id="f-radio" name="radio_metros" type="number" step="any" placeholder="100" value="100">
+            </label>
+
+            <label>
+              Estado
+              <select id="f-est" name="estado">
+                <option value="1">Activa</option>
+                <option value="0">Inactiva</option>
+              </select>
+            </label>
+
+            <label>
+              Fecha Inicio
+              <input id="f-fecha-inicio" name="fecha_inicio" type="date">
+            </label>
+
+            <label>
+              Fecha Fin
+              <input id="f-fecha-fin" name="fecha_fin" type="date">
+            </label>
+
+            <label class="full-width">
+              Descripción / Observaciones
+              <textarea id="f-descripcion" name="descripcion" rows="3"
+                placeholder="Detalles sobre el proyecto..."></textarea>
+            </label>
+          </div>
+
+          <div class="modal-actions" style="margin-top: 15px;">
+            <button type="button" class="btn secondary" id="btn-cancel">
+              Cancelar
+            </button>
+
+            <button type="submit" class="btn" id="btn-save">
+              Guardar
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+
+    <script>
+      const q = document.getElementById('q');
+      const tbody = document.getElementById('tbody');
+      const btnNew = document.getElementById('btnNew');
+      const backdrop = document.getElementById('modal-backdrop');
+      const form = document.getElementById('obra-form');
+      const modalTitle = document.getElementById('modal-title');
+      const btnCancel = document.getElementById('btn-cancel');
+
+      const fDireccion = document.getElementById('f-direccion');
+      const fLatitud = document.getElementById('f-latitud');
+      const fLongitud = document.getElementById('f-longitud');
+      const fRadio = document.getElementById('f-radio');
+
+      let editId = null;
+      let searchTimeout = null;
+
+      /* =========================
+        VARIABLES Y LÓGICA DE LEAFLET (MAPA)
+        ========================= */
+      let map = null;
+      let marker = null;
+      let circle = null;
+
+      // Coordenadas por defecto centrado en La Paz (Ej. El Prado / Av. 16 de Julio)
+      const DEFAULT_COORDS = [-16.5000, -68.1333];
+
+      function setupMap() {
+        if (map) return; // Si ya existe no lo re-inicializamos
+
+        map = L.map('map').setView(DEFAULT_COORDS, 13);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        marker = L.marker(DEFAULT_COORDS, { draggable: true }).addTo(map);
+
+        // Círculo para representar el radio de geocerca
+        circle = L.circle(DEFAULT_COORDS, {
+          color: '#3b82f6',
+          fillColor: '#93c5fd',
+          fillOpacity: 0.3,
+          radius: 100
+        }).addTo(map);
+
+        // Evento: Arrastrar el marcador
+        marker.on('dragend', function (e) {
+          const position = marker.getLatLng();
+          updateInputsAndCircle(position.lat, position.lng);
+          reverseGeocode(position.lat, position.lng);
         });
 
-        const data = await res.json();
-
-        if (!res.ok || !data.ok) {
-          throw new Error(data.msg || 'No se pudo eliminar la obra');
-        }
-
-        tr.remove();
-      } catch (e) {
-        console.error(e);
-        alert(e.message || 'No se pudo eliminar');
-      }
-    }
-  });
-
-  /* =========================
-     CERRAR MODAL
-     ========================= */
-  btnCancel.addEventListener('click', closeModal);
-
-  backdrop.addEventListener('click', (e) => {
-    if (e.target === backdrop) closeModal();
-  });
-
-  form.addEventListener('submit', onSubmit);
-
-  /* =========================
-     INICIALIZAR FORMULARIO Y MAPA
-     ========================= */
-  function initFormValues(o = {}) {
-    document.getElementById('f-nombre').value = o.nombre || '';
-    fDireccion.value = o.direccion || '';
-    fLatitud.value = o.latitud || '';
-    fLongitud.value = o.longitud || '';
-    fRadio.value = o.radio_metros || 100;
-    document.getElementById('f-est').value = Number(o.estado ?? 1);
-    document.getElementById('f-fecha-inicio').value = o.fecha_inicio || '';
-    document.getElementById('f-fecha-fin').value = o.fecha_fin || '';
-    document.getElementById('f-descripcion').value = o.descripcion || '';
-
-    // Cargar coordenadas en el mapa
-    const lat = parseFloat(o.latitud) || DEFAULT_COORDS[0];
-    const lng = parseFloat(o.longitud) || DEFAULT_COORDS[1];
-    const radio = parseFloat(o.radio_metros) || 100;
-
-    setTimeout(() => {
-      setupMap();
-      setMapPosition(lat, lng, (o.latitud && o.longitud) ? 16 : 13);
-      circle.setRadius(radio);
-      map.invalidateSize(); // Corregir cálculo de dimensiones en modales flex
-    }, 150);
-  }
-
-  /* =========================
-     ABRIR Y CERRAR MODAL
-     ========================= */
-  function openModal(title) {
-    modalTitle.textContent = title;
-    backdrop.style.display = 'flex';
-  }
-
-  function closeModal() {
-    backdrop.style.display = 'none';
-    form.reset();
-    editId = null;
-  }
-
-  /* =========================
-     GUARDAR OBRA
-     ========================= */
-  async function onSubmit(e) {
-    e.preventDefault();
-
-    const payload = getFormValues();
-    if (!payload) return;
-
-    try {
-      let url = '/api/obras';
-      let method = 'POST';
-
-      if (form.dataset.mode === 'edit' && editId) {
-        url = `/api/obras/${editId}`;
-        method = 'PUT';
+        // Evento: Hacer clic directamente en el mapa
+        map.on('click', function (e) {
+          const { lat, lng } = e.latlng;
+          marker.setLatLng([lat, lng]);
+          updateInputsAndCircle(lat, lng);
+          reverseGeocode(lat, lng);
+        });
       }
 
-      const res = await fetch(url, {
-        method: method,
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(payload)
+      function setMapPosition(lat, lng, zoom = 15) {
+        if (!map) return;
+        const coords = [lat, lng];
+        map.setView(coords, zoom);
+        marker.setLatLng(coords);
+        circle.setLatLng(coords);
+      }
+
+      function updateInputsAndCircle(lat, lng) {
+        fLatitud.value = parseFloat(lat).toFixed(6);
+        fLongitud.value = parseFloat(lng).toFixed(6);
+        circle.setLatLng([lat, lng]);
+      }
+
+      /* Actualizar radio dinámicamente cuando el usuario cambia el input de metros */
+      fRadio.addEventListener('input', () => {
+        const r = parseFloat(fRadio.value) || 0;
+        if (circle) circle.setRadius(r);
       });
 
-      const data = await res.json();
+      /* Actualizar posición si el usuario escribe latitud o longitud directamente */
+      [fLatitud, fLongitud].forEach(inp => {
+        inp.addEventListener('change', () => {
+          const lat = parseFloat(fLatitud.value);
+          const lng = parseFloat(fLongitud.value);
+          if (!isNaN(lat) && !isNaN(lng)) {
+            setMapPosition(lat, lng);
+          }
+        });
+      });
 
-      if (!res.ok || !data.ok) {
-        throw new Error(data.msg || 'Error al guardar la obra');
+      /* Búsqueda por dirección (Geocodificación con Nominatim) */
+      /* Búsqueda por dirección (Geocodificación con Nominatim) */
+      fDireccion.addEventListener('input', () => {
+        clearTimeout(searchTimeout);
+        const query = fDireccion.value.trim();
+
+        if (query.length < 3) return;
+
+        searchTimeout = setTimeout(async () => {
+          try {
+            // Agregamos "La Paz Bolivia" para acotar el resultado a la zona de interés
+            const searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', La Paz, Bolivia')}`;
+            const res = await fetch(searchUrl);
+            const data = await res.json();
+
+            if (data && data.length > 0) {
+              const lat = parseFloat(data[0].lat);
+              const lon = parseFloat(data[0].lon);
+
+              setMapPosition(lat, lon, 16);
+              updateInputsAndCircle(lat, lon);
+            }
+          } catch (err) {
+            console.error('Error al geocodificar la dirección:', err);
+          }
+        }, 800);
+      });
+
+      /* Obtener dirección textual cuando se mueve el pin (Geocodificación inversa) */
+      async function reverseGeocode(lat, lng) {
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+          const data = await res.json();
+          if (data && data.display_name) {
+            fDireccion.value = data.display_name;
+          }
+        } catch (err) {
+          console.error('Error al obtener la dirección:', err);
+        }
       }
 
-      appendOrReplaceRow(data.obra || payload);
-      closeModal();
-    } catch (err) {
-      console.error(err);
-      alert(err.message || 'No se pudo guardar la obra');
-    }
-  }
+      /* =========================================================
+         CAPTURA DE GPS EN TIEMPO REAL Y ENLACES DE GOOGLE MAPS
+         ========================================================= */
+      const btnGpsActual = document.getElementById('btnGpsActual');
+      const btnProcesarMaps = document.getElementById('btnProcesarMaps');
+      const fGoogleMapsUrl = document.getElementById('f-google-maps-url');
 
-  /* =========================
-     OBTENER DATOS DEL FORMULARIO
-     ========================= */
-  function getFormValues() {
-    const nombre = document.getElementById('f-nombre').value.trim();
-    const direccion = fDireccion.value.trim();
-    const latitud = fLatitud.value ? parseFloat(fLatitud.value) : null;
-    const longitud = fLongitud.value ? parseFloat(fLongitud.value) : null;
-    const radio_metros = fRadio.value ? parseFloat(fRadio.value) : null;
-    const estado = Number(document.getElementById('f-est').value);
-    const fecha_inicio = document.getElementById('f-fecha-inicio').value || null;
-    const fecha_fin = document.getElementById('f-fecha-fin').value || null;
-    const descripcion = document.getElementById('f-descripcion').value.trim();
+      /* 1. GPS en tiempo real desde el dispositivo */
+      if (btnGpsActual) {
+        btnGpsActual.addEventListener('click', () => {
+          if (!navigator.geolocation) {
+            alert('Tu navegador o dispositivo no soporta geolocalización GPS.');
+            return;
+          }
 
-    if (!nombre) {
-      alert('El nombre de la obra es obligatorio');
-      return false;
-    }
+          const originalHtml = btnGpsActual.innerHTML;
+          btnGpsActual.disabled = true;
+          btnGpsActual.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Obteniendo GPS...';
 
-    return {
-      nombre,
-      tipo: 'OBRA',
-      direccion,
-      latitud,
-      longitud,
-      radio_metros,
-      estado,
-      fecha_inicio,
-      fecha_fin,
-      descripcion
-    };
-  }
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              const lat = position.coords.latitude;
+              const lng = position.coords.longitude;
 
-  /* =========================
-     CONVERTIR FILA A OBJETO
-     ========================= */
-  function rowToObj(tr) {
-    return {
-      id_lugar: Number(tr.dataset.id),
-      nombre: tr.dataset.nombre || '',
-      tipo: tr.dataset.tipo || 'OBRA',
-      direccion: tr.dataset.direccion || '',
-      latitud: tr.dataset.latitud || '',
-      longitud: tr.dataset.longitud || '',
-      radio_metros: tr.dataset.radio_metros || '',
-      estado: Number(tr.dataset.estado || 0),
-      fecha_inicio: tr.dataset.fecha_inicio || '',
-      fecha_fin: tr.dataset.fecha_fin || '',
-      descripcion: tr.dataset.descripcion || ''
-    };
-  }
+              setMapPosition(lat, lng, 17);
+              updateInputsAndCircle(lat, lng);
+              reverseGeocode(lat, lng);
 
-  /* =========================
-     AGREGAR / REEMPLAZAR FILA
-     ========================= */
+              btnGpsActual.disabled = false;
+              btnGpsActual.innerHTML = '<i class="bi bi-check2-circle"></i> ¡Ubicación capturada!';
+              setTimeout(() => {
+                btnGpsActual.innerHTML = originalHtml;
+              }, 2500);
+            },
+            (error) => {
+              btnGpsActual.disabled = false;
+              btnGpsActual.innerHTML = originalHtml;
+              let msg = 'No se pudo obtener tu ubicación actual.';
+              if (error.code === error.PERMISSION_DENIED) {
+                msg = 'Permiso de ubicación denegado. Habilita los permisos de GPS en tu navegador.';
+              } else if (error.code === error.POSITION_UNAVAILABLE) {
+                msg = 'Señal de GPS no disponible en este momento.';
+              } else if (error.code === error.TIMEOUT) {
+                msg = 'Tiempo de espera agotado al consultar el GPS.';
+              }
+              alert(msg);
+            },
+            { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+          );
+        });
+      }
+
+      /* 2. Procesar enlace o coordenadas de Google Maps */
+      async function procesarGoogleMaps() {
+        const rawVal = fGoogleMapsUrl ? fGoogleMapsUrl.value.trim() : '';
+        if (!rawVal) {
+          alert('Por favor pega un enlace o coordenadas de Google Maps.');
+          if (fGoogleMapsUrl) fGoogleMapsUrl.focus();
+          return;
+        }
+
+        // 1. Intento rápido: Si son coordenadas directas (ej. -16.5042, -68.1294)
+        const regexDirecto = /^(-?\d{1,2}\.\d+)[,\s]+(-?\d{1,3}\.\d+)$/;
+        const matchDir = rawVal.match(regexDirecto);
+        if (matchDir) {
+          const lat = parseFloat(matchDir[1]);
+          const lng = parseFloat(matchDir[2]);
+          if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+            setMapPosition(lat, lng, 17);
+            updateInputsAndCircle(lat, lng);
+            reverseGeocode(lat, lng);
+            fGoogleMapsUrl.value = '';
+            return;
+          }
+        }
+
+        // 2. Procesar mediante la API (soporta enlaces de WhatsApp maps.app.goo.gl y URLs de navegador)
+        const originalBtnText = btnProcesarMaps.innerHTML;
+        btnProcesarMaps.disabled = true;
+        btnProcesarMaps.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Procesando...';
+
+        try {
+          const res = await fetch('/api/obras/parsear-maps', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: rawVal })
+          });
+
+          const data = await res.json();
+          if (!res.ok || !data.ok) {
+            throw new Error(data.msg || 'No se pudieron extraer coordenadas del enlace de Google Maps.');
+          }
+
+          const lat = parseFloat(data.latitud);
+          const lng = parseFloat(data.longitud);
+
+          setMapPosition(lat, lng, 17);
+          updateInputsAndCircle(lat, lng);
+          reverseGeocode(lat, lng);
+
+          fGoogleMapsUrl.value = '';
+        } catch (err) {
+          console.error(err);
+          alert(err.message || 'Error al procesar el enlace de Google Maps');
+        } finally {
+          btnProcesarMaps.disabled = false;
+          btnProcesarMaps.innerHTML = originalBtnText;
+        }
+      }
+
+      if (btnProcesarMaps) {
+        btnProcesarMaps.addEventListener('click', procesarGoogleMaps);
+      }
+
+      if (fGoogleMapsUrl) {
+        fGoogleMapsUrl.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            procesarGoogleMaps();
+          }
+        });
+
+        fGoogleMapsUrl.addEventListener('paste', () => {
+          setTimeout(procesarGoogleMaps, 200);
+        });
+      }
+
+      const pageSizeSelect = document.getElementById('pageSize');
+      const pageInfo = document.getElementById('pageInfo');
+      const pageControls = document.getElementById('pageControls');
+
+      let currentPage = 1;
+
+      /* =========================
+         PAGINACIÓN Y BÚSQUEDA DE OBRAS
+         ========================= */
+
+      function renderPagination() {
+        const filterVal = q ? q.value.toLowerCase().trim() : '';
+        const pageSize = parseInt(pageSizeSelect ? pageSizeSelect.value : 10, 10) || 10;
+        const allRows = [...tbody.rows];
+
+        // Filtrar filas que coincidan con la búsqueda
+        const matchingRows = allRows.filter(tr => {
+          const name = tr.querySelector('.c-nombre')?.textContent.toLowerCase() || '';
+          const dir = tr.querySelector('.c-direccion')?.textContent.toLowerCase() || '';
+          return name.includes(filterVal) || dir.includes(filterVal);
+        });
+
+        const totalMatching = matchingRows.length;
+        const totalPages = Math.ceil(totalMatching / pageSize) || 1;
+
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        const startIdx = (currentPage - 1) * pageSize;
+        const endIdx = Math.min(startIdx + pageSize, totalMatching);
+
+        // Ocultar todas las filas
+        allRows.forEach(tr => tr.style.display = 'none');
+
+        // Mostrar solo el bloque de filas correspondiente a la página actual
+        matchingRows.forEach((tr, index) => {
+          if (index >= startIdx && index < endIdx) {
+            tr.style.display = '';
+          }
+        });
+
+        // Actualizar texto informativo
+        if (totalMatching === 0) {
+          pageInfo.textContent = 'Sin resultados encontrados';
+        } else {
+          pageInfo.textContent = `Mostrando ${startIdx + 1} - ${endIdx} de ${totalMatching} obras`;
+        }
+
+        // Renderizar botones de control
+        pageControls.innerHTML = '';
+
+        // Botón Anterior
+        const prevBtn = document.createElement('button');
+        prevBtn.className = 'page-btn';
+        prevBtn.type = 'button';
+        prevBtn.textContent = 'Anterior';
+        prevBtn.disabled = currentPage === 1 || totalMatching === 0;
+        prevBtn.addEventListener('click', () => {
+          if (currentPage > 1) {
+            currentPage--;
+            renderPagination();
+          }
+        });
+        pageControls.appendChild(prevBtn);
+
+        // Botones de Páginas Numeradas
+        for (let i = 1; i <= totalPages; i++) {
+          if (totalPages > 7) {
+            if (i !== 1 && i !== totalPages && Math.abs(i - currentPage) > 1) {
+              if (i === 2 || i === totalPages - 1) {
+                const dots = document.createElement('span');
+                dots.textContent = '...';
+                dots.style.padding = '0 4px';
+                dots.style.color = '#94a3b8';
+                pageControls.appendChild(dots);
+              }
+              continue;
+            }
+          }
+
+          const pBtn = document.createElement('button');
+          pBtn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
+          pBtn.type = 'button';
+          pBtn.textContent = i;
+          pBtn.addEventListener('click', () => {
+            currentPage = i;
+            renderPagination();
+          });
+          pageControls.appendChild(pBtn);
+        }
+
+        // Botón Siguiente
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'page-btn';
+        nextBtn.type = 'button';
+        nextBtn.textContent = 'Siguiente';
+        nextBtn.disabled = currentPage === totalPages || totalMatching === 0;
+        nextBtn.addEventListener('click', () => {
+          if (currentPage < totalPages) {
+            currentPage++;
+            renderPagination();
+          }
+        });
+        pageControls.appendChild(nextBtn);
+      }
+
+      q.addEventListener('input', () => {
+        currentPage = 1;
+        renderPagination();
+      });
+
+      if (pageSizeSelect) {
+        pageSizeSelect.addEventListener('change', () => {
+          currentPage = 1;
+          renderPagination();
+        });
+      }
+
+      // Inicializar paginación al cargar la vista
+      renderPagination();
+
+      /* =========================
+         NUEVA OBRA
+         ========================= */
+      btnNew.addEventListener('click', () => {
+        editId = null;
+        form.dataset.mode = 'create';
+        initFormValues();
+        openModal('Nueva Obra');
+      });
+
+      /* =========================
+         EDITAR / ELIMINAR OBRA
+         ========================= */
+      tbody.addEventListener('click', async (ev) => {
+        const tr = ev.target.closest('tr');
+        if (!tr) return;
+
+        /* EDITAR */
+        if (ev.target.closest('.btnEdit')) {
+          const obra = rowToObj(tr);
+          editId = obra.id_lugar;
+          form.dataset.mode = 'edit';
+          initFormValues(obra);
+          openModal(`Editar Obra #${obra.id_lugar}`);
+          return;
+        }
+
+        /* ELIMINAR */
+        if (ev.target.closest('.btnDel')) {
+          const id = tr.dataset.id;
+          const conf = confirm(`¿Eliminar la obra #${id}?`);
+          if (!conf) return;
+
+          try {
+            const res = await fetch(`/api/obras/${id}`, {
+              method: 'DELETE',
+              credentials: 'include'
+            });
+
+            const data = await res.json();
+
+            if (!res.ok || !data.ok) {
+              throw new Error(data.msg || 'No se pudo eliminar la obra');
+            }
+
+            tr.remove();
+          } catch (e) {
+            console.error(e);
+            alert(e.message || 'No se pudo eliminar');
+          }
+        }
+      });
+
+      /* =========================
+         CERRAR MODAL
+         ========================= */
+      btnCancel.addEventListener('click', closeModal);
+
+      backdrop.addEventListener('click', (e) => {
+        if (e.target === backdrop) closeModal();
+      });
+
+      form.addEventListener('submit', onSubmit);
+
+      /* =========================
+         INICIALIZAR FORMULARIO Y MAPA
+         ========================= */
+      function initFormValues(o = {}) {
+        document.getElementById('f-nombre').value = o.nombre || '';
+        fDireccion.value = o.direccion || '';
+        fLatitud.value = o.latitud || '';
+        fLongitud.value = o.longitud || '';
+        fRadio.value = o.radio_metros || 100;
+        document.getElementById('f-est').value = Number(o.estado ?? 1);
+        document.getElementById('f-fecha-inicio').value = o.fecha_inicio || '';
+        document.getElementById('f-fecha-fin').value = o.fecha_fin || '';
+        document.getElementById('f-descripcion').value = o.descripcion || '';
+
+        // Cargar coordenadas en el mapa
+        const lat = parseFloat(o.latitud) || DEFAULT_COORDS[0];
+        const lng = parseFloat(o.longitud) || DEFAULT_COORDS[1];
+        const radio = parseFloat(o.radio_metros) || 100;
+
+        setTimeout(() => {
+          setupMap();
+          setMapPosition(lat, lng, (o.latitud && o.longitud) ? 16 : 13);
+          circle.setRadius(radio);
+          map.invalidateSize(); // Corregir cálculo de dimensiones en modales flex
+        }, 150);
+      }
+
+      /* =========================
+         ABRIR Y CERRAR MODAL
+         ========================= */
+      function openModal(title) {
+        modalTitle.textContent = title;
+        backdrop.style.display = 'flex';
+      }
+
+      function closeModal() {
+        backdrop.style.display = 'none';
+        form.reset();
+        editId = null;
+      }
+
+      /* =========================
+         GUARDAR OBRA
+         ========================= */
+      async function onSubmit(e) {
+        e.preventDefault();
+
+        const payload = getFormValues();
+        if (!payload) return;
+
+        try {
+          let url = '/api/obras';
+          let method = 'POST';
+
+          if (form.dataset.mode === 'edit' && editId) {
+            url = `/api/obras/${editId}`;
+            method = 'PUT';
+          }
+
+          const res = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(payload)
+          });
+
+          const data = await res.json();
+
+          if (!res.ok || !data.ok) {
+            throw new Error(data.msg || 'Error al guardar la obra');
+          }
+
+          appendOrReplaceRow(data.obra || payload);
+          closeModal();
+        } catch (err) {
+          console.error(err);
+          alert(err.message || 'No se pudo guardar la obra');
+        }
+      }
+
+      /* =========================
+         OBTENER DATOS DEL FORMULARIO
+         ========================= */
+      function getFormValues() {
+        const nombre = document.getElementById('f-nombre').value.trim();
+        const direccion = fDireccion.value.trim();
+        const latitud = fLatitud.value ? parseFloat(fLatitud.value) : null;
+        const longitud = fLongitud.value ? parseFloat(fLongitud.value) : null;
+        const radio_metros = fRadio.value ? parseFloat(fRadio.value) : null;
+        const estado = Number(document.getElementById('f-est').value);
+        const fecha_inicio = document.getElementById('f-fecha-inicio').value || null;
+        const fecha_fin = document.getElementById('f-fecha-fin').value || null;
+        const descripcion = document.getElementById('f-descripcion').value.trim();
+
+        if (!nombre) {
+          alert('El nombre de la obra es obligatorio');
+          return false;
+        }
+
+        return {
+          nombre,
+          tipo: 'OBRA',
+          direccion,
+          latitud,
+          longitud,
+          radio_metros,
+          estado,
+          fecha_inicio,
+          fecha_fin,
+          descripcion
+        };
+      }
+
+      /* =========================
+         CONVERTIR FILA A OBJETO
+         ========================= */
+      function rowToObj(tr) {
+        return {
+          id_lugar: Number(tr.dataset.id),
+          nombre: tr.dataset.nombre || '',
+          tipo: tr.dataset.tipo || 'OBRA',
+          direccion: tr.dataset.direccion || '',
+          latitud: tr.dataset.latitud || '',
+          longitud: tr.dataset.longitud || '',
+          radio_metros: tr.dataset.radio_metros || '',
+          estado: Number(tr.dataset.estado || 0),
+          fecha_inicio: tr.dataset.fecha_inicio || '',
+          fecha_fin: tr.dataset.fecha_fin || '',
+          descripcion: tr.dataset.descripcion || ''
+        };
+      }
+
+      /* =========================
+         AGREGAR / REEMPLAZAR FILA
+         ========================= */
 
       function appendOrReplaceRow(o) {
         // Asegurar formato YYYY-MM-DD para atributos de datos e inputs
@@ -785,6 +904,6 @@ fDireccion.addEventListener('input', () => {
         renderPagination();
       }
 
-</script>
+    </script>
 
-<%- include('../partials/footer') %>
+    <%- include('../partials/footer') %>
