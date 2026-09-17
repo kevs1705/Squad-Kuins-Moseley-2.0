@@ -83,6 +83,13 @@
   color: #64748b !important;
   margin-top: 0.5rem !important;
   line-height: 1.35 !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.horario-stat-subinfo i {
+  margin-right: 6px !important;
+  flex-shrink: 0 !important;
 }
 
 .btn-stat-action {
@@ -454,8 +461,17 @@
 .event-time {
   font-size: 0.68rem;
   opacity: 0.95;
-  margin-top: 1px;
+  margin-top: 2px;
   white-space: nowrap;
+  display: flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+}
+
+.event-time i {
+  font-size: 0.72rem !important;
+  margin-right: 2px !important;
+  flex-shrink: 0 !important;
 }
 
 .event-action-group {

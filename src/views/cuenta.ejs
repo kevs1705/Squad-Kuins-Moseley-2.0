@@ -123,13 +123,33 @@
                     </div>
                   </div>
 
-                  <!-- Contraseña (Ancho completo abajo) -->
+                  <!-- Fecha de Inicio -->
+                  <div class="info-item">
+                    <div class="info-icon-container">
+                      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                        <line x1="16" y1="2" x2="16" y2="6" />
+                        <line x1="8" y1="2" x2="8" y2="6" />
+                        <line x1="3" y1="10" x2="21" y2="10" />
+                        <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01" />
+                      </svg>
+                    </div>
+                    <div class="info-text">
+                      <span class="info-label">Fecha de Inicio</span>
+                      <span class="info-value <%= user.fecha_inicio_pasantia ? '' : 'muted' %>" id="v-fecha-inicio">
+                        <%= user.fecha_inicio_pasantia || '—' %>
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Contraseña -->
                   <div class="info-item pwd-item">
                     <div class="info-icon-container">
                       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                        <path d="M21 2l-2 2m-1.5 1.5L14 9a5 5 0 1 0 3 3l3-3m0 0l2 2m-2-2l2-2" />
+                        <circle cx="7.5" cy="16.5" r="2.5" />
                       </svg>
                     </div>
                     <div class="info-text pwd-info-text">
@@ -138,7 +158,9 @@
                         <input id="v-password" class="pwd-display-input" type="password"
                           value="<%= user.contrasena || '' %>" readonly>
                         <button type="button" id="togglePwd" class="pwd-toggle-button"
-                          aria-label="Mostrar/ocultar contraseña">👁️</button>
+                          aria-label="Mostrar/ocultar contraseña" title="Mostrar/ocultar contraseña">
+                          <i class="bi bi-eye"></i>
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -177,8 +199,9 @@
           const toggleBtn = document.getElementById('togglePwd');
           const pwdInput = document.getElementById('v-password');
           toggleBtn?.addEventListener('click', () => {
-            pwdInput.type = (pwdInput.type === 'password') ? 'text' : 'password';
-            toggleBtn.textContent = (pwdInput.type === 'password') ? '👁️' : '🙈';
+            const isPwd = (pwdInput.type === 'password');
+            pwdInput.type = isPwd ? 'text' : 'password';
+            toggleBtn.innerHTML = isPwd ? '<i class="bi bi-eye-slash"></i>' : '<i class="bi bi-eye"></i>';
           });
         }
 
@@ -313,7 +336,7 @@
         <label for="swal-pass">Contraseña <small>(opcional)</small></label>
         <div class="pwd-group">
           <input id="swal-pass" class="swal-inputx" type="password" placeholder="Nueva contraseña (opcional)" />
-          <button type="button" id="toggle-pass" class="eye-btn" aria-label="Mostrar/ocultar contraseña">👁️</button>
+          <button type="button" id="toggle-pass" class="eye-btn" aria-label="Mostrar/ocultar contraseña"><i class="bi bi-eye"></i></button>
         </div>
       </div>
 
@@ -321,7 +344,7 @@
         <label for="swal-pass2">Confirmar contraseña</label>
         <div class="pwd-group">
           <input id="swal-pass2" class="swal-inputx" type="password" placeholder="Repite la contraseña" />
-          <button type="button" id="toggle-pass2" class="eye-btn" aria-label="Mostrar/ocultar contraseña">👁️</button>
+          <button type="button" id="toggle-pass2" class="eye-btn" aria-label="Mostrar/ocultar contraseña"><i class="bi bi-eye"></i></button>
         </div>
       </div>
     </div>
@@ -347,8 +370,16 @@
               const t1 = document.getElementById('toggle-pass');
               const t2 = document.getElementById('toggle-pass2');
 
-              t1.onclick = () => { p1.type = (p1.type === 'password' ? 'text' : 'password'); };
-              t2.onclick = () => { p2.type = (p2.type === 'password' ? 'text' : 'password'); };
+              t1.onclick = () => { 
+                const isPwd = (p1.type === 'password');
+                p1.type = isPwd ? 'text' : 'password'; 
+                t1.innerHTML = isPwd ? '<i class="bi bi-eye-slash"></i>' : '<i class="bi bi-eye"></i>';
+              };
+              t2.onclick = () => { 
+                const isPwd = (p2.type === 'password');
+                p2.type = isPwd ? 'text' : 'password'; 
+                t2.innerHTML = isPwd ? '<i class="bi bi-eye-slash"></i>' : '<i class="bi bi-eye"></i>';
+              };
             },
             preConfirm: () => {
               const ci = document.getElementById('swal-ci').value.trim();

@@ -504,56 +504,63 @@ body,
   color: #A0AEC0 !important;
 }
 
-/* Contraseña en ancho completo */
+/* Contraseña en grid */
 .pwd-item {
-  grid-column: 1 / -1 !important;
+  position: relative !important;
 }
 
 .pwd-info-text {
-  flex-direction: row !important;
-  justify-content: space-between !important;
-  align-items: center !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  flex-grow: 1 !important;
+  min-width: 0 !important;
   width: 100% !important;
-  flex-wrap: wrap !important;
-  gap: 12px !important;
 }
 
 .pwd-field-container {
   display: flex !important;
   align-items: center !important;
-  gap: 8px !important;
-  flex-grow: 1 !important;
+  gap: 6px !important;
+  width: 100% !important;
   min-width: 0 !important;
+  margin-top: 2px !important;
 }
 
 .pwd-display-input {
   flex-grow: 1 !important;
-  height: 42px !important;
+  height: 32px !important;
   border: 1px solid var(--color-border) !important;
-  border-radius: 8px !important;
+  border-radius: 6px !important;
   background: #F8FAFC !important;
   color: var(--color-text) !important;
-  padding: 0 16px !important;
-  font-size: 16px !important;
+  padding: 0 10px !important;
+  font-size: 14px !important;
   letter-spacing: 2px !important;
   outline: none !important;
+  min-width: 0 !important;
+}
+
+.pwd-display-input:focus {
+  border-color: var(--color-primary) !important;
 }
 
 .pwd-toggle-button {
-  width: 42px !important;
-  height: 42px !important;
-  display: flex !important;
+  width: 32px !important;
+  height: 32px !important;
+  display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
   border: 1px solid var(--color-border) !important;
-  border-radius: 8px !important;
+  border-radius: 6px !important;
   background: #FFFFFF !important;
   cursor: pointer !important;
-  font-size: 16px !important;
+  font-size: 15px !important;
   color: #475569 !important;
   transition: all 0.2s ease !important;
   padding: 0 !important;
   line-height: 1 !important;
+  flex-shrink: 0 !important;
 }
 
 .pwd-toggle-button:hover {

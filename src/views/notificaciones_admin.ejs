@@ -47,7 +47,7 @@
     }
     .kpi-card {
       background: var(--admin-card-bg);
-      border: 1px solid var(--admin-border);
+      border: 2px solid var(--admin-border);
       border-radius: var(--admin-radius);
       padding: 1.25rem 1.5rem;
       display: flex;
@@ -55,11 +55,22 @@
       justify-content: space-between;
       box-shadow: var(--admin-shadow);
       transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      user-select: none;
+      position: relative;
     }
     .kpi-card:hover {
-      transform: translateY(-2px);
+      transform: translateY(-3px);
       box-shadow: var(--admin-shadow-hover);
-      border-color: #CBD5E1;
+      border-color: #94A3B8;
+    }
+    .kpi-card.active {
+      background: #FFFFFF;
+      border-color: var(--admin-primary);
+      box-shadow: 0 10px 25px -3px rgba(15, 95, 166, 0.18), 0 0 0 1px var(--admin-primary);
+    }
+    .kpi-card.active .kpi-info-title {
+      color: var(--admin-primary);
     }
     .kpi-info-title {
       font-size: 0.8rem;
@@ -571,7 +582,7 @@
     %>
     <div class="kpi-grid">
       <!-- KPI 1: Teletrabajo Pre-Autorizaciones -->
-      <div class="kpi-card">
+      <div class="kpi-card active" data-target="#tab-teletrabajo-solicitudes" role="button" tabindex="0" title="Ver Solicitudes de Pre-Autorización">
         <div>
           <div class="kpi-info-title">Solicitudes Teletrabajo</div>
           <div class="kpi-info-val"><%= totalTeletrabajo %></div>
@@ -593,7 +604,7 @@
       </div>
 
       <!-- KPI 2: Auditoría y Suma de Horas Teletrabajo -->
-      <div class="kpi-card">
+      <div class="kpi-card" data-target="#tab-teletrabajo-auditoria" role="button" tabindex="0" title="Ver Auditoría y Bitácoras">
         <div>
           <div class="kpi-info-title">Jornadas Teletrabajo</div>
           <div class="kpi-info-val"><%= totalAuditoria %></div>
@@ -613,8 +624,9 @@
           <i class="bi bi-journal-check"></i>
         </div>
       </div>
+
       <!-- KPI 3: Horas Extra -->
-      <div class="kpi-card">
+      <div class="kpi-card" data-target="#tab-horas-extra" role="button" tabindex="0" title="Ver Horas Extra">
         <div>
           <div class="kpi-info-title">Horas Extra Solicitadas</div>
           <div class="kpi-info-val"><%= (notifs||[]).length %></div>
@@ -636,43 +648,8 @@
       </div>
     </div>
 
-    <!-- 2. PANEL PRINCIPAL CON PESTAÑAS SEGMENTADAS -->
+    <!-- 2. PANEL PRINCIPAL -->
     <div class="admin-main-card">
-      
-      <ul class="nav-tabs-segmented" id="adminTabs" role="tablist">
-        <!-- Tab 1 -->
-        <li class="nav-item" role="presentation">
-          <button class="nav-link active" id="tab-btn-1" type="button" data-target="#tab-teletrabajo-solicitudes">
-            <i class="bi bi-house-check fs-6"></i>
-            <span>1. Pre-Autorización Teletrabajo</span>
-            <% if (pendTeletrabajo > 0) { %>
-              <span class="pill-counter pill-counter-amber"><%= pendTeletrabajo %></span>
-            <% } %>
-          </button>
-        </li>
-
-        <!-- Tab 2 -->
-        <li class="nav-item" role="presentation">
-          <button class="nav-link" id="tab-btn-2" type="button" data-target="#tab-teletrabajo-auditoria">
-            <i class="bi bi-shield-check fs-6"></i>
-            <span>2. Auditoría y Bitácoras (Fase 2)</span>
-            <% if (pendAuditoria > 0) { %>
-              <span class="pill-counter pill-counter-red"><%= pendAuditoria %></span>
-            <% } %>
-          </button>
-        </li>
-
-        <!-- Tab 3 -->
-        <li class="nav-item" role="presentation">
-          <button class="nav-link" id="tab-btn-3" type="button" data-target="#tab-horas-extra">
-            <i class="bi bi-clock-history fs-6"></i>
-            <span>3. Horas Extra</span>
-            <% if (pendHorasExtra > 0) { %>
-              <span class="pill-counter pill-counter-blue"><%= pendHorasExtra %></span>
-            <% } %>
-          </button>
-        </li>
-      </ul>
 
       <div class="tab-content" id="adminTabsContent">
         
@@ -1173,23 +1150,23 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       
-      // --- SISTEMA DE PESTAÑAS EXCLUSIVO ---
-      const tabButtons = document.querySelectorAll('.nav-tabs-segmented .nav-link');
+      // --- SISTEMA DE PESTAÑAS MEDIANTE LAS 3 TARJETAS KPI SUPERIORES ---
+      const tabCards = document.querySelectorAll('.kpi-card[data-target]');
       const tabPanes = document.querySelectorAll('.tab-content > .tab-pane');
 
-      tabButtons.forEach(btn => {
-        btn.addEventListener('click', (e) => {
+      tabCards.forEach(card => {
+        card.addEventListener('click', (e) => {
           e.preventDefault();
-          const targetSelector = btn.getAttribute('data-target');
+          const targetSelector = card.getAttribute('data-target');
           if (!targetSelector) return;
 
-          tabButtons.forEach(b => b.classList.remove('active'));
+          tabCards.forEach(c => c.classList.remove('active'));
           tabPanes.forEach(pane => {
             pane.classList.remove('active', 'show');
             pane.style.setProperty('display', 'none', 'important');
           });
 
-          btn.classList.add('active');
+          card.classList.add('active');
           const targetPane = document.querySelector(targetSelector);
           if (targetPane) {
             targetPane.classList.add('active', 'show');

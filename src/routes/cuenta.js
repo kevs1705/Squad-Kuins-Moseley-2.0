@@ -13,7 +13,8 @@ router.get('/cuenta', requireAuth, async (req, res) => {
     // 1. Obtener datos del usuario con JOIN a carreras
     const [rows] = await db.query(
       `SELECT u.id_usuario, u.nombre, u.CI, u.universidad, u.id_carrera, 
-              c.nombre AS carrera_nombre, u.celular, u.estado, u.contrasena, u.rol
+              c.nombre AS carrera_nombre, u.celular, u.estado, u.contrasena, u.rol,
+              DATE_FORMAT(u.fecha_inicio_pasantia, '%d/%m/%Y') AS fecha_inicio_pasantia
        FROM usuarios u
        LEFT JOIN carreras c ON u.id_carrera = c.id_carrera
        WHERE u.id_usuario = ? LIMIT 1`,
