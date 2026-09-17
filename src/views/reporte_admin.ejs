@@ -1,5 +1,8 @@
-<% pageTitle='Reportes (Administrador)' ; pageSubtitle='Listado global · Control de Asistencias y Horas' ; %>
-  <%- include('partials/header') %>
+<%
+  pageTitle = 'Reportes';
+  pageSubtitle = 'Listado global · Control de Asistencias y Horas — BYGGER SRL';
+%>
+<%- include('partials/header') %>
     <link rel="stylesheet" href="/css/reporte_admin.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -9,28 +12,10 @@
 
     <script>
       document.body.classList.add('reportes-admin-page');
-      (() => {
-        const header = document.querySelector('.content-header');
-        if (header) {
-          const h1 = header.querySelector('h1');
-          if (h1) h1.childNodes[0].textContent = 'Reportes';
-
-          const rightEl = header.querySelector('small.muted') || header.lastElementChild;
-          if (rightEl && rightEl !== h1.parentElement) {
-            const formattedDate = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'numeric', year: 'numeric' });
-            rightEl.outerHTML = `
-          <div class="header-right">
-            <div class="admin-badge">Administrador</div>
-            <div class="header-separator"></div>
-            <div class="header-date">Actualizado ${formattedDate}</div>
-          </div>
-        `;
-          }
-        }
-      })();
     </script>
 
-    <!-- Dashboard Top: Columna Izquierda (Cards dinámicas con usuario primero) + Columna Derecha (Panel de Estadísticas con Doble Pestaña) -->
+    <div class="reportes-admin-wrapper">
+      <!-- Dashboard Top: Columna Izquierda (Cards dinámicas con usuario primero) + Columna Derecha (Panel de Estadísticas con Doble Pestaña) -->
     <div class="reportes-dashboard-top">
       <!-- Columna Izquierda: Tarjetas de Información -->
       <div class="kpi-column-left">
@@ -687,6 +672,7 @@
         </div>
       </div>
     </div>
+    </div> <!-- .reportes-admin-wrapper -->
 
     <script id="data-usuarios" type="application/json"><%- JSON.stringify(usuarios || []) %></script>
     <script id="data-lugares" type="application/json"><%- JSON.stringify(lugares || []) %></script>
