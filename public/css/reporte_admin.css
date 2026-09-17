@@ -1044,8 +1044,8 @@ body.reportes-admin-page .modal {
   border: 1px solid var(--color-border) !important;
   border-radius: var(--radius-card) !important;
   padding: 28px !important;
-  max-width: 520px !important;
-  width: 100% !important;
+  max-width: 520px;
+  width: 100%;
   color: var(--color-text) !important;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15) !important;
 }
@@ -2343,13 +2343,24 @@ body.reportes-admin-page .btn-outline-clean:hover {
     justify-content: center;
   }
 
+  body.reportes-admin-page .filters-card {
+    padding: 16px;
+    gap: 12px;
+  }
+
   body.reportes-admin-page .filters-form-row {
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    gap: 12px !important;
+    height: auto !important;
   }
  
   body.reportes-admin-page .filter-group {
     min-width: 100%;
+    flex: 0 0 auto !important;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
   }
 
   body.reportes-admin-page .filter-buttons-right {
@@ -2525,7 +2536,7 @@ body.reportes-admin-page .weekly-timeline-container {
 
 body.reportes-admin-page .weekly-header-days {
   display: grid;
-  grid-template-columns: 60px repeat(7, 1fr);
+  grid-template-columns: 60px repeat(7, minmax(0, 1fr));
   background: #F8FAFC;
   border-bottom: 1px solid var(--color-border);
   text-align: center;
@@ -2675,16 +2686,21 @@ body.reportes-admin-page .sched-slot-time {
 /* Tarjeta de Asistencia Real Registrada */
 body.reportes-admin-page .weekly-attendance-card {
   position: absolute;
-  left: 3px;
-  right: 3px;
-  border-radius: 7px;
-  padding: 4px 6px;
+  left: 4px;
+  right: 4px;
+  border-radius: 8px;
+  padding: 8px 10px;
   color: #FFFFFF;
   z-index: 2;
   overflow: hidden;
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
   box-sizing: border-box;
+}
+
+body.reportes-admin-page .weekly-attendance-card.new-design {
+  display: flex;
+  flex-direction: column;
 }
 
 body.reportes-admin-page .weekly-attendance-card:hover {
@@ -2964,9 +2980,317 @@ body.reportes-admin-page .cal-detail-sched-val {
   color: #1D4ED8;
 }
 
+
+
+/* Card de Detalle del Día Seleccionado en Modal */
+body.reportes-admin-page .calendar-day-detail-card {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-left: 4px solid #2563EB;
+  border-radius: 10px;
+  padding: 14px 16px;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+body.reportes-admin-page .cal-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+body.reportes-admin-page .cal-detail-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+body.reportes-admin-page .cal-detail-badge {
+  background: #EFF6FF;
+  color: #1D4ED8;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid #DBEAFE;
+}
+
+body.reportes-admin-page .cal-detail-lugar {
+  font-weight: 600;
+  color: var(--color-text);
+  font-size: 14px;
+}
+
+body.reportes-admin-page .cal-detail-status {
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 6px;
+}
+
+body.reportes-admin-page .cal-detail-status.status-finalizado {
+  background: #DCFCE7;
+  color: #166534;
+}
+
+body.reportes-admin-page .cal-detail-status.status-en-curso {
+  background: #FEF3C7;
+  color: #B45309;
+}
+
+body.reportes-admin-page .cal-detail-status.status-observado {
+  background: #FEE2E2;
+  color: #DC2626;
+}
+
+body.reportes-admin-page .cal-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+
+body.reportes-admin-page .cal-detail-tarea-wrap,
+body.reportes-admin-page .cal-detail-obs-wrap {
+  font-size: 13px;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-top: 8px;
+}
+
+body.reportes-admin-page .cal-detail-tarea-wrap p,
+body.reportes-admin-page .cal-detail-obs-wrap p {
+  margin: 4px 0 0 0;
+  color: #475569;
+  line-height: 1.4;
+}
+
+/* Barra de Horarios Semanales Programados */
+body.reportes-admin-page .calendar-user-schedule-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  background: #F1F5F9;
+  padding: 8px 12px;
+  border-radius: 9px;
+  border: 1px solid #E2E8F0;
+  font-size: 12px;
+}
+
+body.reportes-admin-page .cal-sched-title {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 700;
+  color: #334155;
+  white-space: nowrap;
+}
+
+body.reportes-admin-page .cal-sched-days-wrap {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+body.reportes-admin-page .cal-sched-item {
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  color: #1E293B;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+body.reportes-admin-page .cal-sched-day {
+  color: #1D4ED8;
+  font-weight: 700;
+}
+
+body.reportes-admin-page .cal-sched-empty {
+  color: #94A3B8;
+  font-style: italic;
+}
+
+/* Etiqueta de Horario Programado dentro de la celda del día */
+body.reportes-admin-page .cal-prog-tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: #475569;
+  background: #F1F5F9;
+  border: 1px solid #E2E8F0;
+  padding: 1px 5px;
+  border-radius: 4px;
+  margin-bottom: 3px;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+body.reportes-admin-page .cal-day-cell.cal-day-has-prog {
+  cursor: pointer;
+}
+
+body.reportes-admin-page .cal-day-cell.cal-day-has-prog:hover {
+  background: #F8FAFC;
+}
+
+/* Ficha de Horario Programado en el Detalle del Día */
+body.reportes-admin-page .cal-detail-sched-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+  background: #EFF6FF;
+  border: 1px solid #DBEAFE;
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+
+body.reportes-admin-page .cal-detail-sched-label {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 600;
+  color: #1E40AF;
+}
+
+body.reportes-admin-page .cal-detail-sched-val {
+  font-weight: 700;
+  color: #1D4ED8;
+}
+
 @media (max-width: 768px) {
   body.reportes-admin-page .actions-group-inline {
     flex-direction: column;
     gap: 4px;
   }
+  
+  /* Panel de Estadísticas Mobile Responsiveness */
+  body.reportes-admin-page .stats-panel-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  body.reportes-admin-page .stats-tabs-nav {
+    flex-direction: column;
+    width: 100%;
+    gap: 6px;
+  }
+  
+  body.reportes-admin-page .stats-tab-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  /* Modal Calendario Mobile Responsiveness */
+  body.reportes-admin-page #modalCalendario {
+    padding: 16px !important;
+    max-height: 98vh !important;
+  }
+  
+  body.reportes-admin-page .modal-header-custom {
+    flex-direction: column;
+    align-items: center !important;
+    text-align: center;
+    position: relative;
+    padding-top: 24px !important;
+  }
+  
+  body.reportes-admin-page .modal-close-btn {
+    position: absolute;
+    top: -10px;
+    right: 0;
+  }
+  
+  body.reportes-admin-page .calendar-nav-bar {
+    padding-top: 56px !important;
+  }
+  
+  /* Botones Semana inicio/actual */
+  body.reportes-admin-page .calendar-nav-bar > div:last-child {
+    position: static !important;
+    transform: none !important;
+    width: 100% !important;
+    justify-content: center !important;
+    flex-wrap: wrap !important;
+    margin-bottom: 16px;
+    order: -1; /* Moverlos arriba del todo en la caja */
+  }
+  
+  /* Agrupar flechas juntas y texto abajo */
+  body.reportes-admin-page .calendar-nav-bar > div:first-child {
+    display: grid !important;
+    grid-template-columns: auto auto;
+    grid-template-rows: auto auto;
+    justify-content: center;
+    gap: 8px !important;
+  }
+  
+  body.reportes-admin-page #btnCalPrevWeek {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: end;
+  }
+  
+  body.reportes-admin-page #btnCalNextWeek {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: start;
+  }
+  
+  body.reportes-admin-page .calendar-nav-bar > div:first-child span {
+    grid-column: 1 / 3;
+    grid-row: 2;
+    font-size: 15px !important;
+    text-align: center;
+  }
+  
+  /* KPI pills */
+  body.reportes-admin-page .calendar-kpis-wrap {
+    flex-direction: column;
+    gap: 6px !important;
+  }
+  
+  /* Horizontal scroll for grid */
+  body.reportes-admin-page .weekly-timeline-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  body.reportes-admin-page .weekly-header-days,
+  body.reportes-admin-page .weekly-body-grid {
+    min-width: 800px;
+  }
+  
+  /* Sidebar Overlay en Mobile */
+  body.reportes-admin-page .sidebar {
+    z-index: 9999 !important;
+  }
+  
+  body.reportes-admin-page .content,
+  body.reportes-admin-page .sidebar:not(.collapsed) ~ .content,
+  body.reportes-admin-page .sidebar.collapsed ~ .content {
+    margin-left: 0 !important;
+  }
+}
+
+body.reportes-admin-page #modalCalendario {
+  max-width: 1400px !important;
+  width: 98% !important;
+  padding: 32px !important;
 }
