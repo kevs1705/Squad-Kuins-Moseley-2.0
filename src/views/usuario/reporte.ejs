@@ -2807,25 +2807,29 @@
               }
               initCountdownMedianoche();
 
-              // 7. ALERTA EMERGENTE AUTOMÁTICA AL ENTRAR A LA PESTAÑA (Solo si tiene más de 3 bitácoras sin llenar)
+              // 7. ALERTA EMERGENTE AUTOMÁTICA AL ENTRAR A LA PESTAÑA (Solo una vez por sesión iniciada)
               const totalPendientes = <%= bitacorasPendientes || 0 %>;
               if (typeof Swal !== 'undefined' && totalPendientes > 3) {
-                Swal.fire({
-                  icon: 'warning',
-                  title: '⚠️ Aviso de Bitácoras Pendientes',
-                  html: `
-                <div style="font-size: 14px; text-align: left; color: #1e293b; line-height: 1.5;">
-                  Tienes <b style="color: #dc2626; font-size: 16px;">${totalPendientes}</b> bitácora(s) o comprobante(s) pendiente(s) de registro (más de 3 sin llenar).
-                  <br><br>
-                  <div style="background: #fff5f5; border: 1px solid #fecaca; border-radius: 8px; padding: 12px; font-size: 13px; color: #991b1b;">
-                    ⏰ <b>Recuerda:</b> Tienes hasta las <b>12:00 AM (medianoche)</b> para registrar tus bitácoras.<br>
-                    Las bitácoras pendientes quedan <b>bloqueadas</b> y sus horas se <b>congelan automáticamente</b> (no suman a tus horas disponibles hasta que el administrador las reactive).
+                const yaMostrado = sessionStorage.getItem('aviso_bitacoras_mostrado');
+                if (!yaMostrado) {
+                  sessionStorage.setItem('aviso_bitacoras_mostrado', 'true');
+                  Swal.fire({
+                    icon: 'warning',
+                    title: '⚠️ Aviso de Bitácoras Pendientes',
+                    html: `
+                  <div style="font-size: 14px; text-align: left; color: #1e293b; line-height: 1.5;">
+                    Tienes <b style="color: #dc2626; font-size: 16px;">${totalPendientes}</b> bitácora(s) o comprobante(s) pendiente(s) de registro (más de 3 sin llenar).
+                    <br><br>
+                    <div style="background: #fff5f5; border: 1px solid #fecaca; border-radius: 8px; padding: 12px; font-size: 13px; color: #991b1b;">
+                      ⏰ <b>Recuerda:</b> Tienes hasta las <b>12:00 AM (medianoche)</b> para registrar tus bitácoras.<br>
+                      Las bitácoras pendientes quedan <b>bloqueadas</b> y sus horas se <b>congelan automáticamente</b> (no suman a tus horas disponibles hasta que el administrador las reactive).
+                    </div>
                   </div>
-                </div>
-              `,
-                  confirmButtonText: 'Entendido, voy a registrar',
-                  confirmButtonColor: '#0b6bcb'
-                });
+                `,
+                    confirmButtonText: 'Entendido, voy a registrar',
+                    confirmButtonColor: '#0b6bcb'
+                  });
+                }
               }
             })();
           </script>

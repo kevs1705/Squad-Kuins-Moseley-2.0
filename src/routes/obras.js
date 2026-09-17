@@ -9,14 +9,23 @@ function requireAuth(req, res, next) {
 }
 
 function requireAdmin(req, res, next) {
-  if (req.session.user.rol !== 1) return res.status(403).send('No autorizado');
+  if (req.session?.user?.rol !== 1) {
+    if (req.xhr || req.path.startsWith('/api/') || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+      return res.status(403).json({ ok: false, msg: 'No autorizado' });
+    }
+    return res.status(403).render('error', {
+      statusCode: 403,
+      title: 'No autorizado',
+      message: 'No cuentas con permisos de administrador para acceder al módulo de obras.'
+    });
+  }
   next();
 }
 // ======================================================
 // 1. OBTENER LISTA DE OBRAS
 // ======================================================
 
-router.get('/admin/obras', async (req, res) => {
+router.get('/admin/obras', requireAuth, requireAdmin, async (req, res) => {
     try {
 
         const [lugares] = await db.query(`
@@ -43,11 +52,12 @@ router.get('/admin/obras', async (req, res) => {
         });
 
     } catch (error) {
-
         console.error('Error al obtener las obras:', error);
-
-        res.status(500).send('Error al obtener las obras');
-
+        res.status(500).render('error', {
+            statusCode: 500,
+            title: 'Error en la base de datos',
+            message: 'Error al obtener el listado de obras desde la base de datos.'
+        });
     }
 });
 

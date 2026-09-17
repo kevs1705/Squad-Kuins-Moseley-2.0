@@ -105,10 +105,34 @@ const pagina_webAdminRoutes = require('./src/routes/pagina_web/admin');
 app.use(pagina_webAdminRoutes);
 
 //3. LUGARES
-
-// Si tu archivo está dentro de src/routes/
 const ObrasRoutes = require('./src/routes/obras');
 app.use(ObrasRoutes);
+
+// 4. Manejador de ruta 404 y Errores Globales
+app.use((req, res, next) => {
+  if (req.xhr || req.path.startsWith('/api/') || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+    return res.status(404).json({ ok: false, msg: 'Ruta no encontrada' });
+  }
+  res.status(404).render('error', {
+    statusCode: 404,
+    statusLabel: 'Página no encontrada · 404',
+    title: 'Página no encontrada',
+    message: 'La página a la que intentas acceder no existe o fue reubicada.'
+  });
+});
+
+app.use((err, req, res, next) => {
+  console.error('Error no controlado en el servidor:', err);
+  if (req.xhr || req.path.startsWith('/api/') || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+    return res.status(500).json({ ok: false, msg: 'Error interno del servidor' });
+  }
+  res.status(500).render('error', {
+    statusCode: 500,
+    statusLabel: 'Error interno · 500',
+    title: 'Error en el sistema',
+    message: 'Ocurrió un error inesperado al procesar la solicitud en el servidor.'
+  });
+});
 
 // Remplaza el app.listen final por esto:
 const PORT = process.env.PORT || 3000;

@@ -8,7 +8,14 @@ const { requireAuth } = require('../middleware/auth');
 function requireRole(role) {
   return (req, res, next) => {
     if (req.session?.user?.rol === role) return next();
-    return res.status(403).send('No autorizado');
+    if (req.xhr || req.path.startsWith('/api/') || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+      return res.status(403).json({ ok: false, msg: 'No autorizado' });
+    }
+    return res.status(403).render('error', {
+      statusCode: 403,
+      title: 'No autorizado',
+      message: 'No cuentas con permisos de administrador para gestionar notificaciones.'
+    });
   };
 }
 
@@ -106,7 +113,11 @@ router.get('/notificaciones_admin', requireAuth, requireRole(1), async (req, res
     });
   } catch (error) {
     console.error('Error al cargar panel de notificaciones admin:', error);
-    res.status(500).send('Error interno al cargar solicitudes.');
+    res.status(500).render('error', {
+      statusCode: 500,
+      title: 'Error en la base de datos',
+      message: 'Error interno al cargar solicitudes y notificaciones desde la base de datos.'
+    });
   }
 });
 
