@@ -28,17 +28,20 @@
             <div class="stat-info" style="flex: 1; min-width: 0;">
               <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
                 <span class="stat-label">Usuario Seleccionado</span>
-                <button type="button" class="btn-card-calendar" id="btnVerCalendarioUsuario" style="display: none;"
-                  title="Visualizar calendario de asistencias y actividades de este usuario">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                    <line x1="16" y1="2" x2="16" y2="6" />
-                    <line x1="8" y1="2" x2="8" y2="6" />
-                    <line x1="3" y1="10" x2="21" y2="10" />
-                  </svg>
-                  <span>Calendario</span>
-                </button>
+                <div style="display: flex; align-items: center; gap: 6px;">
+
+                  <button type="button" class="btn-card-calendar" id="btnVerCalendarioUsuario" style="display: none;"
+                    title="Visualizar calendario de asistencias y actividades de este usuario">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                      <line x1="16" y1="2" x2="16" y2="6" />
+                      <line x1="8" y1="2" x2="8" y2="6" />
+                      <line x1="3" y1="10" x2="21" y2="10" />
+                    </svg>
+                    <span>Calendario</span>
+                  </button>
+                </div>
               </div>
               <div class="stat-value-row">
                 <span class="stat-value" id="stat-user" title="Todos los usuarios">Todos los usuarios</span>
@@ -367,61 +370,6 @@
         </form>
       </div>
 
-<<<<<<< Updated upstream
-    <!-- MODAL 4: CALENDARIO DE ASISTENCIAS Y ACTIVIDADES DEL USUARIO -->
-    <div class="modal-backdrop" id="modalCalendarioBackdrop">
-      <div class="modal" id="modalCalendario" style="width: 98%; max-width: 1400px; max-height: 95vh; overflow-y: auto; padding: 32px;">
-        <div class="modal-header-custom" style="display: flex; justify-content: space-between; align-items: flex-start; padding: 0 0 20px 0; border-bottom: 1px solid #E2E8F0; margin-bottom: 20px;">
-          <div>
-            <div class="modal-badge-tag" style="background: #EFF6FF; color: #1D4ED8; font-weight: 700; padding: 6px 12px; border-radius: 8px; font-size: 11px; text-transform: uppercase; display: inline-block;">Calendario de Actividades</div>
-            <h3 id="cal_usuario_nombre" style="margin: 12px 0 4px 0; font-size: 26px; font-weight: 800; color: #0F172A;">Nombre del Usuario</h3>
-            <p id="cal_usuario_sub" style="margin: 0; font-size: 14px; color: #64748B; font-weight: 500;">Consultando asistencias...</p>
-          </div>
-          <button type="button" class="modal-close-btn" id="btnXCerrarCalendario" style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #64748B; cursor: pointer;">&times;</button>
-        </div>
-
-        <div class="calendar-modal-body" id="calModalBody">
-          <!-- Resumen de Horarios Asignados / Programados del Usuario -->
-          <div class="calendar-user-schedule-bar" id="calUserScheduleBar" style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px; margin-bottom: 24px;">
-            <div class="cal-sched-title" style="display: flex; align-items: center; color: #334155; font-weight: 700; font-size: 14px; margin-bottom: 12px;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
-                style="margin-right: 8px;">
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="12 6 12 12 16 14" />
-              </svg>
-              Horario programado registrado:
-            </div>
-            <div class="cal-sched-days-wrap" id="calSchedDaysList" style="display: flex; gap: 10px; flex-wrap: wrap;">
-              <!-- Días programados (Lun: 08:00-12:00, etc.) -->
-            </div>
-          </div>
-
-          <!-- Barra de Navegación Semanal y Resumen -->
-          <div class="calendar-nav-bar" style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px; margin-bottom: 24px; position: relative;">
-            <div style="display: flex; align-items: center; justify-content: center; gap: 16px; width: 100%; margin-bottom: 12px;">
-              <button type="button" class="btn-cal-nav" id="btnCalPrevWeek" title="Semana anterior" style="background: #FFFFFF; border: 1px solid #CBD5E1; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #0F5FA6;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-              </button>
-              <span class="calendar-current-month" id="calCurrentWeekLabel" style="font-size: 18px; font-weight: 800; color: #1E293B;">Semana del --/-- al --/--</span>
-              <button type="button" class="btn-cal-nav" id="btnCalNextWeek" title="Semana siguiente" style="background: #FFFFFF; border: 1px solid #CBD5E1; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #0F5FA6;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-              </button>
-            </div>
-            <div class="calendar-kpis-wrap" style="display: flex; gap: 12px; justify-content: center; align-items: center;">
-              <span class="cal-kpi-pill kpi-dias" style="background: #EFF6FF; color: #1D4ED8; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>
-                <b id="calKpiTotalDiasSemana">0</b> días asistidos
-              </span>
-              <span class="cal-kpi-pill kpi-horas" style="background: #F0FDF4; color: #15803D; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                <b id="calKpiTotalHorasSemana">00:00</b> h en la semana
-              </span>
-            </div>
-            <div style="position: absolute; right: 16px; top: 16px; display: flex; gap: 8px;">
-              <button type="button" class="btn-cal-today" id="btnCalFirstWeek" style="background: #FFFFFF; border: 1px solid #CBD5E1; color: #0F5FA6; font-weight: 600; padding: 8px 16px; border-radius: 8px; font-size: 13px; cursor: pointer; transition: all 0.2s;">Semana de inicio</button>
-              <button type="button" class="btn-cal-today" id="btnCalThisWeek" style="background: #FFFFFF; border: 1px solid #CBD5E1; color: #0F5FA6; font-weight: 600; padding: 8px 16px; border-radius: 8px; font-size: 13px; cursor: pointer; transition: all 0.2s;">Semana actual</button>
-=======
       <!-- Tabla Principal de Asistencias y Bitácoras -->
       <div class="reports-table-card">
         <div class="table-card-top-bar">
@@ -515,7 +463,6 @@
             </div>
             <div id="det_comprobante_container" class="detalle-comprobante-wrapper">
               <!-- Renderizado dinámicamente -->
->>>>>>> Stashed changes
             </div>
           </div>
 
@@ -582,8 +529,7 @@
               <div class="modal-badge-tag" style="background: #EEF2FF; color: #4338CA;">Horario Semanal</div>
               <h3 id="horario_usuario_nombre" style="margin: 4px 0 2px 0;">Horario del Pasante</h3>
               <p id="horario_usuario_sub" style="margin: 0; font-size: 13px; color: var(--color-text-muted);">
-                Consultando
-                horario...</p>
+                Consultando horario...</p>
             </div>
             <button type="button" class="modal-close-btn" id="btnXCerrarHorario">&times;</button>
           </div>
@@ -606,8 +552,7 @@
               <div class="modal-badge-tag" style="background: #FEF3C7; color: #B45309;">Ajuste Administrativo</div>
               <h3 style="margin: 4px 0 2px 0;">Editar Registro de Jornada</h3>
               <p id="modalSubInfo" style="margin: 0; font-size: 13px; color: var(--color-text-muted);">Ajustar
-                marcaciones
-                de horas y observaciones</p>
+                marcaciones de horas y observaciones</p>
             </div>
             <button type="button" class="modal-close-btn" id="btnXModal">&times;</button>
           </div>
@@ -640,45 +585,93 @@
 
       <!-- MODAL 4: CALENDARIO DE ASISTENCIAS Y ACTIVIDADES DEL USUARIO -->
       <div class="modal-backdrop" id="modalCalendarioBackdrop">
-        <div class="modal" id="modalCalendario" style="max-width: 880px; max-height: 92vh; overflow-y: auto;">
-          <div class="modal-header-custom">
+        <div class="modal" id="modalCalendario"
+          style="width: 98%; max-width: 1400px; max-height: 95vh; overflow-y: auto; padding: 32px;">
+          <div class="modal-header-custom"
+            style="display: flex; justify-content: space-between; align-items: flex-start; padding: 0 0 20px 0; border-bottom: 1px solid #E2E8F0; margin-bottom: 20px;">
             <div>
-              <div class="modal-badge-tag" style="background: #EFF6FF; color: #1D4ED8;">Calendario de Actividades</div>
-              <h3 id="cal_usuario_nombre" style="margin: 4px 0 2px 0;">Calendario del Usuario</h3>
-              <p id="cal_usuario_sub" style="margin: 0; font-size: 13px; color: var(--color-text-muted);">Consultando
+              <div class="modal-badge-tag"
+                style="background: #EFF6FF; color: #1D4ED8; font-weight: 700; padding: 6px 12px; border-radius: 8px; font-size: 11px; text-transform: uppercase; display: inline-block;">
+                Calendario de Actividades</div>
+              <h3 id="cal_usuario_nombre"
+                style="margin: 12px 0 4px 0; font-size: 26px; font-weight: 800; color: #0F172A;">Nombre del Usuario</h3>
+              <p id="cal_usuario_sub" style="margin: 0; font-size: 14px; color: #64748B; font-weight: 500;">Consultando
                 asistencias...</p>
             </div>
-            <button type="button" class="modal-close-btn" id="btnXCerrarCalendario">&times;</button>
+            <button type="button" class="modal-close-btn" id="btnXCerrarCalendario"
+              style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #64748B; cursor: pointer;">&times;</button>
           </div>
 
           <div class="calendar-modal-body" id="calModalBody">
             <!-- Resumen de Horarios Asignados / Programados del Usuario -->
-            <div class="calendar-user-schedule-bar" id="calUserScheduleBar">
-              <span class="cal-sched-title">
-                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+            <div class="calendar-user-schedule-bar" id="calUserScheduleBar"
+              style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px; margin-bottom: 24px;">
+              <div class="cal-sched-title"
+                style="display: flex; align-items: center; color: #334155; font-weight: 700; font-size: 14px; margin-bottom: 12px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
-                  style="margin-right: 4px;">
+                  style="margin-right: 8px;">
                   <circle cx="12" cy="12" r="10" />
                   <polyline points="12 6 12 12 16 14" />
                 </svg>
-                Horario Programado Registrado:
-              </span>
-              <div class="cal-sched-days-wrap" id="calSchedDaysList">
+                Horario programado registrado:
+              </div>
+              <div class="cal-sched-days-wrap" id="calSchedDaysList" style="display: flex; gap: 10px; flex-wrap: wrap;">
                 <!-- Días programados (Lun: 08:00-12:00, etc.) -->
               </div>
             </div>
 
             <!-- Barra de Navegación Semanal y Resumen -->
-            <div class="calendar-nav-bar">
-              <div class="calendar-nav-controls">
-                <button type="button" class="btn-cal-nav" id="btnCalPrevWeek" title="Semana anterior">&lsaquo;</button>
-                <span class="calendar-current-month" id="calCurrentWeekLabel">Semana del --/-- al --/--</span>
-                <button type="button" class="btn-cal-nav" id="btnCalNextWeek" title="Semana siguiente">&rsaquo;</button>
-                <button type="button" class="btn-cal-today" id="btnCalThisWeek">Semana Actual</button>
+            <div class="calendar-nav-bar"
+              style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px; margin-bottom: 24px; position: relative;">
+              <div
+                style="display: flex; align-items: center; justify-content: center; gap: 16px; width: 100%; margin-bottom: 12px;">
+                <button type="button" class="btn-cal-nav" id="btnCalPrevWeek" title="Semana anterior"
+                  style="background: #FFFFFF; border: 1px solid #CBD5E1; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #0F5FA6;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m15 18-6-6 6-6" />
+                  </svg>
+                </button>
+                <span class="calendar-current-month" id="calCurrentWeekLabel"
+                  style="font-size: 18px; font-weight: 800; color: #1E293B;">Semana del --/-- al --/--</span>
+                <button type="button" class="btn-cal-nav" id="btnCalNextWeek" title="Semana siguiente"
+                  style="background: #FFFFFF; border: 1px solid #CBD5E1; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #0F5FA6;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m9 18 6-6-6-6" />
+                  </svg>
+                </button>
               </div>
-              <div class="calendar-kpis-wrap">
-                <span class="cal-kpi-pill kpi-dias"><b id="calKpiTotalDiasSemana">0</b> días asistidos</span>
-                <span class="cal-kpi-pill kpi-horas"><b id="calKpiTotalHorasSemana">00:00</b> en la semana</span>
+              <div class="calendar-kpis-wrap"
+                style="display: flex; gap: 12px; justify-content: center; align-items: center;">
+                <span class="cal-kpi-pill kpi-dias"
+                  style="background: #EFF6FF; color: #1D4ED8; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <polyline points="16 11 18 13 22 9" />
+                  </svg>
+                  <b id="calKpiTotalDiasSemana">0</b> días asistidos
+                </span>
+                <span class="cal-kpi-pill kpi-horas"
+                  style="background: #F0FDF4; color: #15803D; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                  </svg>
+                  <b id="calKpiTotalHorasSemana">00:00</b> h en la semana
+                </span>
+              </div>
+              <div style="position: absolute; right: 16px; top: 16px; display: flex; gap: 8px;">
+                <button type="button" class="btn-cal-today" id="btnCalFirstWeek"
+                  style="background: #FFFFFF; border: 1px solid #CBD5E1; color: #0F5FA6; font-weight: 600; padding: 8px 16px; border-radius: 8px; font-size: 13px; cursor: pointer; transition: all 0.2s;">Semana
+                  de inicio</button>
+                <button type="button" class="btn-cal-today" id="btnCalThisWeek"
+                  style="background: #FFFFFF; border: 1px solid #CBD5E1; color: #0F5FA6; font-weight: 600; padding: 8px 16px; border-radius: 8px; font-size: 13px; cursor: pointer; transition: all 0.2s;">Semana
+                  actual</button>
               </div>
             </div>
 
@@ -742,14 +735,11 @@
             </div>
           </div>
 
-<<<<<<< Updated upstream
-        <div class="modal-actions" style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #E2E8F0; display: flex; justify-content: flex-end;">
-          <button type="button" class="btn btn-outline-primary" id="btnCerrarCalendario" style="background: #FFFFFF; border: 1px solid #0F5FA6; color: #0F5FA6; font-weight: 600; padding: 10px 24px; border-radius: 8px; cursor: pointer;">Cerrar</button>
-=======
-          <div class="modal-actions" style="margin-top: 16px;">
-            <button type="button" class="btn btn-secondary" id="btnCerrarCalendario">Cerrar</button>
+          <div class="modal-actions"
+            style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #E2E8F0; display: flex; justify-content: flex-end;">
+            <button type="button" class="btn btn-outline-primary" id="btnCerrarCalendario"
+              style="background: #FFFFFF; border: 1px solid #0F5FA6; color: #0F5FA6; font-weight: 600; padding: 10px 24px; border-radius: 8px; cursor: pointer;">Cerrar</button>
           </div>
->>>>>>> Stashed changes
         </div>
       </div>
     </div> <!-- .reportes-admin-wrapper -->
@@ -1502,7 +1492,7 @@
               eventCard.style.top = `${topPx}px`;
               eventCard.style.height = `${heightPx}px`;
               eventCard.title = `Asistencia: ${item.hora_entrada || '-'} a ${item.hora_salida || '-'} (${item.horas_dia || '-'})`;
-              
+
               // New layout inside the card
               eventCard.innerHTML = `
                 <div class="weekly-event-status-tag" style="background: rgba(255,255,255,0.15); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 6px; letter-spacing: 0.5px;">
@@ -1513,20 +1503,20 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-top:2px; opacity:0.8;"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
                     <div style="line-height: 1.2;">
                       <div style="font-size: 10px; opacity: 0.9;">Entrada</div>
-                      <div style="font-size: 13px; font-weight: 700;">${item.hora_entrada ? item.hora_entrada.slice(0,5) : '-'}</div>
+                      <div style="font-size: 13px; font-weight: 700;">${item.hora_entrada ? item.hora_entrada.slice(0, 5) : '-'}</div>
                     </div>
                   </div>
                   <div class="time-row" style="display: flex; align-items: flex-start; gap: 4px;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-top:2px; opacity:0.8;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                     <div style="line-height: 1.2;">
                       <div style="font-size: 10px; opacity: 0.9;">Salida</div>
-                      <div style="font-size: 13px; font-weight: 700;">${item.hora_salida ? item.hora_salida.slice(0,5) : '-'}</div>
+                      <div style="font-size: 13px; font-weight: 700;">${item.hora_salida ? item.hora_salida.slice(0, 5) : '-'}</div>
                     </div>
                   </div>
                 </div>
                 <div class="weekly-event-duration-row" style="margin-bottom: 6px;">
                   <div style="font-size: 10px; opacity: 0.9;">Duración</div>
-                  <div style="font-size: 12px; font-weight: 700;">${item.horas_dia ? item.horas_dia.slice(0,5) + ' h' : '-'}</div>
+                  <div style="font-size: 12px; font-weight: 700;">${item.horas_dia ? item.horas_dia.slice(0, 5) + ' h' : '-'}</div>
                 </div>
                 <div class="weekly-event-place" style="font-size: 10px; font-weight: 600; display: flex; align-items: center; gap: 4px; text-transform: uppercase;">
                   <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -2231,6 +2221,7 @@
           const statUser = document.getElementById('stat-user');
           const statUserBadge = document.getElementById('stat-user-badge');
           const btnCal = document.getElementById('btnVerCalendarioUsuario');
+          const btnHor = document.getElementById('btnVerHorarioUsuario');
           const currentUserIdForCal = data.usuario_info ? data.usuario_info.id_usuario : (hiddenUserId.value ? parseInt(hiddenUserId.value, 10) : (data.data && data.data.length > 0 && nombreBusqueda ? data.data[0].id_usuario : null));
 
           if (data.usuario_info) {
@@ -2240,6 +2231,10 @@
             if (btnCal) {
               btnCal.style.display = 'inline-flex';
               btnCal.onclick = () => abrirModalCalendarioUsuario(data.usuario_info.id_usuario);
+            }
+            if (btnHor) {
+              btnHor.style.display = 'inline-flex';
+              btnHor.onclick = () => abrirModalHorario(data.usuario_info.id_usuario, data.usuario_info.nombre, data.usuario_info.CI);
             }
           } else if (nombreBusqueda) {
             statUser.textContent = `Búsqueda: "${nombreBusqueda}"`;
@@ -2251,11 +2246,19 @@
             } else if (btnCal) {
               btnCal.style.display = 'none';
             }
+            if (btnHor && currentUserIdForCal) {
+              btnHor.style.display = 'inline-flex';
+              const firstRow = data.data && data.data[0];
+              btnHor.onclick = () => abrirModalHorario(currentUserIdForCal, firstRow ? firstRow.usuario_nombre : nombreBusqueda, firstRow ? firstRow.usuario_ci : '');
+            } else if (btnHor) {
+              btnHor.style.display = 'none';
+            }
           } else {
             statUser.textContent = 'Todos los usuarios';
             statUser.title = 'Todos los usuarios';
             statUserBadge.textContent = 'Global';
             if (btnCal) btnCal.style.display = 'none';
+            if (btnHor) btnHor.style.display = 'none';
           }
 
           // 4. Renderizar Recuadro de Aviso de Culminación de Pasantía al Administrador
@@ -2475,6 +2478,9 @@
             </td>
             <td style="text-align: center; white-space: nowrap;">
               <div class="actions-group-inline">
+                <button class="btn-icon-action btn-icon-horario" type="button" onclick="abrirModalHorario(${item.id_usuario}, '${usuarioSeguro}', '${escapeHTML(item.usuario_ci || '')}')" title="Ver horario programado del pasante">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </button>
                 <button class="btn-icon-action btn-icon-edit" type="button" onclick="abrirModalEditar('${item.id_asistencia}', '${item.hora_entrada || ''}', '${item.hora_salida || ''}', '${obsSegura}', '${usuarioSeguro}', '${item.fecha || ''}')" title="Editar jornada y observación">
                   <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
                 </button>
