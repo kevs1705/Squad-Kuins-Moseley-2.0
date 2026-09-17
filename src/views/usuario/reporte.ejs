@@ -94,6 +94,86 @@
         border-radius: 20px !important;
         font-size: 0.82rem !important;
       }
+
+      /* TARJETA CONTROL Y ESTADO DE BITÁCORAS - TOTALMENTE RESPONSIVA */
+      .card-aviso-bitacoras {
+        border-radius: 10px !important;
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        border-left: 5px solid #ff6a00 !important;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
+        overflow: hidden;
+      }
+
+      .card-aviso-bitacoras-body {
+        padding: 10px 18px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 16px !important;
+        flex-wrap: nowrap !important;
+        width: 100% !important;
+      }
+
+      .aviso-bitacoras-left {
+        display: flex !important;
+        align-items: center !important;
+        gap: 12px !important;
+        min-width: 0 !important;
+        flex: 1 1 auto !important;
+      }
+
+      .aviso-bitacoras-right {
+        display: flex !important;
+        align-items: center !important;
+        gap: 14px !important;
+        flex-shrink: 0 !important;
+        white-space: nowrap !important;
+      }
+
+      .aviso-bitacoras-divider {
+        width: 1px !important;
+        height: 32px !important;
+        background: #e2e8f0 !important;
+        flex-shrink: 0 !important;
+      }
+
+      @media (max-width: 991px) {
+        .card-aviso-bitacoras-body {
+          flex-direction: column !important;
+          align-items: stretch !important;
+          gap: 12px !important;
+          padding: 12px 14px !important;
+        }
+
+        .aviso-bitacoras-right {
+          width: 100% !important;
+          justify-content: space-between !important;
+          border-top: 1px solid #f1f5f9 !important;
+          padding-top: 10px !important;
+          gap: 10px !important;
+        }
+
+        .aviso-bitacoras-divider {
+          display: none !important;
+        }
+      }
+
+      @media (max-width: 576px) {
+        .aviso-bitacoras-title-wrap {
+          flex-wrap: wrap !important;
+          gap: 6px !important;
+        }
+
+        .aviso-bitacoras-right {
+          flex-wrap: wrap !important;
+        }
+
+        .aviso-btn-completar {
+          width: 100% !important;
+          justify-content: center !important;
+        }
+      }
     </style>
 
     <div class="reporte-wrapper py-3">
@@ -279,7 +359,7 @@
                           <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0" />
                         </svg>
                       </div>
-                      <div>
+                      <div style="min-width: max-content;">
                         <span class="jornada-hours-label">Horas acumuladas</span>
                         <span class="jornada-hours-val">
                           <%= total_acumulada %> <small>hrs</small>
@@ -291,18 +371,34 @@
                           <% const horasDisponiblesVis=(typeof total_disponibles !=='undefined' && total_disponibles) ?
                             total_disponibles : total_acumulada; %>
 
-                            <div class="d-flex flex-column gap-1.5 mt-2">
+                            <!-- Contenedor Horizontal Estricto: De costado a costado (en una sola fila horizontal) -->
+                            <div style="display: flex !important; flex-direction: row !important; align-items: center !important; gap: 8px !important; margin-top: 8px !important; flex-wrap: nowrap !important;">
                               <% const tieneCongeladas = horasCongeladasVis !== '00:00:00' && horasCongeladasVis !== '00:00'; %>
-                              <div class="d-inline-flex align-items-center fw-bold"
-                                style="font-size: 0.82rem; color: <%= tieneCongeladas ? '#dc2626' : '#64748b' %>; background: <%= tieneCongeladas ? '#fef2f2' : '#f8fafc' %>; padding: 4px 10px; border-radius: 8px; border: 1.5px solid <%= tieneCongeladas ? '#fca5a5' : '#e2e8f0' %>; box-shadow: <%= tieneCongeladas ? '0 2px 6px rgba(220, 38, 38, 0.12)' : 'none' %>;">
-                                <i class="bi bi-snowflake me-1.5 <%= tieneCongeladas ? 'text-danger' : 'text-muted' %>" style="font-size: 0.95rem;"></i>
-                                Horas congeladas: &nbsp;<span style="font-size: 0.9rem; letter-spacing: -0.2px;"><%= horasCongeladasVis %></span>&nbsp;hrs
+                              
+                              <!-- Tarjeta 1: Horas congeladas -->
+                              <div style="display: flex !important; flex-direction: column !important; justify-content: center !important; background: <%= tieneCongeladas ? 'rgba(239, 68, 68, 0.25)' : 'rgba(255, 255, 255, 0.12)' %> !important; border: 1px solid <%= tieneCongeladas ? 'rgba(248, 113, 113, 0.6)' : 'rgba(255, 255, 255, 0.25)' %> !important; border-radius: 8px !important; padding: 4px 10px !important; white-space: nowrap !important; flex-shrink: 0 !important;">
+                                <div style="display: flex !important; align-items: center !important; gap: 4px !important; font-size: 0.72rem !important; font-weight: 600 !important; color: <%= tieneCongeladas ? '#fecaca' : 'rgba(255, 255, 255, 0.9)' %> !important; line-height: 1.2 !important;">
+                                  <i class="bi bi-snowflake" style="font-size: 0.8rem !important; color: <%= tieneCongeladas ? '#fca5a5' : '#93c5fd' %> !important;"></i>
+                                  <span>Horas congeladas:</span>
+                                </div>
+                                <div style="font-size: 0.92rem !important; font-weight: 800 !important; color: #ffffff !important; letter-spacing: -0.2px !important; line-height: 1.2 !important; margin-top: 2px !important;">
+                                  <%= horasCongeladasVis %> <span style="font-size: 0.72rem !important; font-weight: 600 !important; color: rgba(255, 255, 255, 0.8) !important;">hrs</span>
+                                </div>
                               </div>
-                              <div class="d-inline-flex align-items-center fw-bold text-success"
-                                style="font-size: 0.82rem; background: #f0fdf4; padding: 4px 10px; border-radius: 8px; border: 1.5px solid #86efac;">
-                                <i class="bi bi-check-circle-fill me-1.5 text-success" style="font-size: 0.95rem;"></i>
-                                Horas disponibles: &nbsp;<span style="font-size: 0.9rem; letter-spacing: -0.2px;"><%= horasDisponiblesVis %></span>&nbsp;hrs
+
+                              <!-- Tarjeta 2: Horas disponibles (A SU DERECHA / COSTADO, NUNCA ABAJO) -->
+                              <div style="display: flex !important; flex-direction: row !important; align-items: center !important; flex-shrink: 0 !important;">
+                                <div style="display: flex !important; flex-direction: column !important; justify-content: center !important; background: rgba(255, 255, 255, 0.12) !important; border: 1px solid rgba(255, 255, 255, 0.25) !important; border-radius: 8px !important; padding: 4px 10px !important; white-space: nowrap !important; flex-shrink: 0 !important;">
+                                  <div style="display: flex !important; align-items: center !important; gap: 4px !important; font-size: 0.72rem !important; font-weight: 600 !important; color: rgba(255, 255, 255, 0.9) !important; line-height: 1.2 !important;">
+                                    <i class="bi bi-check-circle-fill" style="font-size: 0.8rem !important; color: #86efac !important;"></i>
+                                    <span>Horas disponibles:</span>
+                                  </div>
+                                  <div style="font-size: 0.92rem !important; font-weight: 800 !important; color: #ffffff !important; letter-spacing: -0.2px !important; line-height: 1.2 !important; margin-top: 2px !important;">
+                                    <%= horasDisponiblesVis %> <span style="font-size: 0.72rem !important; font-weight: 600 !important; color: rgba(255, 255, 255, 0.8) !important;">hrs</span>
+                                  </div>
+                                </div>
                               </div>
+
                             </div>
                       </div>
                     </div>
@@ -574,52 +670,71 @@
 
                   <!-- AVISO DE BITÁCORAS DEL USUARIO -->
                   <% if (bitacorasPendientes > 0) { %>
-                    <!-- ESTADO: CON BITÁCORAS PENDIENTES (ALERTA COMPACTA Y BIEN DISTRIBUIDA) -->
-                    <div class="card border-0 shadow-sm mb-3"
-                      style="border-radius: 12px; background: linear-gradient(135deg, #fffbeb 0%, #fff7ed 100%); border: 1.5px solid #fed7aa !important; border-left: 5px solid #ea580c !important; overflow: hidden; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.08) !important;">
-                      <div class="card-body p-3">
-                        <div class="row align-items-center g-3">
-                          <!-- Columna 1: Icono + Título + Mensaje claro con letras más grandes -->
-                          <div class="col-12 col-md-7 col-lg-8 d-flex align-items-center gap-3">
-                            <div class="d-flex align-items-center justify-content-center rounded-3 flex-shrink-0"
-                              style="width: 48px; height: 48px; background: #ea580c; color: #ffffff; box-shadow: 0 4px 10px rgba(234, 88, 12, 0.25);">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                <polyline points="14 2 14 8 20 8"></polyline>
-                                <line x1="12" y1="18" x2="12" y2="12"></line>
-                                <line x1="12" y1="9" x2="12.01" y2="9"></line>
+                    <!-- TARJETA HORIZONTAL MODERNA: CONTROL Y ESTADO DE BITÁCORAS (TOTALMENTE RESPONSIVA) -->
+                    <div class="card border-0 mb-3 card-aviso-bitacoras">
+                      <div class="card-body card-aviso-bitacoras-body">
+                        
+                        <!-- Lado Izquierdo y Centro: Icono + Título + Mensaje -->
+                        <div class="aviso-bitacoras-left">
+                          <!-- Icono de documento con advertencia dentro de círculo naranja claro -->
+                          <div style="width: 40px; height: 40px; border-radius: 50%; background: #ffedd5; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" stroke="#ea580c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                              <path d="M14 2v6h6" stroke="#ea580c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                              <path d="M8 12h5M8 15h3" stroke="#ea580c" stroke-width="2" stroke-linecap="round"/>
+                              <path d="M17 14.5l3.5 6h-7l3.5-6z" fill="#ea580c" stroke="#ffffff" stroke-width="1.2" stroke-linejoin="round"/>
+                              <circle cx="17" cy="19.2" r="0.5" fill="#ffffff"/>
+                              <line x1="17" y1="16.5" x2="17" y2="18" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round"/>
+                            </svg>
+                          </div>
+
+                          <!-- Textos: Título con Badge y subtítulo descriptivo -->
+                          <div style="min-width: 0; flex: 1 1 auto;">
+                            <div class="d-flex align-items-center gap-2 aviso-bitacoras-title-wrap">
+                              <span style="font-size: 1.02rem; font-weight: 800; color: #0b1f44; letter-spacing: -0.2px; line-height: 1.2;">
+                                Control y Estado de Bitácoras
+                              </span>
+                              <span class="badge d-inline-flex align-items-center gap-1"
+                                style="background: #ef4444; color: #ffffff; font-size: 0.74rem; font-weight: 700; padding: 2.5px 8px; border-radius: 6px; white-space: nowrap;">
+                                <i class="bi bi-exclamation-triangle-fill" style="font-size: 0.68rem;"></i>
+                                <span><%= bitacorasPendientes %> <%= bitacorasPendientes === 1 ? 'pendiente' : 'pendientes' %></span>
+                              </span>
+                            </div>
+                            <div style="font-size: 0.82rem; color: #64748b; margin-top: 2px; line-height: 1.35;">
+                              Tienes <strong style="color: #0b1f44; font-weight: 700;"><%= bitacorasPendientes %> <%= bitacorasPendientes === 1 ? 'bitácora' : 'bitácoras' %></strong> sin justificar. Las bitácoras se bloquean a las <strong style="color: #0b1f44; font-weight: 700;">12:00 AM (medianoche)</strong>.
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Lado Derecho: Separador + Reloj + CIERRE EN + Botón -->
+                        <div class="aviso-bitacoras-right">
+                          <!-- Línea vertical divisoria gris clara -->
+                          <div class="aviso-bitacoras-divider"></div>
+
+                          <!-- Icono de reloj en círculo azul claro + Ticker -->
+                          <div class="d-flex align-items-center gap-2">
+                            <div style="width: 34px; height: 34px; border-radius: 50%; background: #eff6ff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 15 15"></polyline>
                               </svg>
                             </div>
-                            <div>
-                              <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
-                                <span class="fw-bold text-dark" style="font-size: 1.05rem; letter-spacing: -0.2px;">Control y Estado de Bitácoras</span>
-                                <span class="badge rounded-pill"
-                                  style="background: #ef4444; color: #ffffff; font-size: 0.8rem; font-weight: 700; padding: 0.35em 0.75em;">
-                                  <i class="bi bi-exclamation-triangle-fill me-1"></i><%= bitacorasPendientes %> pendiente(s)
-                                </span>
-                              </div>
-                              <div class="text-secondary" style="font-size: 0.88rem; line-height: 1.35;">
-                                Tienes <strong><%= bitacorasPendientes %> bitácora(s) sin justificar</strong>. Las bitácoras se bloquean a las <strong>12:00 AM (medianoche)</strong>.
-                              </div>
+
+                            <!-- Texto CIERRE EN + Contador dinámico -->
+                            <div style="display: flex; flex-direction: column; line-height: 1.15; min-width: 98px; flex-shrink: 0;">
+                              <span style="font-size: 0.62rem; text-transform: uppercase; font-weight: 700; color: #8f9cae; letter-spacing: 0.5px;">CIERRE EN</span>
+                              <span id="countdownMedianocheTicker" class="font-monospace fw-bold" style="font-size: 1.02rem; color: #0b1f44;">--:--:--</span>
                             </div>
                           </div>
 
-                          <!-- Columna 2: Contador + Botón -->
-                          <div class="col-12 col-md-5 col-lg-4 d-flex align-items-center justify-content-md-end gap-2 flex-wrap">
-                            <div class="d-flex align-items-center gap-2 bg-white px-2.5 py-1.5 rounded-3 border border-warning shadow-sm">
-                              <i class="bi bi-clock-history text-danger" style="font-size: 1.1rem;"></i>
-                              <div class="d-flex flex-column" style="line-height: 1.1;">
-                                <span style="font-size: 0.68rem; text-transform: uppercase; font-weight: 800; color: #9a3412;">Cierre en:</span>
-                                <span id="countdownMedianocheTicker" class="font-monospace fw-bold text-danger" style="font-size: 0.95rem;">--:--:--</span>
-                              </div>
-                            </div>
-                            <a href="#tablaHistorialJornadas" class="btn btn-warning btn-sm fw-bold px-3 py-2 rounded-3 text-white shadow-sm d-inline-flex align-items-center gap-1.5"
-                              style="background: #ea580c; border: none; font-size: 0.88rem;">
-                              <i class="bi bi-pencil-square"></i> Completar
-                            </a>
-                          </div>
+                          <!-- Botón Completar en azul corporativo -->
+                          <a href="#tablaHistorialJornadas" class="btn text-white fw-semibold d-inline-flex align-items-center gap-1.5 px-3 py-1.5 aviso-btn-completar"
+                            style="background: #0056c6; border: none; border-radius: 7px; font-size: 0.86rem; box-shadow: 0 2px 6px rgba(0, 86, 198, 0.25); text-decoration: none; white-space: nowrap; flex-shrink: 0;">
+                            <i class="bi bi-pencil-square" style="font-size: 0.9rem;"></i>
+                            <span>Completar</span>
+                          </a>
                         </div>
+
                       </div>
                     </div>
                   <% } else { %>
