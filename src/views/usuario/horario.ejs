@@ -135,8 +135,8 @@
         <span style="font-size: 1.1rem; font-weight: 500; color: #64748b;">hrs/sem</span>
       </div>
       <div class="horario-stat-subinfo">
-        <span>
-          <i class="bi bi-clock-history me-1 text-primary"></i>
+        <span class="d-inline-flex align-items-center">
+          <i class="bi bi-clock-history me-2 text-primary" style="font-size: 0.95rem;"></i>
           <%= diasActivosCount > 0 ? ((totalHorasSemana / diasActivosCount) % 1 === 0 ? (totalHorasSemana / diasActivosCount) : (totalHorasSemana / diasActivosCount).toFixed(1)) + ' hrs/día prom.' : 'Sin jornada configurada' %>
         </span>
       </div>
@@ -159,9 +159,9 @@
       </div>
       <div class="horario-stat-subinfo" style="display: flex; justify-content: space-between; align-items: center;">
         <% if (horasFaltantes > 0) { %>
-          <span><i class="bi bi-hourglass-split me-1 text-warning"></i>Faltan <strong><%= Math.round(horasFaltantes) %> hrs</strong></span>
+          <span class="d-inline-flex align-items-center"><i class="bi bi-hourglass-split me-2 text-warning" style="font-size: 0.95rem;"></i>Faltan <strong>&nbsp;<%= Math.round(horasFaltantes) %> hrs</strong></span>
         <% } else { %>
-          <span class="text-success"><i class="bi bi-check-circle-fill me-1"></i>¡Meta alcanzada!</span>
+          <span class="text-success d-inline-flex align-items-center"><i class="bi bi-check-circle-fill me-2" style="font-size: 0.95rem;"></i>¡Meta alcanzada!</span>
         <% } %>
       </div>
     </div>
@@ -170,23 +170,22 @@
     <div class="horario-stat-card">
       <div class="horario-stat-header">
         <div class="horario-stat-title">Fecha Tentativa a terminar Tu Pasantia</div>
-        <i class="bi bi-calendar2-check-fill text-success" style="font-size: 1.25rem;"></i>
       </div>
 
       <% if (fechaEstimadaObj === 'COMPLETADO') { %>
         <div class="horario-stat-value text-success" style="font-size: 1.6rem;">
-          <i class="bi bi-patch-check-fill me-1"></i>¡Completada!
+          <i class="bi bi-patch-check-fill me-2"></i>¡Completada!
         </div>
         <div class="horario-stat-subinfo text-success" style="font-weight: 600;">
-          <i class="bi bi-trophy-fill me-1 text-warning"></i>Meta alcanzada 🎉
+          <i class="bi bi-trophy-fill me-2 text-warning"></i>Meta alcanzada 🎉
         </div>
       <% } else if (fechaEstimadaObj instanceof Date) { %>
         <div class="horario-stat-value text-success" style="font-size: 1.65rem; letter-spacing: -0.5px;" title="<%= fechaLarga %>">
           <%= fechaCorta %>
         </div>
         <div class="horario-stat-subinfo" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
-          <span title="<%= fechaLarga %>">
-            <i class="bi bi-calendar-event me-1 text-primary"></i><strong><%= diasLaboralesRestantes %></strong> <%= diasLaboralesRestantes === 1 ? 'jornada' : 'jornadas' %> (~<%= semanasRestantes %> sem)
+          <span title="<%= fechaLarga %>" class="d-inline-flex align-items-center">
+            <i class="bi bi-calendar-event me-2 text-primary" style="font-size: 0.95rem;"></i><strong><%= diasLaboralesRestantes %></strong>&nbsp;<%= diasLaboralesRestantes === 1 ? 'jornada' : 'jornadas' %> (~<%= semanasRestantes %> sem)
           </span>
           <span class="badge bg-light text-primary border" style="font-size: 0.72rem; font-weight: 600;">
             <%= (totalHorasSemana % 1 === 0) ? totalHorasSemana : totalHorasSemana.toFixed(1) %> hrs/sem
@@ -196,8 +195,8 @@
         <div class="horario-stat-value text-secondary" style="font-size: 1.4rem;">
           Sin horario
         </div>
-        <div class="horario-stat-subinfo text-muted">
-          <i class="bi bi-exclamation-circle me-1 text-warning"></i>Configura tu horario para estimar
+        <div class="horario-stat-subinfo text-muted d-inline-flex align-items-center">
+          <i class="bi bi-exclamation-circle me-2 text-warning" style="font-size: 0.95rem;"></i>Configura tu horario para estimar
         </div>
       <% } %>
     </div>
@@ -208,10 +207,9 @@
     <div class="calendar-toolbar">
       <div class="toolbar-left">
         <h2 class="calendar-title">
-          <i class="bi bi-calendar3 me-2 text-primary"></i>Mi Agenda Semanal
+          Mi Agenda Semanal
         </h2>
         <div class="week-range-badge">
-          <i class="bi bi-calendar-range me-1 text-primary"></i>
           Semana: <%= fechasSemana[1].diaNumero %> <%= fechasSemana[1].mesCorto %> - <%= fechasSemana[6].diaNumero %> <%= fechasSemana[6].mesCorto %> <%= fechasSemana[6].anio %>
         </div>
       </div>
@@ -336,7 +334,7 @@
 
                     <div class="event-info-group">
                       <div class="event-title">
-                        <i class="bi bi-briefcase-fill me-1"></i>Pasantía
+                        Pasantía
                       </div>
                       <div class="event-time">
                         <i class="bi bi-clock me-1"></i><%= horarioDia.hora_entrada.slice(0,5) %> - <%= horarioDia.hora_salida.slice(0,5) %>
@@ -389,7 +387,7 @@
     <div class="horario-modal-header">
       <div class="d-flex align-items-center gap-2">
         <div class="modal-icon-badge">
-          <i class="bi bi-clock-history"></i>
+          <i class="bi bi-pencil-square"></i>
         </div>
         <div>
           <h3 id="modalTitulo" class="modal-main-title">Configurar Horario</h3>
@@ -407,7 +405,7 @@
         <div class="modal-form-section">
           <div class="d-flex justify-content-between align-items-center mb-2">
             <label class="section-label">
-              <i class="bi bi-calendar-check me-1 text-primary"></i> Días a aplicar:
+              Días a aplicar:
             </label>
             <div id="modalQuickDayActions" class="quick-day-actions">
               <button type="button" class="btn-text-action" onclick="seleccionarDiasLunesViernes()">Lun-Vie</button>
@@ -418,7 +416,7 @@
             </div>
             <div id="modalSingleDayNotice" class="single-day-notice" style="display: none;">
               <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
-                <i class="bi bi-lock-fill me-1"></i><span id="modalSingleDayName">Lunes</span>
+                <span id="modalSingleDayName">Lunes</span>
               </span>
             </div>
           </div>
@@ -439,7 +437,7 @@
 
         <div class="modal-form-section">
           <label class="section-label mb-2">
-            <i class="bi bi-lightning-charge-fill me-1 text-warning"></i> Duración de jornada sugerida:
+            Duración de jornada sugerida:
           </label>
           <div class="preset-buttons-group">
             <button type="button" class="btn-preset active" data-hours="4" onclick="aplicarPresetHoras(4, this)">
@@ -461,14 +459,14 @@
           <div class="modal-inputs-row">
             <div class="modal-input-group">
               <label for="modal_hora_entrada" class="input-label">
-                <i class="bi bi-box-arrow-in-right text-success me-1"></i> Hora de Entrada:
+                Hora de Entrada:
               </label>
               <input type="time" name="hora_entrada" id="modal_hora_entrada" class="form-modal-input" value="08:00" onchange="recalcularTiemposModal()" required>
             </div>
 
             <div class="modal-input-group">
               <label for="modal_hora_salida" class="input-label">
-                <i class="bi bi-box-arrow-right text-danger me-1"></i> Hora de Salida:
+                Hora de Salida:
               </label>
               <input type="time" name="hora_salida" id="modal_hora_salida" class="form-modal-input" value="12:00" onchange="recalcularTiemposModal()" required>
             </div>
@@ -569,7 +567,7 @@
 
       if (horarioData && horarioData.id) {
         modalEdicionIdHorario = horarioData.id;
-        modalTitulo.innerHTML = `<i class="bi bi-pencil-square text-primary me-1"></i>Editar ${nombresDiasMap[diaEspecifico]}`;
+        modalTitulo.textContent = `Editar ${nombresDiasMap[diaEspecifico]}`;
         modalSubtitulo.textContent = `Ajusta el horario configurado para el ${nombresDiasMap[diaEspecifico]}`;
         
         modalEntrada.value = (horarioData.entrada || '08:00').slice(0, 5);
@@ -577,7 +575,7 @@
         
         if (btnEliminarModal) btnEliminarModal.classList.remove('d-none');
       } else {
-        modalTitulo.innerHTML = `<i class="bi bi-plus-circle text-primary me-1"></i>Asignar ${nombresDiasMap[diaEspecifico]}`;
+        modalTitulo.textContent = `Asignar ${nombresDiasMap[diaEspecifico]}`;
         modalSubtitulo.textContent = `Configura la jornada de pasantía para el ${nombresDiasMap[diaEspecifico]}`;
         modalEntrada.value = '08:00';
         modalSalida.value = '12:00';
@@ -588,7 +586,7 @@
       if (quickActions) quickActions.style.display = 'flex';
       if (singleDayNotice) singleDayNotice.style.display = 'none';
 
-      modalTitulo.innerHTML = `<i class="bi bi-sliders text-primary me-1"></i>Configurar Horario Semanal`;
+      modalTitulo.textContent = 'Configurar Horario Semanal';
       modalSubtitulo.textContent = 'Selecciona los días y el rango de jornada a aplicar';
 
       for (let d = 1; d <= 6; d++) {
