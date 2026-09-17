@@ -222,7 +222,7 @@
         </label>
 
 
-        <label>
+        <label id="wrap-f-univ">
           Universidad
           <input
             id="f-univ"
@@ -233,7 +233,7 @@
         </label>
 
 
-        <label>
+        <label id="wrap-f-carr">
           Carrera
           <select id="f-carr" name="id_carrera" required>
             <option value="">Seleccione una carrera...</option>
@@ -673,13 +673,35 @@
     document.getElementById('f-cel').value =
       u.celular || '';
 
-    document.getElementById('f-est').value =
-      Number(u.estado ?? 1);
-
     document.getElementById('f-rol').value =
       Number(u.rol ?? 0);
 
+    updateRolFields();
   }
+
+  const fRol = document.getElementById('f-rol');
+  const fCarr = document.getElementById('f-carr');
+  const fUniv = document.getElementById('f-univ');
+  const wrapCarr = document.getElementById('wrap-f-carr');
+  const wrapUniv = document.getElementById('wrap-f-univ');
+
+  function updateRolFields() {
+    if (!fRol) return;
+    const isAdm = (Number(fRol.value) === 1);
+    if (isAdm) {
+      if (fCarr) fCarr.removeAttribute('required');
+      if (fUniv) fUniv.removeAttribute('required');
+      if (wrapCarr) wrapCarr.style.display = 'none';
+      if (wrapUniv) wrapUniv.style.display = 'none';
+    } else {
+      if (fCarr) fCarr.setAttribute('required', 'required');
+      if (fUniv) fUniv.setAttribute('required', 'required');
+      if (wrapCarr) wrapCarr.style.display = '';
+      if (wrapUniv) wrapUniv.style.display = '';
+    }
+  }
+
+  fRol?.addEventListener('change', updateRolFields);
 
 
   /* =========================
@@ -875,19 +897,23 @@
 
     /* VALIDACIONES */
 
-    if (
-      !nombre ||
-      !apellido_paterno ||
-      !CI ||
-      !id_carrera
-    ) {
-
-      alert(
-        'Nombre, apellidos, CI y Carrera son obligatorios'
-      );
-
-      return false;
-
+    if (rol === 1) {
+      if (!nombre || !apellido_paterno || !CI) {
+        alert('Nombre, apellido paterno y CI son obligatorios para el administrador');
+        return false;
+      }
+    } else {
+      if (
+        !nombre ||
+        !apellido_paterno ||
+        !CI ||
+        !id_carrera
+      ) {
+        alert(
+          'Nombre, apellidos, CI y Carrera son obligatorios'
+        );
+        return false;
+      }
     }
 
 

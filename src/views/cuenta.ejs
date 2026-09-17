@@ -73,7 +73,8 @@
                     </div>
                   </div>
 
-                  <!-- Carrera -->
+                  <!-- Carrera (Oculta para rol Administrador) -->
+                  <% if (Number(user.rol) !== 1) { %>
                   <div class="info-item">
                     <div class="info-icon-container">
                       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
@@ -89,6 +90,7 @@
                       </span>
                     </div>
                   </div>
+                  <% } %>
 
                   <!-- Celular -->
                   <div class="info-item">
@@ -215,7 +217,8 @@
           nombre: "<%= user.nombre || '' %>",
           universidad: "<%= user.universidad || '' %>",
           id_carrera: "<%= user.id_carrera || '' %>",
-          celular: "<%= user.celular || '' %>"
+          celular: "<%= user.celular || '' %>",
+          rol: Number("<%= user.rol || 0 %>")
         };
 
         const editBtn = document.getElementById('editBtn');
@@ -310,6 +313,7 @@
         <input id="swal-nombre" class="swal-inputx" placeholder="Nombre completo" />
       </div>
 
+      ${initial.rol !== 1 ? `
       <!-- Universidad inhabilitada -->
       <div class="swal-field">
         <label for="swal-univ">Universidad</label>
@@ -323,7 +327,7 @@
           <option value="">-- Seleccionar carrera --</option>
           ${opcionesCarreras}
         </select>
-      </div>
+      </div>` : ''}
 
       <div class="swal-field swal-span-2">
         <label for="swal-phone">Celular</label>
@@ -359,11 +363,11 @@
             confirmButtonText: 'Guardar',
             cancelButtonText: 'Cancelar',
             didOpen: () => {
-              document.getElementById('swal-ci').value = initial.ci;
-              document.getElementById('swal-nombre').value = initial.nombre;
-              document.getElementById('swal-univ').value = initial.universidad;
-              document.getElementById('swal-id-carrera').value = initial.id_carrera;
-              document.getElementById('swal-phone').value = initial.celular;
+              if (document.getElementById('swal-ci')) document.getElementById('swal-ci').value = initial.ci;
+              if (document.getElementById('swal-nombre')) document.getElementById('swal-nombre').value = initial.nombre;
+              if (document.getElementById('swal-univ')) document.getElementById('swal-univ').value = initial.universidad;
+              if (document.getElementById('swal-id-carrera')) document.getElementById('swal-id-carrera').value = initial.id_carrera;
+              if (document.getElementById('swal-phone')) document.getElementById('swal-phone').value = initial.celular;
 
               const p1 = document.getElementById('swal-pass');
               const p2 = document.getElementById('swal-pass2');

@@ -64,11 +64,14 @@ router.post('/api/cuenta/update', requireAuth, async (req, res) => {
     if (!nombre || nombre.length < 2) {
       return res.status(400).json({ ok: false, msg: 'Nombre obligatorio (2–100).' });
     }
-    if (!universidad) {
-      return res.status(400).json({ ok: false, msg: 'Universidad es obligatoria.' });
-    }
-    if (!id_carrera) {
-      return res.status(400).json({ ok: false, msg: 'Debe seleccionar una carrera válida.' });
+    const isUserAdmin = req.session.user.rol === 1;
+    if (!isUserAdmin) {
+      if (!universidad) {
+        return res.status(400).json({ ok: false, msg: 'Universidad es obligatoria.' });
+      }
+      if (!id_carrera) {
+        return res.status(400).json({ ok: false, msg: 'Debe seleccionar una carrera válida.' });
+      }
     }
     if (celular && !/^[0-9]{7,12}$/.test(celular)) {
       return res.status(400).json({ ok: false, msg: 'Celular debe tener 7–12 dígitos.' });
