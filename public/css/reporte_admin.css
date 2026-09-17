@@ -1657,6 +1657,25 @@ body.reportes-admin-page .btn-icon-action {
   outline: none;
 }
 
+/* Botón Horario - Índigo Interactivo */
+body.reportes-admin-page .btn-icon-horario {
+  background: #EEF2FF;
+  color: #4F46E5;
+  border-color: #C7D2FE;
+}
+
+body.reportes-admin-page .btn-icon-horario:hover {
+  background: #4F46E5;
+  color: #FFFFFF;
+  border-color: #4338CA;
+  transform: translateY(-2px) scale(1.06);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.28);
+}
+
+body.reportes-admin-page .btn-icon-horario:active {
+  transform: scale(0.96);
+}
+
 /* Botón Editar - Azul Interactivo */
 body.reportes-admin-page .btn-icon-edit {
   background: #EFF6FF;
@@ -3178,7 +3197,6 @@ body.reportes-admin-page .cal-detail-sched-val {
     flex-direction: column;
     gap: 4px;
   }
-<<<<<<< Updated upstream
   
   /* Panel de Estadísticas Mobile Responsiveness */
   body.reportes-admin-page .stats-panel-header {
@@ -3294,7 +3312,6 @@ body.reportes-admin-page #modalCalendario {
   max-width: 1400px !important;
   width: 98% !important;
   padding: 32px !important;
-=======
 }
 
 /* ---------- Recuadro de Aviso: Pasantes en Período de Culminación ---------- */
@@ -3488,5 +3505,4 @@ body.reportes-admin-page .aviso-user-single {
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 12px;
->>>>>>> Stashed changes
 }
