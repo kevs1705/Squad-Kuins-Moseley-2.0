@@ -92,6 +92,13 @@ router.post("/cambiar-password", async (req, res) => {
     });
   }
 
+  if (password.length < 6 || !/[a-zA-Z]/.test(password) || !/[0-9]/.test(password) || !/[^a-zA-Z0-9]/.test(password)) {
+    return res.render("cambiar_password", {
+      title: "Cambiar Contraseña",
+      error: "La contraseña debe tener al menos 6 caracteres e incluir letras, números y al menos un carácter especial (ej. @, #, $, *, !, .)."
+    });
+  }
+
   try {
     const userId = req.session.user.id;
     

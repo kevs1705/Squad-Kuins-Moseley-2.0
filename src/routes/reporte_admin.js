@@ -46,11 +46,14 @@ router.get('/admin/reportes', requireAdmin, async (req, res) => {
   try {
     // 1. Consultar usuarios para el autocompletado y filtros (excluyendo administradores)
     const [usuarios] = await db.query(
-      `SELECT u.id_usuario, u.nombre, u.CI, u.universidad, u.id_carrera, c.nombre AS carrera_nombre
+      `SELECT u.id_usuario, 
+              TRIM(CONCAT_WS(' ', u.nombre, u.apellido_paterno, u.apellido_materno)) AS nombre,
+              u.nombre AS primer_nombre, u.apellido_paterno, u.apellido_materno,
+              u.CI, u.universidad, u.id_carrera, c.nombre AS carrera_nombre
        FROM usuarios u
        LEFT JOIN carreras c ON u.id_carrera = c.id_carrera
        WHERE (u.rol = 0 OR u.rol IS NULL)
-       ORDER BY u.nombre ASC`
+       ORDER BY u.nombre ASC, u.apellido_paterno ASC`
     );
 
     // 2. Consultar obras y lugares para el filtro
@@ -98,8 +101,8 @@ async function fetchCombinedRecords({ id_carrera, estado_duracion, id_usuario, i
       whereA.push('a.id_usuario = ?');
       paramsA.push(id_usuario);
     } else if (nombre) {
-      whereA.push('u.nombre LIKE ?');
-      paramsA.push(`%${nombre}%`);
+      whereA.push("(u.nombre LIKE ? OR u.apellido_paterno LIKE ? OR u.apellido_materno LIKE ? OR CONCAT_WS(' ', u.nombre, u.apellido_paterno, u.apellido_materno) LIKE ?)");
+      paramsA.push(`%${nombre}%`, `%${nombre}%`, `%${nombre}%`, `%${nombre}%`);
     }
     if (id_lugar) {
       whereA.push('a.id_lugar = ?');
@@ -147,7 +150,7 @@ async function fetchCombinedRecords({ id_carrera, estado_duracion, id_usuario, i
       `SELECT
         CAST(a.id_asistencia AS CHAR) AS id_asistencia,
         u.id_usuario,
-        u.nombre AS usuario_nombre,
+        TRIM(CONCAT_WS(' ', u.nombre, u.apellido_paterno, u.apellido_materno)) AS usuario_nombre,
         u.CI AS usuario_ci,
         u.id_carrera,
         DATE_FORMAT(a.fecha, '%Y-%m-%d') AS fecha,
@@ -193,8 +196,8 @@ async function fetchCombinedRecords({ id_carrera, estado_duracion, id_usuario, i
       whereB.push('n.id_usuario = ?');
       paramsB.push(id_usuario);
     } else if (nombre) {
-      whereB.push('u.nombre LIKE ?');
-      paramsB.push(`%${nombre}%`);
+      whereB.push("(u.nombre LIKE ? OR u.apellido_paterno LIKE ? OR u.apellido_materno LIKE ? OR CONCAT_WS(' ', u.nombre, u.apellido_paterno, u.apellido_materno) LIKE ?)");
+      paramsB.push(`%${nombre}%`, `%${nombre}%`, `%${nombre}%`, `%${nombre}%`);
     }
     if (fechasRaw) {
       if (fechasRaw.includes(' to ') || fechasRaw.includes(' a ')) {
@@ -222,7 +225,7 @@ async function fetchCombinedRecords({ id_carrera, estado_duracion, id_usuario, i
       `SELECT
         CONCAT('he_', n.id_notificacion) AS id_asistencia,
         u.id_usuario,
-        u.nombre AS usuario_nombre,
+        TRIM(CONCAT_WS(' ', u.nombre, u.apellido_paterno, u.apellido_materno)) AS usuario_nombre,
         u.CI AS usuario_ci,
         u.id_carrera,
         DATE_FORMAT(n.fecha_solicitada, '%Y-%m-%d') AS fecha,
@@ -320,7 +323,10 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
     let usuarioInfo = null;
     if (id_usuario) {
       const [uRows] = await db.query(
-        `SELECT u.id_usuario, u.nombre, u.CI, u.universidad, u.id_carrera, COALESCE(c.nombre, '') AS carrera
+        `SELECT u.id_usuario, 
+                TRIM(CONCAT_WS(' ', u.nombre, u.apellido_paterno, u.apellido_materno)) AS nombre,
+                u.nombre AS primer_nombre, u.apellido_paterno, u.apellido_materno,
+                u.CI, u.universidad, u.id_carrera, COALESCE(c.nombre, '') AS carrera
          FROM usuarios u
          LEFT JOIN carreras c ON u.id_carrera = c.id_carrera
          WHERE u.id_usuario = ? LIMIT 1`,
@@ -375,10 +381,17 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
 
     // 5. Estadísticas dinámicas para el panel lateral derecho y avisos de culminación de pasantía:
     const [usersRanking] = await db.query(
-      `SELECT u.id_usuario, u.nombre, u.CI, u.universidad, COALESCE(c.nombre, '') AS carrera
+      `SELECT u.id_usuario, 
+              TRIM(CONCAT_WS(' ', u.nombre, u.apellido_paterno, u.apellido_materno)) AS nombre,
+              u.nombre AS primer_nombre,
+              u.CI, u.universidad, u.id_carrera, COALESCE(c.nombre, '') AS carrera
        FROM usuarios u
        LEFT JOIN carreras c ON u.id_carrera = c.id_carrera
-       WHERE u.rol = 0 AND u.estado = 1`
+       WHERE (u.rol = 0 OR u.rol IS NULL) AND u.estado = 1`
+    );
+
+    const [carrerasRankingList] = await db.query(
+      `SELECT id_carrera, nombre, siglas FROM carreras ORDER BY nombre ASC`
     );
 
     const [userAsistencias] = await db.query(
@@ -464,7 +477,10 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
         }
       }
 
-      return `${cursor.getDate()} de ${mesesCompletos[cursor.getMonth()]}`;
+      const currYear = new Date().getFullYear();
+      const pronYear = cursor.getFullYear();
+      const yearSuffix = (pronYear !== currYear) ? ` de ${pronYear}` : '';
+      return `${cursor.getDate()} de ${mesesCompletos[cursor.getMonth()]}${yearSuffix}`;
     }
 
     const mapAsist = {};
@@ -600,7 +616,9 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
         return {
           id_usuario: u.id_usuario,
           nombre: u.nombre,
+          primer_nombre: u.primer_nombre || (u.nombre ? u.nombre.split(' ')[0] : 'Pasante'),
           CI: u.CI,
+          id_carrera: u.id_carrera,
           carrera: u.carrera,
           universidad: u.universidad,
           total_dias: totalDias,
@@ -609,10 +627,9 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
       });
 
       userRankList.sort((a, b) => b.total_segundos - a.total_segundos);
-      const top6 = userRankList.slice(0, 6);
-      const maxSegundos = top6.length > 0 && top6[0].total_segundos > 0 ? top6[0].total_segundos : 1;
+      const maxSegundos = userRankList.length > 0 && userRankList[0].total_segundos > 0 ? userRankList[0].total_segundos : 1;
 
-      const formattedTop = top6.map((u, idx) => ({
+      const formattedTop = userRankList.map((u, idx) => ({
         ...u,
         horas_formateadas: formatSecondsToHHMMSS(u.total_segundos),
         horas_decimal: (u.total_segundos / 3600).toFixed(1),
@@ -624,7 +641,8 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
         tipo: 'global',
         top_usuarios: formattedTop,
         total_pasantes_ranking: usersRanking.length,
-        pasantes_por_finalizar: pasantesPorFinalizar
+        pasantes_por_finalizar: pasantesPorFinalizar,
+        carreras: carrerasRankingList || []
       };
     }
 

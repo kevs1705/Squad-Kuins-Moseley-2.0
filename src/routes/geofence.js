@@ -28,8 +28,28 @@ router.get('/geofence', requireAuth, async (req, res) => {
       "SELECT id_lugar, nombre, latitud, longitud, radio_metros FROM lugares WHERE estado = 'ACTIVO' AND tipo != 'TELETRABAJO' AND latitud != 0 AND longitud != 0"
     );
 
-    // Renderizar la vista pasando lugares y estado de teletrabajo
-    res.render('geofence', { redirect, lugares: lugares || [], teletrabajoHoy });
+    // 3. Obtener la asistencia de hoy para saber si ya tiene entrada en curso o jornada completada
+    const [asistenciaRows] = await db.query(
+      `SELECT id_asistencia, 
+              TIME_FORMAT(hora_entrada, '%H:%i') AS hora_entrada, 
+              TIME_FORMAT(hora_salida, '%H:%i') AS hora_salida, 
+              estado 
+       FROM asistencias 
+       WHERE id_usuario = ? AND fecha = CURDATE() AND estado != 'ANULADO'
+       ORDER BY id_asistencia DESC LIMIT 1`,
+      [userId]
+    );
+    const asistenciaHoy = asistenciaRows.length > 0 ? asistenciaRows[0] : null;
+
+    let estadoJornada = 'SIN_JORNADA';
+    if (asistenciaHoy && asistenciaHoy.hora_entrada && !asistenciaHoy.hora_salida) {
+      estadoJornada = 'EN_CURSO';
+    } else if (asistenciaHoy && asistenciaHoy.hora_entrada && asistenciaHoy.hora_salida) {
+      estadoJornada = 'COMPLETADA';
+    }
+
+    // Renderizar la vista pasando lugares, estado de teletrabajo y asistencia de hoy
+    res.render('geofence', { redirect, lugares: lugares || [], teletrabajoHoy, asistenciaHoy, estadoJornada });
   } catch (error) {
     console.error('Error al cargar geocerca:', error);
     res.status(500).send('Error interno del servidor al cargar geocerca.');
@@ -230,15 +250,23 @@ router.post('/api/geofence/register', async (req, res) => {
   try {
     // Buscar si ya existe una asistencia para la fecha
     const [existing] = await db.query(
-      'SELECT id_asistencia, hora_entrada, hora_salida FROM asistencias WHERE id_usuario = ? AND fecha = ? LIMIT 1',
+      'SELECT id_asistencia, hora_entrada, hora_salida FROM asistencias WHERE id_usuario = ? AND fecha = ? AND estado != "ANULADO" LIMIT 1',
       [userId, fechaUsar]
     );
 
     let asistenciaId = null;
 
     if (existing && existing.length > 0) {
-      asistenciaId = existing[0].id_asistencia;
+      const reg = existing[0];
+      asistenciaId = reg.id_asistencia;
+
       if (tipo === 'entrada') {
+        if (reg.hora_entrada) {
+          return res.status(400).json({
+            ok: false,
+            msg: `Ya tienes una entrada registrada el día de hoy a las ${String(reg.hora_entrada).slice(0, 5)}. No puedes volver a registrar otra entrada.`
+          });
+        }
         await db.query(
           `UPDATE asistencias 
            SET hora_entrada = ?, id_lugar = ?, estado = ?
@@ -246,6 +274,19 @@ router.post('/api/geofence/register', async (req, res) => {
           [horaUsar, idLugar, estadoAsistencia, asistenciaId]
         );
       } else {
+        // Salida
+        if (!reg.hora_entrada) {
+          return res.status(400).json({
+            ok: false,
+            msg: 'No puedes marcar salida sin haber registrado tu entrada primero.'
+          });
+        }
+        if (reg.hora_salida) {
+          return res.status(400).json({
+            ok: false,
+            msg: `Ya has registrado tu salida el día de hoy a las ${String(reg.hora_salida).slice(0, 5)}. Tu jornada ya está finalizada.`
+          });
+        }
         await db.query(
           `UPDATE asistencias 
            SET hora_salida = ?, id_lugar = COALESCE(?, id_lugar), 
@@ -255,22 +296,19 @@ router.post('/api/geofence/register', async (req, res) => {
         );
       }
     } else {
-      // Insertar nuevo registro en tabla pura asistencias
-      if (tipo === 'entrada') {
-        const [ins] = await db.query(
-          `INSERT INTO asistencias (id_usuario, id_lugar, fecha, hora_entrada, estado) 
-           VALUES (?, ?, ?, ?, ?)`,
-          [userId, idLugar, fechaUsar, horaUsar, estadoAsistencia]
-        );
-        asistenciaId = ins.insertId;
-      } else {
-        const [ins] = await db.query(
-          `INSERT INTO asistencias (id_usuario, id_lugar, fecha, hora_salida, estado) 
-           VALUES (?, ?, ?, ?, ?)`,
-          [userId, idLugar, fechaUsar, horaUsar, estadoAsistencia]
-        );
-        asistenciaId = ins.insertId;
+      if (tipo === 'salida') {
+        return res.status(400).json({
+          ok: false,
+          msg: 'No puedes registrar salida sin haber iniciado tu jornada con una marcación de entrada.'
+        });
       }
+      // Insertar nuevo registro en tabla pura asistencias
+      const [ins] = await db.query(
+        `INSERT INTO asistencias (id_usuario, id_lugar, fecha, hora_entrada, estado) 
+         VALUES (?, ?, ?, ?, ?)`,
+        [userId, idLugar, fechaUsar, horaUsar, estadoAsistencia]
+      );
+      asistenciaId = ins.insertId;
     }
 
     // Guardar / Actualizar registro en la tabla satélite asistencias_geo EXCLUSIVAMENTE para TELETRABAJO

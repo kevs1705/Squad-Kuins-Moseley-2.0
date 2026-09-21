@@ -76,8 +76,19 @@ router.post('/api/cuenta/update', requireAuth, async (req, res) => {
     if (celular && !/^[0-9]{7,12}$/.test(celular)) {
       return res.status(400).json({ ok: false, msg: 'Celular debe tener 7–12 dígitos.' });
     }
-    if (contrasena && contrasena.length < 4) {
-      return res.status(400).json({ ok: false, msg: 'La contraseña debe tener mínimo 4 caracteres.' });
+    if (contrasena) {
+      if (contrasena.length < 6) {
+        return res.status(400).json({ ok: false, msg: 'La contraseña debe tener mínimo 6 caracteres.' });
+      }
+      if (!/[a-zA-Z]/.test(contrasena)) {
+        return res.status(400).json({ ok: false, msg: 'La contraseña debe contener al menos una letra.' });
+      }
+      if (!/[0-9]/.test(contrasena)) {
+        return res.status(400).json({ ok: false, msg: 'La contraseña debe contener al menos un número.' });
+      }
+      if (!/[^a-zA-Z0-9]/.test(contrasena)) {
+        return res.status(400).json({ ok: false, msg: 'La contraseña debe contener al menos un carácter especial (ej. @, #, $, *, !, .).' });
+      }
     }
 
     // Validar duplicado de CI
