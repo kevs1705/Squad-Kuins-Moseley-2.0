@@ -1,210 +1,1518 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Estadísticas — MONSELEY</title>
-  <meta name="color-scheme" content="dark light" />
-  <link rel="stylesheet" href="/css/style.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-</head>
-<body>
-  <main class="container">
-    <section class="card">
-      <div class="toolbar justify-between">
-        <div>
-          <h1 class="h1 m-0">Estadísticas</h1>
-          <p class="subtitle mb-0">Horas por semana, totales por pasante y KPI</p>
-        </div>
-        <div class="toolbar">
-          <a href="/admin/reportes" class="btn btn--secondary">🏠 Volver</a>
-        </div>
-      </div>
+<% pageTitle='Centro de Estadísticas y Gráficos BI' ;
+  pageSubtitle='Tablero Ejecutivo de Rendimiento y Horas de Pasantías — BYGGER SRL' ; %>
+  <%- include('partials/header') %>
 
-      <div class="row mt-3">
-        <!-- Izquierda: Lineal -->
-        <div class="col-2">
-          <div class="panel">
-            <div class="toolbar justify-between mb-3">
-              <div class="toolbar gap-2">
-                <h2 class="h2 m-0">Tendencia semanal</h2>
-                <span class="chip chip--info">Interactivo</span>
-              </div>
-              <div class="toolbar gap-2">
-                <label for="sel-user" class="muted">Pasante:</label>
-                <select id="sel-user" class="select">
-                  <% (users || []).forEach(u => { %>
-                    <option value="<%= u.id_usuario %>"><%= u.nombre %></option>
-                  <% }) %>
-                </select>
-              </div>
-            </div>
-            <div class="chart-box">
-              <canvas id="lineChart"></canvas>
-            </div>
-          </div>
-        </div>
+    <!-- Chart.js 4.4 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 
-        <!-- Derecha: Pastel + KPI -->
-        <div class="col-2">
-          <div class="panel mb-3">
-            <div class="toolbar justify-between mb-3">
-              <h2 class="h2 m-0">Horas totales por pasante</h2>
-              <span class="chip chip--ok">Acumulado</span>
-            </div>
-            <div class="chart-box chart-box--sm">
-              <canvas id="pieChart"></canvas>
-            </div>
-          </div>
+    <style>
+      /* ==========================================================================
+     ESTILOS DASHBOARD EJECUTIVO BI — SISTEMA MONSELEY (LIGHT CORPORATIVO)
+     ========================================================================== */
+      :root {
+        --bg-main: #F3F4F6;
+        --bg-card: #FFFFFF;
+        --color-primary: #0F5FA6;
+        --color-primary-hover: #0D528F;
+        --color-secondary: #0F5C8C;
+        --color-accent: #0D9488;
+        --color-accent-light: #E6FFFA;
+        --color-text: #1E293B;
+        --color-text-dark: #0F172A;
+        --color-text-muted: #64748B;
+        --color-border: #E2E8F0;
+        --color-border-light: #F1F5F9;
 
-          <div class="panel">
-            <div class="toolbar justify-between">
-              <h2 class="h2 m-0">Total de pasantes</h2>
-              <span id="kpi-pasantes" class="h2 m-0"><%= totalPasantes %></span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  </main>
+        --bi-blue: #0F5FA6;
+        --bi-teal: #0D9488;
+        --bi-emerald: #10B981;
+        --bi-indigo: #6366F1;
+        --bi-amber: #F59E0B;
+        --bi-amber-dark: #D97706;
 
-<script>
-  // ====== Tema ======
-  const cssVar = (n,f)=>getComputedStyle(document.documentElement).getPropertyValue(n).trim()||f;
-  const colorText   = cssVar('--text','#e5e7eb');
-  const colorMuted  = cssVar('--muted','#94a3b8');
-  const colorBorder = cssVar('--border','#27324c');
-  const colorBrand  = cssVar('--brand','#24c58a');
-
-  // ====== Helpers ======
-  const $ = s => document.querySelector(s);
-  const selUser = $('#sel-user');
-  const kpiNode = $('#kpi-pasantes');
-
-  const commonScales = {
-    x:{ ticks:{ color: colorMuted, maxRotation: 0 }, grid:{ color: colorBorder } },
-    y:{ ticks:{ color: colorMuted }, grid:{ color: colorBorder } }
-  };
-  const commonPlugins = { legend:{ labels:{ color: colorText } }, title:{ color: colorText } };
-
-  // ====== Charts ======
-  const lineChart = new Chart(document.getElementById('lineChart'), {
-    type: 'line',
-    data: { labels: [], datasets: [
-      {
-        label: 'Horas por semana',
-        data: [],
-        borderColor: colorBrand,
-        backgroundColor: colorBrand + '33',
-        fill: true,
-        tension: .35,
-        pointRadius: 3,
-        pointHoverRadius: 5
-      },
-      {
-        label: 'Acumulado',
-        data: [],
-        borderColor: '#60a5fa',
-        backgroundColor: '#60a5fa33',
-        fill: false,
-        tension: .35,
-        pointRadius: 0,
-        pointHoverRadius: 3,
-        borderDash: [6,4]
+        --radius-card: 16px;
+        --radius-inner: 10px;
+        --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+        --shadow-hover: 0 10px 25px -5px rgba(0, 0, 0, 0.07);
       }
-    ] },
-    options: { responsive: true, maintainAspectRatio: false, scales: commonScales, plugins: commonPlugins }
-  });
 
-  const pieChart = new Chart(document.getElementById('pieChart'), {
-  type: 'pie',
-  data: { 
-    labels: [], 
-    datasets: [{
-      data: [],
-      backgroundColor: [
-        '#22c55e', // verde
-        '#3b82f6', // azul
-        '#f59e0b', // naranja
-        '#ef4444', // rojo
-        '#8b5cf6', // violeta
-        '#14b8a6', // turquesa
-        '#eab308', // amarillo
-        '#ec4899'  // rosa
-      ],
-      borderColor: '#141c2f', // mismo que panel oscuro
-      borderWidth: 2
-    }] 
-  },
-  options: { 
-    responsive: true, 
-    maintainAspectRatio: false, 
-    plugins: commonPlugins 
-  }
-});
+      /* Contenedor Principal */
+      .bi-dashboard-container {
+        width: 100%;
+        margin: 0;
+        padding: 0.5rem 0.25rem 3rem 0.25rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        box-sizing: border-box;
+        color: var(--color-text);
+      }
 
+      /* Barra de Comando de Filtros */
+      .bi-filter-bar {
+        background: #FFFFFF;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-card);
+        padding: 1.1rem 1.35rem;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        box-shadow: var(--shadow-card);
+      }
 
-  // ====== Data loaders ======
-  async function loadPie(){
-    const r = await fetch('/api/graficos/pie');
-    const j = await r.json();
-    if (!j.ok) return;
-    pieChart.data.labels = j.labels;
-    pieChart.data.datasets[0].data = j.data;
-    pieChart.update();
-  }
+      .bi-scope-tabs {
+        display: inline-flex;
+        background: #F1F5F9;
+        border: 1px solid var(--color-border);
+        padding: 4px;
+        border-radius: 12px;
+        gap: 4px;
+      }
 
-  async function loadKPI(){
-    const r = await fetch('/api/graficos/kpi');
-    const j = await r.json();
-    if (j.ok && kpiNode) kpiNode.textContent = j.total;
-  }
+      .bi-scope-btn {
+        background: transparent;
+        border: none;
+        color: var(--color-text-muted);
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
 
-  async function loadLine(userId){
-    if (!userId) return;
-    const r = await fetch(`/api/graficos/line?userId=${encodeURIComponent(userId)}`);
-    const j = await r.json();
-    if (!j.ok) return;
+      .bi-scope-btn:hover {
+        color: var(--color-primary);
+        background: #E2E8F0;
+      }
 
-    lineChart.data.labels = j.labels;
-    lineChart.data.datasets[0].data = j.horas;
-    lineChart.data.datasets[1].data = j.acumulado;
-    lineChart.update();
-  }
+      .bi-scope-btn.active {
+        background: var(--color-primary);
+        color: #FFFFFF;
+        box-shadow: 0 2px 8px rgba(15, 95, 166, 0.28);
+      }
 
-  // ====== Eventos ======
-  selUser?.addEventListener('change', () => loadLine(selUser.value));
+      .bi-filter-controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
 
-  // ====== Init ======
-  (async () => {
-    // Si no hay usuarios en EJS, intenta cargarlos por API (fallback)
-    if (!selUser || selUser.options.length === 0) {
-      const ru = await fetch('/api/graficos/usuarios');
-      const ju = await ru.json();
-      if (ju.ok) {
-        ju.data.forEach(u => {
-          const opt = document.createElement('option');
-          opt.value = u.id_usuario; opt.textContent = u.nombre;
-          selUser.appendChild(opt);
+      .bi-select-custom {
+        background: #FFFFFF;
+        color: var(--color-text-dark);
+        border: 1.5px solid #CBD5E1;
+        border-radius: 10px;
+        padding: 8px 14px;
+        font-size: 0.86rem;
+        font-weight: 600;
+        cursor: pointer;
+        outline: none;
+        min-width: 200px;
+        transition: all 0.2s ease;
+      }
+
+      .bi-select-custom:focus {
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px rgba(15, 95, 166, 0.15);
+      }
+
+      .bi-period-pills {
+        display: inline-flex;
+        background: #F1F5F9;
+        border: 1px solid var(--color-border);
+        padding: 3px;
+        border-radius: 10px;
+        gap: 2px;
+      }
+
+      .bi-period-btn {
+        background: transparent;
+        border: none;
+        color: var(--color-text-muted);
+        padding: 6px 12px;
+        border-radius: 7px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .bi-period-btn:hover {
+        color: var(--color-primary);
+      }
+
+      .bi-period-btn.active {
+        background: var(--color-primary);
+        color: #FFFFFF;
+        box-shadow: 0 2px 6px rgba(15, 95, 166, 0.25);
+      }
+
+      /* Toggle de Orden Ascendente / Descendente */
+      .bi-order-toggle {
+        display: inline-flex;
+        background: #F1F5F9;
+        border: 1px solid var(--color-border);
+        border-radius: 10px;
+        padding: 3px;
+        gap: 3px;
+      }
+
+      .bi-order-btn {
+        background: transparent;
+        border: none;
+        color: var(--color-text-muted);
+        font-size: 0.76rem;
+        font-weight: 700;
+        padding: 6px 12px;
+        border-radius: 7px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .bi-order-btn:hover {
+        color: var(--color-primary);
+      }
+
+      .bi-order-btn.active {
+        background: var(--color-primary);
+        color: #FFFFFF;
+        box-shadow: 0 2px 6px rgba(15, 95, 166, 0.25);
+      }
+
+      .bi-btn-refresh {
+        background: #FFFFFF;
+        border: 1.5px solid var(--color-primary);
+        color: var(--color-primary);
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.82rem;
+        padding: 7px 14px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s ease;
+      }
+
+      .bi-btn-refresh:hover {
+        background: var(--color-primary);
+        color: #FFFFFF;
+        box-shadow: 0 2px 8px rgba(15, 95, 166, 0.25);
+      }
+
+      /* Tarjetas KPI Corporativas */
+      .bi-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.25rem;
+        width: 100%;
+      }
+
+      .bi-kpi-card {
+        background: #FFFFFF;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-card);
+        padding: 1.25rem 1.4rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        box-shadow: var(--shadow-card);
+        position: relative;
+        overflow: hidden;
+        transition: all 0.25s ease;
+      }
+
+      .bi-kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-hover);
+        border-color: #CBD5E1;
+      }
+
+      /* Borde superior dinámico */
+      .bi-kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3.5px;
+      }
+
+      .bi-kpi-blue::before {
+        background: linear-gradient(90deg, #0F5FA6, #0284C7);
+      }
+
+      .bi-kpi-teal::before {
+        background: linear-gradient(90deg, #0D9488, #14B8A6);
+      }
+
+      .bi-kpi-emerald::before {
+        background: linear-gradient(90deg, #10B981, #34D399);
+      }
+
+      .bi-kpi-indigo::before {
+        background: linear-gradient(90deg, #6366F1, #8B5CF6);
+      }
+
+      .bi-kpi-amber::before {
+        background: linear-gradient(90deg, #F59E0B, #EA580C);
+      }
+
+      .bi-kpi-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.75rem;
+      }
+
+      .bi-kpi-label {
+        font-size: 0.76rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: var(--color-text-muted);
+      }
+
+      .bi-kpi-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+      }
+
+      .bi-icon-blue {
+        background: #EFF6FF;
+        color: var(--bi-blue);
+      }
+
+      .bi-icon-teal {
+        background: #F0FDFA;
+        color: var(--bi-teal);
+      }
+
+      .bi-icon-emerald {
+        background: #F0FDF4;
+        color: var(--bi-emerald);
+      }
+
+      .bi-icon-indigo {
+        background: #EEF2FF;
+        color: var(--bi-indigo);
+      }
+
+      .bi-icon-amber {
+        background: #FFFBEB;
+        color: var(--bi-amber-dark);
+      }
+
+      .bi-kpi-value {
+        font-size: 2rem;
+        font-weight: 800;
+        line-height: 1.1;
+        color: var(--color-text-dark);
+        margin-bottom: 0.35rem;
+        letter-spacing: -0.5px;
+      }
+
+      .bi-kpi-sub {
+        font-size: 0.78rem;
+        color: var(--color-text-muted);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      /* Layout de Gráficos (Dashboard Grid) */
+      .bi-charts-grid-main {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 1.25rem;
+        width: 100%;
+      }
+
+      .bi-charts-grid-secondary {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.25rem;
+        width: 100%;
+      }
+
+      .bi-panel {
+        background: #FFFFFF;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-card);
+        padding: 1.4rem 1.5rem;
+        box-shadow: var(--shadow-card);
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .bi-panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.25rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--color-border-light);
+      }
+
+      .bi-panel-title {
+        margin: 0;
+        font-size: 1.02rem;
+        font-weight: 800;
+        color: var(--color-text-dark);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        letter-spacing: -0.2px;
+      }
+
+      .bi-panel-tag {
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 3px 9px;
+        border-radius: 6px;
+        background: #EFF6FF;
+        color: var(--color-primary);
+        border: 1px solid #BFDBFE;
+      }
+
+      /* Contenedores de Canvas */
+      .bi-chart-canvas-wrap {
+        position: relative;
+        width: 100%;
+        height: 320px;
+      }
+
+      .bi-chart-canvas-wrap-sm {
+        position: relative;
+        width: 100%;
+        height: 250px;
+      }
+
+      /* Widgets de Gauge Donut con Porcentaje Central (Cuadrícula simétrica 2x2) */
+      .bi-gauges-container {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.25rem 1rem;
+        align-items: center;
+        justify-content: center;
+        padding: 0.75rem 0.5rem;
+      }
+
+      .bi-gauge-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        position: relative;
+      }
+
+      .bi-gauge-chart-box {
+        position: relative;
+        width: 105px;
+        height: 105px;
+      }
+
+      .bi-gauge-center-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: var(--color-text-dark);
+        letter-spacing: -0.5px;
+        line-height: 1;
+      }
+
+      .bi-gauge-label {
+        font-size: 0.78rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: var(--color-text);
+        margin-top: 8px;
+        letter-spacing: 0.4px;
+      }
+
+      .bi-gauge-subtext {
+        font-size: 0.74rem;
+        color: var(--color-text-muted);
+        font-weight: 600;
+        margin-top: 2px;
+      }
+
+      .bi-quick-sort-btn {
+        background: #F8FAFC;
+        border: 1px solid #CBD5E1;
+        color: #475569;
+        font-size: 0.72rem;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 6px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        transition: all 0.2s ease;
+      }
+
+      .bi-quick-sort-btn:hover {
+        background: #F1F5F9;
+        border-color: var(--color-primary);
+        color: var(--color-primary);
+      }
+
+      /* Barras de Progreso en Flecha (Arrow Bars) */
+      .bi-arrow-bars-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 0.5rem;
+      }
+
+      .bi-arrow-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .bi-arrow-name {
+        width: 140px;
+        font-size: 0.84rem;
+        font-weight: 700;
+        color: var(--color-text-dark);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .bi-arrow-career {
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: var(--color-text-muted);
+      }
+
+      .bi-arrow-bar-wrap {
+        flex: 1;
+        height: 32px;
+        background: #F1F5F9;
+        border-radius: 8px;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid var(--color-border);
+        display: flex;
+        align-items: center;
+      }
+
+      .bi-arrow-bar-fill {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        padding-right: 12px;
+        font-weight: 800;
+        font-size: 0.85rem;
+        color: #FFFFFF;
+        transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        clip-path: polygon(0% 0%, calc(100% - 12px) 0%, 100% 50%, calc(100% - 12px) 100%, 0% 100%);
+      }
+
+      /* Gradientes corporativos sobrios para las barras de progreso */
+      .fill-monseley-blue {
+        background: linear-gradient(90deg, #0F5FA6, #0284C7);
+      }
+
+      .fill-teal-corp {
+        background: linear-gradient(90deg, #0D9488, #14B8A6);
+      }
+
+      .fill-indigo-corp {
+        background: linear-gradient(90deg, #4F46E5, #6366F1);
+      }
+
+      .fill-emerald-corp {
+        background: linear-gradient(90deg, #059669, #10B981);
+      }
+
+      .fill-amber-corp {
+        background: linear-gradient(90deg, #D97706, #F59E0B);
+      }
+
+      /* Ficha de Perfil de Estudiante */
+      .bi-student-profile-card {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        padding: 1.25rem 1.5rem;
+        background: #F8FAFC;
+        border: 1.5px solid #BFDBFE;
+        border-radius: var(--radius-card);
+        margin-bottom: 1.25rem;
+        box-shadow: 0 4px 15px rgba(15, 95, 166, 0.05);
+      }
+
+      .bi-student-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #0F5FA6, #0284C7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.7rem;
+        color: #FFFFFF;
+        flex-shrink: 0;
+        box-shadow: 0 4px 12px rgba(15, 95, 166, 0.25);
+      }
+
+      .bi-student-details {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        flex: 1;
+      }
+
+      .bi-student-name {
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: var(--color-text-dark);
+        margin: 0;
+      }
+
+      .bi-student-meta {
+        font-size: 0.82rem;
+        color: var(--color-text-muted);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+
+      .bi-student-meta span {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      /* Tabla de Auditoría Rápida — Estilo Ejecutivo Monseley */
+      .bi-table-wrap {
+        width: 100%;
+        overflow-x: auto;
+        border-radius: 12px;
+        border: 1px solid var(--color-border);
+      }
+
+      .bi-summary-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.88rem;
+      }
+
+      .bi-summary-table th {
+        background: #F8FAFC;
+        color: #475569;
+        padding: 14px 18px;
+        text-transform: uppercase;
+        font-size: 0.76rem;
+        font-weight: 800;
+        letter-spacing: 0.6px;
+        border-bottom: 2px solid var(--color-border);
+        text-align: left;
+        white-space: nowrap;
+      }
+
+      .bi-summary-table td {
+        padding: 13px 18px;
+        border-bottom: 1px solid var(--color-border-light);
+        vertical-align: middle;
+        color: var(--color-text);
+        white-space: nowrap;
+      }
+
+      .bi-summary-table tr:hover td {
+        background: #F8FAFC;
+      }
+
+      .bi-summary-table tr:last-child td {
+        border-bottom: none;
+      }
+
+      .bi-table-name {
+        color: var(--color-text-dark);
+        font-weight: 700;
+        font-size: 0.88rem;
+        letter-spacing: -0.2px;
+      }
+
+      .bi-table-career-badge {
+        background: #EFF6FF;
+        color: var(--color-primary);
+        border: 1px solid #BFDBFE;
+        padding: 3px 9px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 0.75rem;
+        letter-spacing: 0.3px;
+        display: inline-block;
+      }
+
+      .bi-table-presencial {
+        color: #334155;
+        font-weight: 600;
+      }
+
+      .bi-table-teletrabajo {
+        color: var(--bi-indigo);
+        font-weight: 600;
+      }
+
+      .bi-table-extras {
+        color: var(--bi-amber-dark);
+        font-weight: 700;
+      }
+
+      .bi-table-total {
+        color: var(--color-primary);
+        font-weight: 800;
+        font-size: 0.95rem;
+      }
+
+      .bi-table-prog-text {
+        font-size: 0.72rem;
+        color: var(--color-text-muted);
+        font-weight: 600;
+        margin-top: 3px;
+        display: block;
+      }
+
+      @media (max-width: 1024px) {
+        .bi-charts-grid-main {
+          grid-template-columns: 1fr;
+        }
+
+        .bi-charts-grid-secondary {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+
+    <div class="bi-dashboard-container">
+
+      <!-- 1. BARRA DE COMANDO Y FILTROS INTEGRADOS -->
+      <div class="bi-filter-bar">
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+          <!-- Filtro de Modo Principal (General, Carrera, Estudiante) -->
+          <div class="bi-scope-tabs" role="tablist">
+            <button type="button" class="bi-scope-btn active" data-mode="general">
+              <i class="bi bi-globe"></i> En General
+            </button>
+            <button type="button" class="bi-scope-btn" data-mode="carrera">
+              <i class="bi bi-mortarboard-fill"></i> Por Carrera
+            </button>
+            <button type="button" class="bi-scope-btn" data-mode="estudiante">
+              <i class="bi bi-person-badge-fill"></i> Por Estudiante
+            </button>
+          </div>
+
+          <!-- Selector Dinámico de Carrera (visible en modo carrera) -->
+          <div id="wrapFiltroCarrera" style="display: none;">
+            <select id="selectCarrera" class="bi-select-custom">
+              <% (carreras || []).forEach(c=> { %>
+                <option value="<%= c.id_carrera %>">
+                  <%= c.nombre %>
+                </option>
+                <% }) %>
+            </select>
+          </div>
+
+          <!-- Selector Dinámico de Estudiante (visible en modo estudiante) -->
+          <div id="wrapFiltroEstudiante" style="display: none;">
+            <select id="selectEstudiante" class="bi-select-custom" style="min-width: 260px;">
+              <% (pasantes || []).forEach(p=> { %>
+                <option value="<%= p.id_usuario %>">
+                  <%= p.nombre_completo %> (<%= p.carrera_siglas || 'GEN' %>)
+                </option>
+                <% }) %>
+            </select>
+          </div>
+        </div>
+
+        <!-- Filtro de Período Temporal + Orden Ascendente/Descendente -->
+        <div class="bi-filter-controls">
+          <div class="bi-period-pills">
+            <button type="button" class="bi-period-btn active" data-period="all">Histórico</button>
+            <button type="button" class="bi-period-btn" data-period="mes">Este Mes</button>
+            <button type="button" class="bi-period-btn" data-period="trimestre">3 Meses</button>
+            <button type="button" class="bi-period-btn" data-period="anio">Este Año</button>
+          </div>
+
+          <!-- Filtro Ascendente / Descendente -->
+          <div class="bi-order-toggle" role="group" aria-label="Orden de Datos">
+            <button type="button" class="bi-order-btn active" data-order="desc" id="btnOrderDesc"
+              title="Ordenar de mayor a menor">
+              <i class="bi bi-sort-numeric-down-alt"></i> Mayor a menor
+            </button>
+            <button type="button" class="bi-order-btn" data-order="asc" id="btnOrderAsc"
+              title="Ordenar de menor a mayor">
+              <i class="bi bi-sort-numeric-up"></i> Menor a mayor
+            </button>
+          </div>
+
+          <button type="button" id="btnActualizarData" class="bi-btn-refresh">
+            <i class="bi bi-arrow-clockwise"></i> Actualizar
+          </button>
+        </div>
+      </div>
+
+      <!-- Ficha de Perfil de Estudiante (Se inyecta dinámicamente si está en modo estudiante) -->
+      <div id="studentProfileContainer" style="display: none;"></div>
+
+      <!-- 2. TARJETAS KPI CORPORATIVAS SUPERIORES -->
+      <div class="bi-kpi-grid">
+        <!-- KPI 1: Pasantes -->
+        <div class="bi-kpi-card bi-kpi-blue">
+          <div class="bi-kpi-header">
+            <span class="bi-kpi-label">Pasantes en Alcance</span>
+            <div class="bi-kpi-icon bi-icon-blue"><i class="bi bi-people-fill"></i></div>
+          </div>
+          <div class="bi-kpi-value" id="kpiTotalPasantes">0</div>
+          <div class="bi-kpi-sub">
+            <i class="bi bi-check2-circle text-primary"></i> <span id="kpiSubPasantes">Total registrados</span>
+          </div>
+        </div>
+
+        <!-- KPI 2: Total Horas -->
+        <div class="bi-kpi-card bi-kpi-teal">
+          <div class="bi-kpi-header">
+            <span class="bi-kpi-label">Horas Certificadas</span>
+            <div class="bi-kpi-icon bi-icon-teal"><i class="bi bi-clock-history"></i></div>
+          </div>
+          <div class="bi-kpi-value" id="kpiTotalHoras">0.0 <span
+              style="font-size: 1rem; color: var(--bi-teal); font-weight: 700;">hrs</span></div>
+          <div class="bi-kpi-sub">
+            <i class="bi bi-speedometer2 text-secondary"></i> Promedio: <b id="kpiPromedioHoras"
+              class="text-dark">0.0</b> hrs/est.
+          </div>
+        </div>
+
+        <!-- KPI 3: Cumplimiento de Meta -->
+        <div class="bi-kpi-card bi-kpi-emerald">
+          <div class="bi-kpi-header">
+            <span class="bi-kpi-label">Avance Global Meta</span>
+            <div class="bi-kpi-icon bi-icon-emerald"><i class="bi bi-bullseye"></i></div>
+          </div>
+          <div class="bi-kpi-value" id="kpiCumplimiento">0%</div>
+          <div class="bi-kpi-sub">
+            <i class="bi bi-award-fill text-success"></i> Base meta: 280 hrs/pasante
+          </div>
+        </div>
+
+        <!-- KPI 4: Teletrabajo vs Presencial -->
+        <div class="bi-kpi-card bi-kpi-indigo">
+          <div class="bi-kpi-header">
+            <span class="bi-kpi-label">Modalidad Asistencia</span>
+            <div class="bi-kpi-icon bi-icon-indigo"><i class="bi bi-laptop"></i></div>
+          </div>
+          <div class="bi-kpi-value" id="kpiHorasTeletrabajo">0.0 <span
+              style="font-size: 1rem; color: var(--bi-indigo); font-weight: 700;">hrs rem.</span></div>
+          <div class="bi-kpi-sub">
+            Pres: <b id="kpiHorasPresencial" class="text-dark">0.0</b>h · Extras: <b id="kpiHorasExtrasVal"
+              style="color: var(--bi-amber-dark);">0.0</b>h
+          </div>
+        </div>
+
+        <!-- KPI 5: Carrera Líder -->
+        <div class="bi-kpi-card bi-kpi-amber">
+          <div class="bi-kpi-header">
+            <span class="bi-kpi-label">Carrera Líder</span>
+            <div class="bi-kpi-icon bi-icon-amber"><i class="bi bi-trophy-fill"></i></div>
+          </div>
+          <div class="bi-kpi-value" id="kpiCarreraLider" style="font-size: 1.45rem; line-height: 1.3;">-</div>
+          <div class="bi-kpi-sub">
+            Mayor volumen de horas acumuladas
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. BLOQUE PRINCIPAL DE GRÁFICOS: TENDENCIA TEMPORAL + GAUGES CIRCULARES -->
+      <div class="bi-charts-grid-main">
+
+        <!-- Gráfico 1: Evolución Temporal y Tendencia Semanal -->
+        <div class="bi-panel">
+          <div class="bi-panel-header">
+            <div class="bi-panel-title">
+              <i class="bi bi-graph-up text-primary"></i>
+              <span>Tendencia Temporal de Horas y Acumulativo</span>
+            </div>
+            <span class="bi-panel-tag">Línea de Tiempo</span>
+          </div>
+          <div class="bi-chart-canvas-wrap">
+            <canvas id="chartTendenciaTemporal"></canvas>
+          </div>
+        </div>
+
+        <!-- Gráfico 2: Donut Gauges con Porcentaje Central -->
+        <div class="bi-panel">
+          <div class="bi-panel-header">
+            <div class="bi-panel-title">
+              <i class="bi bi-pie-chart-fill text-warning"></i>
+              <span>Medidores de Eficiencia</span>
+            </div>
+            <span class="bi-panel-tag"
+              style="color: var(--bi-teal); border-color: #99F6E4; background: #F0FDFA;">Gauges</span>
+          </div>
+
+          <div class="bi-gauges-container">
+            <!-- Gauge 1: Meta -->
+            <div class="bi-gauge-item">
+              <div class="bi-gauge-chart-box">
+                <canvas id="gaugeMeta"></canvas>
+                <div class="bi-gauge-center-text" id="gaugeMetaVal">0%</div>
+              </div>
+              <div class="bi-gauge-label">Meta Pasantía</div>
+              <div class="bi-gauge-subtext">Meta 280 hrs</div>
+            </div>
+
+            <!-- Gauge 2: Presencial -->
+            <div class="bi-gauge-item">
+              <div class="bi-gauge-chart-box">
+                <canvas id="gaugePresencial"></canvas>
+                <div class="bi-gauge-center-text" id="gaugePresencialVal">0%</div>
+              </div>
+              <div class="bi-gauge-label">Presencial</div>
+              <div class="bi-gauge-subtext" id="gaugePresencialHrs">0 hrs</div>
+            </div>
+
+            <!-- Gauge 3: Remoto -->
+            <div class="bi-gauge-item">
+              <div class="bi-gauge-chart-box">
+                <canvas id="gaugeRemoto"></canvas>
+                <div class="bi-gauge-center-text" id="gaugeRemotoVal">0%</div>
+              </div>
+              <div class="bi-gauge-label">Teletrabajo</div>
+              <div class="bi-gauge-subtext" id="gaugeRemotoHrs">0 hrs</div>
+            </div>
+
+            <!-- Gauge 4: Horas Extras -->
+            <div class="bi-gauge-item">
+              <div class="bi-gauge-chart-box">
+                <canvas id="gaugeExtra"></canvas>
+                <div class="bi-gauge-center-text" id="gaugeExtraVal">0%</div>
+              </div>
+              <div class="bi-gauge-label">Horas Extras</div>
+              <div class="bi-gauge-subtext" id="gaugeExtraHrs">0 hrs</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 4. BLOQUE SECUNDARIO: DISTRIBUCIÓN POR CARRERA + RANKING EN FLECHAS -->
+      <div class="bi-charts-grid-secondary">
+
+        <!-- Gráfico 3: Distribución por Carrera (Barras Verticales) -->
+        <div class="bi-panel">
+          <div class="bi-panel-header">
+            <div class="bi-panel-title">
+              <i class="bi bi-bar-chart-fill text-success"></i>
+              <span>Distribución de Horas por Carrera</span>
+            </div>
+            <span class="bi-panel-tag"
+              style="color: var(--bi-indigo); border-color: #C7D2FE; background: #EEF2FF;">Carreras</span>
+          </div>
+          <div class="bi-chart-canvas-wrap-sm">
+            <canvas id="chartPorCarrera"></canvas>
+          </div>
+        </div>
+
+        <!-- Gráfico 4: Ranking y Avance de Pasantes (Barras Flecha) -->
+        <div class="bi-panel">
+          <div class="bi-panel-header">
+            <div class="bi-panel-title">
+              <i class="bi bi-lightning-charge-fill text-primary"></i>
+              <span id="rankingPanelTitle">Líderes de Rendimiento y Avance</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <button type="button" class="bi-quick-sort-btn" id="btnToggleRankingSort"
+                title="Alternar Ascendente / Descendente">
+                <i class="bi bi-arrow-down-up" id="sortRankingIcon"></i> <span id="sortRankingLabel">Descendente</span>
+              </button>
+              <span class="bi-panel-tag" id="rankingBadgeTag"
+                style="color: var(--bi-amber-dark); border-color: #FDE68A; background: #FEF3C7;">Top Ranking</span>
+            </div>
+          </div>
+
+          <div class="bi-arrow-bars-list" id="rankingArrowList">
+            <!-- Render dinámico de las flechas de porcentaje -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 5. TABLA RESUMEN EN ANCHO COMPLETO HORIZONTAL -->
+      <div class="bi-panel" style="width: 100%;">
+        <div class="bi-panel-header" style="align-items: center; margin-bottom: 1rem; padding-bottom: 0.85rem;">
+          <div class="bi-panel-title" style="white-space: nowrap;">
+            <span id="tablaResumenTitle" style="font-size: 1.15rem; font-weight: 800; color: #0F172A; letter-spacing: -0.2px;">Detalle Rápido de Pasantes</span>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <button type="button" class="bi-quick-sort-btn" id="btnToggleTableSort"
+              title="Alternar Ascendente / Descendente">
+              <i class="bi bi-arrow-down-up" id="sortTableIcon"></i> <span id="sortTableLabel">Descendente</span>
+            </button>
+            <span class="bi-panel-tag" id="tablaBadgeCount">0 Registros</span>
+          </div>
+        </div>
+
+        <div class="bi-table-wrap">
+          <table class="bi-summary-table">
+            <thead>
+              <tr>
+                <th>Pasante</th>
+                <th>Carrera</th>
+                <th>Presencial</th>
+                <th>Teletrabajo</th>
+                <th>Horas Extras</th>
+                <th>Total</th>
+                <th>Progreso (Meta 280 hrs)</th>
+              </tr>
+            </thead>
+            <tbody id="tablaResumenBody">
+              <!-- Renderizado dinámico -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <script>
+      // ==========================================================================
+      // LÓGICA FRONTEND DASHBOARD BI SISTEMA MONSELEY (LIGHT CORPORATIVO)
+      // ==========================================================================
+      document.addEventListener('DOMContentLoaded', () => {
+
+        // Paleta Corporativa Monseley
+        const CORP = {
+          blue: '#0F5FA6',
+          blueHover: '#0D528F',
+          teal: '#0D9488',
+          emerald: '#10B981',
+          indigo: '#6366F1',
+          amber: '#F59E0B',
+          amberDark: '#D97706',
+          trackColor: '#E2E8F0',
+          gridColor: '#F1F5F9',
+          textDark: '#0F172A',
+          textMuted: '#64748B'
+        };
+
+        // Estado local de los filtros
+        let currentMode = 'general'; // 'general' | 'carrera' | 'estudiante'
+        let currentPeriod = 'all';  // 'all' | 'mes' | 'trimestre' | 'anio'
+        let currentOrder = 'desc';  // 'desc' | 'asc'
+
+        // Elementos DOM
+        const scopeBtns = document.querySelectorAll('.bi-scope-btn');
+        const periodBtns = document.querySelectorAll('.bi-period-btn');
+        const orderBtns = document.querySelectorAll('.bi-order-btn');
+        const wrapCarrera = document.getElementById('wrapFiltroCarrera');
+        const wrapEstudiante = document.getElementById('wrapFiltroEstudiante');
+        const selectCarrera = document.getElementById('selectCarrera');
+        const selectEstudiante = document.getElementById('selectEstudiante');
+        const btnActualizar = document.getElementById('btnActualizarData');
+        const studentProfileContainer = document.getElementById('studentProfileContainer');
+        const btnToggleRankingSort = document.getElementById('btnToggleRankingSort');
+        const btnToggleTableSort = document.getElementById('btnToggleTableSort');
+        const sortRankingLabel = document.getElementById('sortRankingLabel');
+        const sortTableLabel = document.getElementById('sortTableLabel');
+        const rankingPanelTitle = document.getElementById('rankingPanelTitle');
+        const rankingBadgeTag = document.getElementById('rankingBadgeTag');
+
+        // Instancias de Chart.js
+        let chartTendencia = null;
+        let chartCarrera = null;
+        let gaugeMetaChart = null;
+        let gaugePresencialChart = null;
+        let gaugeRemotoChart = null;
+        let gaugeExtraChart = null;
+
+        // Helper: Crear Donut Gauge con porcentaje y pista clara
+        function initGauge(canvasId, color) {
+          const ctx = document.getElementById(canvasId).getContext('2d');
+          return new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+              datasets: [{
+                data: [0, 100],
+                backgroundColor: [color, CORP.trackColor],
+                borderWidth: 0,
+                circumference: 360,
+                rotation: 0
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              cutout: '78%',
+              plugins: {
+                tooltip: { enabled: false },
+                legend: { display: false }
+              },
+              animation: { animateRotate: true, duration: 800 }
+            }
+          });
+        }
+
+        function updateGauge(chartInstance, valElementId, percent, color) {
+          if (!chartInstance) return;
+          const safePct = Math.max(0, Math.min(100, Math.round(percent || 0)));
+          chartInstance.data.datasets[0].data = [safePct, 100 - safePct];
+          chartInstance.data.datasets[0].backgroundColor = [color, CORP.trackColor];
+          chartInstance.update();
+          const el = document.getElementById(valElementId);
+          if (el) el.textContent = `${safePct}%`;
+        }
+
+        // Inicializar Gauges (4 medidores en cuadrícula 2x2)
+        gaugeMetaChart = initGauge('gaugeMeta', CORP.emerald);
+        gaugePresencialChart = initGauge('gaugePresencial', CORP.blue);
+        gaugeRemotoChart = initGauge('gaugeRemoto', CORP.indigo);
+        gaugeExtraChart = initGauge('gaugeExtra', CORP.amber);
+
+        // ==========================================
+        // FUNCIÓN PRINCIPAL DE CARGA DE ANALÍTICA
+        // ==========================================
+        async function fetchAnalytics() {
+          const carreraId = selectCarrera.value;
+          const estudianteId = selectEstudiante.value;
+
+          let url = `/api/graficos/analytics?modo=${currentMode}&periodo=${currentPeriod}&orden=${currentOrder}`;
+          if (currentMode === 'carrera' && carreraId) url += `&carreraId=${carreraId}`;
+          if (currentMode === 'estudiante' && estudianteId) url += `&estudianteId=${estudianteId}`;
+
+          try {
+            const res = await fetch(url);
+            const data = await res.json();
+            if (!data.ok) return;
+
+            renderDashboard(data);
+          } catch (err) {
+            console.error('Error al obtener datos analíticos:', err);
+          }
+        }
+
+        // ==========================================
+        // RENDERIZADO DEL DASHBOARD Y WIDGETS
+        // ==========================================
+        function renderDashboard(data) {
+          const { kpis, seriesTemporal, porCarrera, rankingEstudiantes, estudiantePerfil } = data;
+
+          // 1. Actualizar KPIs
+          document.getElementById('kpiTotalPasantes').textContent = kpis.totalPasantes || 0;
+          document.getElementById('kpiTotalHoras').innerHTML = `${kpis.totalHoras || 0} <span style="font-size: 1rem; color: var(--bi-teal); font-weight: 700;">hrs</span>`;
+          document.getElementById('kpiPromedioHoras').textContent = kpis.promedioHoras || 0;
+          document.getElementById('kpiCumplimiento').textContent = `${kpis.tasaCumplimiento || 0}%`;
+          document.getElementById('kpiHorasTeletrabajo').innerHTML = `${kpis.horasTeletrabajo || 0} <span style="font-size: 1rem; color: var(--bi-indigo); font-weight: 700;">hrs rem.</span>`;
+          document.getElementById('kpiHorasPresencial').textContent = kpis.horasPresencial || 0;
+          const elExtras = document.getElementById('kpiHorasExtrasVal');
+          if (elExtras) elExtras.textContent = `${kpis.horasExtra || 0}`;
+          document.getElementById('kpiCarreraLider').textContent = kpis.carreraLider || 'En curso';
+
+          // 2. Gauges Circulares con Porcentajes (4 Gauges)
+          updateGauge(gaugeMetaChart, 'gaugeMetaVal', kpis.tasaCumplimiento, CORP.emerald);
+
+          const totalH = (kpis.horasPresencial || 0) + (kpis.horasTeletrabajo || 0) + (kpis.horasExtra || 0);
+          const pctPresencial = totalH > 0 ? (kpis.horasPresencial / totalH) * 100 : 0;
+          const pctRemoto = totalH > 0 ? (kpis.horasTeletrabajo / totalH) * 100 : 0;
+          const pctExtra = totalH > 0 ? (kpis.horasExtra / totalH) * 100 : 0;
+
+          updateGauge(gaugePresencialChart, 'gaugePresencialVal', pctPresencial, CORP.blue);
+          updateGauge(gaugeRemotoChart, 'gaugeRemotoVal', pctRemoto, CORP.indigo);
+          updateGauge(gaugeExtraChart, 'gaugeExtraVal', pctExtra, CORP.amber);
+
+          const elPresHrs = document.getElementById('gaugePresencialHrs');
+          if (elPresHrs) elPresHrs.textContent = `${kpis.horasPresencial || 0} hrs`;
+          const elRemHrs = document.getElementById('gaugeRemotoHrs');
+          if (elRemHrs) elRemHrs.textContent = `${kpis.horasTeletrabajo || 0} hrs`;
+          const elExtHrs = document.getElementById('gaugeExtraHrs');
+          if (elExtHrs) elExtHrs.textContent = `${kpis.horasExtra || 0} hrs`;
+
+          // 3. Ficha de Estudiante (si corresponde)
+          if (estudiantePerfil && currentMode === 'estudiante') {
+            studentProfileContainer.style.display = 'block';
+            studentProfileContainer.innerHTML = `
+          <div class="bi-student-profile-card">
+            <div class="bi-student-avatar"><i class="bi bi-person-fill"></i></div>
+            <div class="bi-student-details">
+              <h3 class="bi-student-name">${estudiantePerfil.nombre}</h3>
+              <div class="bi-student-meta">
+                <span><i class="bi bi-mortarboard text-primary"></i> ${estudiantePerfil.carrera} (${estudiantePerfil.carrera_siglas})</span>
+                <span><i class="bi bi-card-text text-secondary"></i> CI: ${estudiantePerfil.ci || 'S/N'}</span>
+                <span><i class="bi bi-building text-success"></i> ${estudiantePerfil.universidad}</span>
+                <span><i class="bi bi-calendar-event text-danger"></i> Inicio: ${estudiantePerfil.fecha_inicio}</span>
+                <span class="mt-1 d-inline-flex gap-2">
+                  <span style="color: var(--bi-blue); font-weight: 700; background: #EFF6FF; padding: 2px 8px; border-radius: 6px; border: 1px solid #BFDBFE;">Pres: ${estudiantePerfil.horas_presencial} hrs</span>
+                  <span style="color: var(--bi-indigo); font-weight: 700; background: #EEF2FF; padding: 2px 8px; border-radius: 6px; border: 1px solid #C7D2FE;">Tele: ${estudiantePerfil.horas_teletrabajo} hrs</span>
+                  <span style="color: var(--bi-amber-dark); font-weight: 700; background: #FFFBEB; padding: 2px 8px; border-radius: 6px; border: 1px solid #FDE68A;">Extras: ${estudiantePerfil.horas_extra} hrs</span>
+                </span>
+              </div>
+            </div>
+            <div style="text-align: right;">
+              <span style="font-size: 0.8rem; color: var(--color-text-muted); text-transform: uppercase; font-weight: 700;">Progreso a 280 hrs</span>
+              <div style="font-size: 1.8rem; font-weight: 800; color: var(--color-primary);">${estudiantePerfil.total_horas} <span style="font-size: 0.9rem; color: var(--color-text-muted);">/ 280 hrs</span></div>
+              <small style="color: var(--bi-emerald); font-weight: 700;">Resta: ${estudiantePerfil.horas_restantes} hrs</small>
+            </div>
+          </div>
+        `;
+          } else {
+            studentProfileContainer.style.display = 'none';
+            studentProfileContainer.innerHTML = '';
+          }
+
+          // 4. Gráfico de Tendencia Temporal
+          renderChartTendencia(seriesTemporal);
+
+          // 5. Gráfico por Carrera
+          renderChartCarrera(porCarrera);
+
+          // 6. Ranking con Flechas
+          renderRankingFlechas(rankingEstudiantes);
+
+          // 7. Tabla Resumen / Auditoría Rápida (Ancho Completo)
+          renderTablaResumen(rankingEstudiantes);
+        }
+
+        // ==========================================
+        // RENDERIZADO DE CHART 1: TENDENCIA TEMPORAL
+        // ==========================================
+        function renderChartTendencia(series) {
+          const canvas = document.getElementById('chartTendenciaTemporal');
+          const ctx = canvas.getContext('2d');
+
+          if (chartTendencia) chartTendencia.destroy();
+
+          // Gradiente suave de azul Monseley
+          const gradBlue = ctx.createLinearGradient(0, 0, 0, 300);
+          gradBlue.addColorStop(0, 'rgba(15, 95, 166, 0.16)');
+          gradBlue.addColorStop(1, 'rgba(15, 95, 166, 0.0)');
+
+          chartTendencia = new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: series.labels || [],
+              datasets: [
+                {
+                  label: 'Horas Semanales',
+                  data: series.horas || [],
+                  borderColor: CORP.blue,
+                  backgroundColor: gradBlue,
+                  fill: true,
+                  tension: 0.35,
+                  borderWidth: 2.5,
+                  pointBackgroundColor: CORP.blue,
+                  pointBorderColor: '#FFFFFF',
+                  pointBorderWidth: 2,
+                  pointRadius: 4,
+                  pointHoverRadius: 7
+                },
+                {
+                  label: 'Horas Acumuladas',
+                  data: series.acumulado || [],
+                  borderColor: CORP.teal,
+                  backgroundColor: 'transparent',
+                  fill: false,
+                  tension: 0.35,
+                  borderWidth: 2,
+                  borderDash: [5, 4],
+                  pointBackgroundColor: CORP.teal,
+                  pointBorderColor: '#FFFFFF',
+                  pointRadius: 3,
+                  pointHoverRadius: 6
+                },
+                {
+                  label: 'Teletrabajo (hrs)',
+                  data: series.teletrabajo || [],
+                  borderColor: CORP.indigo,
+                  backgroundColor: 'transparent',
+                  borderWidth: 1.8,
+                  pointBackgroundColor: CORP.indigo,
+                  pointRadius: 2.5
+                },
+                {
+                  label: 'Horas Extras (hrs)',
+                  data: series.horas_extra || [],
+                  borderColor: CORP.amber,
+                  backgroundColor: 'transparent',
+                  borderWidth: 1.8,
+                  pointBackgroundColor: CORP.amber,
+                  pointRadius: 2.5
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  labels: { color: '#334155', font: { weight: '600', size: 12 } }
+                },
+                tooltip: {
+                  backgroundColor: '#0F172A',
+                  titleColor: '#FFFFFF',
+                  bodyColor: '#F8FAFC',
+                  borderColor: '#E2E8F0',
+                  borderWidth: 1,
+                  padding: 12,
+                  boxPadding: 4
+                }
+              },
+              scales: {
+                x: {
+                  grid: { color: CORP.gridColor },
+                  ticks: { color: CORP.textMuted, font: { size: 11 } }
+                },
+                y: {
+                  grid: { color: CORP.gridColor },
+                  ticks: { color: CORP.textMuted, font: { size: 11 } }
+                }
+              }
+            }
+          });
+        }
+
+        // ==========================================
+        // RENDERIZADO DE CHART 2: POR CARRERA
+        // ==========================================
+        function renderChartCarrera(data) {
+          const canvas = document.getElementById('chartPorCarrera');
+          const ctx = canvas.getContext('2d');
+
+          if (chartCarrera) chartCarrera.destroy();
+
+          const colores = [CORP.blue, CORP.teal, '#0284C7', CORP.indigo, CORP.amber, CORP.emerald];
+
+          chartCarrera = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: data.labels || [],
+              datasets: [{
+                label: 'Horas Totales',
+                data: data.horas || [],
+                backgroundColor: colores.slice(0, (data.labels || []).length),
+                borderRadius: 6,
+                borderWidth: 0,
+                maxBarThickness: 45
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false },
+                tooltip: {
+                  backgroundColor: '#0F172A',
+                  titleColor: '#FFFFFF',
+                  bodyColor: '#F8FAFC',
+                  borderColor: '#E2E8F0',
+                  borderWidth: 1,
+                  padding: 10
+                }
+              },
+              scales: {
+                x: {
+                  grid: { display: false },
+                  ticks: { color: CORP.textMuted, font: { size: 11, weight: '600' } }
+                },
+                y: {
+                  grid: { color: CORP.gridColor },
+                  ticks: { color: CORP.textMuted, font: { size: 11 } }
+                }
+              }
+            }
+          });
+        }
+
+        // ==========================================
+        // RENDERIZADO DE FLECHAS DE PROGRESO
+        // ==========================================
+        function renderRankingFlechas(estudiantes) {
+          const container = document.getElementById('rankingArrowList');
+          if (!container) return;
+
+          // Actualizar título y tag según el orden
+          if (currentOrder === 'asc') {
+            if (rankingPanelTitle) rankingPanelTitle.textContent = 'Pasantes con Menor Avance (Ascendente)';
+            if (rankingBadgeTag) {
+              rankingBadgeTag.textContent = 'Menor Avance';
+              rankingBadgeTag.style.color = 'var(--bi-amber-dark)';
+              rankingBadgeTag.style.borderColor = '#FDE68A';
+              rankingBadgeTag.style.background = '#FEF3C7';
+            }
+          } else {
+            if (rankingPanelTitle) rankingPanelTitle.textContent = 'Líderes de Rendimiento y Avance';
+            if (rankingBadgeTag) {
+              rankingBadgeTag.textContent = 'Top Ranking';
+              rankingBadgeTag.style.color = 'var(--color-primary)';
+              rankingBadgeTag.style.borderColor = '#BFDBFE';
+              rankingBadgeTag.style.background = '#EFF6FF';
+            }
+          }
+
+          const top = (estudiantes || []).slice(0, 5);
+          if (top.length === 0) {
+            container.innerHTML = '<p class="text-muted text-center py-4">No hay pasantes con actividad en este rango.</p>';
+            return;
+          }
+
+          const gradientClasses = [
+            'fill-monseley-blue',
+            'fill-teal-corp',
+            'fill-indigo-corp',
+            'fill-emerald-corp',
+            'fill-amber-corp'
+          ];
+
+          container.innerHTML = top.map((est, idx) => {
+            const fillClass = gradientClasses[idx % gradientClasses.length];
+            const pct = Math.max(12, est.porcentaje); // Mínimo 12% para que quepa el texto de la flecha
+            return `
+          <div class="bi-arrow-row">
+            <div class="bi-arrow-name">
+              <span>${est.nombre}</span>
+              <span class="bi-arrow-career">${est.carrera_siglas || 'PASANTE'} · ${est.horas} hrs</span>
+            </div>
+            <div class="bi-arrow-bar-wrap">
+              <div class="bi-arrow-bar-fill ${fillClass}" style="width: ${pct}%;">
+                ${est.porcentaje}%
+              </div>
+            </div>
+          </div>
+        `;
+          }).join('');
+        }
+
+        // ==========================================
+        // RENDERIZADO DE TABLA DE RESUMEN
+        // ==========================================
+        function renderTablaResumen(estudiantes) {
+          const tbody = document.getElementById('tablaResumenBody');
+          const badgeCount = document.getElementById('tablaBadgeCount');
+          if (!tbody) return;
+
+          badgeCount.textContent = `${(estudiantes || []).length} Pasantes`;
+
+          if (!estudiantes || estudiantes.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">Sin registros para mostrar</td></tr>';
+            return;
+          }
+
+          tbody.innerHTML = estudiantes.slice(0, 10).map(e => `
+        <tr>
+          <td><span class="bi-table-name">${e.nombre}</span></td>
+          <td><span class="bi-table-career-badge">${e.carrera_siglas || 'GEN'}</span></td>
+          <td><span class="bi-table-presencial">${e.presencial} hrs</span></td>
+          <td><span class="bi-table-teletrabajo">${e.teletrabajo} hrs</span></td>
+          <td><span class="bi-table-extras">${e.horas_extra || 0} hrs</span></td>
+          <td><span class="bi-table-total">${e.horas} hrs</span></td>
+          <td style="min-width: 130px;">
+            <div style="background: #E2E8F0; height: 8px; border-radius: 4px; overflow: hidden;">
+              <div style="width: ${e.porcentaje}%; height: 100%; background: linear-gradient(90deg, #0F5FA6, #0D9488); border-radius: 4px;"></div>
+            </div>
+            <span class="bi-table-prog-text">${e.porcentaje}% de 280 hrs</span>
+          </td>
+        </tr>
+      `).join('');
+        }
+
+        // Helper para alternar orden y sincronizar controles
+        function setOrder(newOrder) {
+          currentOrder = newOrder;
+          orderBtns.forEach(b => {
+            if (b.dataset.order === currentOrder) b.classList.add('active');
+            else b.classList.remove('active');
+          });
+
+          const labelText = currentOrder === 'asc' ? 'Ascendente' : 'Descendente';
+          if (sortRankingLabel) sortRankingLabel.textContent = labelText;
+          if (sortTableLabel) sortTableLabel.textContent = labelText;
+
+          fetchAnalytics();
+        }
+
+        // ==========================================
+        // EVENT LISTENERS DE FILTRADO
+        // ==========================================
+
+        // Cambio de modo: General / Carrera / Estudiante
+        scopeBtns.forEach(btn => {
+          btn.addEventListener('click', () => {
+            scopeBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentMode = btn.dataset.mode;
+
+            wrapCarrera.style.display = currentMode === 'carrera' ? 'block' : 'none';
+            wrapEstudiante.style.display = currentMode === 'estudiante' ? 'block' : 'none';
+
+            fetchAnalytics();
+          });
         });
-      }
-    }
-    if (selUser && selUser.value) await loadLine(selUser.value);
-    await loadPie();
-    await loadKPI();
 
-    // Ajustes responsivos suaves
-    const mq = window.matchMedia('(max-width: 768px)');
-    function applyTweaks(){
-      const isMobile = mq.matches;
-      lineChart.options.plugins.legend.position = isMobile ? 'bottom' : 'top';
-      pieChart.options.plugins.legend.position  = isMobile ? 'bottom' : 'top';
-      lineChart.update('none'); pieChart.update('none');
-    }
-    mq.addEventListener ? mq.addEventListener('change', applyTweaks)
-                        : mq.addListener(applyTweaks);
-    applyTweaks();
-  })();
-</script>
-</body>
-</html>
+        // Cambio de período
+        periodBtns.forEach(btn => {
+          btn.addEventListener('click', () => {
+            periodBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentPeriod = btn.dataset.period;
+            fetchAnalytics();
+          });
+        });
+
+        // Cambio de Orden (Ascendente / Descendente) desde barra superior
+        orderBtns.forEach(btn => {
+          btn.addEventListener('click', () => {
+            setOrder(btn.dataset.order);
+          });
+        });
+
+        // Botones rápidos de orden en cabecera de Ranking y Tabla
+        btnToggleRankingSort?.addEventListener('click', () => {
+          setOrder(currentOrder === 'desc' ? 'asc' : 'desc');
+        });
+
+        btnToggleTableSort?.addEventListener('click', () => {
+          setOrder(currentOrder === 'desc' ? 'asc' : 'desc');
+        });
+
+        // Cambio de selectores dinámicos
+        selectCarrera?.addEventListener('change', fetchAnalytics);
+        selectEstudiante?.addEventListener('change', fetchAnalytics);
+        btnActualizar?.addEventListener('click', fetchAnalytics);
+
+        // Carga inicial
+        fetchAnalytics();
+
+      });
+    </script>
+
+    <%- include('partials/footer') %>
