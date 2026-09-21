@@ -339,7 +339,7 @@
       <div class="swal-field swal-span-2">
         <label for="swal-pass">Contraseña <small>(opcional)</small></label>
         <div class="pwd-group">
-          <input id="swal-pass" class="swal-inputx" type="password" placeholder="Nueva contraseña (opcional)" />
+          <input id="swal-pass" class="swal-inputx" type="password" placeholder="Mín. 6 car.: letras, números y símbolo" />
           <button type="button" id="toggle-pass" class="eye-btn" aria-label="Mostrar/ocultar contraseña"><i class="bi bi-eye"></i></button>
         </div>
       </div>
@@ -347,7 +347,7 @@
       <div class="swal-field swal-span-2">
         <label for="swal-pass2">Confirmar contraseña</label>
         <div class="pwd-group">
-          <input id="swal-pass2" class="swal-inputx" type="password" placeholder="Repite la contraseña" />
+          <input id="swal-pass2" class="swal-inputx" type="password" placeholder="Repite la nueva contraseña" />
           <button type="button" id="toggle-pass2" class="eye-btn" aria-label="Mostrar/ocultar contraseña"><i class="bi bi-eye"></i></button>
         </div>
       </div>
@@ -406,8 +406,20 @@
               }
 
               if (contrasena || contrasena2) {
-                if (contrasena.length < 4) {
-                  Swal.showValidationMessage('La contraseña debe tener mínimo 4 caracteres.');
+                if (contrasena.length < 6) {
+                  Swal.showValidationMessage('La contraseña debe tener mínimo 6 caracteres.');
+                  return false;
+                }
+                if (!/[a-zA-Z]/.test(contrasena)) {
+                  Swal.showValidationMessage('La contraseña debe contener al menos una letra.');
+                  return false;
+                }
+                if (!/[0-9]/.test(contrasena)) {
+                  Swal.showValidationMessage('La contraseña debe contener al menos un número.');
+                  return false;
+                }
+                if (!/[^a-zA-Z0-9]/.test(contrasena)) {
+                  Swal.showValidationMessage('La contraseña debe contener al menos un carácter especial (ej. @, #, $, *, !, .).');
                   return false;
                 }
                 if (contrasena !== contrasena2) {

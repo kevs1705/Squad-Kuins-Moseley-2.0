@@ -18,7 +18,7 @@
         <div class="kpi-column-left">
           <!-- Card 1: Usuario Seleccionado (PRIMERO) -->
           <div class="stat-card stat-card-user" id="cardUserContainer">
-            <div class="stat-icon-wrapper" id="stat-user-avatar-wrap">
+            <div class="stat-icon-wrapper" id="stat-user-avatar-wrap" style="background: #F0FDFA; color: #0D9488;">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
                 stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -29,7 +29,6 @@
               <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
                 <span class="stat-label">Usuario Seleccionado</span>
                 <div style="display: flex; align-items: center; gap: 6px;">
-
                   <button type="button" class="btn-card-calendar" id="btnVerCalendarioUsuario" style="display: none;"
                     title="Visualizar calendario de asistencias y actividades de este usuario">
                     <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
@@ -56,51 +55,9 @@
             </div>
           </div>
 
-          <!-- Card 2: Horas Acumuladas, Congeladas y Disponibles (Visible solo al consultar usuario individual) -->
-          <div class="stat-card" id="cardHorasAcumuladas" style="display: none; flex-direction: column; gap: 8px;">
-            <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
-              <div class="stat-icon-wrapper">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                  stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round"
-                    d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                </svg>
-              </div>
-              <div class="stat-info" style="flex: 1;">
-                <span class="stat-label">Horas acumuladas</span>
-                <div class="stat-value-row">
-                  <span class="stat-value" id="stat-hours">00:00:00</span>
-                  <span class="stat-badge">HH:MM:SS</span>
-                </div>
-                <span class="stat-subtext" id="stat-hours-decimal"
-                  style="font-size: 11.5px; color: var(--color-text-muted); font-weight: 500;">0.0 horas
-                  acumuladas</span>
-              </div>
-            </div>
-
-            <!-- Desglose de Horas Congeladas y Disponibles -->
-            <div
-              style="display: flex; gap: 8px; width: 100%; border-top: 1px solid var(--color-border); padding-top: 8px; margin-top: 2px;">
-              <div
-                style="flex: 1; background: #FEF2F2; padding: 4px 8px; border-radius: 6px; border: 1px solid #FECACA;">
-                <span style="font-size: 10.5px; color: #DC2626; font-weight: 600; display: block;">❄️ Total
-                  Congeladas:</span>
-                <span id="stat-hours-congeladas"
-                  style="font-size: 12px; font-weight: 700; color: #DC2626;">00:00:00</span>
-              </div>
-              <div
-                style="flex: 1; background: #F0FDF4; padding: 4px 8px; border-radius: 6px; border: 1px solid #BBF7D0;">
-                <span style="font-size: 10.5px; color: #16A34A; font-weight: 600; display: block;">✅ Total
-                  Disponibles:</span>
-                <span id="stat-hours-disponibles"
-                  style="font-size: 12px; font-weight: 700; color: #16A34A;">00:00:00</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Card 3: Total Registros / Jornadas -->
-          <div class="stat-card">
-            <div class="stat-icon-wrapper">
+          <!-- Card 2: Total Registros / Jornadas -->
+          <div class="stat-card" id="cardRegistrosContainer">
+            <div class="stat-icon-wrapper" style="background: #F0FDFA; color: #0D9488;">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
                 stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -111,13 +68,16 @@
               <span class="stat-label">Registros encontrados</span>
               <div class="stat-value-row">
                 <span class="stat-value" id="stat-records">0</span>
-                <span class="stat-badge" id="stat-records-badge">Jornadas</span>
+                <span class="stat-badge" id="stat-records-badge">JORNADAS</span>
               </div>
               <span class="stat-subtext"
                 style="font-size: 11.5px; color: var(--color-text-muted); font-weight: 500;">Asistencias en el
                 filtro</span>
             </div>
           </div>
+
+          <!-- Card 3: Pasantes Próximos a Culminar (Aprovecha el espacio lateral en el Ranking) -->
+          <div id="sideAvisoCulminacion" style="display: none;"></div>
         </div>
 
         <!-- Columna Derecha: Panel de Estadísticas Dinámico con Doble Pestaña -->
@@ -197,6 +157,88 @@
               <div class="stats-panel-body" id="statsPanelBody">
                 <!-- Renderizado dinámicamente vía JavaScript -->
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dashboard Bottom: Pronóstico de Salida Estimada + Horas Acumuladas (Grid de 2 Columnas) -->
+      <div class="reportes-dashboard-bottom" id="dashboardBottomRow" style="display: none;">
+        <!-- Card Pronóstico de Salida Estimada -->
+        <div class="stat-card stat-card-pronostico" id="cardPronosticoUsuario" style="flex-direction: column; gap: 10px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1;">
+              <div class="stat-icon-wrapper" style="background: #EFF6FF; color: #0F5FA6;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+              </div>
+              <div class="stat-info" style="min-width: 0; flex: 1;">
+                <span class="stat-label">Pronóstico de salida estimada</span>
+                <div class="stat-value-row">
+                  <span class="stat-value" id="stat-pronostico-fecha" style="font-size: 17px; font-weight: 800; color: #0F5FA6;">--</span>
+                </div>
+                <span class="stat-subtext" id="stat-pronostico-subtext"
+                  style="font-size: 11.5px; color: var(--color-text-muted); font-weight: 500;">Proyección según horario</span>
+              </div>
+            </div>
+            <span class="stat-badge stat-badge-pill" id="stat-pronostico-badge"
+              style="background: #EFF6FF; color: #0F5FA6; font-weight: 700; font-size: 11.5px; padding: 6px 12px; border-radius: 99px; text-transform: uppercase; white-space: nowrap;">~12 SEM RESTANTES</span>
+          </div>
+
+          <!-- Progreso de Meta de Horas y Faltantes -->
+          <div style="width: 100%; border-top: 1px solid var(--color-border); padding-top: 8px; margin-top: 2px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; margin-bottom: 5px;">
+              <span style="color: var(--color-text-muted); font-weight: 600;">Progreso de Pasantía:</span>
+              <span id="stat-pronostico-porcentaje" style="font-weight: 700; color: #0F5FA6;">0% (0 / 280 hrs)</span>
+            </div>
+            <div style="width: 100%; height: 8px; background: #E2E8F0; border-radius: 99px; overflow: hidden;">
+              <div id="stat-pronostico-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #0F5FA6, #0D9488); border-radius: 99px; transition: width 0.4s ease;"></div>
+            </div>
+            <div style="font-size: 11.5px; color: #64748B; margin-top: 6px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
+              <span>⏳ Faltan: <b id="stat-pronostico-faltan" style="color: #0F5FA6; font-weight: 700;">0.0 hrs</b></span>
+              <span>⏱️ Ritmo: <b id="stat-pronostico-ritmo-val" style="color: #0F5FA6; font-weight: 700;">20 hrs/sem</b></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card Horas Acumuladas, Congeladas y Disponibles -->
+        <div class="stat-card stat-card-hours" id="cardHorasAcumuladas" style="flex-direction: column; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
+            <div class="stat-icon-wrapper" style="background: #F0FDFA; color: #0D9488;">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+              </svg>
+            </div>
+            <div class="stat-info" style="flex: 1;">
+              <span class="stat-label">Horas acumuladas</span>
+              <div class="stat-value-row">
+                <span class="stat-value" id="stat-hours" style="font-size: 20px; font-weight: 800; color: #081426;">00:00:00</span>
+                <span class="stat-badge" style="background: #F0FDF4; color: #16A34A; font-weight: 700;">HH:MM:SS</span>
+              </div>
+              <span class="stat-subtext" id="stat-hours-decimal"
+                style="font-size: 11.5px; color: var(--color-text-muted); font-weight: 500;">0 horas acumuladas</span>
+            </div>
+          </div>
+
+          <!-- Desglose de Horas Congeladas y Disponibles -->
+          <div
+            style="display: flex; gap: 8px; width: 100%; border-top: 1px solid var(--color-border); padding-top: 8px; margin-top: 2px;">
+            <div
+              style="flex: 1; background: #FEF2F2; padding: 6px 10px; border-radius: 8px; border: 1px solid #FECACA;">
+              <span style="font-size: 10.5px; color: #DC2626; font-weight: 600; display: block;">❄️ Total Congeladas:</span>
+              <span id="stat-hours-congeladas"
+                style="font-size: 12.5px; font-weight: 700; color: #DC2626;">00:00:00 (0 h)</span>
+            </div>
+            <div
+              style="flex: 1; background: #F0FDF4; padding: 6px 10px; border-radius: 8px; border: 1px solid #BBF7D0;">
+              <span style="font-size: 10.5px; color: #16A34A; font-weight: 600; display: block;">✅ Total Disponibles:</span>
+              <span id="stat-hours-disponibles"
+                style="font-size: 12.5px; font-weight: 700; color: #16A34A;">00:00:00 (0 h)</span>
             </div>
           </div>
         </div>
@@ -1713,6 +1755,8 @@
         document.getElementById('paneGraficos')?.classList.toggle('active', pestana === 'graficos');
         document.getElementById('paneRanking')?.classList.toggle('active', pestana === 'ranking');
 
+        actualizarPosicionAvisoCulminacion();
+
         if (pestana === 'graficos' && statsChartInstance) {
           setTimeout(() => statsChartInstance.resize(), 50);
         }
@@ -1939,7 +1983,7 @@
           bodyEl.innerHTML = `
             <div class="user-stats-container">
               <!-- Mini Cards de Métricas del Usuario -->
-              <div class="user-mini-stats-grid">
+              <div class="user-mini-stats-grid" style="grid-template-columns: repeat(3, 1fr);">
                 <div class="user-mini-stat-card">
                   <div class="user-mini-stat-label">Jornadas Asistidas</div>
                   <div class="user-mini-stat-val text-primary">${stats.total_asistencias} <small style="font-size: 11.5px; font-weight: 500; color: var(--color-text-muted);">días</small></div>
@@ -1978,42 +2022,172 @@
           subEl.textContent = 'Visualización de horas por semanas, días y ranking de pasantes';
           if (tabRankingTitle) tabRankingTitle.textContent = 'Ranking Pasantes';
 
-          let rowsHTML = '';
-          if (stats.top_usuarios && stats.top_usuarios.length > 0) {
-            stats.top_usuarios.forEach(u => {
-              const medal = `#${u.ranking}`;
-              rowsHTML += `
-                <div class="ranking-user-item" onclick="seleccionarUsuarioDesdeRanking(${u.id_usuario}, '${escapeHTML(u.nombre)}', '${escapeHTML(u.CI)}')" title="Clic para ver detalle de ${escapeHTML(u.nombre)}">
-                  <div class="ranking-badge ${u.ranking <= 3 ? 'top-rank' : ''}">${medal}</div>
-                  <div class="user-avatar-initials" style="width: 28px; height: 28px; font-size: 11px;">${getInitials(u.nombre)}</div>
-                  <div class="ranking-user-info">
-                    <div class="ranking-user-name-row">
-                      <span class="ranking-user-name">${escapeHTML(u.nombre)}</span>
-                      <span class="ranking-user-ci">CI: ${escapeHTML(u.CI)}</span>
-                    </div>
-                    <div class="progress-bar-bg">
-                      <div class="progress-bar-fill progress-blue" style="width: ${u.porcentaje_relativo}%;"></div>
-                    </div>
-                  </div>
-                  <div class="ranking-user-hours">
-                    <span class="ranking-hours-val">${escapeHTML(u.horas_decimal)} <small>hrs</small></span>
-                    <span class="ranking-days-sub">${u.total_dias} ${u.total_dias === 1 ? 'jornada' : 'jornadas'}</span>
-                  </div>
-                </div>
-              `;
+          currentRankingData = stats.top_usuarios || [];
+          currentRankingCarrerasList = stats.carreras || [];
+
+          let carrerasOptions = `<option value="" ${currentRankingCarrera === '' ? 'selected' : ''}>Todas las carreras (General)</option>`;
+          if (currentRankingCarrerasList && currentRankingCarrerasList.length > 0) {
+            currentRankingCarrerasList.forEach(c => {
+              carrerasOptions += `<option value="${c.id_carrera}" ${String(currentRankingCarrera) === String(c.id_carrera) ? 'selected' : ''}>${escapeHTML(c.nombre)}${c.siglas ? ' (' + escapeHTML(c.siglas) + ')' : ''}</option>`;
             });
-          } else {
-            rowsHTML = `<div style="color: var(--color-text-muted); font-size: 13px; text-align: center; padding: 20px;">No hay datos de pasantes registrados.</div>`;
           }
 
           bodyEl.innerHTML = `
-            <div class="ranking-container">
-              <div class="ranking-list">
-                ${rowsHTML}
+            <div class="ranking-toolbar-container">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 10px; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                  <span style="font-size: 12.5px; font-weight: 600; color: var(--color-text-muted);">
+                    Filtrar Carrera:
+                  </span>
+                  <select id="rankingCarreraFilter" class="filter-select-ranking" onchange="cambiarCarreraRanking(this.value)">
+                    ${carrerasOptions}
+                  </select>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                  <span style="font-size: 12px; font-weight: 600; color: var(--color-text-muted);">
+                    Ordenar pasantes por horas acumuladas:
+                  </span>
+                  <div class="ranking-sort-toggle">
+                    <button type="button" class="btn-ranking-sort ${currentRankingOrder === 'desc' ? 'active' : ''}" id="btnRankingSortDesc" onclick="cambiarOrdenRanking('desc')">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                      Más Horas (Descendente)
+                    </button>
+                    <button type="button" class="btn-ranking-sort ${currentRankingOrder === 'asc' ? 'active' : ''}" id="btnRankingSortAsc" onclick="cambiarOrdenRanking('asc')">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+                      Menos Horas (Ascendente)
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Card del Gráfico de Barras Horizontales -->
+              <div class="ranking-hbar-card">
+                <div class="ranking-hbar-header">
+                  <div class="ranking-hbar-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="18" y1="20" x2="18" y2="10" />
+                      <line x1="12" y1="20" x2="12" y2="4" />
+                      <line x1="6" y1="20" x2="6" y2="14" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 class="ranking-hbar-title" id="rankingHbarTitle">
+                      ${currentRankingOrder === 'desc' ? 'Top 10 pasantes por horas acumuladas' : 'Top 10 pasantes con menos horas acumuladas'}
+                    </h4>
+                    <p class="ranking-hbar-subtitle">Total de horas registradas en todas las jornadas</p>
+                  </div>
+                </div>
+
+                <div id="rankingListWrap">
+                  <!-- Renderizado dinámico de barras horizontales -->
+                </div>
               </div>
             </div>
           `;
+
+          renderRankingList();
         }
+      }
+
+      let currentRankingOrder = 'desc'; // 'desc' | 'asc'
+      let currentRankingCarrera = ''; // '' = Todas las carreras
+      let currentRankingData = [];
+      let currentRankingCarrerasList = [];
+
+      function cambiarCarreraRanking(carreraId) {
+        currentRankingCarrera = carreraId;
+        renderRankingList();
+      }
+
+      function cambiarOrdenRanking(orden) {
+        currentRankingOrder = orden;
+        document.getElementById('btnRankingSortDesc')?.classList.toggle('active', orden === 'desc');
+        document.getElementById('btnRankingSortAsc')?.classList.toggle('active', orden === 'asc');
+        const titleEl = document.getElementById('rankingHbarTitle');
+        if (titleEl) {
+          titleEl.textContent = orden === 'desc' ? 'Top 10 pasantes por horas acumuladas' : 'Top 10 pasantes con menos horas acumuladas';
+        }
+        renderRankingList();
+      }
+
+      function renderRankingList() {
+        const listWrap = document.getElementById('rankingListWrap');
+        if (!listWrap) return;
+
+        if (!currentRankingData || currentRankingData.length === 0) {
+          listWrap.innerHTML = `<div style="color: var(--color-text-muted); font-size: 13px; text-align: center; padding: 30px;">No hay datos de pasantes registrados.</div>`;
+          return;
+        }
+
+        // 1. Filtrar por carrera si aplica
+        let list = [...currentRankingData];
+        if (currentRankingCarrera) {
+          list = list.filter(u => String(u.id_carrera) === String(currentRankingCarrera) || (u.carrera && u.carrera.toLowerCase().includes(currentRankingCarrera.toLowerCase())));
+        }
+
+        // 2. Ordenar por horas acumuladas (ascendente o descendente)
+        if (currentRankingOrder === 'asc') {
+          list.sort((a, b) => (Number(a.total_segundos) || 0) - (Number(b.total_segundos) || 0));
+        } else {
+          list.sort((a, b) => (Number(b.total_segundos) || 0) - (Number(a.total_segundos) || 0));
+        }
+
+        // 3. Limitar a máximo 10 pasantes
+        const top10 = list.slice(0, 10);
+
+        if (top10.length === 0) {
+          listWrap.innerHTML = `<div style="color: var(--color-text-muted); font-size: 13px; text-align: center; padding: 30px;">No se encontraron pasantes para la carrera seleccionada.</div>`;
+          return;
+        }
+
+        // 4. Calcular escala del eje X
+        const maxHoursVal = Math.max(...top10.map(u => parseFloat(u.horas_decimal) || 0), 10);
+        const step = maxHoursVal > 150 ? 50 : (maxHoursVal > 80 ? 20 : 10);
+        const axisMax = Math.max(step * 2, Math.ceil((maxHoursVal + (step * 0.3)) / step) * step);
+
+        const barColors = [
+          '#3B82F6', '#14B8A6', '#8B5CF6', '#F97316', '#38BDF8',
+          '#10B981', '#A855F7', '#F43F5E', '#60A5FA', '#F59E0B'
+        ];
+
+        let rowsHTML = '';
+        top10.forEach((u, idx) => {
+          const hrs = parseFloat(u.horas_decimal) || 0;
+          const widthPct = Math.min(100, Math.max(1.5, (hrs / axisMax) * 100));
+          const color = barColors[idx % barColors.length];
+          const nameDisplay = escapeHTML(u.primer_nombre || (u.nombre ? u.nombre.split(' ')[0] : 'Pasante'));
+
+          rowsHTML += `
+            <div class="hbar-row" onclick="seleccionarUsuarioDesdeRanking(${u.id_usuario}, '${escapeHTML(u.nombre)}', '${escapeHTML(u.CI)}')" title="Ver jornadas y actividades de ${escapeHTML(u.nombre)} (${escapeHTML(u.carrera || 'Pasante')})">
+              <div class="hbar-avatar-badge">${escapeHTML(getInitials(u.nombre))}</div>
+              <div class="hbar-name" title="${escapeHTML(u.nombre)}">${nameDisplay}</div>
+              <div class="hbar-track">
+                <div class="hbar-fill" style="width: ${widthPct}%; background-color: ${color};"></div>
+                <span class="hbar-val-text" style="left: calc(${widthPct}% + 8px);">${hrs.toFixed(1)} hrs</span>
+              </div>
+            </div>
+          `;
+        });
+
+        // Construir etiquetas del eje X
+        const ticksCount = Math.round(axisMax / step);
+        let ticksHTML = '';
+        for (let i = 0; i <= ticksCount; i++) {
+          const val = i * step;
+          ticksHTML += `<span>${val}</span>`;
+        }
+
+        listWrap.innerHTML = `
+          <div class="hbar-chart-container">
+            ${rowsHTML}
+          </div>
+          <div class="hbar-axis-container">
+            <div class="hbar-axis-ticks">
+              ${ticksHTML}
+            </div>
+            <div class="hbar-axis-label">Horas acumuladas</div>
+          </div>
+        `;
       }
 
       function seleccionarUsuarioDesdeRanking(idUsuario, nombre, ci) {
@@ -2023,13 +2197,35 @@
         fetchReportes(1);
       }
 
+      // Variables para retener el estado de avisos de culminación
+      let lastAvisoStats = null;
+      let lastAvisoUsuarioInfo = null;
+      let lastAvisoIsSpecificUser = false;
+
       // Renderizar Recuadro de Aviso: Pasantes por Culminar o en Última Semana
       function renderAvisoCulminacion(stats, usuarioInfo, isSpecificUser) {
+        lastAvisoStats = stats;
+        lastAvisoUsuarioInfo = usuarioInfo;
+        lastAvisoIsSpecificUser = Boolean(isSpecificUser);
+        actualizarPosicionAvisoCulminacion();
+      }
+
+      function actualizarPosicionAvisoCulminacion() {
         const wrapEl = document.getElementById('contenedorAvisoCulminacion');
+        const sideEl = document.getElementById('sideAvisoCulminacion');
         if (!wrapEl) return;
+
+        const stats = lastAvisoStats;
+        const usuarioInfo = lastAvisoUsuarioInfo;
+        const isSpecificUser = lastAvisoIsSpecificUser;
 
         // Caso A: Si se tiene seleccionado un usuario específico
         if (isSpecificUser && stats && stats.user_culminacion) {
+          if (sideEl) {
+            sideEl.style.display = 'none';
+            sideEl.innerHTML = '';
+          }
+
           const uc = stats.user_culminacion;
           const uNom = usuarioInfo ? usuarioInfo.nombre : (document.getElementById('stat-user').textContent || 'Este pasante');
 
@@ -2083,76 +2279,187 @@
               </div>
             `;
             return;
-          }
-        }
-
-        // Caso B: Vista Global - Mostrar recuadro con lista de pasantes próximos a culminar
-        if (stats && stats.pasantes_por_finalizar && stats.pasantes_por_finalizar.length > 0) {
-          wrapEl.style.display = 'block';
-          const pasantes = stats.pasantes_por_finalizar;
-
-          let itemsHTML = '';
-          pasantes.forEach(p => {
-            const isComp = p.estado_culminacion === 'COMPLETADO';
-            const badgeClass = isComp ? 'aviso-status-completado' : 'aviso-status-terminando';
-            const badgeLabel = isComp ? '🏆 100%' : `🎯 ${p.fecha_pronostico || 'Pronto'}`;
-            const statusText = isComp ? '¡Meta 100% completada!' : `Faltan ~${p.horas_faltantes} hrs (~${p.semanas_restantes} sem)`;
-
-            itemsHTML += `
-              <div class="aviso-culminacion-item">
-                <div class="aviso-item-top">
-                  <div style="min-width: 0; flex: 1;">
-                    <div class="aviso-item-name" title="${escapeHTML(p.nombre)}">${escapeHTML(p.nombre)}</div>
-                    <div class="aviso-item-sub">${escapeHTML(p.carrera || 'Pasante')} · CI: ${escapeHTML(p.CI)}</div>
+          } else {
+            wrapEl.style.display = 'block';
+            wrapEl.innerHTML = `
+              <div class="aviso-culminacion-card" style="background: linear-gradient(135deg, #eff6ff 0%, #e0f2fe 100%); border-color: #93c5fd;">
+                <div class="aviso-user-single" style="background: #ffffff; border-color: #bfdbfe;">
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="aviso-culminacion-icon-box" style="background: linear-gradient(135deg, #0f5fa6 0%, #0d528f 100%); box-shadow: 0 4px 10px rgba(15, 95, 166, 0.25);">
+                      🎯
+                    </div>
+                    <div>
+                      <h4 class="aviso-culminacion-title" style="color: #0f5fa6;">Seguimiento y Pronóstico de Culminación de Pasantía</h4>
+                      <p class="aviso-culminacion-subtitle" style="color: #1e3a8a;">
+                        <strong>${escapeHTML(uNom)}</strong> tiene <strong>${uc.horas_acumuladas} hrs</strong> acumuladas (${uc.porcentaje}% de ${uc.horas_requeridas} hrs). Al ritmo programado de <strong>${uc.horas_semana} hrs/sem</strong>, le restan <strong>~${uc.horas_faltantes} hrs</strong> (~${uc.semanas_restantes} semanas). Fecha estimada de salida: <strong>${escapeHTML(uc.fecha_pronostico || '')}</strong>.
+                      </p>
+                    </div>
                   </div>
-                  <span class="aviso-badge-status ${badgeClass}" style="font-size: 12px; font-weight: 700; padding: 4px 10px;">
-                    ${badgeLabel}
-                  </span>
-                </div>
-                <div class="aviso-progress-wrap">
-                  <div class="aviso-progress-bg">
-                    <div class="aviso-progress-fill" style="width: ${p.porcentaje}%; ${isComp ? 'background: #16a34a;' : ''}"></div>
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="aviso-badge-status" style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; font-size: 13px; padding: 6px 14px; font-weight: 700;">
+                      📅 Salida: ${escapeHTML(uc.fecha_pronostico || '')} (~${uc.semanas_restantes} sem)
+                    </span>
                   </div>
-                </div>
-                <div class="aviso-item-footer">
-                  <span style="color: #475569; font-weight: 500; font-size: 11.5px;">
-                    ${escapeHTML(statusText)}
-                  </span>
-                  <button type="button" class="btn-aviso-ver" onclick="seleccionarUsuarioDesdeRanking(${p.id_usuario}, '${escapeHTML(p.nombre)}', '${escapeHTML(p.CI)}')" title="Ver jornadas y bitácoras de ${escapeHTML(p.nombre)}">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                    Ver Reporte
-                  </button>
                 </div>
               </div>
             `;
-          });
+            return;
+          }
+        }
 
-          wrapEl.innerHTML = `
-            <div class="aviso-culminacion-card">
-              <div class="aviso-culminacion-header">
-                <div class="aviso-culminacion-title-group">
-                  <div class="aviso-culminacion-icon-box">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
-                      <path d="M6 12v5c3 3 9 3 12 0v-5"/>
-                    </svg>
-                  </div>
-                  <div>
-                    <h4 class="aviso-culminacion-title">⚠️ Aviso al Administrador: Pasantes en Período de Culminación</h4>
-                    <p class="aviso-culminacion-subtitle">Pasantes que están a aproximadamente 1 semana de terminar sus pasantías o ya alcanzaron las 280 horas requeridas:</p>
-                  </div>
-                </div>
-                <span class="aviso-culminacion-badge-count">${pasantes.length} pasante(s)</span>
-              </div>
-              <div class="aviso-culminacion-grid">
-                ${itemsHTML}
-              </div>
-            </div>
-          `;
+        // Caso B: Vista Global - Pasantes próximos a culminar
+        const pasantes = stats && stats.pasantes_por_finalizar ? stats.pasantes_por_finalizar : [];
+
+        if (pasantes.length > 0) {
+          if (currentPestanaStats === 'ranking') {
+            // Ubicar aviso al lado (Columna Izquierda debajo de los KPIs)
+            wrapEl.style.display = 'none';
+            wrapEl.innerHTML = '';
+            renderSideAvisoList(pasantes);
+          } else {
+            // Ubicar aviso abajo en cuadrícula
+            if (sideEl) {
+              sideEl.style.display = 'none';
+              sideEl.innerHTML = '';
+            }
+            renderBottomAvisoGrid(pasantes, wrapEl);
+          }
         } else {
           wrapEl.style.display = 'none';
           wrapEl.innerHTML = '';
+          if (sideEl) {
+            sideEl.style.display = 'none';
+            sideEl.innerHTML = '';
+          }
         }
+      }
+
+      function renderSideAvisoList(pasantes) {
+        const sideEl = document.getElementById('sideAvisoCulminacion');
+        if (!sideEl) return;
+        if (!pasantes || pasantes.length === 0) {
+          sideEl.style.display = 'none';
+          sideEl.innerHTML = '';
+          return;
+        }
+
+        let itemsHTML = '';
+        pasantes.forEach(p => {
+          const isComp = p.estado_culminacion === 'COMPLETADO';
+          const badgeClass = isComp ? 'aviso-status-completado' : 'aviso-status-terminando';
+          const badgeLabel = isComp ? '🏆 100%' : `🎯 ${p.fecha_pronostico || 'Pronto'}`;
+          const statusText = isComp ? '¡Meta 100% completada!' : `Faltan ~${p.horas_faltantes} hrs (${p.semanas_restantes} sem)`;
+
+          itemsHTML += `
+            <div class="side-culminacion-item">
+              <div class="side-culminacion-item-top">
+                <div style="min-width: 0; flex: 1;">
+                  <div class="side-culminacion-name" title="${escapeHTML(p.nombre)}">${escapeHTML(p.nombre)}</div>
+                  <div class="side-culminacion-sub" title="${escapeHTML(p.carrera || 'Pasante')}">${escapeHTML(p.carrera || 'Pasante')} · CI: ${escapeHTML(p.CI)}</div>
+                </div>
+                <span class="aviso-badge-status ${badgeClass}" style="font-size: 11px; font-weight: 700; padding: 2px 8px; flex-shrink: 0;">
+                  ${badgeLabel}
+                </span>
+              </div>
+              <div class="side-culminacion-progress">
+                <div class="side-culminacion-progress-fill" style="width: ${p.porcentaje}%; background: ${isComp ? '#16a34a' : 'linear-gradient(90deg, #F59E0B, #D97706)'};"></div>
+              </div>
+              <div class="side-culminacion-footer">
+                <span>${escapeHTML(statusText)}</span>
+                <button type="button" class="side-culminacion-btn-ver" onclick="seleccionarUsuarioDesdeRanking(${p.id_usuario}, '${escapeHTML(p.nombre)}', '${escapeHTML(p.CI)}')" title="Ver reporte de ${escapeHTML(p.nombre)}">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  Ver reporte
+                </button>
+              </div>
+            </div>
+          `;
+        });
+
+        sideEl.style.display = 'block';
+        sideEl.innerHTML = `
+          <div class="side-culminacion-card">
+            <div class="side-culminacion-header">
+              <div class="side-culminacion-title-wrap">
+                <div class="side-culminacion-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                    <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                  </svg>
+                </div>
+                <div>
+                  <h4 class="side-culminacion-title">Por Finalizar Pasantía</h4>
+                  <p class="side-culminacion-subtitle">Aprox. 1 sem o meta de 280 hrs</p>
+                </div>
+              </div>
+              <span class="side-culminacion-badge-count">${pasantes.length} pasante(s)</span>
+            </div>
+            <div class="side-culminacion-list">
+              ${itemsHTML}
+            </div>
+          </div>
+        `;
+      }
+
+      function renderBottomAvisoGrid(pasantes, wrapEl) {
+        let itemsHTML = '';
+        pasantes.forEach(p => {
+          const isComp = p.estado_culminacion === 'COMPLETADO';
+          const badgeClass = isComp ? 'aviso-status-completado' : 'aviso-status-terminando';
+          const badgeLabel = isComp ? '🏆 100%' : `🎯 ${p.fecha_pronostico || 'Pronto'}`;
+          const statusText = isComp ? '¡Meta 100% completada!' : `Faltan ~${p.horas_faltantes} hrs (~${p.semanas_restantes} sem)`;
+
+          itemsHTML += `
+            <div class="aviso-culminacion-item">
+              <div class="aviso-item-top">
+                <div style="min-width: 0; flex: 1;">
+                  <div class="aviso-item-name" title="${escapeHTML(p.nombre)}">${escapeHTML(p.nombre)}</div>
+                  <div class="aviso-item-sub">${escapeHTML(p.carrera || 'Pasante')} · CI: ${escapeHTML(p.CI)}</div>
+                </div>
+                <span class="aviso-badge-status ${badgeClass}" style="font-size: 12px; font-weight: 700; padding: 4px 10px;">
+                  ${badgeLabel}
+                </span>
+              </div>
+              <div class="aviso-progress-wrap">
+                <div class="aviso-progress-bg">
+                  <div class="aviso-progress-fill" style="width: ${p.porcentaje}%; ${isComp ? 'background: #16a34a;' : ''}"></div>
+                </div>
+              </div>
+              <div class="aviso-item-footer">
+                <span style="color: #475569; font-weight: 500; font-size: 11.5px;">
+                  ${escapeHTML(statusText)}
+                </span>
+                <button type="button" class="btn-aviso-ver" onclick="seleccionarUsuarioDesdeRanking(${p.id_usuario}, '${escapeHTML(p.nombre)}', '${escapeHTML(p.CI)}')" title="Ver jornadas y bitácoras de ${escapeHTML(p.nombre)}">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  Ver Reporte
+                </button>
+              </div>
+            </div>
+          `;
+        });
+
+        wrapEl.style.display = 'block';
+        wrapEl.innerHTML = `
+          <div class="aviso-culminacion-card">
+            <div class="aviso-culminacion-header">
+              <div class="aviso-culminacion-title-group">
+                <div class="aviso-culminacion-icon-box">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                    <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                  </svg>
+                </div>
+                <div>
+                  <h4 class="aviso-culminacion-title">⚠️ Aviso al Administrador: Pasantes en Período de Culminación</h4>
+                  <p class="aviso-culminacion-subtitle">Pasantes que están a aproximadamente 1 semana de terminar sus pasantías o ya alcanzaron las 280 horas requeridas:</p>
+                </div>
+              </div>
+              <span class="aviso-culminacion-badge-count">${pasantes.length} pasante(s)</span>
+            </div>
+            <div class="aviso-culminacion-grid">
+              ${itemsHTML}
+            </div>
+          </div>
+        `;
       }
 
       // Función principal para cargar reportes y estadísticas
@@ -2192,34 +2499,91 @@
             badgeEl.textContent = `${data.total.toLocaleString()} ${data.total === 1 ? 'registro' : 'registros'}`;
           }
 
-          // 2. Control dinámico de la Card de Horas Acumuladas
-          const cardHoras = document.getElementById('cardHorasAcumuladas');
+          // 2. Control dinámico de la Fila Inferior (Pronóstico de Salida y Horas Acumuladas)
+          const bottomRow = document.getElementById('dashboardBottomRow');
           const isSpecificUser = Boolean(data.usuario_info || id_usuario || (nombreBusqueda && nombreBusqueda.length > 0));
 
-          if (cardHoras) {
-            if (isSpecificUser) {
-              cardHoras.style.display = 'flex';
-              document.getElementById('stat-hours').textContent = data.total_acumulada || '00:00:00';
-              const decimalEl = document.getElementById('stat-hours-decimal');
-              if (decimalEl) {
-                decimalEl.textContent = `${data.total_horas_decimal || '0.0'} horas acumuladas`;
+          if (bottomRow) {
+            bottomRow.style.display = isSpecificUser ? 'grid' : 'none';
+          }
+
+          if (isSpecificUser) {
+            // Actualizar Card de Horas Acumuladas
+            document.getElementById('stat-hours').textContent = data.total_acumulada || '00:00:00';
+            const decimalEl = document.getElementById('stat-hours-decimal');
+            if (decimalEl) {
+              decimalEl.textContent = `${data.total_horas_decimal || '0.0'} horas acumuladas`;
+            }
+            const congeladasEl = document.getElementById('stat-hours-congeladas');
+            if (congeladasEl) {
+              congeladasEl.textContent = `${data.total_congeladas || '00:00:00'} (${data.total_congeladas_decimal || '0.0'} h)`;
+            }
+            const disponiblesEl = document.getElementById('stat-hours-disponibles');
+            if (disponiblesEl) {
+              disponiblesEl.textContent = `${data.total_disponibles || '00:00:00'} (${data.total_disponibles_decimal || '0.0'} h)`;
+            }
+
+            // Actualizar Card de Pronóstico
+            const userCulminacion = data.stats && data.stats.user_culminacion;
+            if (userCulminacion) {
+              const fechaEl = document.getElementById('stat-pronostico-fecha');
+              const badgeEl = document.getElementById('stat-pronostico-badge');
+              const subtextEl = document.getElementById('stat-pronostico-subtext');
+              const pctEl = document.getElementById('stat-pronostico-porcentaje');
+              const barEl = document.getElementById('stat-pronostico-bar');
+              const faltanEl = document.getElementById('stat-pronostico-faltan');
+              const ritmoEl = document.getElementById('stat-pronostico-ritmo-val');
+
+              if (fechaEl) fechaEl.textContent = userCulminacion.fecha_pronostico || 'Por determinar';
+              if (badgeEl) {
+                if (userCulminacion.es_meta_alcanzada) {
+                  badgeEl.textContent = '🏆 100% Meta';
+                  badgeEl.style.background = '#DCFCE7';
+                  badgeEl.style.color = '#15803D';
+                } else if (userCulminacion.es_ultima_semana) {
+                  badgeEl.textContent = '⚡ Última Semana';
+                  badgeEl.style.background = '#FEF3C7';
+                  badgeEl.style.color = '#B45309';
+                } else {
+                  badgeEl.textContent = `~${userCulminacion.semanas_restantes} sem restantes`;
+                  badgeEl.style.background = '#EFF6FF';
+                  badgeEl.style.color = '#0F5FA6';
+                }
               }
-              const congeladasEl = document.getElementById('stat-hours-congeladas');
-              if (congeladasEl) {
-                congeladasEl.textContent = `${data.total_congeladas || '00:00:00'} (${data.total_congeladas_decimal || '0.0'} h)`;
+              if (subtextEl) {
+                if (userCulminacion.es_meta_alcanzada) {
+                  subtextEl.textContent = 'Pasantía de 280h finalizada con éxito.';
+                } else {
+                  subtextEl.textContent = `Salida estimada: ${userCulminacion.fecha_pronostico || 'Cálculo pendiente'}`;
+                }
               }
-              const disponiblesEl = document.getElementById('stat-hours-disponibles');
-              if (disponiblesEl) {
-                disponiblesEl.textContent = `${data.total_disponibles || '00:00:00'} (${data.total_disponibles_decimal || '0.0'} h)`;
+              if (pctEl) {
+                pctEl.textContent = `${userCulminacion.porcentaje}% (${userCulminacion.horas_acumuladas} / ${userCulminacion.horas_requeridas} hrs)`;
               }
-            } else {
-              cardHoras.style.display = 'none';
+              if (barEl) {
+                barEl.style.width = `${Math.min(userCulminacion.porcentaje, 100)}%`;
+                if (userCulminacion.es_meta_alcanzada) {
+                  barEl.style.background = 'linear-gradient(90deg, #16A34A, #15803D)';
+                } else if (userCulminacion.es_ultima_semana) {
+                  barEl.style.background = 'linear-gradient(90deg, #F59E0B, #D97706)';
+                } else {
+                  barEl.style.background = 'linear-gradient(90deg, #0F5FA6, #0D9488)';
+                }
+              }
+              if (faltanEl) {
+                faltanEl.textContent = `${userCulminacion.horas_faltantes} hrs`;
+                faltanEl.style.color = userCulminacion.horas_faltantes <= 0 ? '#16A34A' : (userCulminacion.horas_faltantes <= 25 ? '#B45309' : '#0F5FA6');
+              }
+              if (ritmoEl) {
+                ritmoEl.textContent = `${userCulminacion.horas_semana || 25} hrs/sem`;
+              }
             }
           }
 
           // 3. Actualizar KPI del Usuario (solo muestra usuario si realmente se seleccionó o buscó uno)
           const statUser = document.getElementById('stat-user');
           const statUserBadge = document.getElementById('stat-user-badge');
+          const subDetails = document.getElementById('stat-user-sub-details');
           const btnCal = document.getElementById('btnVerCalendarioUsuario');
           const btnHor = document.getElementById('btnVerHorarioUsuario');
           const currentUserIdForCal = data.usuario_info ? data.usuario_info.id_usuario : (hiddenUserId.value ? parseInt(hiddenUserId.value, 10) : (data.data && data.data.length > 0 && nombreBusqueda ? data.data[0].id_usuario : null));
@@ -2228,6 +2592,16 @@
             statUser.textContent = data.usuario_info.nombre;
             statUser.title = data.usuario_info.nombre;
             statUserBadge.textContent = `CI: ${data.usuario_info.CI}`;
+            if (subDetails) {
+              const carreraTxt = data.usuario_info.carrera || '';
+              const uniTxt = data.usuario_info.universidad || '';
+              if (carreraTxt || uniTxt) {
+                subDetails.textContent = `${carreraTxt}${uniTxt ? ' · ' + uniTxt : ''}`;
+                subDetails.style.display = 'block';
+              } else {
+                subDetails.style.display = 'none';
+              }
+            }
             if (btnCal) {
               btnCal.style.display = 'inline-flex';
               btnCal.onclick = () => abrirModalCalendarioUsuario(data.usuario_info.id_usuario);
@@ -2240,6 +2614,7 @@
             statUser.textContent = `Búsqueda: "${nombreBusqueda}"`;
             statUser.title = nombreBusqueda;
             statUserBadge.textContent = 'Filtro Nombre';
+            if (subDetails) subDetails.style.display = 'none';
             if (btnCal && currentUserIdForCal) {
               btnCal.style.display = 'inline-flex';
               btnCal.onclick = () => abrirModalCalendarioUsuario(currentUserIdForCal);
@@ -2257,6 +2632,7 @@
             statUser.textContent = 'Todos los usuarios';
             statUser.title = 'Todos los usuarios';
             statUserBadge.textContent = 'Global';
+            if (subDetails) subDetails.style.display = 'none';
             if (btnCal) btnCal.style.display = 'none';
             if (btnHor) btnHor.style.display = 'none';
           }

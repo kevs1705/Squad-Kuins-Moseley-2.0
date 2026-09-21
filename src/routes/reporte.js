@@ -403,6 +403,27 @@ const handleUploadOptional = (req, res, next) => {
   }
 };
 
+// Helper para validar texto de bitácora contra caracteres repetidos y spam
+function validarTextoBitacora(texto) {
+  if (!texto || typeof texto !== 'string') {
+    return 'Debes ingresar una descripción válida para la bitácora.';
+  }
+  const clean = texto.trim();
+  if (clean.length < 8) {
+    return 'La descripción de la tarea es muy corta. Debe tener al menos 8 caracteres.';
+  }
+  // No permitir 4 o más caracteres repetidos consecutivamente (ej: "aaaaaa", "......", "xxxxxx")
+  if (/(.)\1{3,}/i.test(clean)) {
+    return 'La descripción no debe contener caracteres repetidos consecutivamente (ej. "aaaaa"). Por favor describe las tareas reales realizadas.';
+  }
+  // Validar variedad básica de caracteres
+  const uniqueChars = new Set(clean.toLowerCase().replace(/[^a-záéíóúñ0-9]/gi, ''));
+  if (uniqueChars.size < 4 && clean.length > 10) {
+    return 'Por favor ingresa una descripción detallada y real de las actividades de la jornada.';
+  }
+  return null;
+}
+
 // POST: Registrar o Actualizar Bitácora (Tarea + Comprobante Cloudinary/Local)
 router.post('/reportes/guardar', requireAuth, handleUploadOptional, async (req, res) => {
   try {
@@ -412,6 +433,11 @@ router.post('/reportes/guardar', requireAuth, handleUploadOptional, async (req, 
 
     if (!id_asistencia || !tarea) {
       return res.status(400).json({ ok: false, error: 'Debe seleccionar una asistencia y describir la tarea.' });
+    }
+
+    const errorBitacora = validarTextoBitacora(tarea);
+    if (errorBitacora) {
+      return res.status(400).json({ ok: false, error: errorBitacora });
     }
 
     // 1. Obtener datos de la asistencia y validar permisos y bloqueo a las 00:00
@@ -609,8 +635,9 @@ router.post('/api/horas-extras/finalizar', requireAuth, handleUploadOptional, as
     const { id_notificacion, tarea, motivo, comprobante } = req.body;
 
     const tareaFinal = String(tarea || motivo || '').trim();
-    if (!tareaFinal || tareaFinal.length < 5) {
-      return res.status(400).json({ ok: false, msg: 'Debes ingresar un informe de actividades detallado de lo que realizaste (mínimo 5 caracteres).' });
+    const errorHE = validarTextoBitacora(tareaFinal);
+    if (errorHE) {
+      return res.status(400).json({ ok: false, msg: errorHE });
     }
 
     // Comprobante / Foto obligatoria
