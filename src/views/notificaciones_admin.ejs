@@ -566,6 +566,243 @@
       border-color: #93C5FD !important;
       transform: translateY(-1px);
     }
+
+    /* ==========================================================================
+       ESTILOS SWEETALERT2 SIMÉTRICOS - SISTEMA BYGGER / MOSELEY 2.0
+       ========================================================================== */
+    div.swal2-container {
+      z-index: 10050 !important;
+    }
+
+    /* Forzar color-scheme light global para que el tema oscuro del OS no oscurezca inputs */
+    div.swal2-popup,
+    div.swal2-popup * {
+      color-scheme: light !important;
+    }
+
+    div.swal2-popup input:not([type="checkbox"]):not([type="radio"]),
+    div.swal2-popup select,
+    div.swal2-popup textarea {
+      color-scheme: light !important;
+      background-color: #FFFFFF !important;
+      color: #1E293B !important;
+    }
+
+    .swal2-popup.moseley-swal-modal {
+      background: #FFFFFF !important;
+      color: #1E293B !important;
+      border-radius: 14px !important;
+      border: 1px solid #E2E8F0 !important;
+      box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.2) !important;
+      padding: 0 !important;
+      font-family: 'Montserrat', system-ui, -apple-system, sans-serif !important;
+      width: 550px !important;
+      max-width: 95vw !important;
+      overflow: hidden !important;
+    }
+
+    .moseley-swal-modal .swal2-title {
+      display: none !important;
+    }
+
+    .moseley-swal-modal .swal2-html-container {
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: visible !important;
+      color: #334155 !important;
+      text-align: left !important;
+      width: 100% !important;
+    }
+
+    /* Encabezado Estándar Normal del Sistema */
+    .system-modal-header {
+      background: #F0F5FC;
+      border-bottom: 1px solid #E2E8F0;
+      padding: 13px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .system-modal-title {
+      margin: 0;
+      font-size: 1.08rem;
+      font-weight: 700;
+      color: #0B3C5D;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .system-modal-title i {
+      color: #0F5FA6;
+      font-size: 1.15rem;
+    }
+    .system-modal-title strong {
+      color: #0F5FA6;
+      font-weight: 700;
+    }
+    .system-modal-close {
+      background: #FFFFFF;
+      border: 1px solid #CBD5E1;
+      border-radius: 6px;
+      width: 28px;
+      height: 28px;
+      font-size: 16px;
+      cursor: pointer;
+      color: #64748B;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      line-height: 1;
+      transition: all 0.15s ease;
+    }
+    .system-modal-close:hover {
+      background: #F1F5F9;
+      color: #0F172A;
+      border-color: #94A3B8;
+    }
+
+    /* Cuerpo del Formulario */
+    .system-modal-body {
+      padding: 16px 20px 4px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-sizing: border-box;
+      width: 100%;
+    }
+    .swal-form-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .swal-field-group {
+      display: flex;
+      flex-direction: column;
+    }
+    .swal-field-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 6px;
+    }
+    .swal-field-label i {
+      color: #0F5FA6;
+      font-size: 0.88rem;
+    }
+    .swal-field-input,
+    .swal-field-select,
+    .swal-field-textarea {
+      width: 100% !important;
+      box-sizing: border-box !important;
+      background-color: #FFFFFF !important;
+      color: #1E293B !important;
+      color-scheme: light !important;
+      border: 1.5px solid #CBD5E1 !important;
+      border-radius: 10px !important;
+      padding: 9px 12px !important;
+      font-size: 0.88rem !important;
+      font-family: inherit !important;
+      font-weight: 500 !important;
+      line-height: 1.4 !important;
+      transition: all 0.2s ease !important;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+    }
+    .swal-field-select {
+      cursor: pointer;
+      font-weight: 600 !important;
+    }
+    .swal-field-textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+    .swal-field-input:focus,
+    .swal-field-select:focus,
+    .swal-field-textarea:focus {
+      border-color: #0F5FA6 !important;
+      outline: none !important;
+      background-color: #FFFFFF !important;
+      box-shadow: 0 0 0 3.5px rgba(15, 95, 166, 0.15) !important;
+    }
+    .swal-field-input::placeholder,
+    .swal-field-textarea::placeholder {
+      color: #94A3B8 !important;
+      font-weight: 400 !important;
+    }
+
+    /* Banner informativo */
+    .swal-info-banner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      border-radius: 10px;
+      font-size: 0.84rem;
+      color: #475569;
+    }
+
+    /* Botones de Acción Simétricos */
+    .swal-modal-actions {
+      display: flex !important;
+      justify-content: flex-end !important;
+      align-items: center !important;
+      gap: 10px !important;
+      margin-top: 1.25rem !important;
+      padding-top: 1rem !important;
+      border-top: 1.5px solid #F1F5F9 !important;
+      width: 100% !important;
+    }
+    .swal-btn-confirm {
+      background: #0F5FA6 !important;
+      color: #FFFFFF !important;
+      border: 1px solid #0F5FA6 !important;
+      border-radius: 10px !important;
+      padding: 10px 22px !important;
+      font-weight: 700 !important;
+      font-size: 0.88rem !important;
+      letter-spacing: 0.2px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 8px !important;
+      cursor: pointer !important;
+      transition: all 0.2s ease !important;
+      box-shadow: 0 4px 12px rgba(15, 95, 166, 0.25) !important;
+    }
+    .swal-btn-confirm:hover {
+      background: #0D528F !important;
+      border-color: #0D528F !important;
+      transform: translateY(-1px) !important;
+      box-shadow: 0 6px 16px rgba(15, 95, 166, 0.35) !important;
+    }
+    .swal-btn-cancel {
+      background: #F1F5F9 !important;
+      color: #475569 !important;
+      border: 1.5px solid #CBD5E1 !important;
+      border-radius: 10px !important;
+      padding: 10px 20px !important;
+      font-weight: 600 !important;
+      font-size: 0.88rem !important;
+      letter-spacing: 0.2px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 8px !important;
+      cursor: pointer !important;
+      transition: all 0.2s ease !important;
+    }
+    .swal-btn-cancel:hover {
+      background: #E2E8F0 !important;
+      color: #1E293B !important;
+      border-color: #94A3B8 !important;
+    }
   </style>
 
   <div class="teletrabajo-container">
@@ -1116,6 +1353,9 @@
         `;
       }
       Swal.fire({
+        customClass: {
+          popup: 'moseley-swal-modal'
+        },
         title: `<strong>Bitácora: ${nombre}</strong>`,
         html: `
           <div style="text-align: left; font-size: 0.9rem; line-height: 1.5; color: #334155;">
@@ -1133,6 +1373,9 @@
 
     function verMapaModal(lat, lng, nombre) {
       Swal.fire({
+        customClass: {
+          popup: 'moseley-swal-modal'
+        },
         title: `<strong>Ubicación GPS: ${nombre}</strong>`,
         html: `
           <div style="text-align: center; font-size: 0.9rem; color: #334155;">
@@ -1326,50 +1569,87 @@
           const obs = btn.dataset.obs || '';
 
           const { value: formValues } = await Swal.fire({
-            title: `<strong>Editar Solicitud: ${usuario}</strong>`,
+            customClass: {
+              popup: 'moseley-swal-modal',
+              actions: 'swal-modal-actions',
+              confirmButton: 'swal-btn-confirm',
+              cancelButton: 'swal-btn-cancel'
+            },
+            buttonsStyling: false,
             html: `
-              <div style="text-align: left; font-size: 0.88rem;">
-                <div style="margin-bottom: 10px;">
-                  <label style="font-weight: 700; color: #1e293b; display: block; margin-bottom: 3px;">Fecha Solicitada:</label>
-                  <input type="date" id="swal-fecha" class="form-control" style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 10px; width: 100%; box-sizing: border-box;" value="${fecha}">
+              <div class="system-modal-header">
+                <div class="system-modal-title">
+                  <i class="bi bi-pencil-square"></i>
+                  <span>Editar Solicitud: <strong>${usuario}</strong></span>
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
-                  <div>
-                    <label style="font-weight: 700; color: #1e293b; display: block; margin-bottom: 3px;">Hora Inicio:</label>
-                    <input type="time" id="swal-inicio" class="form-control" style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 10px; width: 100%; box-sizing: border-box;" value="${inicio}">
+                <button type="button" class="system-modal-close" onclick="Swal.close()">&times;</button>
+              </div>
+              <div class="system-modal-body">
+                <!-- Fila 1: Fecha Solicitada y Estado de la Solicitud (Simetría 50% / 50%) -->
+                <div class="swal-form-grid-2">
+                  <div class="swal-field-group">
+                    <label class="swal-field-label">
+                      <i class="bi bi-calendar-event"></i> Fecha Solicitada:
+                    </label>
+                    <input type="date" id="swal-fecha" class="swal-field-input" value="${fecha}">
                   </div>
-                  <div>
-                    <label style="font-weight: 700; color: #1e293b; display: block; margin-bottom: 3px;">Hora Fin:</label>
-                    <input type="time" id="swal-fin" class="form-control" style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 10px; width: 100%; box-sizing: border-box;" value="${fin}">
+                  <div class="swal-field-group">
+                    <label class="swal-field-label">
+                      <i class="bi bi-patch-check"></i> Estado de Solicitud:
+                    </label>
+                    <select id="swal-estado" class="swal-field-select">
+                      <option value="1" ${estado == '1' ? 'selected' : ''}>⏳ 1. Pendiente</option>
+                      <option value="2" ${estado == '2' ? 'selected' : ''}>✅ 2. Aprobado (Activo)</option>
+                      <option value="3" ${estado == '3' ? 'selected' : ''}>❌ 3. Rechazado</option>
+                    </select>
                   </div>
                 </div>
-                <div style="margin-bottom: 10px;">
-                  <label style="font-weight: 700; color: #1e293b; display: block; margin-bottom: 3px;">Domicilio / Ubicación:</label>
-                  <input type="text" id="swal-direccion" class="form-control" style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 10px; width: 100%; box-sizing: border-box;" value="${direccion}">
+
+                <!-- Fila 2: Hora Inicio y Hora Fin (Simetría 50% / 50%) -->
+                <div class="swal-form-grid-2">
+                  <div class="swal-field-group">
+                    <label class="swal-field-label">
+                      <i class="bi bi-clock"></i> Hora Inicio:
+                    </label>
+                    <input type="time" id="swal-inicio" class="swal-field-input" value="${inicio}">
+                  </div>
+                  <div class="swal-field-group">
+                    <label class="swal-field-label">
+                      <i class="bi bi-clock-history"></i> Hora Fin:
+                    </label>
+                    <input type="time" id="swal-fin" class="swal-field-input" value="${fin}">
+                  </div>
                 </div>
-                <div style="margin-bottom: 10px;">
-                  <label style="font-weight: 700; color: #1e293b; display: block; margin-bottom: 3px;">Motivo & Justificación:</label>
-                  <textarea id="swal-motivo" class="form-control" rows="2" style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 10px; width: 100%; box-sizing: border-box;">${motivo}</textarea>
+
+                <!-- Fila 3: Domicilio / Ubicación (100% ancho) -->
+                <div class="swal-field-group">
+                  <label class="swal-field-label">
+                    <i class="bi bi-geo-alt"></i> Domicilio / Ubicación Remota:
+                  </label>
+                  <input type="text" id="swal-direccion" class="swal-field-input" value="${direccion}" placeholder="Ej: Zona Miraflores, Calle 3...">
                 </div>
-                <div style="margin-bottom: 10px;">
-                  <label style="font-weight: 700; color: #1e293b; display: block; margin-bottom: 3px;">Estado de la Solicitud:</label>
-                  <select id="swal-estado" class="form-select" style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 10px; width: 100%; box-sizing: border-box; font-weight: 600;">
-                    <option value="1" ${estado == '1' ? 'selected' : ''}>⏳ 1. Pendiente de Aprobación</option>
-                    <option value="2" ${estado == '2' ? 'selected' : ''}>✅ 2. Aprobado (Permiso Activo)</option>
-                    <option value="3" ${estado == '3' ? 'selected' : ''}>❌ 3. Rechazado</option>
-                  </select>
+
+                <!-- Fila 4: Motivo & Justificación (100% ancho) -->
+                <div class="swal-field-group">
+                  <label class="swal-field-label">
+                    <i class="bi bi-chat-left-text"></i> Motivo & Justificación:
+                  </label>
+                  <textarea id="swal-motivo" class="swal-field-textarea" rows="2" placeholder="Motivo o justificación declarada por el colaborador...">${motivo}</textarea>
                 </div>
-                <div>
-                  <label style="font-weight: 700; color: #1e293b; display: block; margin-bottom: 3px;">Observación del Administrador:</label>
-                  <input type="text" id="swal-obs" class="form-control" style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 10px; width: 100%; box-sizing: border-box;" value="${obs}" placeholder="Comentarios u observaciones del admin">
+
+                <!-- Fila 5: Observación del Administrador (100% ancho) -->
+                <div class="swal-field-group" style="margin-bottom: 0;">
+                  <label class="swal-field-label">
+                    <i class="bi bi-shield-check"></i> Observación del Administrador:
+                  </label>
+                  <input type="text" id="swal-obs" class="swal-field-input" value="${obs}" placeholder="Comentarios u observaciones del admin (opcional)">
                 </div>
               </div>
             `,
             focusConfirm: false,
             showCancelButton: true,
-            confirmButtonText: 'Guardar Cambios',
-            cancelButtonText: 'Cancelar',
-            confirmButtonColor: '#0F5FA6',
+            confirmButtonText: '<i class="bi bi-check-lg me-1"></i> Guardar Cambios',
+            cancelButtonText: '<i class="bi bi-x-lg me-1"></i> Cancelar',
             preConfirm: () => {
               const f = document.getElementById('swal-fecha').value;
               const i = document.getElementById('swal-inicio').value;
@@ -1516,31 +1796,59 @@
           const obs = btn.dataset.obs || '';
 
           const { value: formValues } = await Swal.fire({
-            title: `<strong>Editar Jornada: ${usuario}</strong>`,
+            customClass: {
+              popup: 'moseley-swal-modal',
+              actions: 'swal-modal-actions',
+              confirmButton: 'swal-btn-confirm',
+              cancelButton: 'swal-btn-cancel'
+            },
+            buttonsStyling: false,
             html: `
-              <div style="text-align: left; font-size: 0.88rem;">
-                <p style="margin-bottom: 8px; color: #64748b;"><b>Fecha:</b> ${fecha} · Modalidad: Teletrabajo</p>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
-                  <div>
-                    <label style="font-weight: 700; color: #1e293b; display: block; margin-bottom: 3px;">Hora Entrada:</label>
-                    <input type="time" id="swal-jornada-entrada" class="form-control" style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 10px; width: 100%; box-sizing: border-box;" value="${entrada}">
+              <div class="system-modal-header">
+                <div class="system-modal-title">
+                  <i class="bi bi-clock-history"></i>
+                  <span>Editar Jornada: <strong>${usuario}</strong></span>
+                </div>
+                <button type="button" class="system-modal-close" onclick="Swal.close()">&times;</button>
+              </div>
+              <div class="system-modal-body">
+                <div class="swal-info-banner">
+                  <i class="bi bi-calendar-check" style="color: #0F5FA6; font-size: 1.1rem;"></i>
+                  <span><b>Fecha de Registro:</b> ${fecha}</span>
+                  <span class="badge" style="margin-left: auto; font-size: 0.76rem; border-radius: 6px; padding: 4px 9px; background: #EFF6FF; color: #0F5FA6; font-weight: 700; border: 1px solid #BFDBFE;">
+                    Modalidad Teletrabajo
+                  </span>
+                </div>
+
+                <!-- Grilla Simétrica Entrada y Salida -->
+                <div class="swal-form-grid-2">
+                  <div class="swal-field-group">
+                    <label class="swal-field-label">
+                      <i class="bi bi-box-arrow-in-right"></i> Hora de Entrada:
+                    </label>
+                    <input type="time" id="swal-jornada-entrada" class="swal-field-input" value="${entrada}">
                   </div>
-                  <div>
-                    <label style="font-weight: 700; color: #1e293b; display: block; margin-bottom: 3px;">Hora Salida:</label>
-                    <input type="time" id="swal-jornada-salida" class="form-control" style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 10px; width: 100%; box-sizing: border-box;" value="${salida}">
+                  <div class="swal-field-group">
+                    <label class="swal-field-label">
+                      <i class="bi bi-box-arrow-right"></i> Hora de Salida:
+                    </label>
+                    <input type="time" id="swal-jornada-salida" class="swal-field-input" value="${salida}">
                   </div>
                 </div>
-                <div>
-                  <label style="font-weight: 700; color: #1e293b; display: block; margin-bottom: 3px;">Observación del Administrador:</label>
-                  <textarea id="swal-jornada-obs" class="form-control" rows="2" style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 10px; width: 100%; box-sizing: border-box;" placeholder="Observación o justificativo">${obs}</textarea>
+
+                <!-- Observación del Administrador -->
+                <div class="swal-field-group" style="margin-bottom: 0;">
+                  <label class="swal-field-label">
+                    <i class="bi bi-shield-check"></i> Observación del Administrador:
+                  </label>
+                  <textarea id="swal-jornada-obs" class="swal-field-textarea" rows="2" placeholder="Observación o justificativo administrativo...">${obs}</textarea>
                 </div>
               </div>
             `,
             focusConfirm: false,
             showCancelButton: true,
-            confirmButtonText: 'Guardar Jornada',
-            cancelButtonText: 'Cancelar',
-            confirmButtonColor: '#0F5FA6',
+            confirmButtonText: '<i class="bi bi-check-lg me-1"></i> Guardar Jornada',
+            cancelButtonText: '<i class="bi bi-x-lg me-1"></i> Cancelar',
             preConfirm: () => {
               const ent = document.getElementById('swal-jornada-entrada').value;
               const sal = document.getElementById('swal-jornada-salida').value;
