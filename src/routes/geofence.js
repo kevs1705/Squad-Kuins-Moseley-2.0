@@ -4,10 +4,18 @@ const db = require('../config/bd.js');
 const { distanceMeters } = require('../middleware/geofence');
 const { requireAuth } = require('../middleware/auth.js');
 
+function getBoliviaDateTime() {
+  const ahora = new Date();
+  const fecha = ahora.toLocaleDateString('sv-SE', { timeZone: 'America/La_Paz' });
+  const hora = ahora.toLocaleTimeString('en-GB', { timeZone: 'America/La_Paz' });
+  return { fecha, hora };
+}
+
 // GET: Cargar la vista de geocerca con los lugares activos o modo teletrabajo
 router.get('/geofence', requireAuth, async (req, res) => {
   const redirect = req.query.redirect || '/usuario/reporte';
   const userId = req.session.user.id || req.session.user.id_usuario;
+  const { fecha: hoyBolivia } = getBoliviaDateTime();
 
   try {
     // 1. Verificar si el usuario tiene permiso de teletrabajo aprobado para hoy
@@ -17,9 +25,9 @@ router.get('/geofence', requireAuth, async (req, res) => {
               TIME_FORMAT(hora_fin, '%H:%i') AS hora_fin,
               motivo
        FROM solicitudes_teletrabajo
-       WHERE id_usuario = ? AND fecha_solicitada = CURDATE() AND estado = 2
+       WHERE id_usuario = ? AND fecha_solicitada = ? AND estado = 2
        LIMIT 1`,
-      [userId]
+      [userId, hoyBolivia]
     );
     const teletrabajoHoy = teletrabajoRows.length > 0 ? teletrabajoRows[0] : null;
 
@@ -35,9 +43,9 @@ router.get('/geofence', requireAuth, async (req, res) => {
               TIME_FORMAT(hora_salida, '%H:%i') AS hora_salida, 
               estado 
        FROM asistencias 
-       WHERE id_usuario = ? AND fecha = CURDATE() AND estado != 'ANULADO'
+       WHERE id_usuario = ? AND fecha = ? AND (estado != 'ANULADO' OR estado IS NULL)
        ORDER BY id_asistencia DESC LIMIT 1`,
-      [userId]
+      [userId, hoyBolivia]
     );
     const asistenciaHoy = asistenciaRows.length > 0 ? asistenciaRows[0] : null;
 
@@ -63,6 +71,7 @@ router.post('/api/geofence/verify', async (req, res) => {
   }
   const userId = req.session.user.id || req.session.user.id_usuario;
   const { lat, lng, accuracy } = req.body;
+  const { fecha: hoyBolivia } = getBoliviaDateTime();
 
   if (typeof lat !== 'number' || typeof lng !== 'number' || typeof accuracy !== 'number') {
     return res.status(400).json({ ok: false, msg: 'Parámetros de ubicación inválidos' });
@@ -78,9 +87,9 @@ router.post('/api/geofence/verify', async (req, res) => {
     const [teletrabajoRows] = await db.query(
       `SELECT id_solicitud, direccion_remota, motivo
        FROM solicitudes_teletrabajo
-       WHERE id_usuario = ? AND fecha_solicitada = CURDATE() AND estado = 2
+       WHERE id_usuario = ? AND fecha_solicitada = ? AND estado = 2
        LIMIT 1`,
-      [userId]
+      [userId, hoyBolivia]
     );
     const teletrabajoHoy = teletrabajoRows.length > 0 ? teletrabajoRows[0] : null;
 
@@ -136,9 +145,9 @@ router.post('/api/geofence/verify', async (req, res) => {
       });
     }
 
-    // MODO PRESENCIAL NORMAL: Obtener lugares activos desde la base de datos
+    // MODO PRESENCIAL NORMAL: Obtener lugares activos desde la base de datos (excluyendo tipo TELETRABAJO y coordenadas 0,0)
     const [lugares] = await db.query(
-      "SELECT id_lugar, nombre, latitud, longitud, radio_metros FROM lugares WHERE estado = 'ACTIVO'"
+      "SELECT id_lugar, nombre, latitud, longitud, radio_metros FROM lugares WHERE estado = 'ACTIVO' AND tipo != 'TELETRABAJO' AND latitud != 0 AND longitud != 0"
     );
 
     if (!lugares || lugares.length === 0) {
@@ -223,16 +232,11 @@ router.post('/api/geofence/register', async (req, res) => {
   }
 
   const regexFecha = /^\d{4}-\d{2}-\d{2}$/;
-  const regexHora = /^\d{2}:\d{2}:\d{2}$/;
+  const regexHora = /^\d{2}:\d{2}(:\d{2})?$/;
 
-  let fechaUsar = fechaCliente;
-  let horaUsar = horaCliente;
-
-  if (!fechaUsar || !regexFecha.test(fechaUsar) || !horaUsar || !regexHora.test(horaUsar)) {
-    const ahoraRegion = new Date();
-    fechaUsar = ahoraRegion.toLocaleDateString('sv-SE', { timeZone: 'America/La_Paz' });
-    horaUsar = ahoraRegion.toLocaleTimeString('en-GB', { timeZone: 'America/La_Paz' });
-  }
+  const boliviaDT = getBoliviaDateTime();
+  let fechaUsar = (fechaCliente && regexFecha.test(fechaCliente)) ? fechaCliente : boliviaDT.fecha;
+  let horaUsar = (horaCliente && regexHora.test(horaCliente)) ? horaCliente : boliviaDT.hora;
 
   if (!req.session.geofence || !req.session.geofence.ok || Date.now() > req.session.geofence.until) {
     return res.status(403).json({ ok: false, msg: 'Ubicación no verificada o sesión de ubicación expirada.' });
@@ -248,9 +252,9 @@ router.post('/api/geofence/register', async (req, res) => {
   const lng = req.session.geofence.lng || null;
 
   try {
-    // Buscar si ya existe una asistencia para la fecha
+    // Buscar si ya existe una asistencia para la fecha (usando comillas simples 'ANULADO' o NULL)
     const [existing] = await db.query(
-      'SELECT id_asistencia, hora_entrada, hora_salida FROM asistencias WHERE id_usuario = ? AND fecha = ? AND estado != "ANULADO" LIMIT 1',
+      "SELECT id_asistencia, hora_entrada, hora_salida FROM asistencias WHERE id_usuario = ? AND fecha = ? AND (estado != 'ANULADO' OR estado IS NULL) ORDER BY id_asistencia DESC LIMIT 1",
       [userId, fechaUsar]
     );
 

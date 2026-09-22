@@ -310,10 +310,25 @@ router.post('/api/obras/:id', updateObraHandler); // Fallback si usas POST para 
 // 4. ELIMINAR OBRA
 // ======================================================
 
-router.delete('/api/obras/:id', async (req, res) => {
+router.delete('/api/obras/:id', requireAuth, requireAdmin, async (req, res) => {
     try {
         const { id } = req.params;
 
+        // 1. Verificar si la obra tiene asistencias asociadas
+        const [asistencias] = await db.query(
+            'SELECT COUNT(*) AS total FROM asistencias WHERE id_lugar = ?',
+            [id]
+        );
+
+        if (asistencias && asistencias[0] && asistencias[0].total > 0) {
+            const total = asistencias[0].total;
+            return res.status(400).json({
+                ok: false,
+                msg: `No se puede eliminar la obra porque tiene ${total} registro(s) de asistencia asociados. Para retirarla de las opciones activas sin alterar el historial, edítala y cambia su estado a "Inactivo".`
+            });
+        }
+
+        // 2. Si no tiene asistencias asociadas, proceder con el borrado
         const [result] = await db.query(`
             DELETE FROM lugares 
             WHERE id_lugar = ? AND tipo = 'OBRA'
@@ -326,6 +341,12 @@ router.delete('/api/obras/:id', async (req, res) => {
         res.json({ ok: true, msg: 'Obra eliminada correctamente' });
     } catch (error) {
         console.error('Error al eliminar obra:', error);
+        if (error.code === 'ER_ROW_IS_REFERENCED_2' || error.errno === 1451) {
+            return res.status(400).json({
+                ok: false,
+                msg: 'No se puede eliminar esta obra porque tiene registros vinculados en el sistema. Puedes cambiar su estado a "Inactivo" para deshabilitarla.'
+            });
+        }
         res.status(500).json({ ok: false, msg: 'Error al eliminar la obra' });
     }
 });
