@@ -1803,6 +1803,26 @@
 
           <!-- 3. Lógica JavaScript de la Vista -->
           <script>
+            // Helper global de validación de texto de bitácora e informe de horas extras
+            function validarTextoBitacoraCliente(texto) {
+              if (!texto || typeof texto !== 'string') {
+                return 'Debes ingresar una descripción válida para la bitácora o informe.';
+              }
+              const clean = texto.trim();
+              if (clean.length < 5) {
+                return 'La descripción es muy corta. Debe tener al menos 5 caracteres.';
+              }
+              if (/(.)\1{4,}/i.test(clean)) {
+                return 'La descripción no debe contener caracteres repetidos consecutivamente (ej. "aaaaa"). Por favor describe las actividades reales realizadas.';
+              }
+              const uniqueChars = new Set(clean.toLowerCase().replace(/[^a-záéíóúñ0-9]/gi, ''));
+              if (uniqueChars.size < 3 && clean.length > 10) {
+                return 'Por favor describe detalladamente las actividades reales desarrolladas.';
+              }
+              return null;
+            }
+            window.validarTextoBitacoraCliente = validarTextoBitacoraCliente;
+
             document.addEventListener('DOMContentLoaded', () => {
               // Filtrado en vivo de Tabla de Reportes (Rango de Fechas + Búsqueda por texto)
               const reporteFechaDesde = document.getElementById('reporteFechaDesde');
