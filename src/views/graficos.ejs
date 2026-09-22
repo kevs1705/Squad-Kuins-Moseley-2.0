@@ -461,16 +461,16 @@
 
       .bi-quick-sort-btn {
         background: #F8FAFC;
-        border: 1px solid #CBD5E1;
+        border: 1.5px solid #CBD5E1;
         color: #475569;
-        font-size: 0.72rem;
+        font-size: 0.76rem;
         font-weight: 700;
-        padding: 4px 10px;
-        border-radius: 6px;
+        padding: 6px 12px;
+        border-radius: 8px;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
-        gap: 5px;
+        gap: 6px;
         transition: all 0.2s ease;
       }
 
@@ -478,6 +478,97 @@
         background: #F1F5F9;
         border-color: var(--color-primary);
         color: var(--color-primary);
+      }
+
+      /* Botón de Exportar a Excel (Verde Corporativo) */
+      .bi-excel-btn {
+        background: #16A34A;
+        background: linear-gradient(135deg, #16A34A, #15803D);
+        color: #FFFFFF !important;
+        border: 1px solid #15803D;
+        font-size: 0.76rem;
+        font-weight: 700;
+        padding: 6px 14px;
+        border-radius: 8px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 6px rgba(22, 163, 74, 0.25);
+        text-decoration: none;
+      }
+
+      .bi-excel-btn:hover {
+        background: linear-gradient(135deg, #15803D, #166534);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(22, 163, 74, 0.35);
+        color: #FFFFFF !important;
+      }
+
+      .bi-excel-btn:active {
+        transform: translateY(0);
+      }
+
+      /* Dropdown / Botón de Filtro por Carrera */
+      .bi-filter-btn-wrap {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+      }
+
+      .bi-filter-btn-select {
+        background: #FFFFFF;
+        border: 1.5px solid #CBD5E1;
+        color: #334155;
+        font-size: 0.76rem;
+        font-weight: 700;
+        padding: 6px 28px 6px 30px;
+        border-radius: 8px;
+        cursor: pointer;
+        outline: none;
+        appearance: none;
+        -webkit-appearance: none;
+        transition: all 0.2s ease;
+        max-width: 200px;
+      }
+
+      .bi-filter-btn-select:hover,
+      .bi-filter-btn-select:focus {
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px rgba(15, 95, 166, 0.12);
+      }
+
+      .bi-filter-btn-icon-left {
+        position: absolute;
+        left: 10px;
+        pointer-events: none;
+        color: var(--color-primary);
+        font-size: 0.85rem;
+      }
+
+      .bi-filter-btn-icon-right {
+        position: absolute;
+        right: 9px;
+        pointer-events: none;
+        color: #64748B;
+        font-size: 0.72rem;
+      }
+
+      /* Badge contador de registros en cabecera */
+      .bi-panel-tag-count {
+        background: #EFF6FF;
+        border: 1.5px solid #BFDBFE;
+        color: #0F5FA6;
+        font-size: 0.72rem;
+        font-weight: 800;
+        padding: 6px 12px;
+        border-radius: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: inline-flex;
+        align-items: center;
+        white-space: nowrap;
       }
 
       /* Barras de Progreso en Flecha (Arrow Bars) */
@@ -620,33 +711,37 @@
         overflow-x: auto;
         border-radius: 12px;
         border: 1px solid var(--color-border);
+        background: #FFFFFF;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       }
 
       .bi-summary-table {
         width: 100%;
         border-collapse: collapse;
-        font-size: 0.88rem;
+        font-size: 0.85rem;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       }
 
       .bi-summary-table th {
         background: #F8FAFC;
         color: #475569;
-        padding: 14px 18px;
+        padding: 13px 18px;
         text-transform: uppercase;
-        font-size: 0.76rem;
-        font-weight: 800;
-        letter-spacing: 0.6px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
         border-bottom: 2px solid var(--color-border);
         text-align: left;
         white-space: nowrap;
       }
 
       .bi-summary-table td {
-        padding: 13px 18px;
+        padding: 12px 18px;
         border-bottom: 1px solid var(--color-border-light);
         vertical-align: middle;
-        color: var(--color-text);
+        color: #334155;
         white-space: nowrap;
+        font-weight: 400;
       }
 
       .bi-summary-table tr:hover td {
@@ -658,49 +753,60 @@
       }
 
       .bi-table-name {
-        color: var(--color-text-dark);
-        font-weight: 700;
-        font-size: 0.88rem;
-        letter-spacing: -0.2px;
+        color: #0F172A;
+        font-weight: 600;
+        font-size: 0.86rem;
+        letter-spacing: -0.1px;
+      }
+
+      .bi-table-subinfo {
+        font-size: 0.73rem;
+        color: #64748B;
+        font-weight: 400;
+        margin-top: 3px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
       }
 
       .bi-table-career-badge {
         background: #EFF6FF;
-        color: var(--color-primary);
+        color: #0F5FA6;
         border: 1px solid #BFDBFE;
-        padding: 3px 9px;
+        padding: 2px 8px;
         border-radius: 6px;
-        font-weight: 700;
-        font-size: 0.75rem;
-        letter-spacing: 0.3px;
+        font-weight: 600;
+        font-size: 0.72rem;
+        letter-spacing: 0.2px;
         display: inline-block;
       }
 
       .bi-table-presencial {
-        color: #334155;
-        font-weight: 600;
+        color: #475569;
+        font-weight: 500;
       }
 
       .bi-table-teletrabajo {
-        color: var(--bi-indigo);
-        font-weight: 600;
+        color: #4F46E5;
+        font-weight: 500;
       }
 
       .bi-table-extras {
-        color: var(--bi-amber-dark);
-        font-weight: 700;
+        color: #D97706;
+        font-weight: 600;
       }
 
       .bi-table-total {
-        color: var(--color-primary);
-        font-weight: 800;
-        font-size: 0.95rem;
+        color: #0F5FA6;
+        font-weight: 600;
+        font-size: 0.88rem;
       }
 
       .bi-table-prog-text {
-        font-size: 0.72rem;
-        color: var(--color-text-muted);
-        font-weight: 600;
+        font-size: 0.71rem;
+        color: #64748B;
+        font-weight: 500;
         margin-top: 3px;
         display: block;
       }
@@ -971,16 +1077,50 @@
 
       <!-- 5. TABLA RESUMEN EN ANCHO COMPLETO HORIZONTAL -->
       <div class="bi-panel" style="width: 100%;">
-        <div class="bi-panel-header" style="align-items: center; margin-bottom: 1rem; padding-bottom: 0.85rem;">
+        <div class="bi-panel-header" style="align-items: center; margin-bottom: 1rem; padding-bottom: 0.85rem; flex-wrap: wrap; gap: 0.75rem;">
           <div class="bi-panel-title" style="white-space: nowrap;">
-            <span id="tablaResumenTitle" style="font-size: 1.15rem; font-weight: 800; color: #0F172A; letter-spacing: -0.2px;">Detalle Rápido de Pasantes</span>
+            <span id="tablaResumenTitle"
+              style="font-size: 1.15rem; font-weight: 800; color: #0F172A; letter-spacing: -0.2px;">Detalle Rápido de Pasantes</span>
           </div>
-          <div class="d-flex align-items-center gap-2">
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <!-- 1. Filtro Dinámico por Rendimiento (< 100 hrs, Por acabar, etc.) -->
+            <div class="bi-filter-btn-wrap" title="Filtrar por rendimiento / estado">
+              <i class="bi bi-funnel bi-filter-btn-icon-left text-primary"></i>
+              <select id="filtroTablaRendimiento" class="bi-filter-btn-select" style="max-width: 220px;">
+                <option value="todos">Todos los rendimientos</option>
+                <option value="menos_100">Menor a 100 hrs (Contactar)</option>
+                <option value="por_acabar">Por acabar (≥ 200 hrs)</option>
+                <option value="completado">Meta cumplida (≥ 280 hrs)</option>
+              </select>
+              <i class="bi bi-chevron-down bi-filter-btn-icon-right"></i>
+            </div>
+
+            <!-- 2. Botón / Selector de Filtro por Carrera -->
+            <div class="bi-filter-btn-wrap" title="Filtrar por carrera">
+              <i class="bi bi-funnel-fill bi-filter-btn-icon-left"></i>
+              <select id="filtroTablaCarrera" class="bi-filter-btn-select">
+                <option value="">Todas las carreras</option>
+                <% (carreras || []).forEach(c => { %>
+                  <option value="<%= c.id_carrera %>"><%= c.nombre %></option>
+                <% }) %>
+              </select>
+              <i class="bi bi-chevron-down bi-filter-btn-icon-right"></i>
+            </div>
+
+            <!-- 3. Botón Exportar a Excel -->
+            <button type="button" class="bi-excel-btn" id="btnExportarPasantesExcel" title="Exportar Detalle de Pasantes a Excel (.xlsx) con los filtros activos">
+              <i class="bi bi-file-earmark-excel-fill"></i>
+              <span>Exportar a Excel</span>
+            </button>
+
+            <!-- 4. Botón Alternar Orden -->
             <button type="button" class="bi-quick-sort-btn" id="btnToggleTableSort"
               title="Alternar Ascendente / Descendente">
               <i class="bi bi-arrow-down-up" id="sortTableIcon"></i> <span id="sortTableLabel">Descendente</span>
             </button>
-            <span class="bi-panel-tag" id="tablaBadgeCount">0 Registros</span>
+
+            <!-- 5. Badge Contador de Pasantes -->
+            <span class="bi-panel-tag-count" id="tablaBadgeCount">0 PASANTES</span>
           </div>
         </div>
 
@@ -1048,6 +1188,9 @@
         const sortTableLabel = document.getElementById('sortTableLabel');
         const rankingPanelTitle = document.getElementById('rankingPanelTitle');
         const rankingBadgeTag = document.getElementById('rankingBadgeTag');
+        const filtroTablaRendimiento = document.getElementById('filtroTablaRendimiento');
+        const filtroTablaCarrera = document.getElementById('filtroTablaCarrera');
+        const btnExportarPasantesExcel = document.getElementById('btnExportarPasantesExcel');
 
         // Instancias de Chart.js
         let chartTendencia = null;
@@ -1104,12 +1247,13 @@
         // FUNCIÓN PRINCIPAL DE CARGA DE ANALÍTICA
         // ==========================================
         async function fetchAnalytics() {
-          const carreraId = selectCarrera.value;
+          const carreraId = (currentMode === 'carrera') ? (selectCarrera.value || (filtroTablaCarrera ? filtroTablaCarrera.value : '')) : (filtroTablaCarrera ? filtroTablaCarrera.value : '');
           const estudianteId = selectEstudiante.value;
+          const rendVal = filtroTablaRendimiento ? filtroTablaRendimiento.value : 'todos';
 
-          let url = `/api/graficos/analytics?modo=${currentMode}&periodo=${currentPeriod}&orden=${currentOrder}`;
-          if (currentMode === 'carrera' && carreraId) url += `&carreraId=${carreraId}`;
-          if (currentMode === 'estudiante' && estudianteId) url += `&estudianteId=${estudianteId}`;
+          let url = `/api/graficos/analytics?modo=${currentMode}&periodo=${currentPeriod}&orden=${currentOrder}&filtroRendimiento=${encodeURIComponent(rendVal)}`;
+          if (currentMode === 'carrera' && carreraId) url += `&carreraId=${encodeURIComponent(carreraId)}`;
+          if (currentMode === 'estudiante' && estudianteId) url += `&estudianteId=${encodeURIComponent(estudianteId)}`;
 
           try {
             const res = await fetch(url);
@@ -1420,29 +1564,61 @@
           const badgeCount = document.getElementById('tablaBadgeCount');
           if (!tbody) return;
 
-          badgeCount.textContent = `${(estudiantes || []).length} Pasantes`;
+          const totalCount = (estudiantes || []).length;
+          const rendVal = filtroTablaRendimiento ? filtroTablaRendimiento.value : 'todos';
+          let tagSuffix = 'PASANTES';
+          if (rendVal === 'menos_100') tagSuffix = '(< 100 HRS)';
+          else if (rendVal === 'por_acabar') tagSuffix = '(POR ACABAR)';
+          else if (rendVal === 'completado') tagSuffix = '(COMPLETADOS)';
+
+          badgeCount.textContent = `${totalCount} ${tagSuffix}`;
 
           if (!estudiantes || estudiantes.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">Sin registros para mostrar</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">Sin registros para mostrar con los filtros seleccionados</td></tr>';
             return;
           }
 
-          tbody.innerHTML = estudiantes.slice(0, 10).map(e => `
-        <tr>
-          <td><span class="bi-table-name">${e.nombre}</span></td>
+          tbody.innerHTML = estudiantes.map(e => {
+            const isBajo = e.horas < 100;
+            const isPorAcabar = e.horas >= 200 && e.horas < 280;
+            const isMeta = e.horas >= 280;
+
+            let badgeHtml = '';
+            if (isBajo) {
+              badgeHtml = `<span style="font-size: 0.68rem; font-weight: 600; color: #DC2626; background: #FEF2F2; border: 1px solid #FECACA; padding: 1px 6px; border-radius: 4px; margin-left: 6px;">Menor a 100 hrs</span>`;
+            } else if (isPorAcabar) {
+              badgeHtml = `<span style="font-size: 0.68rem; font-weight: 600; color: #0F5FA6; background: #EFF6FF; border: 1px solid #BFDBFE; padding: 1px 6px; border-radius: 4px; margin-left: 6px;">Por acabar</span>`;
+            } else if (isMeta) {
+              badgeHtml = `<span style="font-size: 0.68rem; font-weight: 600; color: #16A34A; background: #F0FDF4; border: 1px solid #BBF7D0; padding: 1px 6px; border-radius: 4px; margin-left: 6px;">Meta cumplida</span>`;
+            }
+
+            return `
+        <tr ${isBajo ? 'style="background: #FFFDFD;"' : ''}>
+          <td>
+            <div style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
+              <span class="bi-table-name">${e.nombre}</span>
+              ${badgeHtml}
+            </div>
+            <div class="bi-table-subinfo">
+              <span>CI: ${e.ci || 'S/N'}</span>
+              <span>·</span>
+              <span>Celular: <span style="color: ${isBajo ? '#DC2626; font-weight: 600;' : '#334155;'}">${e.celular || 'Sin registrar'}</span></span>
+            </div>
+          </td>
           <td><span class="bi-table-career-badge">${e.carrera_siglas || 'GEN'}</span></td>
           <td><span class="bi-table-presencial">${e.presencial} hrs</span></td>
           <td><span class="bi-table-teletrabajo">${e.teletrabajo} hrs</span></td>
           <td><span class="bi-table-extras">${e.horas_extra || 0} hrs</span></td>
-          <td><span class="bi-table-total">${e.horas} hrs</span></td>
-          <td style="min-width: 130px;">
-            <div style="background: #E2E8F0; height: 8px; border-radius: 4px; overflow: hidden;">
-              <div style="width: ${e.porcentaje}%; height: 100%; background: linear-gradient(90deg, #0F5FA6, #0D9488); border-radius: 4px;"></div>
+          <td><span class="bi-table-total" style="${isBajo ? 'color: #DC2626;' : ''}">${e.horas} hrs</span></td>
+          <td style="min-width: 140px;">
+            <div style="background: #E2E8F0; height: 7px; border-radius: 4px; overflow: hidden;">
+              <div style="width: ${e.porcentaje}%; height: 100%; background: ${isBajo ? 'linear-gradient(90deg, #EF4444, #F59E0B)' : 'linear-gradient(90deg, #0F5FA6, #0D9488)'}; border-radius: 4px;"></div>
             </div>
             <span class="bi-table-prog-text">${e.porcentaje}% de 280 hrs</span>
           </td>
         </tr>
-      `).join('');
+      `;
+          }).join('');
         }
 
         // Helper para alternar orden y sincronizar controles
@@ -1474,6 +1650,12 @@
             wrapCarrera.style.display = currentMode === 'carrera' ? 'block' : 'none';
             wrapEstudiante.style.display = currentMode === 'estudiante' ? 'block' : 'none';
 
+            if (currentMode === 'carrera' && filtroTablaCarrera && selectCarrera) {
+              filtroTablaCarrera.value = selectCarrera.value;
+            } else if (currentMode === 'general' && filtroTablaCarrera) {
+              filtroTablaCarrera.value = '';
+            }
+
             fetchAnalytics();
           });
         });
@@ -1504,8 +1686,54 @@
           setOrder(currentOrder === 'desc' ? 'asc' : 'desc');
         });
 
+        // Filtro por rendimiento (< 100 hrs, Por acabar, etc.)
+        filtroTablaRendimiento?.addEventListener('change', fetchAnalytics);
+
+        // Filtro por carrera desde el botón/dropdown en la cabecera de la tabla
+        filtroTablaCarrera?.addEventListener('change', () => {
+          const val = filtroTablaCarrera.value;
+          if (val) {
+            currentMode = 'carrera';
+            if (selectCarrera) selectCarrera.value = val;
+            scopeBtns.forEach(b => {
+              if (b.dataset.mode === 'carrera') b.classList.add('active');
+              else b.classList.remove('active');
+            });
+            wrapCarrera.style.display = 'block';
+            wrapEstudiante.style.display = 'none';
+          } else {
+            currentMode = 'general';
+            scopeBtns.forEach(b => {
+              if (b.dataset.mode === 'general') b.classList.add('active');
+              else b.classList.remove('active');
+            });
+            wrapCarrera.style.display = 'none';
+            wrapEstudiante.style.display = 'none';
+          }
+          fetchAnalytics();
+        });
+
+        // Botón de exportación rápida a Excel de pasantes con filtros dinámicos
+        btnExportarPasantesExcel?.addEventListener('click', () => {
+          const carreraId = (filtroTablaCarrera && filtroTablaCarrera.value) || (currentMode === 'carrera' ? selectCarrera.value : '');
+          const estudianteId = (currentMode === 'estudiante' && selectEstudiante) ? selectEstudiante.value : '';
+          const rendVal = (filtroTablaRendimiento && filtroTablaRendimiento.value) || 'todos';
+
+          let exportUrl = `/api/graficos/export-pasantes-excel?modo=${encodeURIComponent(currentMode)}&periodo=${encodeURIComponent(currentPeriod)}&orden=${encodeURIComponent(currentOrder)}&filtroRendimiento=${encodeURIComponent(rendVal)}`;
+          if (carreraId) {
+            exportUrl += `&carreraId=${encodeURIComponent(carreraId)}`;
+          }
+          if (estudianteId) {
+            exportUrl += `&estudianteId=${encodeURIComponent(estudianteId)}`;
+          }
+          window.location.href = exportUrl;
+        });
+
         // Cambio de selectores dinámicos
-        selectCarrera?.addEventListener('change', fetchAnalytics);
+        selectCarrera?.addEventListener('change', () => {
+          if (filtroTablaCarrera) filtroTablaCarrera.value = selectCarrera.value;
+          fetchAnalytics();
+        });
         selectEstudiante?.addEventListener('change', fetchAnalytics);
         btnActualizar?.addEventListener('click', fetchAnalytics);
 
