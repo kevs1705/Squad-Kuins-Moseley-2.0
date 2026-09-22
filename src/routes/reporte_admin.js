@@ -180,12 +180,12 @@ async function fetchCombinedRecords({ id_carrera, estado_duracion, id_usuario, i
     rowsA = resA || [];
   }
 
-  // 2. Consulta de Horas Extras Aprobadas (Excluir administradores)
+  // 2. Consulta de Horas Extras (Excluir administradores)
   let rowsB = [];
-  const includeHE = mod !== 'PRESENCIAL' && mod !== 'TELETRABAJO' && !id_lugar && estado_duracion !== 'OBSERVADO' && estado_duracion !== 'EN_CURSO' && estado_duracion !== 'CONGELADO';
+  const includeHE = mod !== 'PRESENCIAL' && mod !== 'TELETRABAJO' && !id_lugar;
 
   if (includeHE) {
-    const whereB = ["n.estado = 2", "(u.rol = 0 OR u.rol IS NULL)"];
+    const whereB = ["n.estado IN (1, 2, 3)", "n.hora_inicio IS NOT NULL", "n.hora_fin IS NOT NULL", "(u.rol = 0 OR u.rol IS NULL)"];
     const paramsB = [];
 
     if (id_carrera) {
@@ -198,6 +198,15 @@ async function fetchCombinedRecords({ id_carrera, estado_duracion, id_usuario, i
     } else if (nombre) {
       whereB.push("(u.nombre LIKE ? OR u.apellido_paterno LIKE ? OR u.apellido_materno LIKE ? OR CONCAT_WS(' ', u.nombre, u.apellido_paterno, u.apellido_materno) LIKE ?)");
       paramsB.push(`%${nombre}%`, `%${nombre}%`, `%${nombre}%`, `%${nombre}%`);
+    }
+    if (estado_duracion === 'FINALIZADO') {
+      whereB.push('n.estado = 2');
+    } else if (estado_duracion === 'OBSERVADO') {
+      whereB.push('n.estado IN (1, 3)');
+    } else if (estado_duracion === 'CONGELADO') {
+      whereB.push('n.estado = 1');
+    } else if (estado_duracion === 'EN_CURSO') {
+      whereB.push('1 = 0');
     }
     if (fechasRaw) {
       if (fechasRaw.includes(' to ') || fechasRaw.includes(' a ')) {
@@ -239,7 +248,13 @@ async function fetchCombinedRecords({ id_carrera, estado_duracion, id_usuario, i
            TIMESTAMPDIFF(SECOND, TIMESTAMP(n.fecha_solicitada, n.hora_inicio), TIMESTAMP(n.fecha_solicitada, n.hora_fin)) * 2,
            NULL
         ) AS duracion_segundos,
-        'FINALIZADO' AS asistencia_estado,
+        CASE 
+          WHEN n.estado = 1 THEN 'OBSERVADO'
+          WHEN n.estado = 2 THEN 'FINALIZADO'
+          WHEN n.estado = 3 THEN 'RECHAZADO'
+          ELSE 'OBSERVADO'
+        END AS asistencia_estado,
+        n.estado AS he_estado,
         NULL AS id_reporte,
         n.tarea,
         n.comprobante,
@@ -347,7 +362,13 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
       let horasDiaText = '00:00';
 
       if (r.modalidad === 'HORA_EXTRA') {
-        estadoCalculado = 'FINALIZADO';
+        if (r.he_estado === 1 || r.asistencia_estado === 'OBSERVADO') {
+          estadoCalculado = 'OBSERVADO';
+        } else if (r.he_estado === 3 || r.asistencia_estado === 'RECHAZADO') {
+          estadoCalculado = 'RECHAZADO';
+        } else {
+          estadoCalculado = 'FINALIZADO';
+        }
         horasDiaText = r.duracion_segundos != null ? formatSecondsToHHMM(r.duracion_segundos) : '00:00';
       } else if (!r.hora_salida && isPast) {
         estadoCalculado = 'OBSERVADO';
@@ -737,7 +758,27 @@ router.post('/api/admin/reportes/:id_asistencia/toggle-estado', requireAdmin, as
     if (!rawId) return res.status(400).json({ ok: false, msg: 'ID de asistencia no válido' });
 
     if (rawId.startsWith('he_')) {
-      return res.status(400).json({ ok: false, msg: 'Las horas extras se gestionan mediante su aprobación.' });
+      const idNotif = parseInt(rawId.replace('he_', ''), 10);
+      const [nRows] = await db.query('SELECT id_notificacion, estado FROM notificaciones WHERE id_notificacion = ? LIMIT 1', [idNotif]);
+      if (!nRows.length) return res.status(404).json({ ok: false, msg: 'Hora extra no encontrada' });
+      const nRow = nRows[0];
+      if (Number(nRow.estado) === 2) {
+        await db.query('UPDATE notificaciones SET estado = 1, actualizado_en = NOW() WHERE id_notificacion = ?', [idNotif]);
+        return res.json({
+          ok: true,
+          nuevo_estado: 'OBSERVADO',
+          accion: 'desactivar',
+          msg: 'Horas extras puestas en observación y congeladas.'
+        });
+      } else {
+        await db.query('UPDATE notificaciones SET estado = 2, actualizado_en = NOW() WHERE id_notificacion = ?', [idNotif]);
+        return res.json({
+          ok: true,
+          nuevo_estado: 'FINALIZADO',
+          accion: 'activar',
+          msg: 'Horas extras aprobadas y acreditadas con éxito.'
+        });
+      }
     }
 
     const id_asistencia = parseInt(rawId, 10);
@@ -810,7 +851,12 @@ router.post('/api/admin/reportes/:id_asistencia/reactivar', requireAdmin, async 
     if (!rawId) return res.status(400).json({ ok: false, msg: 'ID de asistencia no válido' });
 
     if (rawId.startsWith('he_')) {
-      return res.status(400).json({ ok: false, msg: 'Las horas extras no requieren reactivación manual.' });
+      const idNotif = parseInt(rawId.replace('he_', ''), 10);
+      await db.query(`UPDATE notificaciones SET estado = 1, observacion_admin = 'Horas extras reactivadas por el Administrador para su regularización.', actualizado_en = NOW() WHERE id_notificacion = ?`, [idNotif]);
+      return res.json({
+        ok: true,
+        msg: 'Horas extras reactivadas exitosamente. El pasante ya puede completarlas o regularizarlas.'
+      });
     }
 
     const id_asistencia = parseInt(rawId, 10);
@@ -845,7 +891,16 @@ router.post('/api/admin/reportes/:id_asistencia/congelar', requireAdmin, async (
     if (!rawId) return res.status(400).json({ ok: false, msg: 'ID de asistencia no válido' });
 
     if (rawId.startsWith('he_')) {
-      return res.status(400).json({ ok: false, msg: 'No se puede congelar una hora extra individualmente.' });
+      const idNotif = parseInt(rawId.replace('he_', ''), 10);
+      const [nRows] = await db.query('SELECT estado FROM notificaciones WHERE id_notificacion = ? LIMIT 1', [idNotif]);
+      if (!nRows.length) return res.status(404).json({ ok: false, msg: 'Hora extra no encontrada' });
+      if (Number(nRows[0].estado) === 2) {
+        await db.query('UPDATE notificaciones SET estado = 1, actualizado_en = NOW() WHERE id_notificacion = ?', [idNotif]);
+        return res.json({ ok: true, accion: 'congelar', msg: 'Horas extras congeladas y pasadas a observación.' });
+      } else {
+        await db.query('UPDATE notificaciones SET estado = 2, actualizado_en = NOW() WHERE id_notificacion = ?', [idNotif]);
+        return res.json({ ok: true, accion: 'descongelar', msg: 'Horas extras aprobadas y descongeladas.' });
+      }
     }
 
     const id_asistencia = parseInt(rawId, 10);

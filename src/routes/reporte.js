@@ -76,7 +76,7 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
       ) AS total_segundos_he
       FROM notificaciones
       WHERE id_usuario = ?
-        AND estado = 2
+        AND estado IN (1, 2)
         AND hora_inicio IS NOT NULL
         AND hora_fin IS NOT NULL
     `, [userId]);
@@ -112,7 +112,32 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
         )
     `, [userId]);
 
-    const totalSegundosCongelados = Number(totalsObs[0]?.total_segundos_obs) || 0;
+    const [totalsObsHE] = await db.query(`
+      SELECT COALESCE(
+        SUM(
+          TIMESTAMPDIFF(
+            SECOND,
+            TIMESTAMP(fecha_solicitada, hora_inicio),
+            TIMESTAMP(fecha_solicitada, hora_fin)
+          )
+        ), 0
+      ) AS total_segundos_obs_he
+      FROM notificaciones
+      WHERE id_usuario = ?
+        AND (
+          estado = 1 
+          OR (
+            fecha_solicitada < CURDATE() 
+            AND (tarea IS NULL OR TRIM(tarea) = '')
+            AND estado != 2
+          )
+        )
+        AND hora_inicio IS NOT NULL
+        AND hora_fin IS NOT NULL
+    `, [userId]);
+
+    const totalSegundosObsHE = (Number(totalsObsHE[0]?.total_segundos_obs_he) || 0) * 2;
+    const totalSegundosCongelados = (Number(totalsObs[0]?.total_segundos_obs) || 0) + totalSegundosObsHE;
     const total_congeladas = formatSecondsToHHMMSS(totalSegundosCongelados);
     const total_observadas = total_congeladas;
 
@@ -269,7 +294,6 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
     };
 
     const bitacorasPendientes = jornadas.filter(j => {
-      if (j.modalidad === 'HORA_EXTRA') return false;
       const faltaT = !j.tarea || j.tarea.trim() === '';
       const faltaC = !j.comprobante || j.comprobante.trim() === '';
       return faltaT || faltaC;
@@ -438,6 +462,70 @@ router.post('/reportes/guardar', requireAuth, handleUploadOptional, async (req, 
     const errorBitacora = validarTextoBitacora(tarea);
     if (errorBitacora) {
       return res.status(400).json({ ok: false, error: errorBitacora });
+    }
+
+    // Si es una asistencia de horas extras (prefijo 'he_')
+    if (String(id_asistencia).startsWith('he_')) {
+      const idNotif = parseInt(String(id_asistencia).replace('he_', ''), 10);
+      if (!idNotif) {
+        return res.status(400).json({ ok: false, error: 'ID de horas extras no válido' });
+      }
+
+      const [[notif]] = await db.query(
+        `SELECT id_notificacion, DATE_FORMAT(fecha_solicitada, '%Y-%m-%d') AS fecha_fmt, fecha_solicitada, estado, tarea, comprobante
+         FROM notificaciones
+         WHERE id_notificacion = ? AND id_usuario = ?`,
+        [idNotif, userId]
+      );
+
+      if (!notif) {
+        return res.status(404).json({ ok: false, error: 'Registro de horas extras no encontrado' });
+      }
+
+      const { fecha: hoyBolivia } = getBoliviaDateTime();
+      const fechaNotif = notif.fecha_fmt || (notif.fecha_solicitada instanceof Date ? notif.fecha_solicitada.toISOString().slice(0, 10) : String(notif.fecha_solicitada).slice(0, 10));
+      const esFechaPasada = fechaNotif < hoyBolivia;
+
+      // Si ya estaba aprobada (estado = 2) y completa en una fecha pasada, no permitir edición sin reactivación
+      if (esFechaPasada && notif.estado === 2 && notif.tarea && notif.comprobante) {
+        return res.status(403).json({
+          ok: false,
+          error: 'Esta sesión de horas extras ya fue aprobada y cerrada. Solicita al administrador su reactivación si necesitas modificarla.'
+        });
+      }
+
+      // Ruta de la imagen cargada por Multer o enviada desde Cloudinary
+      const publicPath = req.file ? '/uploads/comprobantes/' + req.file.filename : null;
+      const comprobanteUrl = (comprobante && typeof comprobante === 'string' && comprobante.trim() !== '') 
+        ? comprobante.trim() 
+        : publicPath;
+
+      const imgFinal = comprobanteUrl !== null ? comprobanteUrl : notif.comprobante;
+
+      if (!imgFinal) {
+        return res.status(400).json({ ok: false, error: 'Es obligatorio adjuntar un comprobante o fotografía de evidencia.' });
+      }
+
+      // Actualizar la notificación con la bitácora (tarea + comprobante)
+      // Pasa a estado 1 (En Revisión / Observado) con horas congeladas hasta su aprobación
+      await db.query(
+        `UPDATE notificaciones
+         SET tarea = ?,
+             motivo = ?,
+             comprobante = ?,
+             estado = 1,
+             observacion_admin = NULL,
+             actualizado_en = NOW()
+         WHERE id_notificacion = ? AND id_usuario = ?`,
+        [tarea, tarea, imgFinal, idNotif, userId]
+      );
+
+      return res.json({
+        ok: true,
+        es_regularizada: true,
+        msg: 'Horas extras regularizadas con éxito. Tu bitácora y evidencia fotográfica fueron enviadas a revisión del Administrador.',
+        comprobante: imgFinal
+      });
     }
 
     // 1. Obtener datos de la asistencia y validar permisos y bloqueo a las 00:00
