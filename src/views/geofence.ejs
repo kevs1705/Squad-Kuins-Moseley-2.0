@@ -489,7 +489,7 @@ async function verifyPosition() {
         await Swal.fire({
           icon: 'success',
           title: isTeletrabajoMode ? 'Entrada de Teletrabajo Registrada' : 'Asistencia Registrada',
-          html: `Acción: <b>${tipo.toUpperCase()}</b><br>Hora registrada: <b>${regData.hora}</b><br><small class="text-muted">Modalidad: Teletrabajo (En Observación)</small>`,
+          html: `Acción: <b>${tipo.toUpperCase()}</b><br>Hora registrada: <b>${regData.hora}</b>` + (isTeletrabajoMode ? '<br><small class="text-muted">Modalidad: Teletrabajo (En Observación)</small>' : ''),
           timer: 2500,
           showConfirmButton: false
         });
