@@ -11,11 +11,20 @@
   <!-- METRICAS Y PROYECCIONES SUPERIORES -->
   <% 
     const horasRequeridas = Number(user.horas_requeridas) || 280; 
-    const horasPrevias = Number(user.horas_previas) || 0;
-    const horasSistema = (typeof totalHorasSistema !== 'undefined') ? Number(totalHorasSistema) : 0; 
-    const totalAcumulado = horasPrevias + horasSistema; 
-    const porcentaje = Math.min(100, Math.round((totalAcumulado / horasRequeridas) * 100)); 
-    const horasFaltantes = Math.max(0, horasRequeridas - totalAcumulado); 
+    const segundosMeta = horasRequeridas * 3600;
+    const totalSegundosAcum = (typeof totalSegundos !== 'undefined') ? Number(totalSegundos) : ((Number(totalHorasSistema) || 0) * 3600); 
+    const esMetaAlcanzada = totalSegundosAcum >= segundosMeta;
+    // Horas acumuladas sin decimales (entero)
+    const totalAcumuladoHoras = Math.floor(totalSegundosAcum / 3600); 
+    const segundosFaltantes = Math.max(0, segundosMeta - totalSegundosAcum);
+    // Sin decimales en horas faltantes: número entero exacto
+    const horasFaltantes = esMetaAlcanzada ? 0 : Math.ceil(segundosFaltantes / 3600); 
+    
+    // Porcentaje exacto con decimales (ej. 99.5% o 99.7%) sin redondear falsamente a 100%
+    const pctRaw = (totalSegundosAcum / segundosMeta) * 100;
+    const porcentajeTexto = esMetaAlcanzada 
+      ? '100%' 
+      : (Math.min(99.9, Math.floor(pctRaw * 10) / 10)).toFixed(1) + '%'; 
 
     /* Mapeo de horas por día de la semana configurado */
     const horasPorDia = {}; 
@@ -75,12 +84,18 @@
     let diasLaboralesRestantes = 0;
     let semanasRestantes = 0;
 
-    if (totalAcumulado >= horasRequeridas) {
+    if (esMetaAlcanzada) {
       fechaEstimadaObj = 'COMPLETADO';
     } else if (totalHorasSemana > 0 && horasFaltantes > 0) {
       let horasRestantes = horasFaltantes;
       let cursor = new Date();
       cursor.setHours(0, 0, 0, 0);
+
+      // Si el usuario ya marcó su salida hoy o su horario de hoy ya concluyó,
+      // el pronóstico se recorre a partir de mañana.
+      if (typeof yaSalioHoy !== 'undefined' && yaSalioHoy) {
+        cursor.setDate(cursor.getDate() + 1);
+      }
 
       const MAX_ITER = 3650;
       let iter = 0;
@@ -146,22 +161,22 @@
     <div class="horario-stat-card">
       <div class="horario-stat-header">
         <div class="horario-stat-title">Total Acumulado</div>
-        <span class="badge rounded-pill <%= porcentaje >= 100 ? 'bg-success text-white' : 'bg-primary-subtle text-primary border border-primary-subtle' %>" style="font-size: 0.75rem; font-weight: 700; padding: 4px 8px;">
-          <%= porcentaje %>%
+        <span class="badge rounded-pill <%= esMetaAlcanzada ? 'bg-success text-white' : 'bg-primary-subtle text-primary border border-primary-subtle' %>" style="font-size: 0.75rem; font-weight: 700; padding: 4px 8px;">
+          <%= porcentajeTexto %>
         </span>
       </div>
       <div class="horario-stat-value">
-        <%= String(Math.round(totalAcumulado)).padStart(3, '0') %> / <%= horasRequeridas %>
+        <%= totalAcumuladoHoras %> / <%= horasRequeridas %>
         <span style="font-size: 1.1rem; font-weight: 500; color: #64748b;">hrs</span>
       </div>
       <div class="horario-progress-container">
-        <div class="horario-progress-fill" style="width: <%= porcentaje %>%;"></div>
+        <div class="horario-progress-fill" style="width: <%= Math.min(100, pctRaw) %>%;"></div>
       </div>
       <div class="horario-stat-subinfo" style="display: flex; justify-content: space-between; align-items: center;">
-        <% if (horasFaltantes > 0) { %>
-          <span class="d-inline-flex align-items-center"><i class="bi bi-hourglass-split me-2 text-warning" style="font-size: 0.95rem;"></i>Faltan <strong>&nbsp;<%= Math.round(horasFaltantes) %> hrs</strong></span>
+        <% if (!esMetaAlcanzada) { %>
+          <span class="d-inline-flex align-items-center"><i class="bi bi-hourglass-split me-2 text-warning" style="font-size: 0.95rem;"></i>Faltan <strong>&nbsp;<%= horasFaltantes %> <%= horasFaltantes === 1 ? 'hr' : 'hrs' %></strong></span>
         <% } else { %>
-          <span class="text-success d-inline-flex align-items-center"><i class="bi bi-check-circle-fill me-2" style="font-size: 0.95rem;"></i>¡Meta alcanzada!</span>
+          <span class="text-success d-inline-flex align-items-center"><i class="bi bi-check-circle-fill me-2" style="font-size: 0.95rem;"></i>Meta de <%= horasRequeridas %> hrs alcanzada</span>
         <% } %>
       </div>
     </div>
@@ -174,10 +189,10 @@
 
       <% if (fechaEstimadaObj === 'COMPLETADO') { %>
         <div class="horario-stat-value text-success" style="font-size: 1.6rem;">
-          <i class="bi bi-patch-check-fill me-2"></i>¡Completada!
+          <i class="bi bi-patch-check-fill me-2"></i>Completada
         </div>
         <div class="horario-stat-subinfo text-success" style="font-weight: 600;">
-          <i class="bi bi-trophy-fill me-2 text-warning"></i>Meta alcanzada 🎉
+          <i class="bi bi-check-circle-fill me-2 text-success"></i>Meta de <%= horasRequeridas %> hrs alcanzada
         </div>
       <% } else if (fechaEstimadaObj instanceof Date) { %>
         <div class="horario-stat-value text-success" style="font-size: 1.65rem; letter-spacing: -0.5px;" title="<%= fechaLarga %>">
