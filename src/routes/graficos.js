@@ -338,7 +338,7 @@ router.get("/api/graficos/analytics", requireAuth, requireAdmin, async (req, res
         const presVal = Number((u.segundos_presencial / 3600).toFixed(1));
         const teleVal = Number((u.segundos_teletrabajo / 3600).toFixed(1));
         const extraVal = Number((u.segundos_extra / 3600).toFixed(1));
-        const pct = Math.min(100, Math.round((hVal / 280) * 100));
+        const pct = hVal >= 280 ? 100 : Number((Math.min(99.9, Math.floor((hVal / 280) * 1000) / 10)).toFixed(1));
         return {
           id_usuario: p.id_usuario,
           nombre: p.nombre_completo,
@@ -380,7 +380,7 @@ router.get("/api/graficos/analytics", requireAuth, requireAdmin, async (req, res
       const presVal = Number((u.segundos_presencial / 3600).toFixed(1));
       const teleVal = Number((u.segundos_teletrabajo / 3600).toFixed(1));
       const extraVal = Number((u.segundos_extra / 3600).toFixed(1));
-      const pct = Math.min(100, Math.round((hVal / 280) * 100));
+      const pct = hVal >= 280 ? 100 : Number((Math.min(99.9, Math.floor((hVal / 280) * 1000) / 10)).toFixed(1));
 
       const [recientes] = await db.query(
         `SELECT DATE_FORMAT(a.fecha, '%d/%m/%Y') AS fecha_formateada,
@@ -410,7 +410,7 @@ router.get("/api/graficos/analytics", requireAuth, requireAdmin, async (req, res
         horas_presencial: presVal,
         horas_teletrabajo: teleVal,
         horas_extra: extraVal,
-        horas_restantes: Math.max(0, Number((280 - hVal).toFixed(1))),
+        horas_restantes: hVal >= 280 ? 0 : Math.max(0, Math.ceil(280 - hVal)),
         porcentaje_meta: pct,
         asistencias_recientes: recientes
       };
@@ -577,7 +577,7 @@ router.get("/api/graficos/export-pasantes-excel", requireAuth, requireAdmin, asy
         const total = Number((u.total_segundos / 3600).toFixed(1));
         const meta = 280;
         const restantes = total >= meta ? 0 : Math.max(0, Math.ceil(meta - total));
-        const porcentaje = Math.min(100, Math.round((total / meta) * 100));
+        const porcentaje = total >= meta ? 100 : Number((Math.min(99.9, Math.floor((total / meta) * 1000) / 10)).toFixed(1));
 
         let estadoRendimiento = "En Progreso";
         let bajoRendimiento = false;

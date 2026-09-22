@@ -64,12 +64,49 @@ router.get('/usuario/horario', async (req, res) => {
 
         const totalSegundosHE = (Number(resultadoHE[0]?.total_segundos_he) || 0) * 2;
         const totalSegundos = (Number(resultadoHoras[0]?.total_segundos) || 0) + totalSegundosHE;
-        const totalHorasSistema = Math.round(totalSegundos / 3600);
+        const totalHorasSistema = Number((totalSegundos / 3600).toFixed(1));
+
+        // 3. Verificar si el usuario ya completó o marcó salida en la jornada de hoy
+        const [asistHoy] = await db.query(`
+            SELECT hora_entrada, hora_salida, estado 
+            FROM asistencias 
+            WHERE id_usuario = ? AND fecha = CURDATE() AND estado NOT IN ('ANULADO', 'RECHAZADO')
+        `, [id_usuario]);
+
+        let yaSalioHoy = false;
+        let estaTrabajando = false;
+        (asistHoy || []).forEach(a => {
+            if (a.hora_entrada && !a.hora_salida) {
+                estaTrabajando = true;
+            }
+            if (a.hora_salida) {
+                yaSalioHoy = true;
+            }
+        });
+        if (estaTrabajando) yaSalioHoy = false;
+
+        // Si no está trabajando y no tiene asistencia hoy, validar si el horario programado para hoy ya concluyó
+        if (!estaTrabajando && !yaSalioHoy) {
+            const now = new Date();
+            const dw = now.getDay();
+            const diaBD = (dw === 0) ? 7 : dw;
+            const horarioHoy = horarios.find(h => Number(h.dia_semana) === diaBD);
+            if (horarioHoy && horarioHoy.hora_salida) {
+                const [hS, mS] = horarioHoy.hora_salida.split(':').map(Number);
+                const endMinutes = (hS * 60) + (mS || 0);
+                const nowMinutes = (now.getHours() * 60) + now.getMinutes();
+                if (nowMinutes >= endMinutes) {
+                    yaSalioHoy = true;
+                }
+            }
+        }
 
         res.render('usuario/horario', {
             user: req.session.user,
             horarios,
-            totalHorasSistema
+            totalHorasSistema,
+            totalSegundos,
+            yaSalioHoy
         });
 
     } catch (error) {

@@ -543,7 +543,7 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
       const h = mapHE[u.id_usuario] || { total_dias_he: 0, total_segundos_he: 0 };
       const totalSeg = (Number(a.total_segundos) || 0) + (Number(h.total_segundos_he) || 0);
       const horasAcum = Number((totalSeg / 3600).toFixed(1));
-      
+
       const esMetaAlcanzada = totalSeg >= (HORAS_META_DEFAULT * 3600);
       const segFalt = Math.max(0, (HORAS_META_DEFAULT * 3600) - totalSeg);
       // Sin decimales en horas faltantes: redondear al entero superior si quedan minutos
