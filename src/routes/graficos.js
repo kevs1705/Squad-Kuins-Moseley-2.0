@@ -576,7 +576,7 @@ router.get("/api/graficos/export-pasantes-excel", requireAuth, requireAdmin, asy
         const ext = Number((u.segundos_extra / 3600).toFixed(1));
         const total = Number((u.total_segundos / 3600).toFixed(1));
         const meta = 280;
-        const restantes = Math.max(0, Number((meta - total).toFixed(1)));
+        const restantes = total >= meta ? 0 : Math.max(0, Math.ceil(meta - total));
         const porcentaje = Math.min(100, Math.round((total / meta) * 100));
 
         let estadoRendimiento = "En Progreso";

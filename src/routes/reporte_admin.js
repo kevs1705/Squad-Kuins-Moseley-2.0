@@ -439,6 +439,24 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
        GROUP BY id_usuario`
     );
 
+    // Consultar asistencias de la fecha actual para validar si el pasante ya marcó su salida hoy
+    const [asistenciasHoy] = await db.query(
+      `SELECT id_usuario, hora_entrada, hora_salida, estado 
+       FROM asistencias 
+       WHERE fecha = CURDATE() AND estado NOT IN ('ANULADO', 'RECHAZADO')`
+    );
+
+    const mapSalioHoy = {};
+    const mapTrabajandoHoy = {};
+    (asistenciasHoy || []).forEach(a => {
+      if (a.hora_entrada && !a.hora_salida) {
+        mapTrabajandoHoy[a.id_usuario] = true;
+      }
+      if (a.hora_salida) {
+        mapSalioHoy[a.id_usuario] = true;
+      }
+    });
+
     const [allHorarios] = await db.query(
       `SELECT id_usuario, dia_semana, hora_entrada, hora_salida
        FROM horarios
@@ -463,13 +481,20 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
 
     const mesesCompletos = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
-    function calcularFechaPronostico(id_usuario, horasFaltantes) {
+    function calcularFechaPronostico(id_usuario, horasFaltantes, yaSalioHoy = false) {
       if (horasFaltantes <= 0) return 'Meta Cumplida';
       const horasPorDia = mapHorasPorDiaPorUsuario[id_usuario] || {};
       const totalHrsSem = Object.values(horasPorDia).reduce((acc, v) => acc + v, 0);
 
       let cursor = new Date();
       cursor.setHours(0, 0, 0, 0);
+
+      // Si el pasante ya marcó salida hoy o ya finalizó su jornada de hoy,
+      // no puede sumar más horas el día de hoy. El cálculo de las horas restantes se recorre a partir de mañana.
+      if (yaSalioHoy) {
+        cursor.setDate(cursor.getDate() + 1);
+      }
+
       let horasRest = horasFaltantes;
       const MAX_DAYS = 365;
       let iter = 0;
@@ -518,17 +543,37 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
       const h = mapHE[u.id_usuario] || { total_dias_he: 0, total_segundos_he: 0 };
       const totalSeg = (Number(a.total_segundos) || 0) + (Number(h.total_segundos_he) || 0);
       const horasAcum = Number((totalSeg / 3600).toFixed(1));
-      const horasFalt = Math.max(0, Number((HORAS_META_DEFAULT - horasAcum).toFixed(1)));
-      const porc = Math.min(100, Math.round((horasAcum / HORAS_META_DEFAULT) * 100));
+      
+      const esMetaAlcanzada = totalSeg >= (HORAS_META_DEFAULT * 3600);
+      const segFalt = Math.max(0, (HORAS_META_DEFAULT * 3600) - totalSeg);
+      // Sin decimales en horas faltantes: redondear al entero superior si quedan minutos
+      const horasFalt = esMetaAlcanzada ? 0 : Math.ceil(segFalt / 3600);
+      const porc = Math.min(100, Math.round((totalSeg / (HORAS_META_DEFAULT * 3600)) * 100));
       const hrsSem = mapHorasSemanaPorUsuario[u.id_usuario] || 25;
       const semRest = hrsSem > 0 ? Number((horasFalt / hrsSem).toFixed(1)) : Number((horasFalt / 25).toFixed(1));
 
-      const esMetaAlcanzada = horasAcum >= HORAS_META_DEFAULT;
       // Considerar última semana: Faltan <= 30 hrs o <= 1.2 semanas de trabajo, con al menos 80 horas acumuladas
       const esUltimaSemana = !esMetaAlcanzada && (semRest <= 1.2 || horasFalt <= 30) && (horasAcum >= 80);
 
       if (esMetaAlcanzada || esUltimaSemana) {
-        const fechaPron = esMetaAlcanzada ? 'Meta Cumplida' : calcularFechaPronostico(u.id_usuario, horasFalt);
+        const estaTrabajando = !!mapTrabajandoHoy[u.id_usuario];
+        let yaSalioHoy = !estaTrabajando && !!mapSalioHoy[u.id_usuario];
+        if (!estaTrabajando && !yaSalioHoy) {
+          const now = new Date();
+          const dw = now.getDay();
+          const diaBD = (dw === 0) ? 7 : dw;
+          const horarioHoy = (allHorarios || []).find(hor => hor.id_usuario === u.id_usuario && Number(hor.dia_semana) === diaBD);
+          if (horarioHoy && horarioHoy.hora_salida) {
+            const [hS, mS] = horarioHoy.hora_salida.split(':').map(Number);
+            const endMinutes = (hS * 60) + (mS || 0);
+            const nowMinutes = (now.getHours() * 60) + now.getMinutes();
+            if (nowMinutes >= endMinutes) {
+              yaSalioHoy = true;
+            }
+          }
+        }
+
+        const fechaPron = esMetaAlcanzada ? 'Meta Cumplida' : calcularFechaPronostico(u.id_usuario, horasFalt, yaSalioHoy);
         pasantesPorFinalizar.push({
           id_usuario: u.id_usuario,
           nombre: u.nombre,
@@ -543,7 +588,7 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
           horas_semana: Number(hrsSem.toFixed(1)),
           fecha_pronostico: fechaPron,
           estado_culminacion: esMetaAlcanzada ? 'COMPLETADO' : 'ULTIMA_SEMANA',
-          badge_text: esMetaAlcanzada ? '¡Meta 100% Alcanzada!' : `🎯 Pronóstico: ${fechaPron} (~${semRest} sem)`
+          badge_text: esMetaAlcanzada ? 'Meta 100% Alcanzada' : `Pronóstico: ${fechaPron} (~${semRest} sem)`
         });
       }
     });
@@ -596,13 +641,33 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
       const uHe = mapHE[uTargetId] || { total_dias_he: 0, total_segundos_he: 0 };
       const uTotalSeg = (Number(uAsist.total_segundos) || 0) + (Number(uHe.total_segundos_he) || 0);
       const uHorasAcum = Number((uTotalSeg / 3600).toFixed(1));
-      const uHorasFalt = Math.max(0, Number((HORAS_META_DEFAULT - uHorasAcum).toFixed(1)));
-      const uPorc = Math.min(100, Math.round((uHorasAcum / HORAS_META_DEFAULT) * 100));
+      const uEsMeta = uTotalSeg >= (HORAS_META_DEFAULT * 3600);
+      const uSegFalt = Math.max(0, (HORAS_META_DEFAULT * 3600) - uTotalSeg);
+      // Sin decimales en horas faltantes: redondear al entero superior si quedan minutos
+      const uHorasFalt = uEsMeta ? 0 : Math.ceil(uSegFalt / 3600);
+      const uPorc = Math.min(100, Math.round((uTotalSeg / (HORAS_META_DEFAULT * 3600)) * 100));
       const uHrsSem = mapHorasSemanaPorUsuario[uTargetId] || 25;
       const uSemRest = uHrsSem > 0 ? Number((uHorasFalt / uHrsSem).toFixed(1)) : Number((uHorasFalt / 25).toFixed(1));
-      const uEsMeta = uHorasAcum >= HORAS_META_DEFAULT;
       const uEsUltSem = !uEsMeta && (uSemRest <= 1.2 || uHorasFalt <= 30) && (uHorasAcum >= 80);
-      const uFechaPron = uEsMeta ? 'Meta Cumplida' : calcularFechaPronostico(uTargetId, uHorasFalt);
+
+      const uEstaTrabajando = !!mapTrabajandoHoy[uTargetId];
+      let uYaSalioHoy = !uEstaTrabajando && !!mapSalioHoy[uTargetId];
+      if (!uEstaTrabajando && !uYaSalioHoy) {
+        const now = new Date();
+        const dw = now.getDay();
+        const diaBD = (dw === 0) ? 7 : dw;
+        const horarioHoy = (allHorarios || []).find(hor => hor.id_usuario === uTargetId && Number(hor.dia_semana) === diaBD);
+        if (horarioHoy && horarioHoy.hora_salida) {
+          const [hS, mS] = horarioHoy.hora_salida.split(':').map(Number);
+          const endMinutes = (hS * 60) + (mS || 0);
+          const nowMinutes = (now.getHours() * 60) + now.getMinutes();
+          if (nowMinutes >= endMinutes) {
+            uYaSalioHoy = true;
+          }
+        }
+      }
+
+      const uFechaPron = uEsMeta ? 'Meta Cumplida' : calcularFechaPronostico(uTargetId, uHorasFalt, uYaSalioHoy);
 
       statsData = {
         tipo: 'usuario',

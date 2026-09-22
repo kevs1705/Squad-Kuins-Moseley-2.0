@@ -2236,10 +2236,10 @@
                 <div class="aviso-user-single" style="background: #ffffff; border-color: #bbf7d0;">
                   <div class="d-flex align-items-center gap-3">
                     <div class="aviso-culminacion-icon-box" style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); box-shadow: 0 4px 10px rgba(22, 163, 74, 0.3);">
-                      🏆
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
                     </div>
                     <div>
-                      <h4 class="aviso-culminacion-title" style="color: #15803d;">¡Meta de Pasantías Alcanzada (100%)!</h4>
+                      <h4 class="aviso-culminacion-title" style="color: #15803d;">Meta de Pasantías Alcanzada (100%)</h4>
                       <p class="aviso-culminacion-subtitle" style="color: #166534;">
                         <strong>${escapeHTML(uNom)}</strong> ha cumplido satisfactoriamente con <strong>${uc.horas_acumuladas} hrs</strong> acumuladas de las <strong>${uc.horas_requeridas} hrs</strong> requeridas.
                       </p>
@@ -2247,7 +2247,7 @@
                   </div>
                   <div class="d-flex align-items-center gap-2">
                     <span class="aviso-badge-status aviso-status-completado" style="font-size: 13px; padding: 6px 14px;">
-                      ✅ Pasantía Finalizada (100%)
+                      Pasantía Finalizada (100%)
                     </span>
                   </div>
                 </div>
@@ -2261,18 +2261,18 @@
                 <div class="aviso-user-single" style="background: #ffffff; border-color: #fde68a;">
                   <div class="d-flex align-items-center gap-3">
                     <div class="aviso-culminacion-icon-box" style="background: linear-gradient(135deg, #d97706 0%, #b45309 100%); box-shadow: 0 4px 10px rgba(217, 119, 6, 0.3);">
-                      ⏳
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     </div>
                     <div>
-                      <h4 class="aviso-culminacion-title" style="color: #b45309;">⚠️ Aviso al Administrador: Pasante en Última Semana de Pasantías</h4>
+                      <h4 class="aviso-culminacion-title" style="color: #b45309;">Aviso: Pasante en Última Semana de Pasantías</h4>
                       <p class="aviso-culminacion-subtitle" style="color: #92400e;">
-                        <strong>${escapeHTML(uNom)}</strong> tiene <strong>${uc.horas_acumuladas} hrs</strong> registradas (${uc.porcentaje}%). Le restan <strong>~${uc.horas_faltantes} hrs</strong> (aprox. <strong>${uc.semanas_restantes} semana(s)</strong>). Pronóstico estimado de finalización: <strong>${escapeHTML(uc.fecha_pronostico || '')}</strong>.
+                        <strong>${escapeHTML(uNom)}</strong> tiene <strong>${uc.horas_acumuladas} hrs</strong> registradas (${uc.porcentaje}%). Le restan <strong>${uc.horas_faltantes} ${uc.horas_faltantes === 1 ? 'hr' : 'hrs'}</strong> (aprox. <strong>${uc.semanas_restantes} semana(s)</strong>). Pronóstico estimado de finalización: <strong>${escapeHTML(uc.fecha_pronostico || '')}</strong>.
                       </p>
                     </div>
                   </div>
                   <div class="d-flex align-items-center gap-2">
                     <span class="aviso-badge-status aviso-status-terminando" style="font-size: 13px; padding: 6px 14px; font-weight: 700;">
-                      🎯 Pronóstico: ${escapeHTML(uc.fecha_pronostico || '')}
+                      Pronóstico: ${escapeHTML(uc.fecha_pronostico || '')}
                     </span>
                   </div>
                 </div>
@@ -2286,18 +2286,18 @@
                 <div class="aviso-user-single" style="background: #ffffff; border-color: #bfdbfe;">
                   <div class="d-flex align-items-center gap-3">
                     <div class="aviso-culminacion-icon-box" style="background: linear-gradient(135deg, #0f5fa6 0%, #0d528f 100%); box-shadow: 0 4px 10px rgba(15, 95, 166, 0.25);">
-                      🎯
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 10"/></svg>
                     </div>
                     <div>
                       <h4 class="aviso-culminacion-title" style="color: #0f5fa6;">Seguimiento y Pronóstico de Culminación de Pasantía</h4>
                       <p class="aviso-culminacion-subtitle" style="color: #1e3a8a;">
-                        <strong>${escapeHTML(uNom)}</strong> tiene <strong>${uc.horas_acumuladas} hrs</strong> acumuladas (${uc.porcentaje}% de ${uc.horas_requeridas} hrs). Al ritmo programado de <strong>${uc.horas_semana} hrs/sem</strong>, le restan <strong>~${uc.horas_faltantes} hrs</strong> (~${uc.semanas_restantes} semanas). Fecha estimada de salida: <strong>${escapeHTML(uc.fecha_pronostico || '')}</strong>.
+                        <strong>${escapeHTML(uNom)}</strong> tiene <strong>${uc.horas_acumuladas} hrs</strong> acumuladas (${uc.porcentaje}% de ${uc.horas_requeridas} hrs). Al ritmo programado de <strong>${uc.horas_semana} hrs/sem</strong>, le restan <strong>${uc.horas_faltantes} ${uc.horas_faltantes === 1 ? 'hr' : 'hrs'}</strong> (~${uc.semanas_restantes} semanas). Fecha estimada de salida: <strong>${escapeHTML(uc.fecha_pronostico || '')}</strong>.
                       </p>
                     </div>
                   </div>
                   <div class="d-flex align-items-center gap-2">
                     <span class="aviso-badge-status" style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; font-size: 13px; padding: 6px 14px; font-weight: 700;">
-                      📅 Salida: ${escapeHTML(uc.fecha_pronostico || '')} (~${uc.semanas_restantes} sem)
+                      Salida: ${escapeHTML(uc.fecha_pronostico || '')} (~${uc.semanas_restantes} sem)
                     </span>
                   </div>
                 </div>
@@ -2347,8 +2347,8 @@
         pasantes.forEach(p => {
           const isComp = p.estado_culminacion === 'COMPLETADO';
           const badgeClass = isComp ? 'aviso-status-completado' : 'aviso-status-terminando';
-          const badgeLabel = isComp ? '🏆 100%' : `🎯 ${p.fecha_pronostico || 'Pronto'}`;
-          const statusText = isComp ? '¡Meta 100% completada!' : `Faltan ~${p.horas_faltantes} hrs (${p.semanas_restantes} sem)`;
+          const badgeLabel = isComp ? '100%' : `${p.fecha_pronostico || 'Pronto'}`;
+          const statusText = isComp ? 'Meta 100% completada' : (p.horas_faltantes === 1 ? 'Falta 1 hr' : `Faltan ${p.horas_faltantes} hrs`) + ` (~${p.semanas_restantes} sem)`;
 
           itemsHTML += `
             <div class="side-culminacion-item">
@@ -2405,8 +2405,8 @@
         pasantes.forEach(p => {
           const isComp = p.estado_culminacion === 'COMPLETADO';
           const badgeClass = isComp ? 'aviso-status-completado' : 'aviso-status-terminando';
-          const badgeLabel = isComp ? '🏆 100%' : `🎯 ${p.fecha_pronostico || 'Pronto'}`;
-          const statusText = isComp ? '¡Meta 100% completada!' : `Faltan ~${p.horas_faltantes} hrs (~${p.semanas_restantes} sem)`;
+          const badgeLabel = isComp ? '100%' : `${p.fecha_pronostico || 'Pronto'}`;
+          const statusText = isComp ? 'Meta 100% completada' : (p.horas_faltantes === 1 ? 'Falta 1 hr' : `Faltan ${p.horas_faltantes} hrs`) + ` (~${p.semanas_restantes} sem)`;
 
           itemsHTML += `
             <div class="aviso-culminacion-item">
