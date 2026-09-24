@@ -2201,12 +2201,16 @@
       let lastAvisoStats = null;
       let lastAvisoUsuarioInfo = null;
       let lastAvisoIsSpecificUser = false;
+      let allPasantesCulminados = [];
 
       // Renderizar Recuadro de Aviso: Pasantes por Culminar o en Última Semana
       function renderAvisoCulminacion(stats, usuarioInfo, isSpecificUser) {
         lastAvisoStats = stats;
         lastAvisoUsuarioInfo = usuarioInfo;
         lastAvisoIsSpecificUser = Boolean(isSpecificUser);
+        if (stats && Array.isArray(stats.pasantes_culminados)) {
+          allPasantesCulminados = stats.pasantes_culminados;
+        }
         actualizarPosicionAvisoCulminacion();
       }
 
@@ -2218,6 +2222,7 @@
         const stats = lastAvisoStats;
         const usuarioInfo = lastAvisoUsuarioInfo;
         const isSpecificUser = lastAvisoIsSpecificUser;
+        const culminados = (stats && stats.pasantes_culminados) ? stats.pasantes_culminados : [];
 
         // Caso A: Si se tiene seleccionado un usuario específico
         if (isSpecificUser && stats && stats.user_culminacion) {
@@ -2249,6 +2254,11 @@
                     <span class="aviso-badge-status aviso-status-completado" style="font-size: 13px; padding: 6px 14px;">
                       Pasantía Finalizada (100%)
                     </span>
+                    ${culminados.length > 0 ? `
+                      <button type="button" class="btn-ver-culminados" onclick="abrirModalPasantesCulminados()" style="padding: 5px 12px; font-size: 12px;">
+                        <span>🎓 Ver todos los culminados (${culminados.length})</span>
+                      </button>
+                    ` : ''}
                   </div>
                 </div>
               </div>
@@ -2307,7 +2317,7 @@
           }
         }
 
-        // Caso B: Vista Global - Pasantes próximos a culminar
+        // Caso B: Vista Global - Pasantes próximos a culminar o culminados
         const pasantes = stats && stats.pasantes_por_finalizar ? stats.pasantes_por_finalizar : [];
 
         if (pasantes.length > 0) {
@@ -2315,15 +2325,61 @@
             // Ubicar aviso al lado (Columna Izquierda debajo de los KPIs)
             wrapEl.style.display = 'none';
             wrapEl.innerHTML = '';
-            renderSideAvisoList(pasantes);
+            renderSideAvisoList(pasantes, culminados);
           } else {
             // Ubicar aviso abajo en cuadrícula
             if (sideEl) {
               sideEl.style.display = 'none';
               sideEl.innerHTML = '';
             }
-            renderBottomAvisoGrid(pasantes, wrapEl);
+            renderBottomAvisoGrid(pasantes, wrapEl, culminados);
           }
+        } else if (culminados.length > 0) {
+          // No hay pasantes en última semana, pero hay pasantes que culminaron
+          if (sideEl) {
+            sideEl.style.display = 'block';
+            sideEl.innerHTML = `
+              <div class="side-culminacion-card" style="border-left-color: #10b981;">
+                <div class="side-culminacion-header">
+                  <div class="side-culminacion-title-wrap">
+                    <div class="side-culminacion-icon" style="background: #dcfce7; color: #059669;">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                    </div>
+                    <div>
+                      <h4 class="side-culminacion-title">Pasantías Culminadas</h4>
+                      <p class="side-culminacion-subtitle">${culminados.length} pasante(s) con 280 hrs</p>
+                    </div>
+                  </div>
+                </div>
+                <div style="padding-top: 4px;">
+                  <button type="button" class="btn-ver-culminados btn-ver-culminados-sm" onclick="abrirModalPasantesCulminados()">
+                    <span>🎓 Ver pasantes culminados (${culminados.length})</span>
+                  </button>
+                </div>
+              </div>
+            `;
+          }
+
+          wrapEl.style.display = 'block';
+          wrapEl.innerHTML = `
+            <div class="banner-culminados-standalone">
+              <div class="banner-culminados-standalone-info">
+                <div class="aviso-culminacion-icon-box" style="width: 38px; height: 38px; font-size: 18px; background: linear-gradient(135deg, #059669 0%, #047857 100%);">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                </div>
+                <div>
+                  <h5 style="margin: 0; font-size: 13.5px; font-weight: 700; color: #065f46;">Control de Culminación de Pasantías</h5>
+                  <p style="margin: 2px 0 0 0; font-size: 12px; color: #047857;">
+                    Actualmente no hay pasantes en última semana. Hay <strong>${culminados.length} pasante(s)</strong> que ya culminaron su pasantía (280 hrs).
+                  </p>
+                </div>
+              </div>
+              <button type="button" class="btn-ver-culminados" onclick="abrirModalPasantesCulminados()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                <span>Ver pasantes que culminaron su pasantía (${culminados.length})</span>
+              </button>
+            </div>
+          `;
         } else {
           wrapEl.style.display = 'none';
           wrapEl.innerHTML = '';
@@ -2334,7 +2390,7 @@
         }
       }
 
-      function renderSideAvisoList(pasantes) {
+      function renderSideAvisoList(pasantes, culminados = []) {
         const sideEl = document.getElementById('sideAvisoCulminacion');
         if (!sideEl) return;
         if (!pasantes || pasantes.length === 0) {
@@ -2347,8 +2403,8 @@
         pasantes.forEach(p => {
           const isComp = p.estado_culminacion === 'COMPLETADO';
           const badgeClass = isComp ? 'aviso-status-completado' : 'aviso-status-terminando';
-          const badgeLabel = isComp ? '100%' : `${p.fecha_pronostico || 'Pronto'}`;
-          const statusText = isComp ? 'Meta 100% completada' : (p.horas_faltantes === 1 ? 'Falta 1 hr' : `Faltan ${p.horas_faltantes} hrs`) + ` (~${p.semanas_restantes} sem)`;
+          const badgeLabel = isComp ? '¡100% Finalizado!' : `${p.fecha_pronostico || 'Pronto'}`;
+          const statusText = isComp ? 'Meta 100% alcanzada (Hoy/Ayer)' : (p.horas_faltantes === 1 ? 'Falta 1 hr' : `Faltan ${p.horas_faltantes} hrs`) + ` (~${p.semanas_restantes} sem)`;
 
           itemsHTML += `
             <div class="side-culminacion-item">
@@ -2375,6 +2431,14 @@
           `;
         });
 
+        const btnCulminadosSide = culminados && culminados.length > 0 ? `
+          <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--color-border);">
+            <button type="button" class="btn-ver-culminados btn-ver-culminados-sm" onclick="abrirModalPasantesCulminados()">
+              <span>🎓 Ver culminados (${culminados.length})</span>
+            </button>
+          </div>
+        ` : '';
+
         sideEl.style.display = 'block';
         sideEl.innerHTML = `
           <div class="side-culminacion-card">
@@ -2388,25 +2452,26 @@
                 </div>
                 <div>
                   <h4 class="side-culminacion-title">Por Finalizar Pasantía</h4>
-                  <p class="side-culminacion-subtitle">Aprox. 1 sem o meta de 280 hrs</p>
+                  <p class="side-culminacion-subtitle">Aprox. 1 sem o culminados recientemente</p>
                 </div>
               </div>
-              <span class="side-culminacion-badge-count">${pasantes.length} pasante(s)</span>
+              <span class="side-culminacion-badge-count">${pasantes.length}</span>
             </div>
             <div class="side-culminacion-list">
               ${itemsHTML}
             </div>
+            ${btnCulminadosSide}
           </div>
         `;
       }
 
-      function renderBottomAvisoGrid(pasantes, wrapEl) {
+      function renderBottomAvisoGrid(pasantes, wrapEl, culminados = []) {
         let itemsHTML = '';
         pasantes.forEach(p => {
           const isComp = p.estado_culminacion === 'COMPLETADO';
           const badgeClass = isComp ? 'aviso-status-completado' : 'aviso-status-terminando';
-          const badgeLabel = isComp ? '100%' : `${p.fecha_pronostico || 'Pronto'}`;
-          const statusText = isComp ? 'Meta 100% completada' : (p.horas_faltantes === 1 ? 'Falta 1 hr' : `Faltan ${p.horas_faltantes} hrs`) + ` (~${p.semanas_restantes} sem)`;
+          const badgeLabel = isComp ? '¡100% Alcanzado!' : `${p.fecha_pronostico || 'Pronto'}`;
+          const statusText = isComp ? 'Meta cumplida (Se mantiene 1 día en aviso)' : (p.horas_faltantes === 1 ? 'Falta 1 hr' : `Faltan ${p.horas_faltantes} hrs`) + ` (~${p.semanas_restantes} sem)`;
 
           itemsHTML += `
             <div class="aviso-culminacion-item">
@@ -2437,6 +2502,13 @@
           `;
         });
 
+        const btnCulminadosHeader = culminados && culminados.length > 0 ? `
+          <button type="button" class="btn-ver-culminados" onclick="abrirModalPasantesCulminados()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+            <span>Ver pasantes que culminaron su pasantía (${culminados.length})</span>
+          </button>
+        ` : '';
+
         wrapEl.style.display = 'block';
         wrapEl.innerHTML = `
           <div class="aviso-culminacion-card">
@@ -2450,10 +2522,13 @@
                 </div>
                 <div>
                   <h4 class="aviso-culminacion-title">⚠️ Aviso al Administrador: Pasantes en Período de Culminación</h4>
-                  <p class="aviso-culminacion-subtitle">Pasantes que están a aproximadamente 1 semana de terminar sus pasantías o ya alcanzaron las 280 horas requeridas:</p>
+                  <p class="aviso-culminacion-subtitle">Pasantes que están a ~1 semana de culminar sus pasantías o culminaron hoy/ayer:</p>
                 </div>
               </div>
-              <span class="aviso-culminacion-badge-count">${pasantes.length} pasante(s)</span>
+              <div class="d-flex align-items-center gap-2 flex-wrap">
+                <span class="aviso-culminacion-badge-count">${pasantes.length} activo(s)</span>
+                ${btnCulminadosHeader}
+              </div>
             </div>
             <div class="aviso-culminacion-grid">
               ${itemsHTML}
@@ -3157,8 +3232,147 @@
         window.location.href = `/admin/reportes/export?${params}`;
       });
 
+      // Funciones para el Modal de Pasantes Culminados
+      window.abrirModalPasantesCulminados = function () {
+        const modal = document.getElementById('modalPasantesCulminados');
+        if (!modal) return;
+        const inputSearch = document.getElementById('inputBuscarCulminados');
+        if (inputSearch) inputSearch.value = '';
+        renderPasantesCulminadosList(allPasantesCulminados);
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+      };
+
+      window.cerrarModalPasantesCulminados = function () {
+        const modal = document.getElementById('modalPasantesCulminados');
+        if (modal) modal.style.display = 'none';
+        document.body.style.overflow = '';
+      };
+
+      window.filtrarPasantesCulminados = function (searchTerm) {
+        const term = (searchTerm || '').toLowerCase().trim();
+        if (!term) {
+          renderPasantesCulminadosList(allPasantesCulminados);
+          return;
+        }
+        const filtered = allPasantesCulminados.filter(p => {
+          const nom = (p.nombre || '').toLowerCase();
+          const ci = (p.CI || '').toLowerCase();
+          const car = (p.carrera || '').toLowerCase();
+          const uni = (p.universidad || '').toLowerCase();
+          return nom.includes(term) || ci.includes(term) || car.includes(term) || uni.includes(term);
+        });
+        renderPasantesCulminadosList(filtered);
+      };
+
+      function renderPasantesCulminadosList(list) {
+        const grid = document.getElementById('gridPasantesCulminados');
+        const badgeCont = document.getElementById('badgeContadorCulminados');
+        if (badgeCont) {
+          badgeCont.textContent = `${list.length} pasante(s)`;
+        }
+        if (!grid) return;
+
+        if (!list || list.length === 0) {
+          grid.innerHTML = `
+            <div class="modal-culminados-empty" style="grid-column: 1 / -1;">
+              <div class="modal-culminados-empty-icon">🎓</div>
+              <h4 style="margin: 0; color: #334155; font-size: 15px;">No se encontraron pasantes culminados</h4>
+              <p style="margin: 4px 0 0 0; font-size: 12.5px; color: #64748b;">No hay registros de pasantías culminadas que coincidan con la búsqueda.</p>
+            </div>
+          `;
+          return;
+        }
+
+        let html = '';
+        list.forEach(p => {
+          const inicial = (p.primer_nombre || p.nombre || 'P').charAt(0).toUpperCase();
+          const esReciente = Boolean(p.es_reciente);
+          html += `
+            <div class="modal-culminado-card">
+              <div class="modal-culminado-top">
+                <div class="modal-culminado-user-info">
+                  <div class="modal-culminado-avatar">${escapeHTML(inicial)}</div>
+                  <div style="min-width: 0; flex: 1;">
+                    <div class="modal-culminado-name" title="${escapeHTML(p.nombre)}">${escapeHTML(p.nombre)}</div>
+                    <div class="modal-culminado-meta" title="${escapeHTML(p.carrera || 'Pasante')} · CI: ${escapeHTML(p.CI)}">
+                      ${escapeHTML(p.carrera || 'Pasante')} · CI: ${escapeHTML(p.CI)}
+                    </div>
+                  </div>
+                </div>
+                <span class="modal-culminado-badge ${esReciente ? 'modal-culminado-badge-reciente' : ''}">
+                  ${esReciente ? '⭐ Culminó Hoy/Ayer' : '✅ 100% Meta'}
+                </span>
+              </div>
+
+              <div class="modal-culminado-details">
+                <div>
+                  <span style="display: block; font-size: 10.5px; color: #047857; font-weight: 600;">Total Horas:</span>
+                  <span class="modal-culminado-horas">${p.horas_acumuladas} / ${p.horas_requeridas || 280} hrs</span>
+                </div>
+                <div style="text-align: right;">
+                  <span style="display: block; font-size: 10.5px; color: #64748b; font-weight: 500;">Fecha de Culminación:</span>
+                  <span class="modal-culminado-fecha">${escapeHTML(p.fecha_culminacion || 'Reciente')}</span>
+                </div>
+              </div>
+
+              <div class="modal-culminado-footer">
+                <button type="button" class="modal-culminado-btn-ver" onclick="cerrarModalPasantesCulminados(); seleccionarUsuarioDesdeRanking(${p.id_usuario}, '${escapeHTML(p.nombre)}', '${escapeHTML(p.CI)}');" title="Ver reporte individual y asistencias de ${escapeHTML(p.nombre)}">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  <span>Ver Reporte Completo</span>
+                </button>
+              </div>
+            </div>
+          `;
+        });
+
+        grid.innerHTML = html;
+      }
+
+      // Cerrar modal al presionar escape o hacer clic fuera
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          cerrarModalPasantesCulminados();
+        }
+      });
+      document.getElementById('modalPasantesCulminados')?.addEventListener('click', (e) => {
+        if (e.target.id === 'modalPasantesCulminados') {
+          cerrarModalPasantesCulminados();
+        }
+      });
+
       // Carga Inicial
       fetchReportes(1);
     </script>
+
+    <!-- Modal de Pasantes que Culminaron su Pasantía (Meta 280 hrs) -->
+    <div id="modalPasantesCulminados" class="modal-culminados-backdrop" style="display: none;">
+      <div class="modal-culminados-dialog">
+        <div class="modal-culminados-header">
+          <div class="modal-culminados-title-group">
+            <div class="modal-culminados-icon">🎓</div>
+            <div>
+              <h3 class="modal-culminados-title">Pasantes que Culminaron su Pasantía</h3>
+              <p class="modal-culminados-subtitle">Listado de pasantes con el 100% de la meta de 280 horas completada</p>
+            </div>
+          </div>
+          <button type="button" class="modal-culminados-close" onclick="cerrarModalPasantesCulminados()" title="Cerrar ventana">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <div class="modal-culminados-search-wrap">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="inputBuscarCulminados" class="modal-culminados-search-input" placeholder="Buscar pasante por nombre, CI o carrera..." oninput="filtrarPasantesCulminados(this.value)">
+          <span id="badgeContadorCulminados" class="aviso-badge-status aviso-status-completado" style="font-size: 12px; font-weight: 700;">0 culminados</span>
+        </div>
+
+        <div class="modal-culminados-body">
+          <div id="gridPasantesCulminados" class="modal-culminados-grid">
+            <!-- Renderizado dinámico de tarjetas de pasantes culminados -->
+          </div>
+        </div>
+      </div>
+    </div>
 
     <%- include('partials/footer') %>

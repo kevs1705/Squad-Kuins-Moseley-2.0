@@ -3872,3 +3872,360 @@ body.reportes-admin-page .side-culminacion-btn-ver:hover {
   color: #FFFFFF;
   border-color: var(--color-primary);
 }
+
+/* ==========================================================================
+   BOTÓN Y MODAL: PASANTES QUE CULMINARON SU PASANTÍA
+   ========================================================================== */
+body.reportes-admin-page .btn-ver-culminados {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  color: #ffffff;
+  border: 1px solid #10b981;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(5, 150, 105, 0.25);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+body.reportes-admin-page .btn-ver-culminados:hover {
+  background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.35);
+  transform: translateY(-1px);
+  color: #ffffff;
+}
+
+body.reportes-admin-page .btn-ver-culminados-sm {
+  padding: 4px 10px;
+  font-size: 11px;
+  border-radius: 6px;
+  width: 100%;
+  justify-content: center;
+}
+
+body.reportes-admin-page .btn-ver-culminados-badge {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  padding: 2px 7px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* Modal Backdrop */
+.modal-culminados-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: modalFadeIn 0.2s ease;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalSlideUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Modal Dialog */
+.modal-culminados-dialog {
+  background: #ffffff;
+  width: 100%;
+  max-width: 860px;
+  max-height: 88vh;
+  border-radius: 16px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  animation: modalSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Modal Header */
+.modal-culminados-header {
+  padding: 18px 22px;
+  background: linear-gradient(135deg, #064e3b 0%, #065f46 60%, #047857 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.modal-culminados-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.modal-culminados-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.modal-culminados-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.2px;
+}
+
+.modal-culminados-subtitle {
+  margin: 2px 0 0 0;
+  font-size: 12.5px;
+  color: #a7f3d0;
+}
+
+.modal-culminados-close {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: #ffffff;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.modal-culminados-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+/* Search bar inside modal */
+.modal-culminados-search-wrap {
+  padding: 12px 22px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.modal-culminados-search-input {
+  flex: 1;
+  padding: 8px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #1e293b;
+  outline: none;
+  background: #ffffff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.modal-culminados-search-input:focus {
+  border-color: #059669;
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
+}
+
+/* Modal Body */
+.modal-culminados-body {
+  padding: 18px 22px;
+  overflow-y: auto;
+  flex: 1;
+  max-height: calc(88vh - 160px);
+}
+
+.modal-culminados-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 14px;
+}
+
+.modal-culminado-card {
+  background: #ffffff;
+  border: 1px solid #d1fae5;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.modal-culminado-card:hover {
+  transform: translateY(-2px);
+  border-color: #6ee7b7;
+  box-shadow: 0 6px 16px rgba(5, 150, 105, 0.12);
+}
+
+.modal-culminado-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.modal-culminado-user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.modal-culminado-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(5, 150, 105, 0.25);
+}
+
+.modal-culminado-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.modal-culminado-meta {
+  font-size: 11.5px;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.modal-culminado-badge {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #86efac;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.modal-culminado-badge-reciente {
+  background: #fef3c7;
+  color: #b45309;
+  border-color: #fde68a;
+}
+
+.modal-culminado-details {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  background: #f0fdf4;
+  border-radius: 8px;
+  font-size: 12px;
+  border: 1px solid #bbf7d0;
+}
+
+.modal-culminado-horas {
+  font-weight: 700;
+  color: #166534;
+}
+
+.modal-culminado-fecha {
+  color: #475569;
+  font-size: 11.5px;
+}
+
+.modal-culminado-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.modal-culminado-btn-ver {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #0f5fa6;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s ease;
+}
+
+.modal-culminado-btn-ver:hover {
+  background: #0f5fa6;
+  color: #ffffff;
+}
+
+.modal-culminados-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: #64748b;
+}
+
+.modal-culminados-empty-icon {
+  font-size: 42px;
+  margin-bottom: 10px;
+}
+
+/* Banner de Pasantes Culminados Standalone */
+.banner-culminados-standalone {
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+  border: 1px solid #a7f3d0;
+  border-radius: var(--radius-card);
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.06);
+}
+
+.banner-culminados-standalone-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.banner-culminados-standalone-text {
+  font-size: 13px;
+  color: #065f46;
+  font-weight: 600;
+}

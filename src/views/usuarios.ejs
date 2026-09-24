@@ -1,1239 +1,1133 @@
-<%
-  pageTitle = 'Usuarios';
-  pageSubtitle = 'Gestión de usuarios';
-%>
+<% pageTitle='Usuarios' ; pageSubtitle='Gestión de usuarios' ; %>
 
-<%- include('partials/header') %>
+  <%- include('partials/header') %>
 
-<section class="panel">
+    <section class="panel">
 
-  <div class="toolbar" style="gap:12px;">
+      <div class="toolbar" style="gap:12px;">
 
-    <div style="display:flex; gap:12px; flex:1; min-width:280px; align-items:center; flex-wrap:wrap;">
-      <input
-        id="q"
-        class="search"
-        placeholder="Buscar por nombre, apellido o CI"
-        style="flex:1; min-width:200px;"
-      >
+        <div style="display:flex; gap:12px; flex:1; min-width:280px; align-items:center; flex-wrap:wrap;">
+          <input id="q" class="search" placeholder="Buscar por nombre, apellido o CI" style="flex:1; min-width:200px;">
 
-      <select id="filterCarrera" class="page-select" style="height:42px; min-width:180px; font-weight:500;">
-        <option value="">Todas las carreras</option>
-        <% (carreras || []).forEach(c => { %>
-          <option value="<%= c.id_carrera %>"><%= c.nombre %></option>
-        <% }) %>
-      </select>
-
-      <select id="filterEstado" class="page-select" style="height:42px; min-width:140px; font-weight:500;">
-        <option value="">Todos los estados</option>
-        <option value="1">Activos</option>
-        <option value="0">Inactivos</option>
-      </select>
-    </div>
-
-    <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
-      <div class="page-select-wrap">
-        <span>Mostrar:</span>
-        <select id="pageSize" class="page-select">
-          <option value="10" selected>10</option>
-          <option value="20">20</option>
-          <option value="30">30</option>
-          <option value="50">50</option>
-        </select>
-      </div>
-
-      <button id="btnNew" class="btn">
-        + Nuevo
-      </button>
-    </div>
-
-  </div>
-
-
-  <div class="table-wrap" style="margin-top:14px;">
-
-    <table id="tbl">
-
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Nombre</th>
-          <th>Apellido Paterno</th>
-          <th>Apellido Materno</th>
-          <th>CI</th>
-          <th>Universidad</th>
-          <th>Carrera</th>
-          <th>Fecha Inicio</th>
-          <th>Celular</th>
-          <th>Estado</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-
-
-      <tbody id="tbody">
-
-        <% (users || []).forEach(u => { %>
-
-          <tr
-            data-id="<%= u.id_usuario %>"
-            data-nombre="<%- (u.nombre || '').replace(/"/g, '&quot;') %>"
-            data-apellido_paterno="<%- (u.apellido_paterno || '').replace(/"/g, '&quot;') %>"
-            data-apellido_materno="<%- (u.apellido_materno || '').replace(/"/g, '&quot;') %>"
-            data-ci="<%- (u.CI || '').replace(/"/g, '&quot;') %>"
-            data-universidad="<%- (u.universidad || '').replace(/"/g, '&quot;') %>"
-            data-id_carrera="<%= u.id_carrera || '' %>"
-            data-fecha_inicio_pasantia="<%- (u.fecha_inicio_pasantia || '').replace(/"/g, '&quot;') %>"
-            data-celular="<%- (u.celular || '').replace(/"/g, '&quot;') %>"
-            data-estado="<%= Number(u.estado) || 0 %>"
-            data-rol="<%= Number(u.rol) || 0 %>"
-          >
-            <td>
-              <%= u.id_usuario %>
-            </td>
-
-            <td class="c-nombre">
-              <%= u.nombre || '' %>
-            </td>
-
-            <td class="c-apellido_paterno">
-              <%= u.apellido_paterno || '' %>
-            </td>
-
-            <td class="c-apellido_materno">
-              <%= u.apellido_materno || '' %>
-            </td>
-
-            <td class="c-ci">
-              <%= u.CI || '' %>
-            </td>
-
-            <td class="c-univ">
-              <%= u.universidad || '' %>
-            </td>
-
-            <td class="c-carr">
-              <%= u.carrera_nombre || u.carrera_siglas || '-' %>
-            </td>
-
-            <td class="c-fecha_inicio">
-              <%= u.fecha_inicio_pasantia || '-' %>
-            </td>
-
-            <td class="c-cel">
-              <%= u.celular || '-' %>
-            </td>
-
-            <td class="c-est">
-              <span class="chip <%= u.estado ? 'ok' : 'off' %>">
-                <%= u.estado ? 'Activo' : 'Inactivo' %>
-              </span>
-            </td>
-
-            <td class="actions">
-
-              <button class="btn secondary btnEdit">
-                <i class="bi bi-pencil-square"></i> Editar
-              </button>
-
-              <button class="btn secondary btnDel">
-                <i class="bi bi-trash3"></i> Eliminar
-              </button>
-
-            </td>
-
-          </tr>
-
-        <% }) %>
-
-      </tbody>
-
-    </table>
-
-  </div>
-
-  <div class="table-pagination" id="paginationBar">
-    <div class="page-info" id="pageInfo">
-      Mostrando 0 - 0 de 0 usuarios
-    </div>
-    <div class="page-controls" id="pageControls">
-    </div>
-  </div>
-
-</section>
-
-
-<!-- MODAL -->
-
-<div class="modal-backdrop" id="modal-backdrop">
-
-  <div class="modal">
-
-    <h3 id="modal-title">
-      Nuevo usuario
-    </h3>
-
-    <form id="user-form">
-
-      <div class="form-grid">
-
-        <label>
-          Nombre
-          <input
-            id="f-nombre"
-            name="nombre"
-            required
-            placeholder="Nombre completo"
-          >
-        </label>
-
-
-        <label>
-          Apellido Paterno
-          <input
-            id="f-app"
-            name="apellido_paterno"
-            required
-            placeholder="Apellido paterno"
-          >
-        </label>
-
-
-        <label>
-          Apellido Materno
-          <input
-            id="f-apm"
-            name="apellido_materno"
-            required
-            placeholder="Apellido materno"
-          >
-        </label>
-
-
-        <label>
-          CI
-          <input
-            id="f-ci"
-            name="ci"
-            required
-            placeholder="CI"
-            inputmode="numeric"
-          >
-        </label>
-
-
-        <label id="wrap-f-univ">
-          Universidad
-          <input
-            id="f-univ"
-            name="universidad"
-            required
-            placeholder="Universidad"
-          >
-        </label>
-
-
-        <label id="wrap-f-carr">
-          Carrera
-          <select id="f-carr" name="id_carrera" required>
-            <option value="">Seleccione una carrera...</option>
-            <% (carreras || []).forEach(c => { %>
+          <select id="filterCarrera" class="page-select" style="height:42px; min-width:180px; font-weight:500;">
+            <option value="">Todas las carreras</option>
+            <% (carreras || []).forEach(c=> { %>
               <option value="<%= c.id_carrera %>">
-                <%= c.nombre %> (<%= c.siglas %>)
+                <%= c.nombre %>
               </option>
-            <% }) %>
-          </select>
-        </label>
-
-
-        <label>
-          Celular
-          <input
-            id="f-cel"
-            name="celular"
-            placeholder="Ej. 70000000"
-            inputmode="tel"
-          >
-        </label>
-
-
-        <label>
-          Estado
-
-          <select id="f-est" name="estado">
-
-            <option value="1">
-              Activo
-            </option>
-
-            <option value="0">
-              Inactivo
-            </option>
-
+              <% }) %>
           </select>
 
-        </label>
-
-
-        <label>
-          Rol
-
-          <select id="f-rol" name="rol">
-
-            <option value="0">
-              Usuario
-            </option>
-
-            <option value="1">
-              Admin
-            </option>
-
+          <select id="filterEstado" class="page-select" style="height:42px; min-width:140px; font-weight:500;">
+            <option value="">Todos los estados</option>
+            <option value="1">Activos</option>
+            <option value="0">Inactivos</option>
           </select>
+        </div>
 
-        </label>
+        <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+          <div class="page-select-wrap">
+            <span>Mostrar:</span>
+            <select id="pageSize" class="page-select">
+              <option value="10" selected>10</option>
+              <option value="20">20</option>
+              <option value="30">30</option>
+              <option value="50">50</option>
+            </select>
+          </div>
 
-
-        <label>
-          Contraseña predeterminada
-          <small>(Se asigna automáticamente al crear. El usuario deberá cambiarla en su primer inicio de sesión.)</small>
-
-          <input
-            id="f-pass-readonly"
-            type="text"
-            value="12345678"
-            readonly
-            style="background-color: #e9ecef; cursor: not-allowed; color: #6c757d;"
-          >
-
-        </label>
+          <button id="btnNew" class="btn">
+            + Nuevo
+          </button>
+        </div>
 
       </div>
 
 
-      <div class="modal-actions">
+      <div class="table-wrap" style="margin-top:14px;">
 
-        <button
-          type="button"
-          class="btn secondary"
-          id="btn-cancel"
-        >
-          Cancelar
-        </button>
+        <table id="tbl">
 
-        <button
-          type="submit"
-          class="btn"
-          id="btn-save"
-        >
-          Guardar
-        </button>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nombre</th>
+              <th>Apellido Paterno</th>
+              <th>Apellido Materno</th>
+              <th>CI</th>
+              <th>Universidad</th>
+              <th>Carrera</th>
+              <th>Fecha Inicio</th>
+              <th>Celular</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+
+
+          <tbody id="tbody">
+
+            <% (users || []).forEach(u=> { %>
+
+              <tr data-id="<%= u.id_usuario %>" data-nombre="<%- (u.nombre || '').replace(/" /g, '&quot;' ) %>"
+                data-apellido_paterno="<%- (u.apellido_paterno || '' ).replace(/"/g, '&quot;' ) %>"
+                  data-apellido_materno="<%- (u.apellido_materno || '' ).replace(/"/g, '&quot;' ) %>"
+                    data-ci="<%- (u.CI || '' ).replace(/"/g, '&quot;' ) %>"
+                      data-universidad="<%- (u.universidad || '' ).replace(/"/g, '&quot;' ) %>"
+                        data-id_carrera="<%= u.id_carrera || '' %>"
+                          data-fecha_inicio_pasantia="<%- (u.fecha_inicio_pasantia || '' ).replace(/"/g, '&quot;' ) %>"
+                            data-fecha_inicio_pasantia_raw="<%- (u.fecha_inicio_pasantia_raw || ''
+                              ).replace(/"/g, '&quot;' ) %>"
+                              data-celular="<%- (u.celular || '' ).replace(/"/g, '&quot;' ) %>"
+                                data-estado="<%= Number(u.estado) || 0 %>"
+                                  data-rol="<%= Number(u.rol) || 0 %>"
+                                    >
+                                    <td>
+                                      <%= u.id_usuario %>
+                                    </td>
+
+                                    <td class="c-nombre">
+                                      <%= u.nombre || '' %>
+                                    </td>
+
+                                    <td class="c-apellido_paterno">
+                                      <%= u.apellido_paterno || '' %>
+                                    </td>
+
+                                    <td class="c-apellido_materno">
+                                      <%= u.apellido_materno || '' %>
+                                    </td>
+
+                                    <td class="c-ci">
+                                      <%= u.CI || '' %>
+                                    </td>
+
+                                    <td class="c-univ">
+                                      <%= u.universidad || '' %>
+                                    </td>
+
+                                    <td class="c-carr">
+                                      <%= u.carrera_nombre || u.carrera_siglas || '-' %>
+                                    </td>
+
+                                    <td class="c-fecha_inicio">
+                                      <%= u.fecha_inicio_pasantia || '-' %>
+                                    </td>
+
+                                    <td class="c-cel">
+                                      <%= u.celular || '-' %>
+                                    </td>
+
+                                    <td class="c-est">
+                                      <span class="chip <%= u.estado ? 'ok' : 'off' %>">
+                                        <%= u.estado ? 'Activo' : 'Inactivo' %>
+                                      </span>
+                                    </td>
+
+                                    <td class="actions">
+
+                                      <button class="btn secondary btnEdit">
+                                        <i class="bi bi-pencil-square"></i> Editar
+                                      </button>
+
+                                      <button class="btn secondary btnDel">
+                                        <i class="bi bi-trash3"></i> Eliminar
+                                      </button>
+
+                                    </td>
+
+              </tr>
+
+              <% }) %>
+
+          </tbody>
+
+        </table>
 
       </div>
 
-    </form>
+      <div class="table-pagination" id="paginationBar">
+        <div class="page-info" id="pageInfo">
+          Mostrando 0 - 0 de 0 usuarios
+        </div>
+        <div class="page-controls" id="pageControls">
+        </div>
+      </div>
 
-  </div>
-
-</div>
-
-
-<script>
-
-  const q = document.getElementById('q');
-  const filterCarrera = document.getElementById('filterCarrera');
-  const filterEstado = document.getElementById('filterEstado');
-  const tbody = document.getElementById('tbody');
-  const btnNew = document.getElementById('btnNew');
-  const backdrop = document.getElementById('modal-backdrop');
-  const form = document.getElementById('user-form');
-  const modalTitle = document.getElementById('modal-title');
-  const btnCancel = document.getElementById('btn-cancel');
-  const btnSave = document.getElementById('btn-save');
-
-  let editId = null;
+    </section>
 
 
-  const pageSizeSelect = document.getElementById('pageSize');
-  const pageInfo = document.getElementById('pageInfo');
-  const pageControls = document.getElementById('pageControls');
+    <!-- MODAL -->
 
-  let currentPage = 1;
+    <div class="modal-backdrop" id="modal-backdrop">
 
-  /* =========================
-     PAGINACIÓN Y BÚSQUEDA DE USUARIOS
-     ========================= */
+      <div class="modal" style="max-width: 650px;">
 
-  function renderPagination() {
-    const filterVal = q ? q.value.toLowerCase().trim() : '';
-    const selectedCarrera = filterCarrera ? filterCarrera.value.trim() : '';
-    const selectedEstado = filterEstado ? filterEstado.value.trim() : '';
-    const pageSize = parseInt(pageSizeSelect ? pageSizeSelect.value : 10, 10) || 10;
-    const allRows = [...tbody.rows];
+        <h3 id="modal-title">
+          Nuevo usuario
+        </h3>
+        <form id="user-form" novalidate>
+          <div class="form-grid">
+            <label>
+              <span>Nombre <span style="color: #dc2626;">*</span></span>
+              <input id="f-nombre" name="nombre" placeholder="Nombre completo" autocomplete="off">
+              <div class="field-error" id="err-nombre"
+                style="display:none; color:#dc2626; font-size:11.5px; font-weight:500; margin-top:3px;"></div>
+            </label>
 
-    // Filtrar filas que coincidan con la búsqueda (por nombre, apellido o CI), carrera y estado
-    const matchingRows = allRows.filter(tr => {
-      // Filtro por Carrera
-      if (selectedCarrera && String(tr.dataset.id_carrera || '').trim() !== selectedCarrera) {
-        return false;
-      }
+            <label>
+              <span>Apellido Paterno <span style="color: #dc2626;">*</span></span>
+              <input id="f-app" name="apellido_paterno" placeholder="Apellido paterno" autocomplete="off">
+              <div class="field-error" id="err-app"
+                style="display:none; color:#dc2626; font-size:11.5px; font-weight:500; margin-top:3px;"></div>
+            </label>
 
-      // Filtro por Estado (1: Activo, 0: Inactivo)
-      if (selectedEstado !== '' && String(tr.dataset.estado ?? '').trim() !== selectedEstado) {
-        return false;
-      }
 
-      // Filtro por Texto (Nombre, Apellidos o CI)
-      if (!filterVal) return true;
+            <label>
+              <span>Apellido Materno<span style="color: #dc2626;">*</span></span>
+              <input id="f-apm" name="apellido_materno" placeholder="Apellido materno" autocomplete="off">
+              <div class="field-error" id="err-apm"
+                style="display:none; color:#dc2626; font-size:11.5px; font-weight:500; margin-top:3px;"></div>
+            </label>
 
-      const name = tr.querySelector('.c-nombre')?.textContent.toLowerCase() || '';
-      const apePat = tr.querySelector('.c-apellido_paterno')?.textContent.toLowerCase() || '';
-      const apeMat = tr.querySelector('.c-apellido_materno')?.textContent.toLowerCase() || '';
-      const ci = tr.querySelector('.c-ci')?.textContent.toLowerCase() || '';
 
-      const fullText = `${name} ${apePat} ${apeMat} ${ci}`.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-      const cleanFilter = filterVal.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      const searchTerms = cleanFilter.split(/\s+/).filter(Boolean);
+            <label>
+              <span>CI <span style="color: #dc2626;">*</span></span>
+              <input id="f-ci" name="ci" placeholder="Ej. 12345678" inputmode="numeric" autocomplete="off">
+              <div class="field-error" id="err-ci"
+                style="display:none; color:#dc2626; font-size:11.5px; font-weight:500; margin-top:3px;"></div>
+            </label>
 
-      return searchTerms.every(term => fullText.includes(term));
-    });
 
-    const totalMatching = matchingRows.length;
-    const totalPages = Math.ceil(totalMatching / pageSize) || 1;
+            <label id="wrap-f-fecha_inicio">
+              <span>Fecha de inicio de pasantía <span style="color: #dc2626;">*</span></span>
+              <input id="f-fecha_inicio" name="fecha_inicio_pasantia" type="date">
+              <div class="field-error" id="err-fecha_inicio"
+                style="display:none; color:#dc2626; font-size:11.5px; font-weight:500; margin-top:3px;"></div>
+            </label>
 
-    if (currentPage > totalPages) currentPage = totalPages;
-    if (currentPage < 1) currentPage = 1;
 
-    const startIdx = (currentPage - 1) * pageSize;
-    const endIdx = Math.min(startIdx + pageSize, totalMatching);
+            <label id="wrap-f-univ">
+              <span>Universidad <span style="color: #dc2626;">*</span></span>
+              <input id="f-univ" name="universidad" placeholder="Universidad" autocomplete="off">
+              <div class="field-error" id="err-univ"
+                style="display:none; color:#dc2626; font-size:11.5px; font-weight:500; margin-top:3px;"></div>
+            </label>
 
-    // Ocultar todas las filas
-    allRows.forEach(tr => tr.style.display = 'none');
 
-    // Mostrar solo el bloque de filas correspondiente a la página actual
-    matchingRows.forEach((tr, index) => {
-      if (index >= startIdx && index < endIdx) {
-        tr.style.display = '';
-      }
-    });
+            <label id="wrap-f-carr">
+              <span>Carrera <span style="color: #dc2626;">*</span></span>
+              <select id="f-carr" name="id_carrera">
+                <option value="">Seleccione una carrera...</option>
+                <% (carreras || []).forEach(c=> { %>
+                  <option value="<%= c.id_carrera %>">
+                    <%= c.nombre %> (<%= c.siglas %>)
+                  </option>
+                  <% }) %>
+              </select>
+              <div class="field-error" id="err-carr"
+                style="display:none; color:#dc2626; font-size:11.5px; font-weight:500; margin-top:3px;"></div>
+            </label>
 
-    // Actualizar texto informativo
-    if (totalMatching === 0) {
-      pageInfo.textContent = 'Sin resultados encontrados';
-    } else {
-      pageInfo.textContent = `Mostrando ${startIdx + 1} - ${endIdx} de ${totalMatching} usuarios`;
-    }
 
-    // Renderizar botones de control
-    pageControls.innerHTML = '';
+            <label>
+              Celular
+              <input id="f-cel" name="celular" placeholder="Ej. 70000000" inputmode="tel" autocomplete="off">
+              <div class="field-error" id="err-cel"
+                style="display:none; color:#dc2626; font-size:11.5px; font-weight:500; margin-top:3px;"></div>
+            </label>
 
-    // Botón Anterior
-    const prevBtn = document.createElement('button');
-    prevBtn.className = 'page-btn';
-    prevBtn.type = 'button';
-    prevBtn.textContent = 'Anterior';
-    prevBtn.disabled = currentPage === 1 || totalMatching === 0;
-    prevBtn.addEventListener('click', () => {
-      if (currentPage > 1) {
-        currentPage--;
-        renderPagination();
-      }
-    });
-    pageControls.appendChild(prevBtn);
 
-    // Botones de Páginas Numeradas
-    for (let i = 1; i <= totalPages; i++) {
-      if (totalPages > 7) {
-        if (i !== 1 && i !== totalPages && Math.abs(i - currentPage) > 1) {
-          if (i === 2 || i === totalPages - 1) {
-            const dots = document.createElement('span');
-            dots.textContent = '...';
-            dots.style.padding = '0 4px';
-            dots.style.color = '#94a3b8';
-            pageControls.appendChild(dots);
+            <label>
+              Estado
+
+              <select id="f-est" name="estado">
+
+                <option value="1">
+                  Activo
+                </option>
+
+                <option value="0">
+                  Inactivo
+                </option>
+
+              </select>
+
+            </label>
+
+
+            <label>
+              Rol
+
+              <select id="f-rol" name="rol">
+
+                <option value="0">
+                  Pasante / Usuario
+                </option>
+
+                <option value="1">
+                  Admin
+                </option>
+
+              </select>
+
+            </label>
+
+
+            <label>
+              Contraseña predeterminada
+              <small>(Se asigna automáticamente al crear. El usuario deberá cambiarla en su primer inicio de
+                sesión.)</small>
+
+              <input id="f-pass-readonly" type="text" value="12345678" readonly
+                style="background-color: #e9ecef; cursor: not-allowed; color: #6c757d;">
+
+            </label>
+
+          </div>
+
+
+          <div class="modal-actions">
+
+            <button type="button" class="btn secondary" id="btn-cancel">
+              Cancelar
+            </button>
+
+            <button type="submit" class="btn" id="btn-save">
+              Guardar
+            </button>
+
+          </div>
+
+        </form>
+
+      </div>
+
+    </div>
+
+
+    <script>
+
+      const q = document.getElementById('q');
+      const filterCarrera = document.getElementById('filterCarrera');
+      const filterEstado = document.getElementById('filterEstado');
+      const tbody = document.getElementById('tbody');
+      const btnNew = document.getElementById('btnNew');
+      const backdrop = document.getElementById('modal-backdrop');
+      const form = document.getElementById('user-form');
+      const modalTitle = document.getElementById('modal-title');
+      const btnCancel = document.getElementById('btn-cancel');
+      const btnSave = document.getElementById('btn-save');
+
+      let editId = null;
+
+
+      const pageSizeSelect = document.getElementById('pageSize');
+      const pageInfo = document.getElementById('pageInfo');
+      const pageControls = document.getElementById('pageControls');
+
+      let currentPage = 1;
+
+      /* =========================
+         PAGINACIÓN Y BÚSQUEDA DE USUARIOS
+         ========================= */
+
+      function renderPagination() {
+        const filterVal = q ? q.value.toLowerCase().trim() : '';
+        const selectedCarrera = filterCarrera ? filterCarrera.value.trim() : '';
+        const selectedEstado = filterEstado ? filterEstado.value.trim() : '';
+        const pageSize = parseInt(pageSizeSelect ? pageSizeSelect.value : 10, 10) || 10;
+        const allRows = [...tbody.rows];
+
+        // Filtrar filas que coincidan con la búsqueda (por nombre, apellido o CI), carrera y estado
+        const matchingRows = allRows.filter(tr => {
+          // Filtro por Carrera
+          if (selectedCarrera && String(tr.dataset.id_carrera || '').trim() !== selectedCarrera) {
+            return false;
           }
-          continue;
+
+          // Filtro por Estado (1: Activo, 0: Inactivo)
+          if (selectedEstado !== '' && String(tr.dataset.estado ?? '').trim() !== selectedEstado) {
+            return false;
+          }
+
+          // Filtro por Texto (Nombre, Apellidos o CI)
+          if (!filterVal) return true;
+
+          const name = tr.querySelector('.c-nombre')?.textContent.toLowerCase() || '';
+          const apePat = tr.querySelector('.c-apellido_paterno')?.textContent.toLowerCase() || '';
+          const apeMat = tr.querySelector('.c-apellido_materno')?.textContent.toLowerCase() || '';
+          const ci = tr.querySelector('.c-ci')?.textContent.toLowerCase() || '';
+
+          const fullText = `${name} ${apePat} ${apeMat} ${ci}`.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+          const cleanFilter = filterVal.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+          const searchTerms = cleanFilter.split(/\s+/).filter(Boolean);
+
+          return searchTerms.every(term => fullText.includes(term));
+        });
+
+        const totalMatching = matchingRows.length;
+        const totalPages = Math.ceil(totalMatching / pageSize) || 1;
+
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        const startIdx = (currentPage - 1) * pageSize;
+        const endIdx = Math.min(startIdx + pageSize, totalMatching);
+
+        // Ocultar todas las filas
+        allRows.forEach(tr => tr.style.display = 'none');
+
+        // Mostrar solo el bloque de filas correspondiente a la página actual
+        matchingRows.forEach((tr, index) => {
+          if (index >= startIdx && index < endIdx) {
+            tr.style.display = '';
+          }
+        });
+
+        // Actualizar texto informativo
+        if (totalMatching === 0) {
+          pageInfo.textContent = 'Sin resultados encontrados';
+        } else {
+          pageInfo.textContent = `Mostrando ${startIdx + 1} - ${endIdx} de ${totalMatching} usuarios`;
         }
+
+        // Renderizar botones de control
+        pageControls.innerHTML = '';
+
+        // Botón Anterior
+        const prevBtn = document.createElement('button');
+        prevBtn.className = 'page-btn';
+        prevBtn.type = 'button';
+        prevBtn.textContent = 'Anterior';
+        prevBtn.disabled = currentPage === 1 || totalMatching === 0;
+        prevBtn.addEventListener('click', () => {
+          if (currentPage > 1) {
+            currentPage--;
+            renderPagination();
+          }
+        });
+        pageControls.appendChild(prevBtn);
+
+        // Botones de Páginas Numeradas
+        for (let i = 1; i <= totalPages; i++) {
+          if (totalPages > 7) {
+            if (i !== 1 && i !== totalPages && Math.abs(i - currentPage) > 1) {
+              if (i === 2 || i === totalPages - 1) {
+                const dots = document.createElement('span');
+                dots.textContent = '...';
+                dots.style.padding = '0 4px';
+                dots.style.color = '#94a3b8';
+                pageControls.appendChild(dots);
+              }
+              continue;
+            }
+          }
+
+          const pBtn = document.createElement('button');
+          pBtn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
+          pBtn.type = 'button';
+          pBtn.textContent = i;
+          pBtn.addEventListener('click', () => {
+            currentPage = i;
+            renderPagination();
+          });
+          pageControls.appendChild(pBtn);
+        }
+
+        // Botón Siguiente
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'page-btn';
+        nextBtn.type = 'button';
+        nextBtn.textContent = 'Siguiente';
+        nextBtn.disabled = currentPage === totalPages || totalMatching === 0;
+        nextBtn.addEventListener('click', () => {
+          if (currentPage < totalPages) {
+            currentPage++;
+            renderPagination();
+          }
+        });
+        pageControls.appendChild(nextBtn);
       }
 
-      const pBtn = document.createElement('button');
-      pBtn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
-      pBtn.type = 'button';
-      pBtn.textContent = i;
-      pBtn.addEventListener('click', () => {
-        currentPage = i;
+      q.addEventListener('input', () => {
+        currentPage = 1;
         renderPagination();
       });
-      pageControls.appendChild(pBtn);
-    }
 
-    // Botón Siguiente
-    const nextBtn = document.createElement('button');
-    nextBtn.className = 'page-btn';
-    nextBtn.type = 'button';
-    nextBtn.textContent = 'Siguiente';
-    nextBtn.disabled = currentPage === totalPages || totalMatching === 0;
-    nextBtn.addEventListener('click', () => {
-      if (currentPage < totalPages) {
-        currentPage++;
-        renderPagination();
+      if (filterCarrera) {
+        filterCarrera.addEventListener('change', () => {
+          currentPage = 1;
+          renderPagination();
+        });
       }
-    });
-    pageControls.appendChild(nextBtn);
-  }
 
-  q.addEventListener('input', () => {
-    currentPage = 1;
-    renderPagination();
-  });
+      if (filterEstado) {
+        filterEstado.addEventListener('change', () => {
+          currentPage = 1;
+          renderPagination();
+        });
+      }
 
-  if (filterCarrera) {
-    filterCarrera.addEventListener('change', () => {
-      currentPage = 1;
+      if (pageSizeSelect) {
+        pageSizeSelect.addEventListener('change', () => {
+          currentPage = 1;
+          renderPagination();
+        });
+      }
+
+      // Inicializar paginación al cargar la página
       renderPagination();
-    });
-  }
-
-  if (filterEstado) {
-    filterEstado.addEventListener('change', () => {
-      currentPage = 1;
-      renderPagination();
-    });
-  }
-
-  if (pageSizeSelect) {
-    pageSizeSelect.addEventListener('change', () => {
-      currentPage = 1;
-      renderPagination();
-    });
-  }
-
-  // Inicializar paginación al cargar la página
-  renderPagination();
 
 
-  /* =========================
-     NUEVO USUARIO
-     ========================= */
+      /* =========================
+         NUEVO USUARIO
+         ========================= */
 
-  btnNew.addEventListener('click', () => {
+      btnNew.addEventListener('click', () => {
 
-    editId = null;
+        editId = null;
 
-    form.dataset.mode = 'create';
+        form.dataset.mode = 'create';
 
-    initFormValues();
+        initFormValues();
 
-    openModal('Nuevo usuario');
+        openModal('Nuevo usuario');
 
-    document.getElementById('f-rol').value = '0';
+        document.getElementById('f-rol').value = '0';
 
-  });
-
-
-  /* =========================
-     EDITAR / ELIMINAR
-     ========================= */
-
-  tbody.addEventListener('click', async (ev) => {
-
-    const tr = ev.target.closest('tr');
-
-    if (!tr) return;
+      });
 
 
-    /* EDITAR */
+      /* =========================
+         EDITAR / ELIMINAR
+         ========================= */
 
-    if (ev.target.closest('.btnEdit')) {
+      tbody.addEventListener('click', async (ev) => {
 
-      const user = rowToObj(tr);
+        const tr = ev.target.closest('tr');
 
-      editId = user.id_usuario;
-
-      form.dataset.mode = 'edit';
-
-      initFormValues(user);
-
-      openModal(`Editar #${user.id_usuario}`);
-
-      document.getElementById('f-rol').value = user.rol;
-
-      return;
-    }
+        if (!tr) return;
 
 
-    /* ELIMINAR */
+        /* EDITAR */
 
-    if (ev.target.closest('.btnDel')) {
+        if (ev.target.closest('.btnEdit')) {
 
-      const id = tr.dataset.id;
+          const user = rowToObj(tr);
 
-      const conf = confirm(
-        `¿Eliminar usuario #${id}?`
-      );
+          editId = user.id_usuario;
 
-      if (!conf) return;
+          form.dataset.mode = 'edit';
 
+          initFormValues(user);
 
-      try {
+          openModal(`Editar #${user.id_usuario}`);
 
-        const res = await fetch(
-          `/api/usuarios/${id}`,
-          {
-            method: 'DELETE',
-            credentials: 'include'
-          }
-        );
+          document.getElementById('f-rol').value = user.rol;
+
+          return;
+        }
 
 
-        const data = await res.json();
+        /* ELIMINAR */
 
+        if (ev.target.closest('.btnDel')) {
 
-        if (!res.ok || !data.ok) {
+          const id = tr.dataset.id;
 
-          throw new Error(
-            data.msg || 'No se pudo eliminar'
+          const conf = confirm(
+            `¿Eliminar usuario #${id}?`
           );
 
+          if (!conf) return;
+
+
+          try {
+
+            const res = await fetch(
+              `/api/usuarios/${id}`,
+              {
+                method: 'DELETE',
+                credentials: 'include'
+              }
+            );
+
+
+            const data = await res.json();
+
+
+            if (!res.ok || !data.ok) {
+
+              throw new Error(
+                data.msg || 'No se pudo eliminar'
+              );
+
+            }
+
+
+            tr.remove();
+            const headerCount = document.getElementById('header-user-count');
+            if (headerCount) {
+              headerCount.textContent = tbody.rows.length;
+            }
+
+
+          } catch (e) {
+
+            console.error(e);
+
+            alert(
+              e.message ||
+              'No se pudo eliminar'
+            );
+
+          }
+
         }
 
+      });
 
-        tr.remove();
-        const headerCount = document.getElementById('header-user-count');
-        if (headerCount) {
-          headerCount.textContent = tbody.rows.length;
+
+      /* =========================
+         CERRAR MODAL
+         ========================= */
+
+      btnCancel.addEventListener(
+        'click',
+        closeModal
+      );
+
+
+      backdrop.addEventListener('click', (e) => {
+
+        if (e.target === backdrop) {
+
+          closeModal();
+
         }
 
-
-      } catch (e) {
-
-        console.error(e);
-
-        alert(
-          e.message ||
-          'No se pudo eliminar'
-        );
-
-      }
-
-    }
-
-  });
+      });
 
 
-  /* =========================
-     CERRAR MODAL
-     ========================= */
-
-  btnCancel.addEventListener(
-    'click',
-    closeModal
-  );
-
-
-  backdrop.addEventListener('click', (e) => {
-
-    if (e.target === backdrop) {
-
-      closeModal();
-
-    }
-
-  });
-
-
-  form.addEventListener(
-    'submit',
-    onSubmit
-  );
-
-
-  /* =========================
-     INICIALIZAR FORMULARIO
-     ========================= */
-
-  function initFormValues(u = {}) {
-
-    document.getElementById('f-nombre').value =
-      u.nombre || '';
-
-    document.getElementById('f-app').value =
-      u.apellido_paterno || '';
-
-    document.getElementById('f-apm').value =
-      u.apellido_materno || '';
-
-    document.getElementById('f-ci').value =
-      u.CI || '';
-
-    document.getElementById('f-univ').value =
-      u.universidad || '';
-
-    document.getElementById('f-carr').value = u.id_carrera || '';
-
-    document.getElementById('f-cel').value =
-      u.celular || '';
-
-    document.getElementById('f-rol').value =
-      Number(u.rol ?? 0);
-
-    updateRolFields();
-  }
-
-  const fRol = document.getElementById('f-rol');
-  const fCarr = document.getElementById('f-carr');
-  const fUniv = document.getElementById('f-univ');
-  const wrapCarr = document.getElementById('wrap-f-carr');
-  const wrapUniv = document.getElementById('wrap-f-univ');
-
-  function updateRolFields() {
-    if (!fRol) return;
-    const isAdm = (Number(fRol.value) === 1);
-    if (isAdm) {
-      if (fCarr) fCarr.removeAttribute('required');
-      if (fUniv) fUniv.removeAttribute('required');
-      if (wrapCarr) wrapCarr.style.display = 'none';
-      if (wrapUniv) wrapUniv.style.display = 'none';
-    } else {
-      if (fCarr) fCarr.setAttribute('required', 'required');
-      if (fUniv) fUniv.setAttribute('required', 'required');
-      if (wrapCarr) wrapCarr.style.display = '';
-      if (wrapUniv) wrapUniv.style.display = '';
-    }
-  }
-
-  fRol?.addEventListener('change', updateRolFields);
-
-
-  /* =========================
-     ABRIR MODAL
-     ========================= */
-
-  function openModal(title) {
-
-    modalTitle.textContent = title;
-
-    backdrop.style.display = 'flex';
-
-  }
-
-
-  /* =========================
-     CERRAR MODAL
-     ========================= */
-
-  function closeModal() {
-
-    backdrop.style.display = 'none';
-
-    form.reset();
-
-    editId = null;
-
-  }
-
-
-  /* =========================
-     GUARDAR USUARIO
-     ========================= */
-
-  async function onSubmit(e) {
-
-    e.preventDefault();
-
-
-    const payload =
-      getFormValues(
-        form.dataset.mode === 'create'
+      form.addEventListener(
+        'submit',
+        onSubmit
       );
 
 
-    if (!payload) return;
+      /* =========================
+         ELEMENTOS Y VALIDACIONES EN TIEMPO REAL
+         ========================= */
 
-    btnSave.disabled = true;
-    const originalText = btnSave.textContent;
-    btnSave.textContent = 'Guardando...';
+      const fNombre = document.getElementById('f-nombre');
+      const fApp = document.getElementById('f-app');
+      const fApm = document.getElementById('f-apm');
+      const fCi = document.getElementById('f-ci');
+      const fFechaInicio = document.getElementById('f-fecha_inicio');
+      const fUniv = document.getElementById('f-univ');
+      const fCarr = document.getElementById('f-carr');
+      const fCel = document.getElementById('f-cel');
+      const fEst = document.getElementById('f-est');
+      const fRol = document.getElementById('f-rol');
+      const wrapFechaInicio = document.getElementById('wrap-f-fecha_inicio');
+      const wrapUniv = document.getElementById('wrap-f-univ');
+      const wrapCarr = document.getElementById('wrap-f-carr');
 
-    try {
-
-      let url = '/api/usuarios';
-
-      let method = 'POST';
-
-
-      if (
-        form.dataset.mode === 'edit' &&
-        editId
-      ) {
-
-        url = `/api/usuarios/${editId}`;
-
-        /*
-         * IMPORTANTE:
-         * Aquí dejamos POST porque tu código
-         * original utilizaba POST.
-         *
-         * Si tu backend utiliza PUT para editar,
-         * cambia esta línea a:
-         *
-         * method = 'PUT';
-         */
-
-        method = 'POST';
-
-      }
-
-
-      const res = await fetch(
-        url,
-        {
-          method: method,
-
-          headers: {
-            'Content-Type': 'application/json'
-          },
-
-          credentials: 'include',
-
-          body: JSON.stringify(payload)
-
+      function setFieldError(inputEl, errElId, msg) {
+        const errEl = document.getElementById(errElId);
+        if (!errEl) return;
+        if (msg) {
+          if (inputEl) {
+            inputEl.style.borderColor = '#dc2626';
+            inputEl.style.backgroundColor = '#fef2f2';
+          }
+          errEl.textContent = msg;
+          errEl.style.display = 'block';
+        } else {
+          if (inputEl) {
+            inputEl.style.borderColor = '';
+            inputEl.style.backgroundColor = '';
+          }
+          errEl.textContent = '';
+          errEl.style.display = 'none';
         }
-      );
+      }
+
+      function clearAllErrors() {
+        ['err-nombre', 'err-app', 'err-apm', 'err-ci', 'err-fecha_inicio', 'err-univ', 'err-carr', 'err-cel'].forEach(id => {
+          const errEl = document.getElementById(id);
+          if (errEl) {
+            errEl.textContent = '';
+            errEl.style.display = 'none';
+          }
+        });
+        [fNombre, fApp, fApm, fCi, fFechaInicio, fUniv, fCarr, fCel].forEach(inp => {
+          if (inp) {
+            inp.style.borderColor = '';
+            inp.style.backgroundColor = '';
+          }
+        });
+      }
+
+      // 1. Validar Nombre
+      function validateNombre() {
+        const val = (fNombre?.value || '').trim();
+        if (!val) {
+          setFieldError(fNombre, 'err-nombre', 'El nombre es obligatorio.');
+          return false;
+        }
+        if (val.length < 2) {
+          setFieldError(fNombre, 'err-nombre', 'El nombre debe tener al menos 2 caracteres.');
+          return false;
+        }
+        if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s.]+$/.test(val)) {
+          setFieldError(fNombre, 'err-nombre', 'Solo se permiten letras y espacios.');
+          return false;
+        }
+        setFieldError(fNombre, 'err-nombre', '');
+        return true;
+      }
+
+      // 2. Validar Apellido Paterno
+      function validateApellidoPaterno() {
+        const val = (fApp?.value || '').trim();
+        if (!val) {
+          setFieldError(fApp, 'err-app', 'El apellido paterno es obligatorio.');
+          return false;
+        }
+        if (val.length < 2) {
+          setFieldError(fApp, 'err-app', 'Debe tener al menos 2 caracteres.');
+          return false;
+        }
+        if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s.]+$/.test(val)) {
+          setFieldError(fApp, 'err-app', 'Solo se permiten letras y espacios.');
+          return false;
+        }
+        setFieldError(fApp, 'err-app', '');
+        return true;
+      }
+
+      // 3. Validar Apellido Materno
+      function validateApellidoMaterno() {
+        const val = (fApm?.value || '').trim();
+        if (val && !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s.]+$/.test(val)) {
+          setFieldError(fApm, 'err-apm', 'Solo se permiten letras y espacios.');
+          return false;
+        }
+        setFieldError(fApm, 'err-apm', '');
+        return true;
+      }
+
+      // 4. Validar CI en tiempo real
+      let ciTimer = null;
+      let ciDuplicateFound = false;
+
+      async function validateCI(checkDupe = true) {
+        const val = (fCi?.value || '').trim();
+        if (!val) {
+          setFieldError(fCi, 'err-ci', 'El número de CI es obligatorio.');
+          ciDuplicateFound = false;
+          return false;
+        }
+        if (!/^[0-9.\-]{5,32}$/.test(val)) {
+          setFieldError(fCi, 'err-ci', 'CI inválido (5 a 32 caracteres, dígitos/punto/guion).');
+          ciDuplicateFound = false;
+          return false;
+        }
+        setFieldError(fCi, 'err-ci', '');
+
+        if (checkDupe) {
+          try {
+            const exclude = editId || 0;
+            const res = await fetch(`/api/usuarios/check-ci?ci=${encodeURIComponent(val)}&excludeId=${exclude}`);
+            const data = await res.json();
+            if (data.exists) {
+              setFieldError(fCi, 'err-ci', data.msg || 'Este CI ya está registrado en el sistema.');
+              ciDuplicateFound = true;
+              return false;
+            } else {
+              setFieldError(fCi, 'err-ci', '');
+              ciDuplicateFound = false;
+              return true;
+            }
+          } catch (e) {
+            console.error('Error al verificar CI:', e);
+          }
+        }
+        return !ciDuplicateFound;
+      }
+
+      // 5. Validar Fecha de inicio de pasantía
+      function validateFechaInicio() {
+        const isAdm = (Number(fRol?.value) === 1);
+        const val = (fFechaInicio?.value || '').trim();
+        if (isAdm) {
+          setFieldError(fFechaInicio, 'err-fecha_inicio', '');
+          return true;
+        }
+        if (!val) {
+          setFieldError(fFechaInicio, 'err-fecha_inicio', 'La fecha de inicio de pasantía es requerida.');
+          return false;
+        }
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(val)) {
+          setFieldError(fFechaInicio, 'err-fecha_inicio', 'Formato de fecha inválido.');
+          return false;
+        }
+        const [y, m, d] = val.split('-').map(Number);
+        const dateObj = new Date(y, m - 1, d);
+        if (dateObj.getFullYear() !== y || dateObj.getMonth() !== m - 1 || dateObj.getDate() !== d || y < 2000 || y > 2100) {
+          setFieldError(fFechaInicio, 'err-fecha_inicio', 'No puede elegir una fecha que no existe o es inválida.');
+          return false;
+        }
+        setFieldError(fFechaInicio, 'err-fecha_inicio', '');
+        return true;
+      }
+
+      // 6. Validar Universidad
+      function validateUniversidad() {
+        const isAdm = (Number(fRol?.value) === 1);
+        const val = (fUniv?.value || '').trim();
+        if (isAdm) {
+          setFieldError(fUniv, 'err-univ', '');
+          return true;
+        }
+        if (!val) {
+          setFieldError(fUniv, 'err-univ', 'La universidad es obligatoria para pasantes.');
+          return false;
+        }
+        setFieldError(fUniv, 'err-univ', '');
+        return true;
+      }
+
+      // 7. Validar Carrera
+      function validateCarrera() {
+        const isAdm = (Number(fRol?.value) === 1);
+        const val = (fCarr?.value || '').trim();
+        if (isAdm) {
+          setFieldError(fCarr, 'err-carr', '');
+          return true;
+        }
+        if (!val) {
+          setFieldError(fCarr, 'err-carr', 'Debe seleccionar una carrera.');
+          return false;
+        }
+        setFieldError(fCarr, 'err-carr', '');
+        return true;
+      }
+
+      // 8. Validar Celular
+      function validateCelular() {
+        const val = (fCel?.value || '').trim();
+        if (val && !/^[0-9]{7,12}$/.test(val)) {
+          setFieldError(fCel, 'err-cel', 'El celular debe contener entre 7 y 12 dígitos numéricos.');
+          return false;
+        }
+        setFieldError(fCel, 'err-cel', '');
+        return true;
+      }
+
+      // Listeners de validación en tiempo real
+      fNombre?.addEventListener('input', validateNombre);
+      fNombre?.addEventListener('blur', validateNombre);
+
+      fApp?.addEventListener('input', validateApellidoPaterno);
+      fApp?.addEventListener('blur', validateApellidoPaterno);
+
+      fApm?.addEventListener('input', validateApellidoMaterno);
+      fApm?.addEventListener('blur', validateApellidoMaterno);
+
+      fCi?.addEventListener('input', () => {
+        clearTimeout(ciTimer);
+        if (!validateCI(false)) return;
+        ciTimer = setTimeout(() => {
+          validateCI(true);
+        }, 300);
+      });
+      fCi?.addEventListener('blur', () => {
+        validateCI(true);
+      });
+
+      fFechaInicio?.addEventListener('input', validateFechaInicio);
+      fFechaInicio?.addEventListener('change', validateFechaInicio);
+      fFechaInicio?.addEventListener('blur', validateFechaInicio);
+
+      fUniv?.addEventListener('input', validateUniversidad);
+      fUniv?.addEventListener('blur', validateUniversidad);
+
+      fCarr?.addEventListener('change', validateCarrera);
+      fCarr?.addEventListener('blur', validateCarrera);
+
+      fCel?.addEventListener('input', validateCelular);
+      fCel?.addEventListener('blur', validateCelular);
+
+      function updateRolFields() {
+        if (!fRol) return;
+        const isAdm = (Number(fRol.value) === 1);
+        if (isAdm) {
+          if (wrapFechaInicio) wrapFechaInicio.style.display = 'none';
+          if (wrapCarr) wrapCarr.style.display = 'none';
+          if (wrapUniv) wrapUniv.style.display = 'none';
+          setFieldError(fFechaInicio, 'err-fecha_inicio', '');
+          setFieldError(fUniv, 'err-univ', '');
+          setFieldError(fCarr, 'err-carr', '');
+        } else {
+          if (wrapFechaInicio) wrapFechaInicio.style.display = '';
+          if (wrapCarr) wrapCarr.style.display = '';
+          if (wrapUniv) wrapUniv.style.display = '';
+        }
+      }
+
+      fRol?.addEventListener('change', () => {
+        updateRolFields();
+        validateFechaInicio();
+        validateUniversidad();
+        validateCarrera();
+      });
 
 
-      const data = await res.json();
+      /* =========================
+         INICIALIZAR FORMULARIO
+         ========================= */
 
+      function initFormValues(u = {}) {
+        clearAllErrors();
+        ciDuplicateFound = false;
 
-      if (!res.ok || !data.ok) {
+        if (fNombre) fNombre.value = u.nombre || '';
+        if (fApp) fApp.value = u.apellido_paterno || '';
+        if (fApm) fApm.value = u.apellido_materno || '';
+        if (fCi) fCi.value = u.CI || '';
+        if (fFechaInicio) fFechaInicio.value = u.fecha_inicio_pasantia_raw || '';
+        if (fUniv) fUniv.value = u.universidad || '';
+        if (fCarr) fCarr.value = u.id_carrera || '';
+        if (fCel) fCel.value = u.celular || '';
+        if (fEst) fEst.value = String(Number(u.estado ?? 1));
+        if (fRol) fRol.value = String(Number(u.rol ?? 0));
 
-        throw new Error(
-          data.msg ||
-          'Error al guardar usuario'
-        );
-
+        updateRolFields();
       }
 
 
-      appendOrReplaceRow(data.user);
+      /* =========================
+         ABRIR / CERRAR MODAL
+         ========================= */
 
-      closeModal();
-
-
-    } catch (err) {
-
-      console.error(err);
-
-      alert(
-        err.message ||
-        'No se pudo guardar el usuario'
-      );
-
-    } finally {
-      btnSave.disabled = false;
-      btnSave.textContent = originalText;
-    }
-
-  }
-
-
-  /* =========================
-     OBTENER DATOS DEL FORMULARIO
-     ========================= */
-
-  function getFormValues(requirePass) {
-
-    const nombre =
-      document.getElementById('f-nombre')
-        .value
-        .trim();
-
-
-    const apellido_paterno =
-      document.getElementById('f-app')
-        .value
-        .trim();
-
-
-    const apellido_materno =
-      document.getElementById('f-apm')
-        .value
-        .trim();
-
-
-    const CI =
-      document.getElementById('f-ci')
-        .value
-        .trim();
-
-
-    const universidad =
-      document.getElementById('f-univ')
-        .value
-        .trim();
-
-    const id_carrera = Number(document.getElementById('f-carr').value);
-
-    const celular =
-      document.getElementById('f-cel')
-        .value
-        .trim();
-
-
-    const estado =
-      Number(
-        document.getElementById('f-est').value
-      );
-
-
-    const rol =
-      Number(
-        document.getElementById('f-rol').value
-      );
-
-
-    // La contraseña ya no se envía desde el formulario de admin, 
-    // se maneja automáticamente en la creación y el usuario la cambia.
-    const contrasena = "";
-
-
-    /* VALIDACIONES */
-
-    if (rol === 1) {
-      if (!nombre || !apellido_paterno || !CI) {
-        alert('Nombre, apellido paterno y CI son obligatorios para el administrador');
-        return false;
+      function openModal(title) {
+        modalTitle.textContent = title;
+        backdrop.style.display = 'flex';
       }
-    } else {
-      if (
-        !nombre ||
-        !apellido_paterno ||
-        !CI ||
-        !id_carrera
-      ) {
-        alert(
-          'Nombre, apellidos, CI y Carrera son obligatorios'
-        );
-        return false;
+
+      function closeModal() {
+        backdrop.style.display = 'none';
+        form.reset();
+        clearAllErrors();
+        editId = null;
       }
-    }
 
 
-    /* Validar CI */
+      /* =========================
+         GUARDAR USUARIO
+         ========================= */
 
-    if (!/^[0-9.\-]{5,32}$/.test(CI)) {
+      async function onSubmit(e) {
+        e.preventDefault();
 
-      alert(
-        'CI inválido (5-32 caracteres, dígitos/punto/guion)'
-      );
+        const payload = await getFormValues();
+        if (!payload) return;
 
-      return false;
+        btnSave.disabled = true;
+        const originalText = btnSave.textContent;
+        btnSave.textContent = 'Guardando...';
 
-    }
+        try {
+          let url = '/api/usuarios';
+          let method = 'POST';
 
+          if (form.dataset.mode === 'edit' && editId) {
+            url = `/api/usuarios/${editId}`;
+            method = 'POST';
+          }
 
-    /* Validar celular */
+          const res = await fetch(url, {
+            method: method,
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify(payload)
+          });
 
-    if (
-      celular &&
-      !/^[0-9]{7,12}$/.test(celular)
-    ) {
+          const data = await res.json();
 
-      alert(
-        'Celular: debe contener entre 7 y 12 dígitos'
-      );
+          if (!res.ok || !data.ok) {
+            if (data.msg && data.msg.toLowerCase().includes('ci')) {
+              setFieldError(fCi, 'err-ci', data.msg);
+              fCi?.focus();
+            } else if (data.msg && data.msg.toLowerCase().includes('fecha')) {
+              setFieldError(fFechaInicio, 'err-fecha_inicio', data.msg);
+              fFechaInicio?.focus();
+            }
+            throw new Error(data.msg || 'Error al guardar usuario');
+          }
 
-      return false;
+          appendOrReplaceRow(data.user);
+          closeModal();
 
-    }
-
-
-    /* Contraseña no es obligatoria al crear, se asigna 12345678 automáticamente */
-    // if (requirePass && !contrasena) { ... }
-
-
-    return {
-
-      nombre,
-
-      apellido_paterno,
-
-      apellido_materno,
-
-      CI,
-
-      universidad,
-
-      id_carrera,
-
-      celular,
-
-      estado,
-
-      rol,
-
-      /*
-       * Si estamos editando y la contraseña
-       * está vacía, no se envía.
-       *
-       * Esto permite que el backend conserve
-       * la contraseña actual.
-       */
-
-      ...(contrasena
-        ? { contrasena }
-        : {})
-
-    };
-
-  }
+        } catch (err) {
+          console.error(err);
+          if (!err.message.toLowerCase().includes('ci') && !err.message.toLowerCase().includes('fecha')) {
+            alert(err.message || 'No se pudo guardar el usuario');
+          }
+        } finally {
+          btnSave.disabled = false;
+          btnSave.textContent = originalText;
+        }
+      }
 
 
-  /* =========================
-     CONVERTIR FILA A OBJETO
-     ========================= */
+      /* =========================
+         OBTENER Y VALIDAR DATOS DEL FORMULARIO
+         ========================= */
 
-  function rowToObj(tr) {
+      async function getFormValues() {
+        const vNom = validateNombre();
+        const vApp = validateApellidoPaterno();
+        const vApm = validateApellidoMaterno();
+        const vCi = await validateCI(true);
+        const vFecha = validateFechaInicio();
+        const vUniv = validateUniversidad();
+        const vCarr = validateCarrera();
+        const vCel = validateCelular();
 
-    return {
+        if (!vNom) { fNombre?.focus(); return null; }
+        if (!vApp) { fApp?.focus(); return null; }
+        if (!vApm) { fApm?.focus(); return null; }
+        if (!vCi) { fCi?.focus(); return null; }
+        if (!vFecha) { fFechaInicio?.focus(); return null; }
+        if (!vUniv) { fUniv?.focus(); return null; }
+        if (!vCarr) { fCarr?.focus(); return null; }
+        if (!vCel) { fCel?.focus(); return null; }
 
-      id_usuario:
-        Number(tr.dataset.id),
+        const nombre = fNombre.value.trim();
+        const apellido_paterno = fApp.value.trim();
+        const apellido_materno = fApm.value.trim();
+        const CI = fCi.value.trim();
+        const fecha_inicio_pasantia = fFechaInicio?.value ? fFechaInicio.value.trim() : null;
+        const universidad = fUniv.value.trim();
+        const id_carrera = Number(fCarr.value) || null;
+        const celular = fCel.value.trim();
+        const estado = Number(fEst.value);
+        const rol = Number(fRol.value);
 
-
-      nombre:
-        tr.dataset.nombre ||
-        tr.querySelector('.c-nombre')
-          ?.textContent
-          .trim() ||
-        '',
-
-
-      apellido_paterno:
-        tr.dataset.apellido_paterno ||
-        tr.querySelector('.c-apellido_paterno')
-          ?.textContent
-          .trim() ||
-        '',
-
-
-      apellido_materno:
-        tr.dataset.apellido_materno ||
-        tr.querySelector('.c-apellido_materno')
-          ?.textContent
-          .trim() ||
-        '',
-
-
-      CI:
-        tr.dataset.ci ||
-        tr.querySelector('.c-ci')
-          ?.textContent
-          .trim() ||
-        '',
-
-
-      universidad:
-        tr.dataset.universidad ||
-        tr.querySelector('.c-univ')
-          ?.textContent
-          .trim() ||
-        '',
-
-      id_carrera: Number(tr.dataset.id_carrera) || null,
+        return {
+          nombre,
+          apellido_paterno,
+          apellido_materno,
+          CI,
+          fecha_inicio_pasantia,
+          universidad,
+          id_carrera,
+          celular,
+          estado,
+          rol
+        };
+      }
 
 
-      celular:
-        tr.dataset.celular ||
-        (
-          tr.querySelector('.c-cel')
-            ?.textContent
-            .trim() === '-'
-            ? ''
-            : tr.querySelector('.c-cel')
-                ?.textContent
-                .trim() || ''
-        ),
+      /* =========================
+         CONVERTIR FILA A OBJETO
+         ========================= */
+
+      function rowToObj(tr) {
+        return {
+          id_usuario: Number(tr.dataset.id),
+          nombre: tr.dataset.nombre || tr.querySelector('.c-nombre')?.textContent.trim() || '',
+          apellido_paterno: tr.dataset.apellido_paterno || tr.querySelector('.c-apellido_paterno')?.textContent.trim() || '',
+          apellido_materno: tr.dataset.apellido_materno || tr.querySelector('.c-apellido_materno')?.textContent.trim() || '',
+          CI: tr.dataset.ci || tr.querySelector('.c-ci')?.textContent.trim() || '',
+          fecha_inicio_pasantia: tr.dataset.fecha_inicio_pasantia || tr.querySelector('.c-fecha_inicio')?.textContent.trim() || '',
+          fecha_inicio_pasantia_raw: tr.dataset.fecha_inicio_pasantia_raw || '',
+          universidad: tr.dataset.universidad || tr.querySelector('.c-univ')?.textContent.trim() || '',
+          id_carrera: Number(tr.dataset.id_carrera) || null,
+          celular: tr.dataset.celular || (tr.querySelector('.c-cel')?.textContent.trim() === '-' ? '' : tr.querySelector('.c-cel')?.textContent.trim() || ''),
+          estado: Number(tr.dataset.estado || 0),
+          rol: Number(tr.dataset.rol || 0)
+        };
+      }
 
 
-      estado:
-        Number(
-          tr.dataset.estado || 0
-        ),
+      /* =========================
+         AGREGAR / REEMPLAZAR FILA
+         ========================= */
 
+      function appendOrReplaceRow(u) {
+        let tr = tbody.querySelector(`tr[data-id="${u.id_usuario}"]`);
 
-      rol:
-        Number(
-          tr.dataset.rol || 0
-        )
-
-    };
-
-  }
-
-
-  /* =========================
-     AGREGAR / REEMPLAZAR FILA
-     ========================= */
-
-  function appendOrReplaceRow(u) {
-
-    let tr =
-      tbody.querySelector(
-        `tr[data-id="${u.id_usuario}"]`
-      );
-
-
-    const htmlCells = `
-
-      <td>
-        ${u.id_usuario}
-      </td>
-
+        const htmlCells = `
+      <td>${u.id_usuario}</td>
       <td class="c-nombre"></td>
-
       <td class="c-apellido_paterno"></td>
-
       <td class="c-apellido_materno"></td>
-
       <td class="c-ci"></td>
-
       <td class="c-univ"></td>
-
       <td class="c-carr"></td>
-
       <td class="c-fecha_inicio"></td>
-
       <td class="c-cel"></td>
-
       <td class="c-est">
         <span class="chip ${u.estado ? 'ok' : 'off'}">
           ${u.estado ? 'Activo' : 'Inactivo'}
         </span>
       </td>
-
       <td class="actions">
-
         <button class="btn secondary btnEdit">
           <i class="bi bi-pencil-square"></i> Editar
         </button>
-
         <button class="btn secondary btnDel">
           <i class="bi bi-trash3"></i> Eliminar
         </button>
-
       </td>
-
     `;
 
+        if (!tr) {
+          tr = document.createElement('tr');
+          tr.setAttribute('data-id', u.id_usuario);
+          tbody.prepend(tr);
+          const headerCount = document.getElementById('header-user-count');
+          if (headerCount) {
+            headerCount.textContent = tbody.rows.length;
+          }
+        }
 
-    /* Crear fila si no existe */
+        tr.innerHTML = htmlCells;
 
-    if (!tr) {
+        /* ACTUALIZAR CELDAS */
+        tr.querySelector('.c-nombre').textContent = u.nombre || '';
+        tr.querySelector('.c-apellido_paterno').textContent = u.apellido_paterno || '';
+        tr.querySelector('.c-apellido_materno').textContent = u.apellido_materno || '';
+        tr.querySelector('.c-ci').textContent = u.CI || '';
+        tr.querySelector('.c-univ').textContent = u.universidad || '';
+        tr.querySelector('.c-carr').textContent = u.carrera_nombre || u.carrera_siglas || '-';
+        tr.querySelector('.c-fecha_inicio').textContent = u.fecha_inicio_pasantia || '-';
+        tr.querySelector('.c-cel').textContent = u.celular || '-';
 
-      tr = document.createElement('tr');
+        /* ACTUALIZAR DATASET */
+        tr.dataset.nombre = u.nombre || '';
+        tr.dataset.apellido_paterno = u.apellido_paterno || '';
+        tr.dataset.apellido_materno = u.apellido_materno || '';
+        tr.dataset.ci = u.CI || '';
+        tr.dataset.universidad = u.universidad || '';
+        tr.dataset.id_carrera = u.id_carrera || '';
+        tr.dataset.fecha_inicio_pasantia = u.fecha_inicio_pasantia || '';
+        tr.dataset.fecha_inicio_pasantia_raw = u.fecha_inicio_pasantia_raw || '';
+        tr.dataset.celular = u.celular || '';
+        tr.dataset.estado = Number(u.estado) || 0;
+        tr.dataset.rol = Number(u.rol) || 0;
 
-      tr.setAttribute(
-        'data-id',
-        u.id_usuario
-      );
-
-      tbody.prepend(tr);
-      const headerCount = document.getElementById('header-user-count');
-      if (headerCount) {
-        headerCount.textContent = tbody.rows.length;
+        renderPagination();
       }
 
-    }
+    </script>
 
 
-    tr.innerHTML = htmlCells;
-
-
-    /* =========================
-       ACTUALIZAR CELDAS
-       ========================= */
-
-    tr.querySelector('.c-nombre').textContent =
-      u.nombre || '';
-
-
-    tr.querySelector(
-      '.c-apellido_paterno'
-    ).textContent =
-      u.apellido_paterno || '';
-
-
-    tr.querySelector(
-      '.c-apellido_materno'
-    ).textContent =
-      u.apellido_materno || '';
-
-
-    tr.querySelector('.c-ci').textContent =
-      u.CI || '';
-
-
-    tr.querySelector('.c-univ').textContent =
-      u.universidad || '';
-
-
-    /*tr.querySelector('.c-carr').textContent =
-      u.carrera || '';*/
-    tr.querySelector('.c-carr').textContent = u.carrera_nombre || u.carrera_siglas || '-';
-
-    tr.querySelector('.c-fecha_inicio').textContent =
-      u.fecha_inicio_pasantia || '-';
-
-    tr.querySelector('.c-cel').textContent =
-      u.celular || '-';
-
-
-    /* =========================
-       ACTUALIZAR DATASET
-       ========================= */
-
-    tr.dataset.nombre =
-      u.nombre || '';
-
-
-    tr.dataset.apellido_paterno =
-      u.apellido_paterno || '';
-
-
-    tr.dataset.apellido_materno =
-      u.apellido_materno || '';
-
-
-    tr.dataset.ci =
-      u.CI || '';
-
-
-    tr.dataset.universidad =
-      u.universidad || '';
-
-
-    /*tr.dataset.carrera =
-      u.carrera || '';*/
-    tr.dataset.id_carrera = u.id_carrera || '';
-
-    tr.dataset.fecha_inicio_pasantia =
-      u.fecha_inicio_pasantia || '';
-
-    tr.dataset.celular =
-      u.celular || '';
-
-
-    tr.dataset.estado =
-      Number(u.estado) || 0;
-
-
-    tr.dataset.rol =
-      Number(u.rol) || 0;
-
-    renderPagination();
-
-  }
-
-</script>
-
-
-<%- include('partials/footer') %>
+    <%- include('partials/footer') %>
