@@ -421,7 +421,8 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
          COUNT(id_asistencia) AS total_dias,
          COALESCE(SUM(IF(hora_entrada IS NOT NULL AND hora_salida IS NOT NULL AND estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO'),
                          TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha, hora_entrada), TIMESTAMP(fecha, hora_salida)),
-                         0)), 0) AS total_segundos
+                         0)), 0) AS total_segundos,
+         MAX(IF(hora_entrada IS NOT NULL AND hora_salida IS NOT NULL AND estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO'), DATE_FORMAT(fecha, '%Y-%m-%d'), NULL)) AS ultima_fecha_asistencia
        FROM asistencias
        WHERE estado != 'ANULADO'
        GROUP BY id_usuario`
@@ -433,7 +434,8 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
          COUNT(id_notificacion) AS total_dias_he,
          COALESCE(SUM(IF(hora_inicio IS NOT NULL AND hora_fin IS NOT NULL,
                          TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha_solicitada, hora_inicio), TIMESTAMP(fecha_solicitada, hora_fin)) * 2,
-                         0)), 0) AS total_segundos_he
+                         0)), 0) AS total_segundos_he,
+         MAX(IF(hora_inicio IS NOT NULL AND hora_fin IS NOT NULL, DATE_FORMAT(fecha_solicitada, '%Y-%m-%d'), NULL)) AS ultima_fecha_he
        FROM notificaciones
        WHERE estado = 2
        GROUP BY id_usuario`
@@ -536,11 +538,12 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
 
     // Cálculo de Pasantes en fase final / ~1 semana restante / meta alcanzada (Meta estándar: 280 hrs)
     const pasantesPorFinalizar = [];
+    const pasantesCulminados = [];
     const HORAS_META_DEFAULT = 280;
 
     (usersRanking || []).forEach(u => {
-      const a = mapAsist[u.id_usuario] || { total_dias: 0, total_segundos: 0 };
-      const h = mapHE[u.id_usuario] || { total_dias_he: 0, total_segundos_he: 0 };
+      const a = mapAsist[u.id_usuario] || { total_dias: 0, total_segundos: 0, ultima_fecha_asistencia: null };
+      const h = mapHE[u.id_usuario] || { total_dias_he: 0, total_segundos_he: 0, ultima_fecha_he: null };
       const totalSeg = (Number(a.total_segundos) || 0) + (Number(h.total_segundos_he) || 0);
       const horasAcum = Number((totalSeg / 3600).toFixed(1));
 
@@ -555,7 +558,48 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
       // Considerar última semana: Faltan <= 30 hrs o <= 1.2 semanas de trabajo, con al menos 80 horas acumuladas
       const esUltimaSemana = !esMetaAlcanzada && (semRest <= 1.2 || horasFalt <= 30) && (horasAcum >= 80);
 
-      if (esMetaAlcanzada || esUltimaSemana) {
+      // Calcular fecha de última jornada registrada para saber si culminó hoy/ayer (<= 1 día)
+      const fechasAct = [a.ultima_fecha_asistencia, h.ultima_fecha_he].filter(Boolean).sort();
+      const ultimaFechaActividad = fechasAct.length > 0 ? fechasAct[fechasAct.length - 1] : null;
+
+      let diasDesdeCulminacion = 999;
+      let fechaCulminacionStr = '';
+      if (ultimaFechaActividad) {
+        const parts = String(ultimaFechaActividad).split('-');
+        if (parts.length === 3) {
+          const fDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]), 12, 0, 0);
+          const today = new Date();
+          today.setHours(12, 0, 0, 0);
+          const diffMs = today.getTime() - fDate.getTime();
+          diasDesdeCulminacion = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+          const d = String(fDate.getDate()).padStart(2, '0');
+          const m = String(fDate.getMonth() + 1).padStart(2, '0');
+          const y = fDate.getFullYear();
+          fechaCulminacionStr = `${d}/${m}/${y}`;
+        }
+      }
+
+      if (esMetaAlcanzada) {
+        pasantesCulminados.push({
+          id_usuario: u.id_usuario,
+          nombre: u.nombre,
+          primer_nombre: u.primer_nombre || (u.nombre ? u.nombre.split(' ')[0] : 'Pasante'),
+          CI: u.CI,
+          carrera: u.carrera,
+          universidad: u.universidad,
+          horas_acumuladas: horasAcum,
+          horas_requeridas: HORAS_META_DEFAULT,
+          porcentaje: 100,
+          fecha_culminacion: fechaCulminacionStr || 'Reciente',
+          dias_desde_culminacion: diasDesdeCulminacion,
+          es_reciente: diasDesdeCulminacion <= 1
+        });
+      }
+
+      // En el recuadro activo de Período de Culminación:
+      // 1. Se muestran los pasantes que están a ~1 semana de terminar (esUltimaSemana).
+      // 2. Se mantienen por 1 día (diasDesdeCulminacion <= 1) los que acaban de culminar.
+      if (esUltimaSemana || (esMetaAlcanzada && diasDesdeCulminacion <= 1)) {
         const estaTrabajando = !!mapTrabajandoHoy[u.id_usuario];
         let yaSalioHoy = !estaTrabajando && !!mapSalioHoy[u.id_usuario];
         if (!estaTrabajando && !yaSalioHoy) {
@@ -588,12 +632,19 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
           horas_semana: Number(hrsSem.toFixed(1)),
           fecha_pronostico: fechaPron,
           estado_culminacion: esMetaAlcanzada ? 'COMPLETADO' : 'ULTIMA_SEMANA',
-          badge_text: esMetaAlcanzada ? 'Meta 100% Alcanzada' : `Pronóstico: ${fechaPron} (~${semRest} sem)`
+          dias_desde_culminacion: diasDesdeCulminacion,
+          badge_text: esMetaAlcanzada ? '¡Meta 100% Alcanzada!' : `Pronóstico: ${fechaPron} (~${semRest} sem)`
         });
       }
     });
 
-    pasantesPorFinalizar.sort((a, b) => b.porcentaje - a.porcentaje);
+    pasantesPorFinalizar.sort((a, b) => {
+      if (a.estado_culminacion === 'COMPLETADO' && b.estado_culminacion !== 'COMPLETADO') return -1;
+      if (b.estado_culminacion === 'COMPLETADO' && a.estado_culminacion !== 'COMPLETADO') return 1;
+      return b.porcentaje - a.porcentaje;
+    });
+
+    pasantesCulminados.sort((a, b) => (a.dias_desde_culminacion - b.dias_desde_culminacion) || (b.horas_acumuladas - a.horas_acumuladas));
 
     let statsData = {};
 
@@ -637,8 +688,8 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
 
       // Culminación específica del usuario actual
       const uTargetId = id_usuario || (usuarioInfo ? usuarioInfo.id_usuario : 0);
-      const uAsist = mapAsist[uTargetId] || { total_dias: 0, total_segundos: 0 };
-      const uHe = mapHE[uTargetId] || { total_dias_he: 0, total_segundos_he: 0 };
+      const uAsist = mapAsist[uTargetId] || { total_dias: 0, total_segundos: 0, ultima_fecha_asistencia: null };
+      const uHe = mapHE[uTargetId] || { total_dias_he: 0, total_segundos_he: 0, ultima_fecha_he: null };
       const uTotalSeg = (Number(uAsist.total_segundos) || 0) + (Number(uHe.total_segundos_he) || 0);
       const uHorasAcum = Number((uTotalSeg / 3600).toFixed(1));
       const uEsMeta = uTotalSeg >= (HORAS_META_DEFAULT * 3600);
@@ -679,6 +730,8 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
         comprobantes_subidos: compSubidos.length,
         lugares_desglose: formattedLugares,
         pasantes_por_finalizar: pasantesPorFinalizar,
+        pasantes_culminados: pasantesCulminados,
+        total_culminados: pasantesCulminados.length,
         user_culminacion: {
           horas_acumuladas: uHorasAcum,
           horas_requeridas: HORAS_META_DEFAULT,
@@ -728,6 +781,8 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
         top_usuarios: formattedTop,
         total_pasantes_ranking: usersRanking.length,
         pasantes_por_finalizar: pasantesPorFinalizar,
+        pasantes_culminados: pasantesCulminados,
+        total_culminados: pasantesCulminados.length,
         carreras: carrerasRankingList || []
       };
     }

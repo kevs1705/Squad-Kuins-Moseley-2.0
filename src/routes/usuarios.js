@@ -44,7 +44,8 @@ router.get('/usuarios', requireAuth, requireAdmin, async (req, res) => {
       `SELECT u.id_usuario, u.nombre, u.apellido_paterno, u.apellido_materno, u.CI, 
               u.universidad, u.id_carrera, c.nombre AS carrera_nombre, c.siglas AS carrera_siglas,
               u.celular, u.estado, u.rol, u.contrasena,
-              DATE_FORMAT(u.fecha_inicio_pasantia, '%d/%m/%Y') AS fecha_inicio_pasantia
+              DATE_FORMAT(u.fecha_inicio_pasantia, '%d/%m/%Y') AS fecha_inicio_pasantia,
+              DATE_FORMAT(u.fecha_inicio_pasantia, '%Y-%m-%d') AS fecha_inicio_pasantia_raw
        FROM usuarios u
        LEFT JOIN carreras c ON u.id_carrera = c.id_carrera
        ORDER BY u.id_usuario DESC`
@@ -71,11 +72,42 @@ router.get('/usuarios', requireAuth, requireAdmin, async (req, res) => {
 });
 
 // =========================================================================
+// 1.1 VALIDACIÓN DE CI EN TIEMPO REAL
+// =========================================================================
+router.get('/api/usuarios/check-ci', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const ci = String(req.query.ci || '').trim();
+    const excludeId = Number(req.query.excludeId) || 0;
+    if (!ci) return res.json({ exists: false });
+
+    let query = 'SELECT id_usuario, nombre, apellido_paterno FROM usuarios WHERE CI = ?';
+    const params = [ci];
+    if (excludeId > 0) {
+      query += ' AND id_usuario <> ?';
+      params.push(excludeId);
+    }
+    query += ' LIMIT 1';
+
+    const [rows] = await db.query(query, params);
+    if (rows.length > 0) {
+      return res.json({ 
+        exists: true, 
+        msg: `Este CI ya está registrado (${rows[0].nombre} ${rows[0].apellido_paterno || ''})` 
+      });
+    }
+    return res.json({ exists: false });
+  } catch (err) {
+    console.error('Error al verificar CI:', err);
+    res.status(500).json({ exists: false, error: err.message });
+  }
+});
+
+// =========================================================================
 // 2. CREAR USUARIO (CREATE)
 // =========================================================================
 router.post('/api/usuarios', requireAuth, requireAdmin, async (req, res) => {
   try {
-    let { nombre, apellido_paterno, apellido_materno, CI, universidad, id_carrera, celular, estado, rol } = req.body;
+    let { nombre, apellido_paterno, apellido_materno, CI, universidad, id_carrera, celular, estado, rol, fecha_inicio_pasantia } = req.body;
 
     nombre = String(nombre || '').trim().slice(0, 100);
     apellido_paterno = String(apellido_paterno || '').trim().slice(0, 100);
@@ -86,6 +118,23 @@ router.post('/api/usuarios', requireAuth, requireAdmin, async (req, res) => {
     celular = String(celular || '').trim().slice(0, 20);
     estado = Number(estado) ? 1 : 0;
     rol = Number(rol) ? 1 : 0;
+    
+    // Validar fecha de inicio de pasantía
+    let fechaInicioValida = null;
+    if (fecha_inicio_pasantia && typeof fecha_inicio_pasantia === 'string') {
+      const fStr = fecha_inicio_pasantia.trim();
+      if (/^\d{4}-\d{2}-\d{2}$/.test(fStr)) {
+        const [y, m, d] = fStr.split('-').map(Number);
+        const dateObj = new Date(y, m - 1, d);
+        if (dateObj.getFullYear() === y && dateObj.getMonth() === m - 1 && dateObj.getDate() === d && y >= 2000 && y <= 2100) {
+          fechaInicioValida = fStr;
+        } else {
+          return res.status(400).json({ ok: false, msg: 'No puede elegir una fecha que no existe o es inválida' });
+        }
+      } else {
+        return res.status(400).json({ ok: false, msg: 'Formato de fecha inválido (AAAA-MM-DD)' });
+      }
+    }
     
     // Contraseña automática para nuevos usuarios
     const contrasena = '12345678';
@@ -104,13 +153,13 @@ router.post('/api/usuarios', requireAuth, requireAdmin, async (req, res) => {
     }
 
     const [dupes] = await db.query('SELECT id_usuario FROM usuarios WHERE CI=? LIMIT 1', [CI]);
-    if (dupes.length) return res.status(409).json({ ok: false, msg: 'CI ya registrado' });
+    if (dupes.length) return res.status(409).json({ ok: false, msg: 'Este CI ya está registrado' });
 
     // A. Guardar en MySQL
     const [result] = await db.query(
-      `INSERT INTO usuarios (nombre, apellido_paterno, apellido_materno, CI, universidad, id_carrera, celular, estado, contrasena, rol)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [nombre, apellido_paterno, apellido_materno, CI, universidad, id_carrera, celular || null, estado, contrasena, rol]
+      `INSERT INTO usuarios (nombre, apellido_paterno, apellido_materno, CI, universidad, id_carrera, celular, estado, contrasena, rol, fecha_inicio_pasantia)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [nombre, apellido_paterno, apellido_materno, CI, universidad, id_carrera, celular || null, estado, contrasena, rol, fechaInicioValida]
     );
 
     const idUsuario = result.insertId;
@@ -158,7 +207,9 @@ router.post('/api/usuarios', requireAuth, requireAdmin, async (req, res) => {
     const [rows] = await db.query(
       `SELECT u.id_usuario, u.nombre, u.apellido_paterno, u.apellido_materno, u.CI, 
               u.universidad, u.id_carrera, c.nombre AS carrera_nombre, c.siglas AS carrera_siglas,
-              u.celular, u.estado, u.rol, u.contrasena
+              u.celular, u.estado, u.rol, u.contrasena,
+              DATE_FORMAT(u.fecha_inicio_pasantia, '%d/%m/%Y') AS fecha_inicio_pasantia,
+              DATE_FORMAT(u.fecha_inicio_pasantia, '%Y-%m-%d') AS fecha_inicio_pasantia_raw
        FROM usuarios u
        LEFT JOIN carreras c ON u.id_carrera = c.id_carrera
        WHERE u.id_usuario=? LIMIT 1`, [idUsuario]
@@ -181,7 +232,7 @@ router.post('/api/usuarios/:id', requireAuth, requireAdmin, async (req, res) => 
     const [currentUser] = await db.query('SELECT * FROM usuarios WHERE id_usuario=? LIMIT 1', [id]);
     if (!currentUser.length) return res.status(404).json({ ok: false, msg: 'Usuario no encontrado' });
 
-    let { nombre, apellido_paterno, apellido_materno, CI, universidad, id_carrera, celular, estado, rol, contrasena } = req.body;
+    let { nombre, apellido_paterno, apellido_materno, CI, universidad, id_carrera, celular, estado, rol, contrasena, fecha_inicio_pasantia } = req.body;
 
     nombre = String(nombre || '').trim().slice(0, 100);
     apellido_paterno = String(apellido_paterno || '').trim().slice(0, 100);
@@ -193,6 +244,20 @@ router.post('/api/usuarios/:id', requireAuth, requireAdmin, async (req, res) => 
     estado = Number(estado) ? 1 : 0;
     rol = Number(rol) ? 1 : 0;
     contrasena = (contrasena == null) ? '' : String(contrasena).slice(0, 255);
+
+    let fechaInicioValida = null;
+    if (fecha_inicio_pasantia && typeof fecha_inicio_pasantia === 'string') {
+      const fStr = fecha_inicio_pasantia.trim();
+      if (/^\d{4}-\d{2}-\d{2}$/.test(fStr)) {
+        const [y, m, d] = fStr.split('-').map(Number);
+        const dateObj = new Date(y, m - 1, d);
+        if (dateObj.getFullYear() === y && dateObj.getMonth() === m - 1 && dateObj.getDate() === d && y >= 2000 && y <= 2100) {
+          fechaInicioValida = fStr;
+        } else {
+          return res.status(400).json({ ok: false, msg: 'No puede elegir una fecha que no existe o es inválida' });
+        }
+      }
+    }
 
     if (rol === 1) {
       if (!nombre || !CI) {
@@ -208,7 +273,7 @@ router.post('/api/usuarios/:id', requireAuth, requireAdmin, async (req, res) => 
     }
 
     const [dupes] = await db.query('SELECT id_usuario FROM usuarios WHERE CI=? AND id_usuario<>? LIMIT 1', [CI, id]);
-    if (dupes.length) return res.status(409).json({ ok: false, msg: 'CI ya registrado' });
+    if (dupes.length) return res.status(409).json({ ok: false, msg: 'Este CI ya está registrado' });
 
     const contrasenaFinal = contrasena || currentUser[0].contrasena;
 
@@ -216,16 +281,16 @@ router.post('/api/usuarios/:id', requireAuth, requireAdmin, async (req, res) => 
     if (contrasena) {
       await db.query(
         `UPDATE usuarios
-           SET nombre=?, apellido_paterno=?, apellido_materno=?, CI=?, universidad=?, id_carrera=?, celular=NULLIF(?,''), estado=?, rol=?, contrasena=?
+           SET nombre=?, apellido_paterno=?, apellido_materno=?, CI=?, universidad=?, id_carrera=?, celular=NULLIF(?,''), estado=?, rol=?, contrasena=?, fecha_inicio_pasantia=?
          WHERE id_usuario=? LIMIT 1`,
-        [nombre, apellido_paterno, apellido_materno, CI, universidad, id_carrera, celular, estado, rol, contrasena, id]
+        [nombre, apellido_paterno, apellido_materno, CI, universidad, id_carrera, celular, estado, rol, contrasena, fechaInicioValida, id]
       );
     } else {
       await db.query(
         `UPDATE usuarios
-           SET nombre=?, apellido_paterno=?, apellido_materno=?, CI=?, universidad=?, id_carrera=?, celular=NULLIF(?,''), estado=?, rol=?
+           SET nombre=?, apellido_paterno=?, apellido_materno=?, CI=?, universidad=?, id_carrera=?, celular=NULLIF(?,''), estado=?, rol=?, fecha_inicio_pasantia=?
          WHERE id_usuario=? LIMIT 1`,
-        [nombre, apellido_paterno, apellido_materno, CI, universidad, id_carrera, celular, estado, rol, id]
+        [nombre, apellido_paterno, apellido_materno, CI, universidad, id_carrera, celular, estado, rol, fechaInicioValida, id]
       );
     }
 
@@ -275,7 +340,9 @@ router.post('/api/usuarios/:id', requireAuth, requireAdmin, async (req, res) => 
     const [rows] = await db.query(
       `SELECT u.id_usuario, u.nombre, u.apellido_paterno, u.apellido_materno, u.CI, 
               u.universidad, u.id_carrera, c.nombre AS carrera_nombre, c.siglas AS carrera_siglas,
-              u.celular, u.estado, u.rol, u.contrasena
+              u.celular, u.estado, u.rol, u.contrasena,
+              DATE_FORMAT(u.fecha_inicio_pasantia, '%d/%m/%Y') AS fecha_inicio_pasantia,
+              DATE_FORMAT(u.fecha_inicio_pasantia, '%Y-%m-%d') AS fecha_inicio_pasantia_raw
        FROM usuarios u
        LEFT JOIN carreras c ON u.id_carrera = c.id_carrera
        WHERE u.id_usuario=? LIMIT 1`,
