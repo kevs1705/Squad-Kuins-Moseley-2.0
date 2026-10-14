@@ -2036,25 +2036,34 @@
             <div class="ranking-toolbar-container">
               <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 10px; flex-wrap: wrap;">
                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                  <span style="font-size: 12.5px; font-weight: 600; color: var(--color-text-muted);">
-                    Filtrar Carrera:
-                  </span>
+                  <!-- Selector de Cohorte: En Curso vs Culminados -->
+                  <div class="ranking-cohort-toggle">
+                    <button type="button" class="btn-ranking-cohort ${currentRankingCohort === 'en_curso' ? 'active' : ''}" id="btnRankingCohortEnCurso" onclick="cambiarCohortRanking('en_curso')">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                      En Curso (< 280 hrs)
+                    </button>
+                    <button type="button" class="btn-ranking-cohort ${currentRankingCohort === 'culminados' ? 'active' : ''}" id="btnRankingCohortCulminados" onclick="cambiarCohortRanking('culminados')">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                      Culminados (≥ 280 hrs)
+                    </button>
+                  </div>
+
                   <select id="rankingCarreraFilter" class="filter-select-ranking" onchange="cambiarCarreraRanking(this.value)">
                     ${carrerasOptions}
                   </select>
                 </div>
                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                   <span style="font-size: 12px; font-weight: 600; color: var(--color-text-muted);">
-                    Ordenar pasantes por horas acumuladas:
+                    Ordenar:
                   </span>
                   <div class="ranking-sort-toggle">
                     <button type="button" class="btn-ranking-sort ${currentRankingOrder === 'desc' ? 'active' : ''}" id="btnRankingSortDesc" onclick="cambiarOrdenRanking('desc')">
                       <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-                      Más Horas (Descendente)
+                      Más Horas
                     </button>
                     <button type="button" class="btn-ranking-sort ${currentRankingOrder === 'asc' ? 'active' : ''}" id="btnRankingSortAsc" onclick="cambiarOrdenRanking('asc')">
                       <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
-                      Menos Horas (Ascendente)
+                      Menos Horas
                     </button>
                   </div>
                 </div>
@@ -2063,7 +2072,7 @@
               <!-- Card del Gráfico de Barras Horizontales -->
               <div class="ranking-hbar-card">
                 <div class="ranking-hbar-header">
-                  <div class="ranking-hbar-icon">
+                  <div class="ranking-hbar-icon" id="rankingHbarIconWrap">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                       <line x1="18" y1="20" x2="18" y2="10" />
                       <line x1="12" y1="20" x2="12" y2="4" />
@@ -2072,9 +2081,15 @@
                   </div>
                   <div>
                     <h4 class="ranking-hbar-title" id="rankingHbarTitle">
-                      ${currentRankingOrder === 'desc' ? 'Top 10 pasantes por horas acumuladas' : 'Top 10 pasantes con menos horas acumuladas'}
+                      ${currentRankingCohort === 'culminados' 
+                        ? 'Ranking de pasantes que culminaron las 280 hrs' 
+                        : (currentRankingOrder === 'desc' ? 'Top 10 pasantes en curso por horas acumuladas' : 'Top 10 pasantes en curso con menos horas acumuladas')}
                     </h4>
-                    <p class="ranking-hbar-subtitle">Total de horas registradas en todas las jornadas</p>
+                    <p class="ranking-hbar-subtitle" id="rankingHbarSubtitle">
+                      ${currentRankingCohort === 'culminados' 
+                        ? 'Pasantes que completaron satisfactoriamente la meta oficial de 280 horas' 
+                        : 'Pasantes activos que aún no han acumulado sus 280 horas'}
+                    </p>
                   </div>
                 </div>
 
@@ -2091,6 +2106,7 @@
 
       let currentRankingOrder = 'desc'; // 'desc' | 'asc'
       let currentRankingCarrera = ''; // '' = Todas las carreras
+      let currentRankingCohort = 'en_curso'; // 'en_curso' (< 280 hrs) | 'culminados' (>= 280 hrs) | 'todos'
       let currentRankingData = [];
       let currentRankingCarrerasList = [];
 
@@ -2099,13 +2115,44 @@
         renderRankingList();
       }
 
+      function cambiarCohortRanking(cohort) {
+        currentRankingCohort = cohort;
+        document.getElementById('btnRankingCohortEnCurso')?.classList.toggle('active', cohort === 'en_curso');
+        document.getElementById('btnRankingCohortCulminados')?.classList.toggle('active', cohort === 'culminados');
+        
+        const titleEl = document.getElementById('rankingHbarTitle');
+        const subEl = document.getElementById('rankingHbarSubtitle');
+        const iconWrap = document.getElementById('rankingHbarIconWrap');
+
+        if (cohort === 'culminados') {
+          if (titleEl) titleEl.textContent = 'Ranking de pasantes que culminaron las 280 hrs';
+          if (subEl) subEl.textContent = 'Pasantes que completaron satisfactoriamente la meta oficial de 280 horas';
+          if (iconWrap) {
+            iconWrap.style.background = '#dcfce7';
+            iconWrap.style.color = '#059669';
+          }
+        } else {
+          if (titleEl) {
+            titleEl.textContent = currentRankingOrder === 'desc' 
+              ? 'Top 10 pasantes en curso por horas acumuladas' 
+              : 'Top 10 pasantes en curso con menos horas acumuladas';
+          }
+          if (subEl) subEl.textContent = 'Pasantes activos que aún no han acumulado sus 280 horas';
+          if (iconWrap) {
+            iconWrap.style.background = '#EFF6FF';
+            iconWrap.style.color = 'var(--color-primary)';
+          }
+        }
+        renderRankingList();
+      }
+
       function cambiarOrdenRanking(orden) {
         currentRankingOrder = orden;
         document.getElementById('btnRankingSortDesc')?.classList.toggle('active', orden === 'desc');
         document.getElementById('btnRankingSortAsc')?.classList.toggle('active', orden === 'asc');
         const titleEl = document.getElementById('rankingHbarTitle');
-        if (titleEl) {
-          titleEl.textContent = orden === 'desc' ? 'Top 10 pasantes por horas acumuladas' : 'Top 10 pasantes con menos horas acumuladas';
+        if (titleEl && currentRankingCohort !== 'culminados') {
+          titleEl.textContent = orden === 'desc' ? 'Top 10 pasantes en curso por horas acumuladas' : 'Top 10 pasantes en curso con menos horas acumuladas';
         }
         renderRankingList();
       }
@@ -2119,51 +2166,73 @@
           return;
         }
 
-        // 1. Filtrar por carrera si aplica
+        // 1. Filtrar por cohorte: En Curso (< 280 hrs) vs Culminados (>= 280 hrs)
         let list = [...currentRankingData];
+        if (currentRankingCohort === 'en_curso') {
+          list = list.filter(u => !u.es_culminado && (parseFloat(u.horas_decimal) || 0) < 280);
+        } else if (currentRankingCohort === 'culminados') {
+          list = list.filter(u => u.es_culminado || (parseFloat(u.horas_decimal) || 0) >= 280);
+        }
+
+        // 2. Filtrar por carrera si aplica
         if (currentRankingCarrera) {
           list = list.filter(u => String(u.id_carrera) === String(currentRankingCarrera) || (u.carrera && u.carrera.toLowerCase().includes(currentRankingCarrera.toLowerCase())));
         }
 
-        // 2. Ordenar por horas acumuladas (ascendente o descendente)
+        // 3. Ordenar por horas acumuladas (ascendente o descendente)
         if (currentRankingOrder === 'asc') {
           list.sort((a, b) => (Number(a.total_segundos) || 0) - (Number(b.total_segundos) || 0));
         } else {
           list.sort((a, b) => (Number(b.total_segundos) || 0) - (Number(a.total_segundos) || 0));
         }
 
-        // 3. Limitar a máximo 10 pasantes
+        // 4. Limitar a máximo 10 pasantes
         const top10 = list.slice(0, 10);
 
         if (top10.length === 0) {
-          listWrap.innerHTML = `<div style="color: var(--color-text-muted); font-size: 13px; text-align: center; padding: 30px;">No se encontraron pasantes para la carrera seleccionada.</div>`;
+          const emptyMsg = currentRankingCohort === 'culminados' 
+            ? 'No hay pasantes que hayan culminado las 280 horas en la carrera seleccionada.'
+            : 'No se encontraron pasantes en curso para la carrera seleccionada.';
+          listWrap.innerHTML = `<div style="color: var(--color-text-muted); font-size: 13px; text-align: center; padding: 30px;">${escapeHTML(emptyMsg)}</div>`;
           return;
         }
 
-        // 4. Calcular escala del eje X
+        // 5. Calcular escala del eje X
         const maxHoursVal = Math.max(...top10.map(u => parseFloat(u.horas_decimal) || 0), 10);
         const step = maxHoursVal > 150 ? 50 : (maxHoursVal > 80 ? 20 : 10);
         const axisMax = Math.max(step * 2, Math.ceil((maxHoursVal + (step * 0.3)) / step) * step);
 
-        const barColors = [
+        const barColorsEnCurso = [
           '#3B82F6', '#14B8A6', '#8B5CF6', '#F97316', '#38BDF8',
           '#10B981', '#A855F7', '#F43F5E', '#60A5FA', '#F59E0B'
         ];
+
+        const barColorsCulminados = [
+          '#059669', '#10B981', '#0D9488', '#14B8A6', '#047857',
+          '#15803D', '#16A34A', '#22C55E', '#059669', '#10B981'
+        ];
+
+        const activeColors = currentRankingCohort === 'culminados' ? barColorsCulminados : barColorsEnCurso;
 
         let rowsHTML = '';
         top10.forEach((u, idx) => {
           const hrs = parseFloat(u.horas_decimal) || 0;
           const widthPct = Math.min(100, Math.max(1.5, (hrs / axisMax) * 100));
-          const color = barColors[idx % barColors.length];
+          const color = activeColors[idx % activeColors.length];
           const nameDisplay = escapeHTML(u.primer_nombre || (u.nombre ? u.nombre.split(' ')[0] : 'Pasante'));
+          const isCulminado = u.es_culminado || hrs >= 280;
+
+          const badgeExtra = isCulminado 
+            ? `<span style="font-size: 10px; background: #DCFCE7; color: #166534; border: 1px solid #BBF7D0; padding: 1px 6px; border-radius: 4px; margin-left: 6px; font-weight: 700;">100% Meta</span>`
+            : '';
 
           rowsHTML += `
             <div class="hbar-row" onclick="seleccionarUsuarioDesdeRanking(${u.id_usuario}, '${escapeHTML(u.nombre)}', '${escapeHTML(u.CI)}')" title="Ver jornadas y actividades de ${escapeHTML(u.nombre)} (${escapeHTML(u.carrera || 'Pasante')})">
-              <div class="hbar-avatar-badge">${escapeHTML(getInitials(u.nombre))}</div>
+              <div class="hbar-avatar-badge" style="${isCulminado ? 'background: #DCFCE7; color: #047857;' : ''}">${escapeHTML(getInitials(u.nombre))}</div>
               <div class="hbar-name" title="${escapeHTML(u.nombre)}">${nameDisplay}</div>
               <div class="hbar-track">
                 <div class="hbar-fill" style="width: ${widthPct}%; background-color: ${color};"></div>
-                <span class="hbar-val-text" style="left: calc(${widthPct}% + 8px);">${hrs.toFixed(1)} hrs</span>
+                <span class="hbar-val-text" style="left: calc(${widthPct}% + 8px);">${hrs.toFixed(1)} hrs ${badgeExtra}</span>
               </div>
             </div>
           `;
@@ -2177,6 +2246,36 @@
           ticksHTML += `<span>${val}</span>`;
         }
 
+        // Footer dinámico de la tarjeta de ranking
+        let footerToolbar = '';
+        if (currentRankingCohort === 'en_curso') {
+          const countCulminados = (currentRankingData || []).filter(u => u.es_culminado || (parseFloat(u.horas_decimal) || 0) >= 280).length;
+          footerToolbar = `
+            <div style="margin-top: 14px; padding-top: 10px; border-top: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+              <span style="font-size: 11.5px; color: #64748B;">Mostrando pasantes que aún no han acumulado 280 hrs</span>
+              ${countCulminados > 0 ? `
+                <button type="button" onclick="cambiarCohortRanking('culminados')" style="background: #F0FDF4; border: 1px solid #BBF7D0; color: #166534; font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                  <span>Ver ranking de pasantes que terminaron las 280 hrs (${countCulminados})</span>
+                </button>
+              ` : ''}
+            </div>
+          `;
+        } else {
+          footerToolbar = `
+            <div style="margin-top: 14px; padding-top: 10px; border-top: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+              <button type="button" onclick="cambiarCohortRanking('en_curso')" style="background: #EFF6FF; border: 1px solid #BFDBFE; color: #0F5FA6; font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                <span>Volver al Top 10 de pasantes en curso</span>
+              </button>
+              <button type="button" onclick="abrirModalPasantesCulminados()" style="background: linear-gradient(135deg, #059669 0%, #047857 100%); border: none; color: #FFFFFF; font-size: 11.5px; font-weight: 700; padding: 5px 12px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                <span>Ver listado completo de pasantes culminados</span>
+              </button>
+            </div>
+          `;
+        }
+
         listWrap.innerHTML = `
           <div class="hbar-chart-container">
             ${rowsHTML}
@@ -2187,6 +2286,7 @@
             </div>
             <div class="hbar-axis-label">Horas acumuladas</div>
           </div>
+          ${footerToolbar}
         `;
       }
 
