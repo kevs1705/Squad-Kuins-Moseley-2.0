@@ -241,7 +241,7 @@ router.post('/api/usuarios/:id', requireAuth, requireAdmin, async (req, res) => 
     universidad = String(universidad || '').trim().slice(0, 120);
     id_carrera = Number(id_carrera) || null;
     celular = String(celular || '').trim().slice(0, 20);
-    estado = Number(estado) ? 1 : 0;
+    estado = (estado === undefined || estado === null) ? currentUser[0].estado : (Number(estado) ? 1 : 0);
     rol = Number(rol) ? 1 : 0;
     contrasena = (contrasena == null) ? '' : String(contrasena).slice(0, 255);
 
@@ -352,6 +352,75 @@ router.post('/api/usuarios/:id', requireAuth, requireAdmin, async (req, res) => 
   } catch (e) {
     console.error('Error actualizando usuario:', e);
     res.status(500).json({ ok: false, msg: 'Error actualizando usuario' });
+  }
+});
+
+// =========================================================================
+// 3.1 ALTERNAR ESTADO DE USUARIO (ACTIVAR / DESACTIVAR DESDE LA TABLA)
+// =========================================================================
+router.post('/api/usuarios/:id/toggle-estado', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ ok: false, msg: 'ID inválido' });
+
+    const [currentUser] = await db.query('SELECT * FROM usuarios WHERE id_usuario=? LIMIT 1', [id]);
+    if (!currentUser.length) return res.status(404).json({ ok: false, msg: 'Usuario no encontrado' });
+
+    const user = currentUser[0];
+    const nuevoEstado = user.estado ? 0 : 1;
+
+    // Actualizar en MySQL
+    await db.query('UPDATE usuarios SET estado=? WHERE id_usuario=? LIMIT 1', [nuevoEstado, id]);
+
+    // Sincronizar en el Biométrico K14
+    if (Zkteco) {
+      try {
+        const dispositivoZk = new Zkteco(BIOMETRICO_IP, BIOMETRICO_PORT, 5200, 5000);
+        await dispositivoZk.createSocket();
+
+        if (nuevoEstado === 1) {
+          const rolBiometrico = Number(user.rol) === 1 ? 14 : 0;
+          const deptoBiometrico = user.id_carrera ? Number(user.id_carrera) : 1;
+          const nombreCompleto = `${user.nombre || ''} ${user.apellido_paterno || ''}`.trim();
+          const bioName = nombreCompleto
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .trim()
+            .slice(0, 24) || `User_${id}`;
+
+          let bioPassword = String(user.contrasena || '123456').replace(/\D/g, '').slice(0, 8);
+          if (!bioPassword) bioPassword = '123456';
+
+          await dispositivoZk.setUser(
+            Number(id),
+            String(id),
+            bioName,
+            bioPassword,
+            rolBiometrico,
+            0,
+            deptoBiometrico
+          );
+          console.log(`🔄 Usuario [${bioName}] activado y sincronizado en el K14 con ID: ${id}`);
+        } else {
+          await dispositivoZk.deleteUser(Number(id));
+          console.log(`🚫 Usuario [${user.nombre}] desactivado. Removido del K14.`);
+        }
+
+        await dispositivoZk.disconnect();
+      } catch (bioError) {
+        console.error('⚠️ BD actualizada, pero falló sincronización con biométrico:', bioError.message);
+      }
+    }
+
+    res.json({ 
+      ok: true, 
+      id_usuario: id, 
+      estado: nuevoEstado, 
+      msg: `Usuario ${nuevoEstado ? 'activado' : 'desactivado'} correctamente` 
+    });
+  } catch (e) {
+    console.error('Error al alternar estado de usuario:', e);
+    res.status(500).json({ ok: false, msg: 'Error al cambiar el estado del usuario' });
   }
 });
 

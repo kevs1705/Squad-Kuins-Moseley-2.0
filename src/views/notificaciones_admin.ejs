@@ -803,6 +803,298 @@
       color: #1E293B !important;
       border-color: #94A3B8 !important;
     }
+
+    /* Botón Asignar Horas Extras en Toolbar */
+    .btn-add-he {
+      background: linear-gradient(135deg, #0F5FA6 0%, #0D528F 100%);
+      color: #FFFFFF !important;
+      border: none;
+      border-radius: 10px;
+      padding: 0 16px;
+      height: 42px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(15, 95, 166, 0.22);
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    .btn-add-he:hover {
+      background: linear-gradient(135deg, #0D528F 0%, #093c68 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(15, 95, 166, 0.35);
+    }
+    .btn-add-he:active {
+      transform: translateY(0);
+    }
+
+    /* Modal Overlay y Tarjeta de Horas Extras */
+    .modal-he-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(8, 20, 38, 0.65);
+      backdrop-filter: blur(4px);
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      box-sizing: border-box;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+    .modal-he-overlay.show {
+      display: flex;
+      opacity: 1;
+    }
+    .modal-he-card {
+      background: #FFFFFF;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 580px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      border: 1px solid #E2E8F0;
+      overflow: hidden;
+      transform: scale(0.95);
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .modal-he-overlay.show .modal-he-card {
+      transform: scale(1);
+    }
+    .modal-he-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid #E2E8F0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #F8FAFC;
+    }
+    .modal-he-body {
+      padding: 1.5rem;
+      max-height: calc(85vh - 130px);
+      overflow-y: auto;
+    }
+    .modal-he-footer {
+      padding: 1rem 1.5rem;
+      border-top: 1px solid #E2E8F0;
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      background: #F8FAFC;
+    }
+    .form-label-he {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 6px;
+    }
+    .form-control-he {
+      width: 100%;
+      box-sizing: border-box;
+      background: #FFFFFF;
+      border: 1.5px solid #CBD5E1;
+      border-radius: 10px;
+      padding: 9px 12px;
+      font-size: 0.88rem;
+      color: #1E293B;
+      font-family: inherit;
+      transition: all 0.2s ease;
+    }
+    .form-control-he:focus {
+      outline: none;
+      border-color: #0F5FA6;
+      box-shadow: 0 0 0 3px rgba(15, 95, 166, 0.15);
+    }
+    .btn-cancel-he {
+      background: #FFFFFF;
+      border: 1.5px solid #CBD5E1;
+      color: #475569;
+      border-radius: 10px;
+      padding: 8px 18px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-cancel-he:hover {
+      background: #F1F5F9;
+      color: #1E293B;
+      border-color: #94A3B8;
+    }
+    .btn-submit-he {
+      background: linear-gradient(135deg, #0F5FA6 0%, #0D528F 100%);
+      border: none;
+      color: #FFFFFF;
+      border-radius: 10px;
+      padding: 8px 20px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 10px rgba(15, 95, 166, 0.25);
+      transition: all 0.2s ease;
+    }
+    .btn-submit-he:hover {
+      background: linear-gradient(135deg, #0D528F 0%, #093c68 100%);
+      box-shadow: 0 6px 14px rgba(15, 95, 166, 0.35);
+      transform: translateY(-1px);
+    }
+    .btn-submit-he:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    /* Buscador y Selector Elegante de Pasante (Filtro por Nombre y Carnet) */
+    .pasante-select-wrapper {
+      position: relative;
+    }
+    .pasante-search-box {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .pasante-search-box i.search-ico {
+      position: absolute;
+      left: 14px;
+      color: #0F5FA6;
+      font-size: 0.95rem;
+      pointer-events: none;
+    }
+    .pasante-search-input {
+      width: 100%;
+      height: 44px;
+      padding: 0 40px 0 40px !important;
+      background: #FFFFFF !important;
+      border: 1.5px solid #CBD5E1 !important;
+      border-radius: 12px !important;
+      font-size: 0.9rem !important;
+      color: #1E293B !important;
+      font-weight: 500 !important;
+      transition: all 0.2s ease !important;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important;
+    }
+    .pasante-search-input:focus {
+      border-color: #0F5FA6 !important;
+      box-shadow: 0 0 0 3px rgba(15, 95, 166, 0.15) !important;
+      outline: none !important;
+    }
+    .pasante-clear-btn {
+      position: absolute;
+      right: 12px;
+      background: none;
+      border: none;
+      color: #94A3B8;
+      cursor: pointer;
+      padding: 4px;
+      font-size: 0.95rem;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+    }
+    .pasante-clear-btn:hover {
+      color: #475569;
+    }
+    .pasante-dropdown-menu {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      width: 100%;
+      max-height: 250px;
+      overflow-y: auto;
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 12px;
+      box-shadow: 0 12px 28px -4px rgba(15, 23, 42, 0.12), 0 4px 8px -2px rgba(15, 23, 42, 0.04);
+      z-index: 10005;
+      display: none;
+      padding: 6px;
+      box-sizing: border-box;
+    }
+    .pasante-dropdown-menu.show {
+      display: block;
+    }
+    .pasante-dropdown-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      gap: 12px;
+    }
+    .pasante-dropdown-item:hover, .pasante-dropdown-item.active {
+      background: #F1F5F9;
+    }
+    .pasante-item-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .pasante-avatar-circle {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: #EFF6FF;
+      color: #0F5FA6;
+      font-weight: 700;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      border: 1px solid #DBEAFE;
+    }
+    .pasante-item-name {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #1E293B;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .pasante-badge-ci {
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      color: #475569;
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 6px;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .pasante-dropdown-empty {
+      padding: 18px 14px;
+      text-align: center;
+      color: #64748B;
+      font-size: 0.85rem;
+    }
+    .pasante-selected-badge {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      background: #EFF6FF;
+      border: 1.5px solid #BFDBFE;
+      border-radius: 12px;
+      padding: 10px 14px;
+      margin-top: 8px;
+    }
   </style>
 
   <div class="teletrabajo-container">
@@ -1202,10 +1494,10 @@
               <h5 class="fw-bold mb-1 text-dark">Rendición y Evaluación de Horas Extras</h5>
               <p class="text-muted fs-7 mb-0">Audita el trabajo extraordinario realizado fuera de sede/obra con informe de bitácora y evidencia fotográfica.</p>
             </div>
-            <div class="d-flex gap-2 flex-wrap">
+            <div class="d-flex gap-2 flex-wrap align-items-center">
               <div class="search-input-wrap">
                 <i class="bi bi-search"></i>
-                <input type="text" id="filtroTextoHorasExtra" class="filter-input-search" placeholder="Buscar por colaborador, informe o fecha...">
+                <input type="text" id="filtroTextoHorasExtra" class="filter-input-search" placeholder="Buscar por colaborador, carnet (C.I.), informe o fecha...">
               </div>
               <select id="filtroEstadoHorasExtra" class="filter-select-custom">
                 <option value="">Todos los estados</option>
@@ -1213,6 +1505,9 @@
                 <option value="2">✅ Horas Sumadas (Aprobados)</option>
                 <option value="3">❌ Observados / Rechazados</option>
               </select>
+              <button type="button" class="btn-add-he" id="btnAbrirModalAsignarHE" title="Asignar horas extras a un pasante con menos de 280 horas">
+                <i class="bi bi-plus-circle-fill"></i> Asignar Horas Extras
+              </button>
             </div>
           </div>
 
@@ -1247,6 +1542,7 @@
                     <tr data-id="<%= n.id_notificacion %>" 
                         data-estado="<%= estadoNum %>"
                         data-nombre="<%= (n.nombre_usuario || '').toLowerCase() %>"
+                        data-ci="<%= (n.ci_usuario || '').toLowerCase() %>"
                         data-fecha="<%= n.fecha_solicitada %>"
                         data-motivo="<%= (tareaTexto).toLowerCase() %>">
                       <td>
@@ -1493,11 +1789,12 @@
 
         [...tbodyHorasExtra.children].forEach(tr => {
           const nom = tr.dataset.nombre || '';
+          const ci = tr.dataset.ci || '';
           const fec = tr.dataset.fecha || '';
           const mot = tr.dataset.motivo || '';
           const estado = tr.dataset.estado || '';
 
-          const matchTxt = !q || nom.includes(q) || fec.includes(q) || mot.includes(q);
+          const matchTxt = !q || nom.includes(q) || ci.includes(q) || fec.includes(q) || mot.includes(q);
           const matchEst = !est || estado === est;
 
           tr.style.display = (matchTxt && matchEst) ? '' : 'none';
@@ -2004,7 +2301,403 @@
         });
       });
 
+      // --- MODAL: ASIGNAR HORAS EXTRAS A PASANTE (< 280h) ---
+      const modalAsignarHE = document.getElementById('modalAsignarHE');
+      const btnAbrirModalHE = document.getElementById('btnAbrirModalAsignarHE');
+      const btnCerrarModalHE = document.getElementById('btnCerrarModalHE');
+      const btnCancelarModalHE = document.getElementById('btnCancelarModalHE');
+      const formAsignarHE = document.getElementById('formAsignarHorasExtras');
+      const inputBuscarPasante = document.getElementById('he_buscar_pasante');
+      const inputIdUsuarioHE = document.getElementById('he_id_usuario');
+      const btnLimpiarPasante = document.getElementById('btnLimpiarPasante');
+      const dropdownListPasante = document.getElementById('pasanteDropdownList');
+      const pasanteSelectedCard = document.getElementById('pasanteSelectedCard');
+      const pasanteSelectedAvatar = document.getElementById('pasanteSelectedAvatar');
+      const pasanteSelectedName = document.getElementById('pasanteSelectedName');
+      const pasanteSelectedCI = document.getElementById('pasanteSelectedCI');
+      const btnCambiarPasante = document.getElementById('btnCambiarPasante');
+      const pasanteNoResults = document.getElementById('pasanteNoResults');
+
+      const inputFechaHE = document.getElementById('he_fecha_solicitada');
+      const inputHoraIniHE = document.getElementById('he_hora_inicio');
+      const inputHoraFinHE = document.getElementById('he_hora_fin');
+      const badgeDuracionHE = document.getElementById('heDuracionBadge');
+      const txtDuracionHE = document.getElementById('heDuracionTexto');
+      const btnGuardarHE = document.getElementById('btnGuardarHorasExtras');
+
+      function abrirModalHE() {
+        if (!modalAsignarHE) return;
+        if (inputFechaHE && !inputFechaHE.value) {
+          const hoy = new Date();
+          const y = hoy.getFullYear();
+          const m = String(hoy.getMonth() + 1).padStart(2, '0');
+          const d = String(hoy.getDate()).padStart(2, '0');
+          inputFechaHE.value = `${y}-${m}-${d}`;
+        }
+        modalAsignarHE.style.display = 'flex';
+        setTimeout(() => {
+          modalAsignarHE.classList.add('show');
+          inputBuscarPasante?.focus();
+        }, 10);
+      }
+
+      function resetSeleccionPasante() {
+        if (inputIdUsuarioHE) inputIdUsuarioHE.value = '';
+        if (inputBuscarPasante) {
+          inputBuscarPasante.value = '';
+          inputBuscarPasante.style.display = 'block';
+        }
+        if (btnLimpiarPasante) btnLimpiarPasante.style.display = 'none';
+        if (pasanteSelectedCard) pasanteSelectedCard.style.display = 'none';
+        filtrarListaPasantes('');
+      }
+
+      function cerrarModalHE() {
+        if (!modalAsignarHE) return;
+        modalAsignarHE.classList.remove('show');
+        setTimeout(() => {
+          modalAsignarHE.style.display = 'none';
+          if (formAsignarHE) formAsignarHE.reset();
+          resetSeleccionPasante();
+          if (dropdownListPasante) dropdownListPasante.classList.remove('show');
+          if (badgeDuracionHE) badgeDuracionHE.style.display = 'none';
+          if (btnGuardarHE) {
+            btnGuardarHE.disabled = false;
+            btnGuardarHE.innerHTML = '<i class="bi bi-check-circle-fill"></i> Guardar y Asignar';
+          }
+        }, 250);
+      }
+
+      btnAbrirModalHE?.addEventListener('click', abrirModalHE);
+      btnCerrarModalHE?.addEventListener('click', cerrarModalHE);
+      btnCancelarModalHE?.addEventListener('click', cerrarModalHE);
+      modalAsignarHE?.addEventListener('click', (e) => {
+        if (e.target === modalAsignarHE) cerrarModalHE();
+      });
+
+      // Filtro interactivo por Nombre Completo y Carnet (C.I.)
+      function filtrarListaPasantes(termino) {
+        if (!dropdownListPasante) return;
+        const q = String(termino || '').toLowerCase().trim();
+        const items = dropdownListPasante.querySelectorAll('.pasante-dropdown-item');
+        let visibles = 0;
+
+        items.forEach(item => {
+          const nom = (item.dataset.nombre || '').toLowerCase();
+          const ci = (item.dataset.ci || '').toLowerCase();
+          const match = !q || nom.includes(q) || ci.includes(q);
+
+          item.style.display = match ? 'flex' : 'none';
+          if (match) visibles++;
+        });
+
+        if (pasanteNoResults) {
+          pasanteNoResults.style.display = (visibles === 0) ? 'block' : 'none';
+        }
+      }
+
+      inputBuscarPasante?.addEventListener('input', () => {
+        const val = inputBuscarPasante.value;
+        if (btnLimpiarPasante) {
+          btnLimpiarPasante.style.display = val.trim() ? 'flex' : 'none';
+        }
+        filtrarListaPasantes(val);
+        dropdownListPasante?.classList.add('show');
+      });
+
+      inputBuscarPasante?.addEventListener('focus', () => {
+        filtrarListaPasantes(inputBuscarPasante.value);
+        dropdownListPasante?.classList.add('show');
+      });
+
+      // Selección de un pasante desde la lista
+      dropdownListPasante?.addEventListener('click', (e) => {
+        const item = e.target.closest('.pasante-dropdown-item');
+        if (!item) return;
+
+        const id = item.dataset.id;
+        const nombre = item.dataset.nombre;
+        const ci = item.dataset.ci;
+        const inicial = (nombre || 'U').charAt(0).toUpperCase();
+
+        if (inputIdUsuarioHE) inputIdUsuarioHE.value = id;
+        if (pasanteSelectedAvatar) pasanteSelectedAvatar.textContent = inicial;
+        if (pasanteSelectedName) pasanteSelectedName.textContent = nombre;
+        if (pasanteSelectedCI) pasanteSelectedCI.textContent = `CI: ${ci}`;
+
+        if (inputBuscarPasante) inputBuscarPasante.style.display = 'none';
+        if (btnLimpiarPasante) btnLimpiarPasante.style.display = 'none';
+        if (pasanteSelectedCard) pasanteSelectedCard.style.display = 'flex';
+        dropdownListPasante.classList.remove('show');
+      });
+
+      btnCambiarPasante?.addEventListener('click', () => {
+        resetSeleccionPasante();
+        dropdownListPasante?.classList.add('show');
+        inputBuscarPasante?.focus();
+      });
+
+      btnLimpiarPasante?.addEventListener('click', () => {
+        resetSeleccionPasante();
+        dropdownListPasante?.classList.add('show');
+        inputBuscarPasante?.focus();
+      });
+
+      // Cerrar dropdown al hacer clic fuera del selector
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.pasante-select-wrapper')) {
+          dropdownListPasante?.classList.remove('show');
+        }
+      });
+
+      // Cálculo interactivo de duración
+      function actualizarDuracion() {
+        const ini = inputHoraIniHE?.value;
+        const fin = inputHoraFinHE?.value;
+        if (!ini || !fin) {
+          if (badgeDuracionHE) badgeDuracionHE.style.display = 'none';
+          return;
+        }
+        const [h1, m1] = ini.split(':').map(Number);
+        const [h2, m2] = fin.split(':').map(Number);
+        const min1 = h1 * 60 + m1;
+        const min2 = h2 * 60 + m2;
+        const diff = min2 - min1;
+
+        if (diff <= 0) {
+          if (badgeDuracionHE) {
+            badgeDuracionHE.style.display = 'flex';
+            badgeDuracionHE.style.background = '#FEF2F2';
+            badgeDuracionHE.style.borderColor = '#FECACA';
+            badgeDuracionHE.style.color = '#991B1B';
+            txtDuracionHE.textContent = 'La hora de fin debe ser posterior a la hora de inicio';
+          }
+          return;
+        }
+
+        const hrs = Math.floor(diff / 60);
+        const mins = diff % 60;
+        const hrsDobles = ((diff / 60) * 2).toFixed(1);
+        if (badgeDuracionHE) {
+          badgeDuracionHE.style.display = 'flex';
+          badgeDuracionHE.style.background = '#EFF6FF';
+          badgeDuracionHE.style.borderColor = '#BFDBFE';
+          badgeDuracionHE.style.color = '#1E40AF';
+          txtDuracionHE.textContent = `Duración estimada: ${hrs}h ${mins > 0 ? mins + 'm' : ''} (Acreditará ~${hrsDobles} hrs al aprobarse)`;
+        }
+      }
+
+      inputHoraIniHE?.addEventListener('input', actualizarDuracion);
+      inputHoraFinHE?.addEventListener('input', actualizarDuracion);
+
+      // Envío de formulario mediante AJAX
+      formAsignarHE?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id_usuario = inputIdUsuarioHE?.value;
+        const fecha_solicitada = inputFechaHE?.value;
+        const hora_inicio = inputHoraIniHE?.value;
+        const hora_fin = inputHoraFinHE?.value;
+        const motivo = document.getElementById('he_motivo')?.value;
+
+        if (!id_usuario) {
+          Swal.fire({ icon: 'warning', title: 'Selecciona un pasante', text: 'Debes seleccionar un pasante disponible de la lista.' });
+          return;
+        }
+        if (!fecha_solicitada) {
+          Swal.fire({ icon: 'warning', title: 'Fecha requerida', text: 'Por favor selecciona la fecha de la jornada.' });
+          return;
+        }
+        if (!hora_inicio || !hora_fin || hora_inicio >= hora_fin) {
+          Swal.fire({ icon: 'warning', title: 'Horas inválidas', text: 'Verifica las horas de inicio y fin (la hora de fin debe ser posterior).' });
+          return;
+        }
+
+        btnGuardarHE.disabled = true;
+        btnGuardarHE.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Asignando...';
+
+        try {
+          const res = await fetch('/api/admin/horas-extras/asignar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id_usuario, fecha_solicitada, hora_inicio, hora_fin, motivo })
+          });
+          const data = await res.json();
+
+          if (data.ok) {
+            cerrarModalHE();
+            await Swal.fire({
+              icon: 'success',
+              title: '¡Horas Extras Asignadas!',
+              text: data.msg || 'La jornada ha sido registrada. El pasante podrá ingresar a su panel para redactar su bitácora.',
+              timer: 2000,
+              showConfirmButton: false
+            });
+            location.reload();
+          } else {
+            Swal.fire({ icon: 'error', title: 'Error', text: data.msg || 'No se pudo asignar las horas extras.' });
+            btnGuardarHE.disabled = false;
+            btnGuardarHE.innerHTML = '<i class="bi bi-check-circle-fill"></i> Guardar y Asignar';
+          }
+        } catch (err) {
+          console.error(err);
+          Swal.fire({ icon: 'error', title: 'Error de conexión', text: err.message || 'No se pudo contactar al servidor.' });
+          btnGuardarHE.disabled = false;
+          btnGuardarHE.innerHTML = '<i class="bi bi-check-circle-fill"></i> Guardar y Asignar';
+        }
+      });
+
     });
   </script>
+
+  <!-- MODAL: ASIGNAR HORAS EXTRAS A PASANTE (< 280h) -->
+  <div class="modal-he-overlay" id="modalAsignarHE" role="dialog" aria-modal="true" aria-labelledby="modalHETitle">
+    <div class="modal-he-card">
+      <div class="modal-he-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 38px; height: 38px; border-radius: 10px; background: #EFF6FF; color: #0F5FA6; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+            <i class="bi bi-stopwatch-fill"></i>
+          </div>
+          <div>
+            <h5 class="fw-bold mb-0 text-dark" id="modalHETitle" style="font-size: 1.1rem;">Asignar Horas Extras</h5>
+            <small class="text-muted" style="font-size: 0.8rem;">Solo para pasantes activos con menos de 280 horas acumuladas</small>
+          </div>
+        </div>
+        <button type="button" class="btn-close-modal-he" id="btnCerrarModalHE" aria-label="Cerrar" style="background: none; border: none; font-size: 1.3rem; color: #94A3B8; cursor: pointer; padding: 4px 8px; border-radius: 6px;">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <form id="formAsignarHorasExtras">
+        <div class="modal-he-body">
+          <!-- Selector con Filtro en Tiempo Real de Pasante (por Nombre y Carnet) -->
+          <div style="margin-bottom: 1.25rem;">
+            <label class="form-label-he">
+              Seleccionar Pasante <span style="color: #EF4444;">*</span>
+            </label>
+            <div class="pasante-select-wrapper">
+              <div class="pasante-search-box">
+                <i class="bi bi-search search-ico"></i>
+                <input type="text" 
+                       id="he_buscar_pasante" 
+                       class="pasante-search-input" 
+                       placeholder="Escribe el nombre o carnet (C.I.) para buscar..." 
+                       autocomplete="off">
+                <button type="button" id="btnLimpiarPasante" class="pasante-clear-btn" title="Limpiar selección">
+                  <i class="bi bi-x-circle-fill"></i>
+                </button>
+              </div>
+
+              <!-- Input Oculto con el ID real del usuario seleccionado -->
+              <input type="hidden" id="he_id_usuario" name="id_usuario" required>
+
+              <!-- Menú desplegable dinámico filtrable -->
+              <div id="pasanteDropdownList" class="pasante-dropdown-menu">
+                <% if (typeof pasantesDisponibles !== 'undefined' && pasantesDisponibles.length > 0) { %>
+                  <% pasantesDisponibles.forEach(p => { 
+                    const inicial = (p.nombre_completo || 'U').charAt(0).toUpperCase();
+                  %>
+                    <div class="pasante-dropdown-item" 
+                         data-id="<%= p.id_usuario %>" 
+                         data-nombre="<%= p.nombre_completo %>" 
+                         data-ci="<%= p.CI %>">
+                      <div class="pasante-item-info">
+                        <div class="pasante-avatar-circle"><%= inicial %></div>
+                        <div>
+                          <div class="pasante-item-name"><%= p.nombre_completo %></div>
+                        </div>
+                      </div>
+                      <span class="pasante-badge-ci">
+                        <i class="bi bi-person-vcard"></i> CI: <%= p.CI %>
+                      </span>
+                    </div>
+                  <% }) %>
+                <% } else { %>
+                  <div class="pasante-dropdown-empty">
+                    <i class="bi bi-person-x fs-4 d-block mb-1 text-muted"></i>
+                    No hay pasantes disponibles en este momento
+                  </div>
+                <% } %>
+                <div id="pasanteNoResults" class="pasante-dropdown-empty" style="display: none;">
+                  <i class="bi bi-search fs-4 d-block mb-1 text-muted"></i>
+                  No se encontró ningún pasante con ese nombre o C.I.
+                </div>
+              </div>
+
+              <!-- Tarjeta de Pasante Seleccionado (Visualmente agradable) -->
+              <div id="pasanteSelectedCard" class="pasante-selected-badge">
+                <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                  <div id="pasanteSelectedAvatar" class="pasante-avatar-circle" style="background: #0F5FA6; color: #FFFFFF;">U</div>
+                  <div style="min-width: 0;">
+                    <div id="pasanteSelectedName" style="font-size: 0.9rem; font-weight: 700; color: #0F5FA6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Nombre Pasante</div>
+                    <div style="font-size: 0.78rem; color: #475569; display: flex; align-items: center; gap: 4px;">
+                      <i class="bi bi-person-vcard text-primary"></i> <span id="pasanteSelectedCI">CI: 0000000</span>
+                    </div>
+                  </div>
+                </div>
+                <button type="button" id="btnCambiarPasante" class="btn btn-sm btn-link text-decoration-none fw-semibold" style="color: #0F5FA6; font-size: 0.8rem; padding: 4px 8px;">
+                  <i class="bi bi-arrow-repeat me-1"></i>Cambiar
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Fecha -->
+          <div style="margin-bottom: 1rem;">
+            <label for="he_fecha_solicitada" class="form-label-he">
+              Fecha de la Jornada Extra <span style="color: #EF4444;">*</span>
+            </label>
+            <input type="date" class="form-control-he" id="he_fecha_solicitada" name="fecha_solicitada" required>
+          </div>
+
+          <!-- Horas Inicio y Fin -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1rem;">
+            <div>
+              <label for="he_hora_inicio" class="form-label-he">
+                Hora de Inicio <span style="color: #EF4444;">*</span>
+              </label>
+              <input type="time" class="form-control-he" id="he_hora_inicio" name="hora_inicio" required>
+            </div>
+            <div>
+              <label for="he_hora_fin" class="form-label-he">
+                Hora de Fin <span style="color: #EF4444;">*</span>
+              </label>
+              <input type="time" class="form-control-he" id="he_hora_fin" name="hora_fin" required>
+            </div>
+          </div>
+
+          <!-- Badge duración -->
+          <div id="heDuracionBadge" style="display: none; border-radius: 8px; padding: 8px 12px; font-size: 0.82rem; margin-bottom: 1rem; align-items: center; gap: 8px;">
+            <i class="bi bi-clock-history"></i>
+            <span id="heDuracionTexto">Duración estimada</span>
+          </div>
+
+          <!-- Motivo -->
+          <div style="margin-bottom: 1rem;">
+            <label for="he_motivo" class="form-label-he">
+              Motivo o Instrucción Administrativa
+            </label>
+            <textarea class="form-control-he" id="he_motivo" name="motivo" rows="2" placeholder="Ej: Trabajo extraordinario de apoyo en planimetría y documentación..."></textarea>
+          </div>
+
+          <!-- Aviso Informativo -->
+          <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 10px; padding: 10px 14px; display: flex; gap: 10px; align-items: flex-start;">
+            <i class="bi bi-info-circle-fill" style="color: #D97706; font-size: 1.1rem; margin-top: 1px;"></i>
+            <div style="font-size: 0.8rem; color: #92400E; line-height: 1.4;">
+              <strong>Bitácora en espera del pasante:</strong> El informe de actividades y el comprobante fotográfico se registrarán vacíos para que el pasante asignado los complete al ingresar a su panel de reportes.
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-he-footer">
+          <button type="button" class="btn-cancel-he" id="btnCancelarModalHE">
+            Cancelar
+          </button>
+          <button type="submit" class="btn-submit-he" id="btnGuardarHorasExtras">
+            <i class="bi bi-check-circle-fill"></i> Guardar y Asignar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 
 <%- include('partials/footer') %>

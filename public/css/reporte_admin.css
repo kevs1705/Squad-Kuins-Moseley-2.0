@@ -1989,6 +1989,47 @@ body.reportes-admin-page .chart-badge-pill {
 }
 
 /* Ranking de Usuarios - Gráfico de Barras Horizontales (Top 10) */
+body.reportes-admin-page .ranking-cohort-toggle {
+  display: inline-flex;
+  background: #F1F5F9;
+  padding: 3px;
+  border-radius: 8px;
+  border: 1px solid #CBD5E1;
+  gap: 3px;
+}
+
+body.reportes-admin-page .btn-ranking-cohort {
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #64748B;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+body.reportes-admin-page .btn-ranking-cohort:hover {
+  color: #0F172A;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+body.reportes-admin-page .btn-ranking-cohort.active {
+  background: #FFFFFF;
+  color: var(--color-primary);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+body.reportes-admin-page #btnRankingCohortCulminados.active {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  color: #FFFFFF;
+  box-shadow: 0 2px 6px rgba(5, 150, 105, 0.3);
+}
+
 body.reportes-admin-page .ranking-hbar-card {
   background: #FFFFFF;
   border: 1px solid var(--color-border);

@@ -62,7 +62,7 @@ router.get("/graficos", requireAuth, requireAdmin, async (req, res) => {
  */
 router.get("/api/graficos/analytics", requireAuth, requireAdmin, async (req, res) => {
   try {
-    const modo = req.query.modo || "general"; // 'general' | 'carrera' | 'estudiante'
+    const modo = req.query.modo || "general"; // 'general' | 'carrera' | 'estudiante' | 'culminados'
     const carreraId = req.query.carreraId ? Number(req.query.carreraId) : null;
     const estudianteId = req.query.estudianteId ? Number(req.query.estudianteId) : null;
     const periodo = req.query.periodo || "all"; // 'all' | 'mes' | 'trimestre' | 'anio' | 'custom'
@@ -70,6 +70,7 @@ router.get("/api/graficos/analytics", requireAuth, requireAdmin, async (req, res
     const hasta = req.query.hasta || null;
     const orden = (req.query.orden || "desc").toLowerCase(); // 'desc' | 'asc'
     const filtroRendimiento = req.query.filtroRendimiento || "todos"; // 'todos' | 'menos_100' | 'por_acabar' | 'completado'
+    const cohort = req.query.cohort || req.query.estadoPasantia || (modo === "culminados" ? "culminados" : "en_curso");
 
     // 1. Filtrar Pasantes en Scope (Solo usuarios activos estado = 1)
     let userWhere = "u.rol = 0 AND u.estado = 1";
@@ -101,6 +102,7 @@ router.get("/api/graficos/analytics", requireAuth, requireAdmin, async (req, res
     if (pasanteIds.length === 0) {
       return res.json({
         ok: true,
+        cohort,
         kpis: {
           totalPasantes: 0,
           totalHoras: 0,
@@ -112,9 +114,14 @@ router.get("/api/graficos/analytics", requireAuth, requireAdmin, async (req, res
           carreraLider: "N/A",
           asistenciasCount: 0
         },
+        kpisCulminados: { total: 0, totalHoras: 0, promedioHoras: 0, horasPresencial: 0, horasTeletrabajo: 0, horasExtra: 0, carreraLider: "N/A" },
         seriesTemporal: { labels: [], horas: [], acumulado: [], teletrabajo: [], horas_extra: [] },
         porCarrera: { labels: [], horas: [], estudiantes: [] },
         rankingEstudiantes: [],
+        rankingEnCurso: [],
+        rankingCulminados: [],
+        totalEnCurso: 0,
+        totalCulminados: 0,
         diasSemana: [],
         estudiantePerfil: null
       });
@@ -330,15 +337,16 @@ router.get("/api/graficos/analytics", requireAuth, requireAdmin, async (req, res
       estudiantes: porCarreraList.map((c) => c.estudiantes)
     };
 
-    // Ranking de Estudiantes (con soporte para orden 'asc' o 'desc' hacia meta de 280 hrs)
-    let rankingEstudiantes = pasantes
+    // Ranking de Estudiantes (con soporte para cohorte 'en_curso' vs 'culminados')
+    const allEstudiantesCalculados = pasantes
       .map((p) => {
         const u = userHorasMap[p.id_usuario] || { segundos_presencial: 0, segundos_teletrabajo: 0, segundos_extra: 0, total_segundos: 0 };
         const hVal = Number((u.total_segundos / 3600).toFixed(1));
         const presVal = Number((u.segundos_presencial / 3600).toFixed(1));
         const teleVal = Number((u.segundos_teletrabajo / 3600).toFixed(1));
         const extraVal = Number((u.segundos_extra / 3600).toFixed(1));
-        const pct = hVal >= 280 ? 100 : Number((Math.min(99.9, Math.floor((hVal / 280) * 1000) / 10)).toFixed(1));
+        const esCulminado = hVal >= 280;
+        const pct = esCulminado ? 100 : Number((Math.min(99.9, Math.floor((hVal / 280) * 1000) / 10)).toFixed(1));
         return {
           id_usuario: p.id_usuario,
           nombre: p.nombre_completo,
@@ -350,10 +358,28 @@ router.get("/api/graficos/analytics", requireAuth, requireAdmin, async (req, res
           presencial: presVal,
           teletrabajo: teleVal,
           horas_extra: extraVal,
-          porcentaje: pct
+          porcentaje: pct,
+          es_culminado: esCulminado
         };
-      })
+      });
+
+    const rankingEnCurso = allEstudiantesCalculados
+      .filter((p) => !p.es_culminado)
       .sort((a, b) => (orden === "asc" ? a.horas - b.horas : b.horas - a.horas));
+
+    const rankingCulminados = allEstudiantesCalculados
+      .filter((p) => p.es_culminado)
+      .sort((a, b) => (orden === "asc" ? a.horas - b.horas : b.horas - a.horas));
+
+    let rankingEstudiantes = [];
+    if (modo === "culminados" || cohort === "culminados" || filtroRendimiento === "completado") {
+      rankingEstudiantes = [...rankingCulminados];
+    } else if (cohort === "todos") {
+      rankingEstudiantes = [...allEstudiantesCalculados].sort((a, b) => (orden === "asc" ? a.horas - b.horas : b.horas - a.horas));
+    } else {
+      // Por defecto 'en_curso': los líderes son los que aún NO han acumulado sus 280 hrs
+      rankingEstudiantes = [...rankingEnCurso];
+    }
 
     // Filtro dinámico de rendimiento si se especifica
     if (filtroRendimiento === "menos_100") {
@@ -361,7 +387,56 @@ router.get("/api/graficos/analytics", requireAuth, requireAdmin, async (req, res
     } else if (filtroRendimiento === "por_acabar") {
       rankingEstudiantes = rankingEstudiantes.filter((p) => p.horas >= 200 && p.horas < 280);
     } else if (filtroRendimiento === "completado") {
-      rankingEstudiantes = rankingEstudiantes.filter((p) => p.horas >= 280);
+      rankingEstudiantes = [...rankingCulminados];
+    }
+
+    // Métricas analíticas específicas de culminados
+    const totalHorasCulm = Number(rankingCulminados.reduce((acc, p) => acc + p.horas, 0).toFixed(1));
+    const promHorasCulm = rankingCulminados.length > 0 ? Number((totalHorasCulm / rankingCulminados.length).toFixed(1)) : 0;
+    const presCulm = Number(rankingCulminados.reduce((acc, p) => acc + p.presencial, 0).toFixed(1));
+    const teleCulm = Number(rankingCulminados.reduce((acc, p) => acc + p.teletrabajo, 0).toFixed(1));
+    const extCulm = Number(rankingCulminados.reduce((acc, p) => acc + p.horas_extra, 0).toFixed(1));
+
+    const carreraCulmMap = {};
+    rankingCulminados.forEach((c) => {
+      carreraCulmMap[c.carrera] = (carreraCulmMap[c.carrera] || 0) + 1;
+    });
+    const carreraLiderCulm = Object.entries(carreraCulmMap).sort((a, b) => b[1] - a[1])?.[0]?.[0] || "N/A";
+
+    const kpisCulminados = {
+      total: rankingCulminados.length,
+      totalHoras: totalHorasCulm,
+      promedioHoras: promHorasCulm,
+      horasPresencial: presCulm,
+      horasTeletrabajo: teleCulm,
+      horasExtra: extCulm,
+      carreraLider: carreraLiderCulm
+    };
+
+    let finalKpis = {
+      totalPasantes: totalPasantesCount,
+      totalHoras: totalHorasGlobal,
+      promedioHoras: promedioHorasGlobal,
+      horasPresencial: horasPresencialGlobal,
+      horasTeletrabajo: horasTeletrabajoGlobal,
+      horasExtra: horasExtrasGlobal,
+      tasaCumplimiento: tasaCumplimientoGlobal,
+      carreraLider,
+      asistenciasCount: asistencias.length
+    };
+
+    if (modo === "culminados" || cohort === "culminados") {
+      finalKpis = {
+        totalPasantes: rankingCulminados.length,
+        totalHoras: totalHorasCulm,
+        promedioHoras: promHorasCulm,
+        horasPresencial: presCulm,
+        horasTeletrabajo: teleCulm,
+        horasExtra: extCulm,
+        tasaCumplimiento: 100,
+        carreraLider: carreraLiderCulm,
+        asistenciasCount: asistencias.length
+      };
     }
 
     // Días de la semana (Lunes a Sábado)
@@ -380,7 +455,8 @@ router.get("/api/graficos/analytics", requireAuth, requireAdmin, async (req, res
       const presVal = Number((u.segundos_presencial / 3600).toFixed(1));
       const teleVal = Number((u.segundos_teletrabajo / 3600).toFixed(1));
       const extraVal = Number((u.segundos_extra / 3600).toFixed(1));
-      const pct = hVal >= 280 ? 100 : Number((Math.min(99.9, Math.floor((hVal / 280) * 1000) / 10)).toFixed(1));
+      const esCulminado = hVal >= 280;
+      const pct = esCulminado ? 100 : Number((Math.min(99.9, Math.floor((hVal / 280) * 1000) / 10)).toFixed(1));
 
       const [recientes] = await db.query(
         `SELECT DATE_FORMAT(a.fecha, '%d/%m/%Y') AS fecha_formateada,
@@ -410,8 +486,9 @@ router.get("/api/graficos/analytics", requireAuth, requireAdmin, async (req, res
         horas_presencial: presVal,
         horas_teletrabajo: teleVal,
         horas_extra: extraVal,
-        horas_restantes: hVal >= 280 ? 0 : Math.max(0, Math.ceil(280 - hVal)),
+        horas_restantes: esCulminado ? 0 : Math.max(0, Math.ceil(280 - hVal)),
         porcentaje_meta: pct,
+        es_culminado: esCulminado,
         asistencias_recientes: recientes
       };
     }
@@ -419,20 +496,16 @@ router.get("/api/graficos/analytics", requireAuth, requireAdmin, async (req, res
     res.json({
       ok: true,
       orden,
-      kpis: {
-        totalPasantes: totalPasantesCount,
-        totalHoras: totalHorasGlobal,
-        promedioHoras: promedioHorasGlobal,
-        horasPresencial: horasPresencialGlobal,
-        horasTeletrabajo: horasTeletrabajoGlobal,
-        horasExtra: horasExtrasGlobal,
-        tasaCumplimiento: tasaCumplimientoGlobal,
-        carreraLider,
-        asistenciasCount: asistencias.length
-      },
+      cohort,
+      kpis: finalKpis,
+      kpisCulminados,
+      totalEnCurso: rankingEnCurso.length,
+      totalCulminados: rankingCulminados.length,
       seriesTemporal,
       porCarrera,
       rankingEstudiantes,
+      rankingEnCurso,
+      rankingCulminados,
       diasSemana,
       estudiantePerfil
     });
@@ -615,17 +688,24 @@ router.get("/api/graficos/export-pasantes-excel", requireAuth, requireAdmin, asy
       })
       .sort((a, b) => (orden === "asc" ? a.total_horas - b.total_horas : b.total_horas - a.total_horas));
 
-    // Aplicar filtro dinámico de rendimiento si se especifica (sin emojis)
-    let subtituloFiltro = "Todos los Pasantes";
+    const cohort = req.query.cohort || req.query.estadoPasantia || (filtroRendimiento === 'completado' ? 'culminados' : 'en_curso');
+
+    // Aplicar filtro dinámico de rendimiento o cohorte si se especifica (sin emojis)
+    let subtituloFiltro = "Pasantes en Curso (< 280 hrs)";
     if (filtroRendimiento === "menos_100") {
       listaPasantes = listaPasantes.filter((p) => p.total_horas < 100);
       subtituloFiltro = "Pasantes con Menos de 100 hrs (Para Contactar)";
     } else if (filtroRendimiento === "por_acabar") {
       listaPasantes = listaPasantes.filter((p) => p.total_horas >= 200 && p.total_horas < 280);
       subtituloFiltro = "Pasantes por Culminar Pasantía (≥ 200 hrs)";
-    } else if (filtroRendimiento === "completado") {
+    } else if (filtroRendimiento === "completado" || cohort === "culminados") {
       listaPasantes = listaPasantes.filter((p) => p.total_horas >= 280);
-      subtituloFiltro = "Pasantes con Meta Cumplida (≥ 280 hrs)";
+      subtituloFiltro = "Pasantes con Meta Cumplida (≥ 280 hrs - Graduados)";
+    } else if (cohort === "en_curso") {
+      listaPasantes = listaPasantes.filter((p) => p.total_horas < 280);
+      subtituloFiltro = "Pasantes en Curso (< 280 hrs)";
+    } else if (cohort === "todos") {
+      subtituloFiltro = "Todos los Pasantes (En Curso y Culminados)";
     }
 
     // Crear libro Excel con ExcelJS

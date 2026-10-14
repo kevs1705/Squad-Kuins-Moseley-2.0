@@ -811,6 +811,144 @@
         display: block;
       }
 
+      /* Selector de Cohorte para Ranking y Dashboard (En Curso vs Culminados) */
+      .bi-cohort-toggle {
+        display: inline-flex;
+        background: #F1F5F9;
+        padding: 3px;
+        border-radius: 9px;
+        border: 1px solid #E2E8F0;
+        gap: 3px;
+      }
+
+      .bi-cohort-btn {
+        background: transparent;
+        border: none;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #64748B;
+        padding: 5px 11px;
+        border-radius: 7px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        white-space: nowrap;
+      }
+
+      .bi-cohort-btn:hover {
+        color: #0F172A;
+        background: rgba(255, 255, 255, 0.6);
+      }
+
+      .bi-cohort-btn.active {
+        background: #FFFFFF;
+        color: #0F5FA6;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+      }
+
+      .bi-cohort-btn.active.cohort-btn-culminados {
+        color: #059669;
+      }
+
+      /* Botón de Scope para Graduados */
+      .bi-scope-btn-graduados.active {
+        background: #059669 !important;
+        border-color: #047857 !important;
+        color: #FFFFFF !important;
+      }
+      .bi-scope-btn-graduados.active i {
+        color: #FFFFFF !important;
+      }
+      .bi-scope-btn-graduados.active #badgeTotalCulminadosTab {
+        background: rgba(255, 255, 255, 0.25) !important;
+        color: #FFFFFF !important;
+      }
+
+      /* Banner Ejecutivo Corporativo para Pasantes Graduados */
+      .bi-culminados-banner {
+        background: linear-gradient(135deg, #064E3B 0%, #065F46 45%, #047857 100%);
+        border-radius: var(--radius-card);
+        padding: 1.3rem 1.6rem;
+        margin-bottom: 1.25rem;
+        color: #FFFFFF;
+        box-shadow: 0 8px 24px rgba(6, 78, 59, 0.22);
+        display: none;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .bi-culminados-banner::before {
+        content: '';
+        position: absolute;
+        top: -60px;
+        right: -60px;
+        width: 200px;
+        height: 200px;
+        background: radial-gradient(circle, rgba(52, 211, 153, 0.22) 0%, transparent 70%);
+        border-radius: 50%;
+        pointer-events: none;
+      }
+
+      .bi-culminados-banner-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.15rem;
+      }
+
+      .bi-culminados-banner-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .bi-culminados-banner-icon {
+        width: 44px;
+        height: 44px;
+        background: rgba(255, 255, 255, 0.16);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        color: #FDE047;
+      }
+
+      .bi-culminados-banner-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+      }
+
+      .bi-culminados-stat-box {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 10px;
+        padding: 0.85rem 1rem;
+      }
+
+      .bi-culminados-stat-val {
+        font-size: 1.55rem;
+        font-weight: 800;
+        color: #FFFFFF;
+        line-height: 1.1;
+      }
+
+      .bi-culminados-stat-label {
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #A7F3D0;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        margin-top: 4px;
+      }
+
       @media (max-width: 1024px) {
         .bi-charts-grid-main {
           grid-template-columns: 1fr;
@@ -827,7 +965,7 @@
       <!-- 1. BARRA DE COMANDO Y FILTROS INTEGRADOS -->
       <div class="bi-filter-bar">
         <div class="d-flex align-items-center gap-3 flex-wrap">
-          <!-- Filtro de Modo Principal (General, Carrera, Estudiante) -->
+          <!-- Filtro de Modo Principal (General, Carrera, Estudiante, Culminados) -->
           <div class="bi-scope-tabs" role="tablist">
             <button type="button" class="bi-scope-btn active" data-mode="general">
               <i class="bi bi-globe"></i> En General
@@ -837,6 +975,9 @@
             </button>
             <button type="button" class="bi-scope-btn" data-mode="estudiante">
               <i class="bi bi-person-badge-fill"></i> Por Estudiante
+            </button>
+            <button type="button" class="bi-scope-btn bi-scope-btn-graduados" data-mode="culminados" id="btnModeCulminados" title="Analítica y Cuadro de Honor de pasantes que completaron las 280 hrs">
+              <i class="bi bi-award-fill" style="color: #10B981;"></i> Graduados (≥ 280 hrs) <span class="badge ms-1" id="badgeTotalCulminadosTab" style="background: rgba(16, 185, 129, 0.15); color: #047857; font-size: 0.7rem; padding: 2px 6px; border-radius: 6px;">0</span>
             </button>
           </div>
 
@@ -892,6 +1033,48 @@
 
       <!-- Ficha de Perfil de Estudiante (Se inyecta dinámicamente si está en modo estudiante) -->
       <div id="studentProfileContainer" style="display: none;"></div>
+
+      <!-- Banner Ejecutivo de Analítica para Pasantes Graduados (Visible en modo graduados o filtro) -->
+      <div id="culminadosExecutiveBanner" class="bi-culminados-banner">
+        <div class="bi-culminados-banner-header">
+          <div class="bi-culminados-banner-title">
+            <div class="bi-culminados-banner-icon"><i class="bi bi-mortarboard-fill"></i></div>
+            <div>
+              <h4 class="m-0 fw-bold text-white" style="letter-spacing: -0.3px;">Cuadro de Honor: Pasantes Graduados</h4>
+              <p class="m-0" style="color: #D1FAE5; font-size: 0.84rem;">
+                Estudiantes que completaron con éxito la meta oficial de 280 horas de pasantía.
+              </p>
+            </div>
+          </div>
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <button type="button" class="btn btn-sm btn-light fw-bold" id="btnExportarCulminadosExcel" style="color: #065F46; border-radius: 8px; font-size: 0.78rem;">
+              <i class="bi bi-file-earmark-excel-fill text-success me-1"></i> Exportar Graduados (.xlsx)
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-light" id="btnVolverEnCurso" style="border-radius: 8px; font-size: 0.78rem;">
+              <i class="bi bi-arrow-left me-1"></i> Volver a Pasantes en Curso
+            </button>
+          </div>
+        </div>
+
+        <div class="bi-culminados-banner-stats">
+          <div class="bi-culminados-stat-box">
+            <div class="bi-culminados-stat-val" id="statCulmTotal">0</div>
+            <div class="bi-culminados-stat-label">Graduados Totales (100% Meta)</div>
+          </div>
+          <div class="bi-culminados-stat-box">
+            <div class="bi-culminados-stat-val" id="statCulmHoras">0.0 <span style="font-size: 0.9rem; font-weight: 600;">hrs</span></div>
+            <div class="bi-culminados-stat-label">Horas Certificadas Acumuladas</div>
+          </div>
+          <div class="bi-culminados-stat-box">
+            <div class="bi-culminados-stat-val" id="statCulmPromedio">0.0 <span style="font-size: 0.9rem; font-weight: 600;">hrs</span></div>
+            <div class="bi-culminados-stat-label">Promedio Horas por Graduado</div>
+          </div>
+          <div class="bi-culminados-stat-box">
+            <div class="bi-culminados-stat-val" id="statCulmCarrera" style="font-size: 1.25rem;">-</div>
+            <div class="bi-culminados-stat-label">Carrera con Más Egresados</div>
+          </div>
+        </div>
+      </div>
 
       <!-- 2. TARJETAS KPI CORPORATIVAS SUPERIORES -->
       <div class="bi-kpi-grid">
@@ -1055,21 +1238,38 @@
         <div class="bi-panel">
           <div class="bi-panel-header">
             <div class="bi-panel-title">
-              <i class="bi bi-lightning-charge-fill text-primary"></i>
-              <span id="rankingPanelTitle">Líderes de Rendimiento y Avance</span>
+              <i class="bi bi-lightning-charge-fill text-primary" id="rankingPanelIcon"></i>
+              <span id="rankingPanelTitle">Top Pasantes en Curso (< 280 hrs)</span>
             </div>
-            <div class="d-flex align-items-center gap-2">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+              <!-- Switch de Cohorte: En Curso vs Culminados -->
+              <div class="bi-cohort-toggle" role="group" aria-label="Cohorte Ranking">
+                <button type="button" class="bi-cohort-btn active" id="btnRankCohortEnCurso" title="Mostrar líderes activos que aún no alcanzan las 280 hrs">
+                  <i class="bi bi-lightning-charge-fill text-warning"></i> En Curso (< 280h)
+                </button>
+                <button type="button" class="bi-cohort-btn cohort-btn-culminados" id="btnRankCohortCulminados" title="Mostrar cuadro de honor de quienes completaron sus 280 hrs">
+                  <i class="bi bi-award-fill text-success"></i> Graduados (≥ 280h)
+                </button>
+              </div>
+
               <button type="button" class="bi-quick-sort-btn" id="btnToggleRankingSort"
                 title="Alternar Ascendente / Descendente">
                 <i class="bi bi-arrow-down-up" id="sortRankingIcon"></i> <span id="sortRankingLabel">Descendente</span>
               </button>
               <span class="bi-panel-tag" id="rankingBadgeTag"
-                style="color: var(--bi-amber-dark); border-color: #FDE68A; background: #FEF3C7;">Top Ranking</span>
+                style="color: var(--color-primary); border-color: #BFDBFE; background: #EFF6FF;">Top Ranking En Curso</span>
             </div>
           </div>
 
           <div class="bi-arrow-bars-list" id="rankingArrowList">
             <!-- Render dinámico de las flechas de porcentaje -->
+          </div>
+
+          <div class="mt-3 pt-2 border-top d-flex justify-content-between align-items-center flex-wrap gap-2" id="rankingFooterToggle">
+            <small class="text-muted" id="rankingFooterText">Mostrando líderes que aún están acumulando sus 280 hrs.</small>
+            <button type="button" class="btn btn-sm text-primary p-0 fw-bold text-decoration-none" id="btnRankingFooterAction" style="font-size: 0.76rem; background: none; border: none; cursor: pointer;">
+              Ver pasantes que terminaron (≥ 280 hrs) &rarr;
+            </button>
           </div>
         </div>
 
@@ -1168,9 +1368,11 @@
         };
 
         // Estado local de los filtros
-        let currentMode = 'general'; // 'general' | 'carrera' | 'estudiante'
+        let currentMode = 'general'; // 'general' | 'carrera' | 'estudiante' | 'culminados'
         let currentPeriod = 'all';  // 'all' | 'mes' | 'trimestre' | 'anio'
         let currentOrder = 'desc';  // 'desc' | 'asc'
+        let currentRankingCohort = 'en_curso'; // 'en_curso' (< 280 hrs) | 'culminados' (>= 280 hrs)
+        let cachedAnalyticsData = null;
 
         // Elementos DOM
         const scopeBtns = document.querySelectorAll('.bi-scope-btn');
@@ -1250,8 +1452,9 @@
           const carreraId = (currentMode === 'carrera') ? (selectCarrera.value || (filtroTablaCarrera ? filtroTablaCarrera.value : '')) : (filtroTablaCarrera ? filtroTablaCarrera.value : '');
           const estudianteId = selectEstudiante.value;
           const rendVal = filtroTablaRendimiento ? filtroTablaRendimiento.value : 'todos';
+          const cohortVal = currentMode === 'culminados' ? 'culminados' : (currentRankingCohort || 'en_curso');
 
-          let url = `/api/graficos/analytics?modo=${currentMode}&periodo=${currentPeriod}&orden=${currentOrder}&filtroRendimiento=${encodeURIComponent(rendVal)}`;
+          let url = `/api/graficos/analytics?modo=${encodeURIComponent(currentMode)}&periodo=${encodeURIComponent(currentPeriod)}&orden=${encodeURIComponent(currentOrder)}&filtroRendimiento=${encodeURIComponent(rendVal)}&cohort=${encodeURIComponent(cohortVal)}`;
           if (currentMode === 'carrera' && carreraId) url += `&carreraId=${encodeURIComponent(carreraId)}`;
           if (currentMode === 'estudiante' && estudianteId) url += `&estudianteId=${encodeURIComponent(estudianteId)}`;
 
@@ -1260,6 +1463,7 @@
             const data = await res.json();
             if (!data.ok) return;
 
+            cachedAnalyticsData = data;
             renderDashboard(data);
           } catch (err) {
             console.error('Error al obtener datos analíticos:', err);
@@ -1270,9 +1474,39 @@
         // RENDERIZADO DEL DASHBOARD Y WIDGETS
         // ==========================================
         function renderDashboard(data) {
-          const { kpis, seriesTemporal, porCarrera, rankingEstudiantes, estudiantePerfil } = data;
+          const { kpis, seriesTemporal, porCarrera, rankingEstudiantes, estudiantePerfil, totalCulminados, kpisCulminados } = data;
 
-          // 1. Actualizar KPIs
+          // Actualizar contador del tab de Graduados
+          const badgeCulmTab = document.getElementById('badgeTotalCulminadosTab');
+          if (badgeCulmTab) {
+            badgeCulmTab.textContent = totalCulminados != null ? totalCulminados : (kpisCulminados?.total || 0);
+          }
+
+          // Banner Ejecutivo de Graduados
+          const bannerCulm = document.getElementById('culminadosExecutiveBanner');
+          const isModoCulminados = currentMode === 'culminados';
+          if (bannerCulm) {
+            if (isModoCulminados) {
+              bannerCulm.style.display = 'block';
+              const culmStats = kpisCulminados || {};
+              const statTotalEl = document.getElementById('statCulmTotal');
+              const statHorasEl = document.getElementById('statCulmHoras');
+              const statPromEl = document.getElementById('statCulmPromedio');
+              const statCarEl = document.getElementById('statCulmCarrera');
+              if (statTotalEl) statTotalEl.textContent = culmStats.total || 0;
+              if (statHorasEl) statHorasEl.innerHTML = `${culmStats.totalHoras || 0} <span style="font-size: 0.9rem; font-weight: 600;">hrs</span>`;
+              if (statPromEl) statPromEl.innerHTML = `${culmStats.promedioHoras || 0} <span style="font-size: 0.9rem; font-weight: 600;">hrs</span>`;
+              if (statCarEl) statCarEl.textContent = culmStats.carreraLider || 'N/A';
+            } else {
+              bannerCulm.style.display = 'none';
+            }
+          }
+
+          // 1. Actualizar KPIs Superiores
+          const elSubPasantes = document.getElementById('kpiSubPasantes');
+          if (elSubPasantes) {
+            elSubPasantes.textContent = isModoCulminados ? 'Graduados con meta cumplida' : 'Total registrados en curso';
+          }
           document.getElementById('kpiTotalPasantes').textContent = kpis.totalPasantes || 0;
           document.getElementById('kpiTotalHoras').innerHTML = `${kpis.totalHoras || 0} <span style="font-size: 1rem; color: var(--bi-teal); font-weight: 700;">hrs</span>`;
           document.getElementById('kpiPromedioHoras').textContent = kpis.promedioHoras || 0;
@@ -1340,8 +1574,8 @@
           // 5. Gráfico por Carrera
           renderChartCarrera(porCarrera);
 
-          // 6. Ranking con Flechas
-          renderRankingFlechas(rankingEstudiantes);
+          // 6. Ranking con Flechas (Cohorte dinámica)
+          updateRankingView();
 
           // 7. Tabla Resumen / Auditoría Rápida (Ancho Completo)
           renderTablaResumen(rankingEstudiantes);
@@ -1498,34 +1732,78 @@
         }
 
         // ==========================================
-        // RENDERIZADO DE FLECHAS DE PROGRESO
+        // RENDERIZADO Y CONTROL DEL RANKING (EN CURSO VS GRADUADOS)
         // ==========================================
-        function renderRankingFlechas(estudiantes) {
+        function updateRankingView() {
+          if (!cachedAnalyticsData) return;
+          const isCulm = currentRankingCohort === 'culminados' || currentMode === 'culminados';
+          const list = isCulm 
+            ? (cachedAnalyticsData.rankingCulminados || []) 
+            : (cachedAnalyticsData.rankingEnCurso || cachedAnalyticsData.rankingEstudiantes || []);
+
+          // Sincronizar botones de switch en el header de ranking
+          const btnEnCurso = document.getElementById('btnRankCohortEnCurso');
+          const btnCulm = document.getElementById('btnRankCohortCulminados');
+          if (btnEnCurso && btnCulm) {
+            btnEnCurso.classList.toggle('active', !isCulm);
+            btnCulm.classList.toggle('active', isCulm);
+          }
+
+          const iconEl = document.getElementById('rankingPanelIcon');
+          const footerText = document.getElementById('rankingFooterText');
+          const footerAction = document.getElementById('btnRankingFooterAction');
+
+          if (isCulm) {
+            if (rankingPanelTitle) rankingPanelTitle.textContent = 'Cuadro de Honor: Pasantes Graduados (≥ 280 hrs)';
+            if (iconEl) {
+              iconEl.className = 'bi bi-award-fill text-success';
+            }
+            if (rankingBadgeTag) {
+              rankingBadgeTag.textContent = '100% Meta Cumplida';
+              rankingBadgeTag.style.color = '#059669';
+              rankingBadgeTag.style.borderColor = '#A7F3D0';
+              rankingBadgeTag.style.background = '#ECFDF5';
+            }
+            if (footerText) footerText.textContent = `Mostrando ${list.length} pasantes que culminaron exitosamente las 280 hrs.`;
+            if (footerAction) footerAction.textContent = '← Volver a pasantes en curso (< 280 hrs)';
+          } else {
+            if (iconEl) {
+              iconEl.className = 'bi bi-lightning-charge-fill text-primary';
+            }
+            if (currentOrder === 'asc') {
+              if (rankingPanelTitle) rankingPanelTitle.textContent = 'Pasantes en Curso con Menor Avance (< 280 hrs)';
+              if (rankingBadgeTag) {
+                rankingBadgeTag.textContent = 'Menor Avance';
+                rankingBadgeTag.style.color = 'var(--bi-amber-dark)';
+                rankingBadgeTag.style.borderColor = '#FDE68A';
+                rankingBadgeTag.style.background = '#FEF3C7';
+              }
+            } else {
+              if (rankingPanelTitle) rankingPanelTitle.textContent = 'Top Pasantes en Curso (< 280 hrs)';
+              if (rankingBadgeTag) {
+                rankingBadgeTag.textContent = 'Top Ranking En Curso';
+                rankingBadgeTag.style.color = 'var(--color-primary)';
+                rankingBadgeTag.style.borderColor = '#BFDBFE';
+                rankingBadgeTag.style.background = '#EFF6FF';
+              }
+            }
+            if (footerText) footerText.textContent = 'Mostrando líderes que aún están acumulando sus 280 hrs.';
+            if (footerAction) footerAction.textContent = 'Ver pasantes que terminaron (≥ 280 hrs) →';
+          }
+
+          renderRankingFlechas(list, isCulm);
+        }
+
+        function renderRankingFlechas(estudiantes, isCulminados = false) {
           const container = document.getElementById('rankingArrowList');
           if (!container) return;
 
-          // Actualizar título y tag según el orden
-          if (currentOrder === 'asc') {
-            if (rankingPanelTitle) rankingPanelTitle.textContent = 'Pasantes con Menor Avance (Ascendente)';
-            if (rankingBadgeTag) {
-              rankingBadgeTag.textContent = 'Menor Avance';
-              rankingBadgeTag.style.color = 'var(--bi-amber-dark)';
-              rankingBadgeTag.style.borderColor = '#FDE68A';
-              rankingBadgeTag.style.background = '#FEF3C7';
-            }
-          } else {
-            if (rankingPanelTitle) rankingPanelTitle.textContent = 'Líderes de Rendimiento y Avance';
-            if (rankingBadgeTag) {
-              rankingBadgeTag.textContent = 'Top Ranking';
-              rankingBadgeTag.style.color = 'var(--color-primary)';
-              rankingBadgeTag.style.borderColor = '#BFDBFE';
-              rankingBadgeTag.style.background = '#EFF6FF';
-            }
-          }
-
           const top = (estudiantes || []).slice(0, 5);
           if (top.length === 0) {
-            container.innerHTML = '<p class="text-muted text-center py-4">No hay pasantes con actividad en este rango.</p>';
+            const emptyMsg = isCulminados 
+              ? 'No hay pasantes registrados que hayan completado las 280 horas en este rango.'
+              : 'No hay pasantes en curso con actividad en este rango.';
+            container.innerHTML = `<p class="text-muted text-center py-4">${emptyMsg}</p>`;
             return;
           }
 
@@ -1538,21 +1816,37 @@
           ];
 
           container.innerHTML = top.map((est, idx) => {
+            if (isCulminados) {
+              return `
+              <div class="bi-arrow-row">
+                <div class="bi-arrow-name">
+                  <span class="d-flex align-items-center gap-1">${est.nombre} <i class="bi bi-patch-check-fill text-success" title="Meta de 280 hrs cumplida"></i></span>
+                  <span class="bi-arrow-career">${est.carrera_siglas || 'PASANTE'} · ${est.horas} hrs</span>
+                </div>
+                <div class="bi-arrow-bar-wrap">
+                  <div class="bi-arrow-bar-fill fill-emerald-corp" style="width: 100%;">
+                    100% META SUPERADA (${est.horas} hrs)
+                  </div>
+                </div>
+              </div>
+            `;
+            }
+
             const fillClass = gradientClasses[idx % gradientClasses.length];
-            const pct = Math.max(12, est.porcentaje); // Mínimo 12% para que quepa el texto de la flecha
+            const pct = Math.max(12, est.porcentaje);
             return `
-          <div class="bi-arrow-row">
-            <div class="bi-arrow-name">
-              <span>${est.nombre}</span>
-              <span class="bi-arrow-career">${est.carrera_siglas || 'PASANTE'} · ${est.horas} hrs</span>
-            </div>
-            <div class="bi-arrow-bar-wrap">
-              <div class="bi-arrow-bar-fill ${fillClass}" style="width: ${pct}%;">
-                ${est.porcentaje}%
+            <div class="bi-arrow-row">
+              <div class="bi-arrow-name">
+                <span>${est.nombre}</span>
+                <span class="bi-arrow-career">${est.carrera_siglas || 'PASANTE'} · ${est.horas} hrs</span>
+              </div>
+              <div class="bi-arrow-bar-wrap">
+                <div class="bi-arrow-bar-fill ${fillClass}" style="width: ${pct}%;">
+                  ${est.porcentaje}% (${est.horas} / 280h)
+                </div>
               </div>
             </div>
-          </div>
-        `;
+          `;
           }).join('');
         }
 
@@ -1640,20 +1934,27 @@
         // EVENT LISTENERS DE FILTRADO
         // ==========================================
 
-        // Cambio de modo: General / Carrera / Estudiante
+        // Cambio de modo: General / Carrera / Estudiante / Culminados
         scopeBtns.forEach(btn => {
           btn.addEventListener('click', () => {
             scopeBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             currentMode = btn.dataset.mode;
 
-            wrapCarrera.style.display = currentMode === 'carrera' ? 'block' : 'none';
-            wrapEstudiante.style.display = currentMode === 'estudiante' ? 'block' : 'none';
+            if (currentMode === 'culminados') {
+              currentRankingCohort = 'culminados';
+              wrapCarrera.style.display = 'none';
+              wrapEstudiante.style.display = 'none';
+            } else {
+              currentRankingCohort = 'en_curso';
+              wrapCarrera.style.display = currentMode === 'carrera' ? 'block' : 'none';
+              wrapEstudiante.style.display = currentMode === 'estudiante' ? 'block' : 'none';
 
-            if (currentMode === 'carrera' && filtroTablaCarrera && selectCarrera) {
-              filtroTablaCarrera.value = selectCarrera.value;
-            } else if (currentMode === 'general' && filtroTablaCarrera) {
-              filtroTablaCarrera.value = '';
+              if (currentMode === 'carrera' && filtroTablaCarrera && selectCarrera) {
+                filtroTablaCarrera.value = selectCarrera.value;
+              } else if (currentMode === 'general' && filtroTablaCarrera) {
+                filtroTablaCarrera.value = '';
+              }
             }
 
             fetchAnalytics();
@@ -1686,6 +1987,40 @@
           setOrder(currentOrder === 'desc' ? 'asc' : 'desc');
         });
 
+        // Botones de Switch de Cohorte en Cabecera de Ranking (En Curso vs Graduados)
+        document.getElementById('btnRankCohortEnCurso')?.addEventListener('click', () => {
+          currentRankingCohort = 'en_curso';
+          updateRankingView();
+        });
+
+        document.getElementById('btnRankCohortCulminados')?.addEventListener('click', () => {
+          currentRankingCohort = 'culminados';
+          updateRankingView();
+        });
+
+        // Enlace rápido en el pie del Ranking para alternar entre activos y graduados
+        document.getElementById('btnRankingFooterAction')?.addEventListener('click', () => {
+          currentRankingCohort = (currentRankingCohort === 'culminados') ? 'en_curso' : 'culminados';
+          updateRankingView();
+        });
+
+        // Botones del Banner Ejecutivo de Graduados
+        document.getElementById('btnExportarCulminadosExcel')?.addEventListener('click', () => {
+          window.location.href = `/api/graficos/export-pasantes-excel?modo=culminados&cohort=culminados&periodo=${encodeURIComponent(currentPeriod)}`;
+        });
+
+        document.getElementById('btnVolverEnCurso')?.addEventListener('click', () => {
+          currentMode = 'general';
+          currentRankingCohort = 'en_curso';
+          scopeBtns.forEach(b => {
+            if (b.dataset.mode === 'general') b.classList.add('active');
+            else b.classList.remove('active');
+          });
+          wrapCarrera.style.display = 'none';
+          wrapEstudiante.style.display = 'none';
+          fetchAnalytics();
+        });
+
         // Filtro por rendimiento (< 100 hrs, Por acabar, etc.)
         filtroTablaRendimiento?.addEventListener('change', fetchAnalytics);
 
@@ -1713,13 +2048,14 @@
           fetchAnalytics();
         });
 
-        // Botón de exportación rápida a Excel de pasantes con filtros dinámicos
+        // Botón de exportación rápida a Excel de pasantes con filtros dinámicos y cohorte activa
         btnExportarPasantesExcel?.addEventListener('click', () => {
           const carreraId = (filtroTablaCarrera && filtroTablaCarrera.value) || (currentMode === 'carrera' ? selectCarrera.value : '');
           const estudianteId = (currentMode === 'estudiante' && selectEstudiante) ? selectEstudiante.value : '';
           const rendVal = (filtroTablaRendimiento && filtroTablaRendimiento.value) || 'todos';
+          const cohortVal = currentMode === 'culminados' ? 'culminados' : (currentRankingCohort || 'en_curso');
 
-          let exportUrl = `/api/graficos/export-pasantes-excel?modo=${encodeURIComponent(currentMode)}&periodo=${encodeURIComponent(currentPeriod)}&orden=${encodeURIComponent(currentOrder)}&filtroRendimiento=${encodeURIComponent(rendVal)}`;
+          let exportUrl = `/api/graficos/export-pasantes-excel?modo=${encodeURIComponent(currentMode)}&periodo=${encodeURIComponent(currentPeriod)}&orden=${encodeURIComponent(currentOrder)}&filtroRendimiento=${encodeURIComponent(rendVal)}&cohort=${encodeURIComponent(cohortVal)}`;
           if (carreraId) {
             exportUrl += `&carreraId=${encodeURIComponent(carreraId)}`;
           }

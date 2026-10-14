@@ -105,11 +105,15 @@ router.get('/notificaciones_admin', requireAuth, requireRole(1), async (req, res
       ORDER BY (a.estado = 'OBSERVADO') DESC, a.fecha DESC, a.hora_entrada DESC`
     );
 
+    // 4. Pasantes disponibles con menos de 280 horas acumuladas
+    const pasantesDisponibles = await getPasantesDisponibles();
+
     res.render('notificaciones_admin', { 
       user: req.session.user, 
       notifs: notifs || [],
       teletrabajos: teletrabajos || [],
-      jornadasObservadas: jornadasObservadas || []
+      jornadasObservadas: jornadasObservadas || [],
+      pasantesDisponibles: pasantesDisponibles || []
     });
   } catch (error) {
     console.error('Error al cargar panel de notificaciones admin:', error);
@@ -118,6 +122,116 @@ router.get('/notificaciones_admin', requireAuth, requireRole(1), async (req, res
       title: 'Error en la base de datos',
       message: 'Error interno al cargar solicitudes y notificaciones desde la base de datos.'
     });
+  }
+});
+
+/**
+ * Helper: Obtener pasantes activos con menos de 280 horas acumuladas
+ */
+async function getPasantesDisponibles() {
+  const [pasantes] = await db.query(`
+    SELECT 
+      u.id_usuario, 
+      TRIM(CONCAT_WS(' ', u.nombre, u.apellido_paterno, u.apellido_materno)) AS nombre_completo,
+      u.CI,
+      ROUND((COALESCE(asist.total_seg, 0) + COALESCE(he.total_seg_he, 0)) / 3600, 1) AS horas_acumuladas,
+      ROUND(GREATEST(0, 280 - ((COALESCE(asist.total_seg, 0) + COALESCE(he.total_seg_he, 0)) / 3600)), 1) AS horas_restantes
+    FROM usuarios u
+    LEFT JOIN (
+      SELECT 
+        id_usuario,
+        SUM(TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha, hora_entrada), TIMESTAMP(fecha, hora_salida))) AS total_seg
+      FROM asistencias
+      WHERE estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO')
+        AND hora_entrada IS NOT NULL AND hora_salida IS NOT NULL
+      GROUP BY id_usuario
+    ) asist ON asist.id_usuario = u.id_usuario
+    LEFT JOIN (
+      SELECT 
+        id_usuario,
+        SUM(TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha_solicitada, hora_inicio), TIMESTAMP(fecha_solicitada, hora_fin)) * 2) AS total_seg_he
+      FROM notificaciones
+      WHERE estado = 2
+        AND hora_inicio IS NOT NULL AND hora_fin IS NOT NULL
+      GROUP BY id_usuario
+    ) he ON he.id_usuario = u.id_usuario
+    WHERE (u.rol = 0 OR u.rol IS NULL)
+      AND u.estado = 1
+      AND ((COALESCE(asist.total_seg, 0) + COALESCE(he.total_seg_he, 0)) / 3600) < 280
+    ORDER BY u.nombre ASC, u.apellido_paterno ASC
+  `);
+  return pasantes || [];
+}
+
+/**
+ * GET /api/admin/horas-extras/pasantes-disponibles
+ * Devuelve lista JSON de pasantes que tienen menos de 280 horas acumuladas
+ */
+router.get('/api/admin/horas-extras/pasantes-disponibles', requireAuth, requireRole(1), async (req, res) => {
+  try {
+    const pasantes = await getPasantesDisponibles();
+    return res.json({ ok: true, pasantes });
+  } catch (error) {
+    console.error('Error al consultar pasantes disponibles:', error);
+    return res.status(500).json({ ok: false, msg: 'Error al consultar pasantes disponibles.' });
+  }
+});
+
+/**
+ * POST /api/admin/horas-extras/asignar
+ * Asigna una nueva sesión de horas extras a un pasante (<280h) con bitácora vacía para que el pasante la llene
+ */
+router.post('/api/admin/horas-extras/asignar', requireAuth, requireRole(1), async (req, res) => {
+  try {
+    const { id_usuario, fecha_solicitada, hora_inicio, hora_fin, motivo } = req.body;
+    
+    const idUsuarioNum = parseInt(id_usuario, 10);
+    if (!idUsuarioNum) {
+      return res.status(400).json({ ok: false, msg: 'Debes seleccionar un pasante válido.' });
+    }
+
+    const fecha = String(fecha_solicitada || '').trim().slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+      return res.status(400).json({ ok: false, msg: 'Fecha inválida. Debe ser en formato YYYY-MM-DD.' });
+    }
+
+    let hIni = String(hora_inicio || '').trim().slice(0, 8);
+    let hFin = String(hora_fin || '').trim().slice(0, 8);
+    if (!hIni || !hFin) {
+      return res.status(400).json({ ok: false, msg: 'Debes especificar tanto la hora de inicio como la de fin.' });
+    }
+    if (hIni.length === 5) hIni += ':00';
+    if (hFin.length === 5) hFin += ':00';
+
+    if (hIni >= hFin) {
+      return res.status(400).json({ ok: false, msg: 'La hora de fin debe ser posterior a la hora de inicio.' });
+    }
+
+    // Calcular cantidad de horas en decimal
+    const [diffRows] = await db.query(
+      `SELECT ROUND(TIMESTAMPDIFF(SECOND, TIMESTAMP(?, ?), TIMESTAMP(?, ?)) / 3600, 2) AS horas_calc`,
+      [fecha, hIni, fecha, hFin]
+    );
+    const horasCantidad = diffRows[0]?.horas_calc || 0;
+
+    const motivoFinal = String(motivo || 'Horas extras asignadas por Administración').trim();
+    const obsAdmin = 'EDITADO POR EL ADMIN, REQUIERE QUE SE AGREGUE BITACORA';
+
+    const [insertRes] = await db.query(
+      `INSERT INTO notificaciones 
+        (id_usuario, fecha_solicitada, hora_inicio, hora_fin, horas_cantidad, motivo, tarea, comprobante, estado, observacion_admin)
+       VALUES (?, ?, ?, ?, ?, ?, NULL, NULL, 1, ?)`,
+      [idUsuarioNum, fecha, hIni, hFin, horasCantidad, motivoFinal, obsAdmin]
+    );
+
+    return res.json({ 
+      ok: true, 
+      msg: 'Horas extras asignadas exitosamente al pasante. Queda pendiente para que el pasante complete su bitácora.',
+      id_notificacion: insertRes.insertId 
+    });
+  } catch (err) {
+    console.error('Error al asignar horas extras:', err);
+    return res.status(500).json({ ok: false, msg: 'Error interno del servidor al asignar horas extras.' });
   }
 });
 

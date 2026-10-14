@@ -752,6 +752,7 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
         const h = mapHE[u.id_usuario] || { total_dias_he: 0, total_segundos_he: 0 };
         const totalSeg = (Number(a.total_segundos) || 0) + (Number(h.total_segundos_he) || 0);
         const totalDias = (Number(a.total_dias) || 0) + (Number(h.total_dias_he) || 0);
+        const esCulminado = totalSeg >= (HORAS_META_DEFAULT * 3600);
         return {
           id_usuario: u.id_usuario,
           nombre: u.nombre,
@@ -761,7 +762,8 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
           carrera: u.carrera,
           universidad: u.universidad,
           total_dias: totalDias,
-          total_segundos: totalSeg
+          total_segundos: totalSeg,
+          es_culminado: esCulminado
         };
       });
 
@@ -776,13 +778,19 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
         ranking: idx + 1
       }));
 
+      const topEnCurso = formattedTop.filter(u => !u.es_culminado);
+      const topCulminados = formattedTop.filter(u => u.es_culminado);
+
       statsData = {
         tipo: 'global',
         top_usuarios: formattedTop,
+        top_usuarios_en_curso: topEnCurso,
+        top_usuarios_culminados: topCulminados,
+        total_en_curso: topEnCurso.length,
+        total_culminados: topCulminados.length,
         total_pasantes_ranking: usersRanking.length,
         pasantes_por_finalizar: pasantesPorFinalizar,
         pasantes_culminados: pasantesCulminados,
-        total_culminados: pasantesCulminados.length,
         carreras: carrerasRankingList || []
       };
     }
