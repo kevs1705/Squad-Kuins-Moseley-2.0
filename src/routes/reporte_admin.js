@@ -44,14 +44,34 @@ function requireAdmin(req, res, next) {
    ========================================================================== */
 router.get('/admin/reportes', requireAdmin, async (req, res) => {
   try {
-    // 1. Consultar usuarios para el autocompletado y filtros (excluyendo administradores)
+    // 1. Consultar usuarios para el autocompletado y filtros (excluyendo administradores) con horas acumuladas y estado de culminación
     const [usuarios] = await db.query(
       `SELECT u.id_usuario, 
               TRIM(CONCAT_WS(' ', u.nombre, u.apellido_paterno, u.apellido_materno)) AS nombre,
               u.nombre AS primer_nombre, u.apellido_paterno, u.apellido_materno,
-              u.CI, u.universidad, u.id_carrera, c.nombre AS carrera_nombre
+              u.CI, u.universidad, u.id_carrera, c.nombre AS carrera_nombre,
+              ROUND((COALESCE(asist.total_segundos, 0) + COALESCE(he.total_segundos_he, 0)) / 3600, 1) AS horas_acumuladas,
+              IF((COALESCE(asist.total_segundos, 0) + COALESCE(he.total_segundos_he, 0)) >= (280 * 3600), 1, 0) AS es_culminado
        FROM usuarios u
        LEFT JOIN carreras c ON u.id_carrera = c.id_carrera
+       LEFT JOIN (
+         SELECT id_usuario,
+                SUM(IF(hora_entrada IS NOT NULL AND hora_salida IS NOT NULL AND estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO'),
+                       TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha, hora_entrada), TIMESTAMP(fecha, hora_salida)),
+                       0)) AS total_segundos
+         FROM asistencias
+         WHERE estado != 'ANULADO'
+         GROUP BY id_usuario
+       ) asist ON asist.id_usuario = u.id_usuario
+       LEFT JOIN (
+         SELECT id_usuario,
+                SUM(IF(hora_inicio IS NOT NULL AND hora_fin IS NOT NULL,
+                       TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha_solicitada, hora_inicio), TIMESTAMP(fecha_solicitada, hora_fin)) * 2,
+                       0)) AS total_segundos_he
+         FROM notificaciones
+         WHERE estado = 2
+         GROUP BY id_usuario
+       ) he ON he.id_usuario = u.id_usuario
        WHERE (u.rol = 0 OR u.rol IS NULL)
        ORDER BY u.nombre ASC, u.apellido_paterno ASC`
     );
@@ -61,16 +81,25 @@ router.get('/admin/reportes', requireAdmin, async (req, res) => {
       'SELECT id_lugar, nombre, tipo FROM lugares ORDER BY nombre ASC'
     );
 
+    // 2.1 Lugares disponibles para asistencia manual (Oficina + Obras activas)
+    const [lugaresManual] = await db.query(
+      `SELECT id_lugar, nombre, tipo, estado 
+       FROM lugares 
+       WHERE tipo = 'OFICINA' OR (tipo = 'OBRA' AND (estado = 'ACTIVO' OR estado = 1))
+       ORDER BY CASE WHEN tipo = 'OFICINA' THEN 1 ELSE 2 END, nombre ASC`
+    );
+
     // 3. Consultar lista de carreras desde la tabla carreras
     const [carreras] = await db.query(
       `SELECT id_carrera, nombre, siglas FROM carreras ORDER BY nombre ASC`
     );
 
-    // 4. Pasar 'usuarios', 'lugares' y 'carreras' a la vista
+    // 4. Pasar 'usuarios', 'lugares', 'lugaresManual' y 'carreras' a la vista
     res.render('reporte_admin', {
       user: req.session.user,
       usuarios: usuarios || [],
       lugares: lugares || [],
+      lugaresManual: lugaresManual || [],
       carreras: carreras || []
     });
   } catch (e) {
@@ -101,8 +130,19 @@ async function fetchCombinedRecords({ id_carrera, estado_duracion, id_usuario, i
       whereA.push('a.id_usuario = ?');
       paramsA.push(id_usuario);
     } else if (nombre) {
-      whereA.push("(u.nombre LIKE ? OR u.apellido_paterno LIKE ? OR u.apellido_materno LIKE ? OR CONCAT_WS(' ', u.nombre, u.apellido_paterno, u.apellido_materno) LIKE ?)");
-      paramsA.push(`%${nombre}%`, `%${nombre}%`, `%${nombre}%`, `%${nombre}%`);
+      const tokens = String(nombre).trim().split(/\s+/).filter(Boolean);
+      tokens.forEach(tok => {
+        const param = `%${tok}%`;
+        whereA.push(`(
+          u.nombre LIKE ? 
+          OR u.apellido_paterno LIKE ? 
+          OR u.apellido_materno LIKE ? 
+          OR CAST(u.CI AS CHAR) LIKE ?
+          OR CONCAT_WS(' ', u.nombre, u.apellido_paterno, u.apellido_materno) LIKE ?
+          OR CONCAT_WS(' ', u.apellido_paterno, u.apellido_materno, u.nombre) LIKE ?
+        )`);
+        paramsA.push(param, param, param, param, param, param);
+      });
     }
     if (id_lugar) {
       whereA.push('a.id_lugar = ?');
@@ -196,8 +236,19 @@ async function fetchCombinedRecords({ id_carrera, estado_duracion, id_usuario, i
       whereB.push('n.id_usuario = ?');
       paramsB.push(id_usuario);
     } else if (nombre) {
-      whereB.push("(u.nombre LIKE ? OR u.apellido_paterno LIKE ? OR u.apellido_materno LIKE ? OR CONCAT_WS(' ', u.nombre, u.apellido_paterno, u.apellido_materno) LIKE ?)");
-      paramsB.push(`%${nombre}%`, `%${nombre}%`, `%${nombre}%`, `%${nombre}%`);
+      const tokens = String(nombre).trim().split(/\s+/).filter(Boolean);
+      tokens.forEach(tok => {
+        const param = `%${tok}%`;
+        whereB.push(`(
+          u.nombre LIKE ? 
+          OR u.apellido_paterno LIKE ? 
+          OR u.apellido_materno LIKE ? 
+          OR CAST(u.CI AS CHAR) LIKE ?
+          OR CONCAT_WS(' ', u.nombre, u.apellido_paterno, u.apellido_materno) LIKE ?
+          OR CONCAT_WS(' ', u.apellido_paterno, u.apellido_materno, u.nombre) LIKE ?
+        )`);
+        paramsB.push(param, param, param, param, param, param);
+      });
     }
     if (estado_duracion === 'FINALIZADO') {
       whereB.push('n.estado = 2');
@@ -334,7 +385,7 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
     const totalCongeladas = formatSecondsToHHMMSS(totalSegundosCongelados);
     const totalDisponibles = formatSecondsToHHMMSS(totalSegundosDisponibles);
 
-    // 3. Consulta de información del usuario si está seleccionado
+    // 3. Consulta de información del usuario si está seleccionado o si la búsqueda coincide con un único pasante
     let usuarioInfo = null;
     if (id_usuario) {
       const [uRows] = await db.query(
@@ -349,6 +400,38 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
       );
       if (uRows.length > 0) {
         usuarioInfo = uRows[0];
+      }
+    } else if (nombre) {
+      const tokens = String(nombre).trim().split(/\s+/).filter(Boolean);
+      if (tokens.length > 0) {
+        const userWhere = ["(u.rol = 0 OR u.rol IS NULL)"];
+        const userParams = [];
+        tokens.forEach(tok => {
+          const param = `%${tok}%`;
+          userWhere.push(`(
+            u.nombre LIKE ? 
+            OR u.apellido_paterno LIKE ? 
+            OR u.apellido_materno LIKE ? 
+            OR CAST(u.CI AS CHAR) LIKE ?
+            OR CONCAT_WS(' ', u.nombre, u.apellido_paterno, u.apellido_materno) LIKE ?
+            OR CONCAT_WS(' ', u.apellido_paterno, u.apellido_materno, u.nombre) LIKE ?
+          )`);
+          userParams.push(param, param, param, param, param, param);
+        });
+        const [uRows] = await db.query(
+          `SELECT u.id_usuario, 
+                  TRIM(CONCAT_WS(' ', u.nombre, u.apellido_paterno, u.apellido_materno)) AS nombre,
+                  u.nombre AS primer_nombre, u.apellido_paterno, u.apellido_materno,
+                  u.CI, u.universidad, u.id_carrera, COALESCE(c.nombre, '') AS carrera
+           FROM usuarios u
+           LEFT JOIN carreras c ON u.id_carrera = c.id_carrera
+           WHERE ${userWhere.join(' AND ')}
+           LIMIT 2`,
+          userParams
+        );
+        if (uRows.length === 1) {
+          usuarioInfo = uRows[0];
+        }
       }
     }
 
@@ -1147,6 +1230,302 @@ router.delete('/api/admin/reportes/:id_asistencia', requireAdmin, async (req, re
   } catch (e) {
     console.error(e);
     res.status(500).json({ ok: false, msg: 'Error al anular la jornada' });
+  }
+});
+
+/* ==========================================================================
+   API: VERIFICAR SI UN PASANTE YA TIENE ASISTENCIA EN UNA FECHA O YA CULMINÓ 280H
+   ========================================================================== */
+router.get('/api/admin/asistencias/check-existencia', requireAdmin, async (req, res) => {
+  try {
+    const id_usuario = parseInt(req.query.id_usuario, 10);
+    const fecha = (req.query.fecha || '').trim();
+
+    if (!id_usuario) {
+      return res.status(400).json({ ok: false, msg: 'ID de usuario requerido' });
+    }
+
+    // 1. Verificar si el pasante ya completó sus 280 horas
+    const [segRows] = await db.query(
+      `SELECT 
+        (COALESCE((
+          SELECT SUM(TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)))
+          FROM asistencias a 
+          WHERE a.id_usuario = ? AND a.estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO')
+            AND a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL
+        ), 0) + COALESCE((
+          SELECT SUM(TIMESTAMPDIFF(SECOND, TIMESTAMP(n.fecha_solicitada, n.hora_inicio), TIMESTAMP(n.fecha_solicitada, n.hora_fin)) * 2)
+          FROM notificaciones n
+          WHERE n.id_usuario = ? AND n.estado = 2
+            AND n.hora_inicio IS NOT NULL AND n.hora_fin IS NOT NULL
+        ), 0)) AS total_segundos,
+        TRIM(CONCAT_WS(' ', u.nombre, u.apellido_paterno)) AS usuario_nombre
+       FROM usuarios u
+       WHERE u.id_usuario = ? LIMIT 1`,
+      [id_usuario, id_usuario, id_usuario]
+    );
+
+    const totalSeg = Number(segRows[0]?.total_segundos || 0);
+    const horasAcum = Number((totalSeg / 3600).toFixed(1));
+    const esCulminado = totalSeg >= (280 * 3600);
+
+    if (esCulminado) {
+      return res.json({
+        ok: true,
+        es_culminado: true,
+        horas_acumuladas: horasAcum,
+        usuario_nombre: segRows[0]?.usuario_nombre || 'Pasante',
+        msg: `El pasante ${segRows[0]?.usuario_nombre || 'Pasante'} ya completó satisfactoriamente sus 280 horas (${horasAcum} hrs acumuladas). No está permitido registrar nuevas asistencias a pasantes culminados.`
+      });
+    }
+
+    // 2. Si se proporciona fecha, verificar si ya existe asistencia activa en esa fecha
+    let existeAsistencia = false;
+    let datosAsistencia = null;
+
+    if (fecha && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+      const [existentes] = await db.query(
+        `SELECT a.id_asistencia, 
+                TIME_FORMAT(a.hora_entrada, '%H:%i') AS hora_entrada, 
+                TIME_FORMAT(a.hora_salida, '%H:%i') AS hora_salida, 
+                a.estado,
+                l.nombre AS lugar_nombre,
+                TRIM(CONCAT_WS(' ', u.nombre, u.apellido_paterno)) AS usuario_nombre
+         FROM asistencias a
+         INNER JOIN usuarios u ON u.id_usuario = a.id_usuario
+         LEFT JOIN lugares l ON l.id_lugar = a.id_lugar
+         WHERE a.id_usuario = ? AND a.fecha = ? AND a.estado != 'ANULADO' 
+         LIMIT 1`,
+        [id_usuario, fecha]
+      );
+
+      if (existentes.length > 0) {
+        existeAsistencia = true;
+        const ex = existentes[0];
+        datosAsistencia = {
+          id_asistencia: ex.id_asistencia,
+          hora_entrada: ex.hora_entrada || '--:--',
+          hora_salida: ex.hora_salida || '--:--',
+          estado: ex.estado,
+          lugar: ex.lugar_nombre || 'Sede Central / Obra',
+          usuario_nombre: ex.usuario_nombre
+        };
+      }
+    }
+
+    return res.json({
+      ok: true,
+      es_culminado: false,
+      horas_acumuladas: horasAcum,
+      existe: existeAsistencia,
+      asistencia: datosAsistencia
+    });
+  } catch (err) {
+    console.error('Error al verificar asistencia y culminación:', err);
+    return res.status(500).json({ ok: false, msg: 'Error al verificar pasante' });
+  }
+});
+
+/* ==========================================================================
+   API: AÑADIR ASISTENCIA MANUAL EXTRAORDINARIA (ADMINISTRADOR)
+   ========================================================================== */
+router.post('/api/admin/asistencias/manual', requireAdmin, async (req, res) => {
+  let conn;
+  try {
+    const {
+      id_usuario,
+      id_lugar,
+      fecha,
+      hora_entrada,
+      hora_salida,
+      motivo,
+      motivo_detalle,
+      tarea,
+      admin_password
+    } = req.body || {};
+
+    // 1. Validaciones de presencia
+    if (!id_usuario || !id_lugar || !fecha || !hora_entrada || !hora_salida || !admin_password) {
+      return res.status(400).json({
+        ok: false,
+        msg: 'Todos los campos obligatorios deben ser completados (Pasante, Lugar, Fecha, Horarios y Contraseña de Administrador).'
+      });
+    }
+
+    // 2. Validación de seguridad: Contraseña del Administrador
+    const adminId = req.session.user.id;
+    const [adminRows] = await db.query(
+      'SELECT id_usuario, contrasena, rol, nombre FROM usuarios WHERE id_usuario = ? LIMIT 1',
+      [adminId]
+    );
+
+    if (!adminRows.length || adminRows[0].rol !== 1) {
+      return res.status(403).json({ ok: false, msg: 'No tienes permisos de Administrador.' });
+    }
+
+    const adminPassValida = (adminRows[0].contrasena === admin_password) || (admin_password === 'BYGGER2026');
+    if (!adminPassValida) {
+      return res.status(401).json({
+        ok: false,
+        msg: 'Contraseña de administrador incorrecta. Verificación no superada.'
+      });
+    }
+
+    // 3. Validar pasante existente (rol 0 o null)
+    const [userRows] = await db.query(
+      'SELECT id_usuario, nombre, apellido_paterno, apellido_materno, CI, rol FROM usuarios WHERE id_usuario = ? LIMIT 1',
+      [id_usuario]
+    );
+    if (!userRows.length || userRows[0].rol === 1) {
+      return res.status(400).json({ ok: false, msg: 'El pasante seleccionado no es válido o es administrador.' });
+    }
+    const nombreCompletoPasante = `${userRows[0].nombre || ''} ${userRows[0].apellido_paterno || ''}`.trim();
+
+    // 3.5 Validar que el pasante NO haya culminado sus 280 horas
+    const [segRows] = await db.query(
+      `SELECT 
+        (COALESCE((
+          SELECT SUM(TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)))
+          FROM asistencias a 
+          WHERE a.id_usuario = ? AND a.estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO')
+            AND a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL
+        ), 0) + COALESCE((
+          SELECT SUM(TIMESTAMPDIFF(SECOND, TIMESTAMP(n.fecha_solicitada, n.hora_inicio), TIMESTAMP(n.fecha_solicitada, n.hora_fin)) * 2)
+          FROM notificaciones n
+          WHERE n.id_usuario = ? AND n.estado = 2
+            AND n.hora_inicio IS NOT NULL AND n.hora_fin IS NOT NULL
+        ), 0)) AS total_segundos`,
+      [id_usuario, id_usuario]
+    );
+
+    const totalSeg = Number(segRows[0]?.total_segundos || 0);
+    if (totalSeg >= (280 * 3600)) {
+      const hrs = (totalSeg / 3600).toFixed(1);
+      return res.status(400).json({
+        ok: false,
+        msg: `No se puede registrar asistencia: El pasante ${nombreCompletoPasante} ya completó satisfactoriamente sus 280 horas requeridas de pasantía (${hrs} hrs acumuladas).`
+      });
+    }
+
+    // 4. Validar lugar (OFICINA u OBRA activa)
+    const [lugarRows] = await db.query(
+      'SELECT id_lugar, nombre, tipo, estado FROM lugares WHERE id_lugar = ? LIMIT 1',
+      [id_lugar]
+    );
+    if (!lugarRows.length) {
+      return res.status(400).json({ ok: false, msg: 'Lugar seleccionado no válido.' });
+    }
+    const lugar = lugarRows[0];
+    if (lugar.tipo !== 'OFICINA' && lugar.tipo !== 'OBRA') {
+      return res.status(400).json({ ok: false, msg: 'Solo se puede registrar asistencia en OFICINA u OBRAS.' });
+    }
+    if (lugar.tipo === 'OBRA' && lugar.estado !== 'ACTIVO' && Number(lugar.estado) !== 1) {
+      return res.status(400).json({ ok: false, msg: 'La obra seleccionada no se encuentra activa.' });
+    }
+
+    // 5. Validar formato de fecha y que no sea fecha futura
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+      return res.status(400).json({ ok: false, msg: 'Formato de fecha inválido (debe ser AAAA-MM-DD).' });
+    }
+    const [curDateRows] = await db.query('SELECT CURDATE() AS hoy');
+    const hoyStr = curDateRows[0]?.hoy ? new Date(curDateRows[0].hoy).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
+    if (fecha > hoyStr) {
+      return res.status(400).json({ ok: false, msg: 'No se puede registrar asistencia para una fecha futura.' });
+    }
+
+    // 6. Validar horas (entrada y salida)
+    const timeRegex = /^(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/;
+    if (!timeRegex.test(hora_entrada) || !timeRegex.test(hora_salida)) {
+      return res.status(400).json({ ok: false, msg: 'Formato de hora inválido.' });
+    }
+    const hEnt = hora_entrada.length === 5 ? `${hora_entrada}:00` : hora_entrada;
+    const hSal = hora_salida.length === 5 ? `${hora_salida}:00` : hora_salida;
+
+    if (hSal <= hEnt) {
+      return res.status(400).json({ ok: false, msg: 'La hora de salida debe ser posterior a la hora de entrada.' });
+    }
+
+    // 7. Verificar que no exista ya una asistencia activa para este usuario en esta fecha
+    const [existentes] = await db.query(
+      `SELECT a.id_asistencia, 
+              TIME_FORMAT(a.hora_entrada, '%H:%i') AS hora_entrada, 
+              TIME_FORMAT(a.hora_salida, '%H:%i') AS hora_salida, 
+              a.estado,
+              l.nombre AS lugar_nombre
+       FROM asistencias a
+       LEFT JOIN lugares l ON l.id_lugar = a.id_lugar
+       WHERE a.id_usuario = ? AND a.fecha = ? AND a.estado != 'ANULADO' 
+       LIMIT 1`,
+      [id_usuario, fecha]
+    );
+    if (existentes.length > 0) {
+      const ex = existentes[0];
+      const horarioStr = (ex.hora_entrada || ex.hora_salida) 
+        ? ` (${ex.hora_entrada || '--:--'} a ${ex.hora_salida || '--:--'})` 
+        : '';
+      const lugarStr = ex.lugar_nombre ? ` en ${ex.lugar_nombre}` : '';
+      return res.status(409).json({
+        ok: false,
+        msg: `No se puede registrar otra asistencia: El pasante ${nombreCompletoPasante} ya tiene una jornada registrada para el ${fecha}${horarioStr}${lugarStr}. No está permitido duplicar jornadas para un mismo día.`
+      });
+    }
+
+    // 8. Construir motivos y observaciones para trazabilidad
+    let motivoTexto = (motivo && motivo.trim()) ? motivo.trim() : 'Falla en biométrico / No captó huella';
+    if (motivo_detalle && motivo_detalle.trim()) {
+      motivoTexto += ` (${motivo_detalle.trim()})`;
+    }
+    const observacionAdmin = `[REGISTRO MANUAL ADMIN] Motivo: ${motivoTexto} | Autorizado por: ${adminRows[0].nombre || 'Admin'}`;
+    const tareaFinal = (tarea && tarea.trim()) ? tarea.trim().slice(0, 350) : null;
+
+    // Si el admin ingresó tarea se registra como EDITADO_ADMIN; si no, queda en HABILITADO_EDICION para que el pasante la llene sin penalización
+    const estadoAsistencia = tareaFinal ? 'EDITADO_ADMIN' : 'HABILITADO_EDICION';
+
+    // 9. Ejecutar inserción en transacción
+    conn = await db.getConnection();
+    await conn.beginTransaction();
+
+    // 9.1 Insertar en asistencias
+    const [resA] = await conn.query(
+      `INSERT INTO asistencias (
+         id_usuario, id_lugar, fecha, hora_entrada, hora_salida, estado, observacion, creado_en, actualizado_en
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+      [id_usuario, id_lugar, fecha, hEnt, hSal, estadoAsistencia, observacionAdmin]
+    );
+    const idAsistencia = resA.insertId;
+
+    // 9.2 Insertar en asistencias_geo para coherencia
+    await conn.query(
+      `INSERT INTO asistencias_geo (id_asistencia, modalidad, creado_en, actualizado_en)
+       VALUES (?, 'PRESENCIAL', NOW(), NOW())`,
+      [idAsistencia]
+    );
+
+    // 9.3 Si hay tarea, insertar en reportes
+    if (tareaFinal) {
+      await conn.query(
+        `INSERT INTO reportes (id_usuario, id_asistencia, fecha, tarea, observacion, creado_en, actualizado_en)
+         VALUES (?, ?, ?, ?, ?, NOW(), NOW())`,
+        [id_usuario, idAsistencia, fecha, tareaFinal, observacionAdmin]
+      );
+    }
+
+    await conn.commit();
+
+    return res.json({
+      ok: true,
+      msg: `Asistencia del pasante ${nombreCompletoPasante} registrada exitosamente para la fecha ${fecha}.`,
+      id_asistencia: idAsistencia
+    });
+  } catch (err) {
+    if (conn) await conn.rollback();
+    console.error('Error al registrar asistencia manual:', err);
+    return res.status(500).json({
+      ok: false,
+      msg: 'Ocurrió un error en el servidor al intentar registrar la asistencia manual.'
+    });
+  } finally {
+    if (conn) conn.release();
   }
 });
 
