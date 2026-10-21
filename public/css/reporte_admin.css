@@ -2457,6 +2457,21 @@ body.reportes-admin-page .btn-top-export:hover {
   box-shadow: 0 6px 14px rgba(5, 150, 105, 0.32);
 }
 
+/* Añadir Asistencia Manual - Gradiente Azul Primario / Teal con Sombra Elegante */
+body.reportes-admin-page .btn-top-manual-asistencia {
+  background: linear-gradient(135deg, #0F5FA6 0%, #0D9488 100%);
+  color: #FFFFFF;
+  border-color: #0F5FA6;
+  box-shadow: 0 3px 8px rgba(15, 95, 166, 0.25);
+  font-weight: 700;
+}
+
+body.reportes-admin-page .btn-top-manual-asistencia:hover {
+  background: linear-gradient(135deg, #0D528F 0%, #0B7A70 100%);
+  box-shadow: 0 6px 14px rgba(15, 95, 166, 0.35);
+  transform: translateY(-1px);
+}
+
 /* ---------- Inputs y Selects del Filtro ---------- */
 body.reportes-admin-page .filter-select-custom {
   width: 100%;
@@ -2525,12 +2540,13 @@ body.reportes-admin-page .calendar-clear-btn:hover {
 body.reportes-admin-page .filter-buttons-right {
   display: flex;
   align-items: flex-end;
+  gap: 8px;
   flex-shrink: 0;
 }
 
 body.reportes-admin-page .btn-outline-clean {
   height: 42px;
-  padding: 0 18px;
+  padding: 0 16px;
   background: #FFF1F2;
   border: 1.5px solid #FECDD3;
   color: #E11D48;
@@ -2555,6 +2571,37 @@ body.reportes-admin-page .btn-outline-clean:hover {
   color: #BE123C;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(225, 29, 72, 0.18);
+}
+
+/* Botón Asistencia Extraordinaria en la esquina de Filtros */
+body.reportes-admin-page .btn-manual-asistencia-filter {
+  height: 42px;
+  padding: 0 16px;
+  background: linear-gradient(135deg, #EFF6FF 0%, #E0F2FE 100%);
+  border: 1.5px solid #93C5FD;
+  color: #1D4ED8;
+  font-weight: 700;
+  font-size: 13px;
+  border-radius: var(--radius-input);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+body.reportes-admin-page .btn-manual-asistencia-filter::before {
+  display: none !important;
+  content: none !important;
+}
+
+body.reportes-admin-page .btn-manual-asistencia-filter:hover {
+  background: linear-gradient(135deg, #DBEAFE 0%, #BAE6FD 100%);
+  border-color: #60A5FA;
+  color: #1E40AF;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(29, 78, 216, 0.2);
 }
 
 /* Personalización de Flatpickr */

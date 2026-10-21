@@ -165,7 +165,8 @@
       <!-- Dashboard Bottom: Pronóstico de Salida Estimada + Horas Acumuladas (Grid de 2 Columnas) -->
       <div class="reportes-dashboard-bottom" id="dashboardBottomRow" style="display: none;">
         <!-- Card Pronóstico de Salida Estimada -->
-        <div class="stat-card stat-card-pronostico" id="cardPronosticoUsuario" style="flex-direction: column; gap: 10px;">
+        <div class="stat-card stat-card-pronostico" id="cardPronosticoUsuario"
+          style="flex-direction: column; gap: 10px;">
           <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 12px;">
             <div style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1;">
               <div class="stat-icon-wrapper" style="background: #EFF6FF; color: #0F5FA6;">
@@ -178,28 +179,36 @@
               <div class="stat-info" style="min-width: 0; flex: 1;">
                 <span class="stat-label">Pronóstico de salida estimada</span>
                 <div class="stat-value-row">
-                  <span class="stat-value" id="stat-pronostico-fecha" style="font-size: 17px; font-weight: 800; color: #0F5FA6;">--</span>
+                  <span class="stat-value" id="stat-pronostico-fecha"
+                    style="font-size: 17px; font-weight: 800; color: #0F5FA6;">--</span>
                 </div>
                 <span class="stat-subtext" id="stat-pronostico-subtext"
-                  style="font-size: 11.5px; color: var(--color-text-muted); font-weight: 500;">Proyección según horario</span>
+                  style="font-size: 11.5px; color: var(--color-text-muted); font-weight: 500;">Proyección según
+                  horario</span>
               </div>
             </div>
             <span class="stat-badge stat-badge-pill" id="stat-pronostico-badge"
-              style="background: #EFF6FF; color: #0F5FA6; font-weight: 700; font-size: 11.5px; padding: 6px 12px; border-radius: 99px; text-transform: uppercase; white-space: nowrap;">~12 SEM RESTANTES</span>
+              style="background: #EFF6FF; color: #0F5FA6; font-weight: 700; font-size: 11.5px; padding: 6px 12px; border-radius: 99px; text-transform: uppercase; white-space: nowrap;">~12
+              SEM RESTANTES</span>
           </div>
 
           <!-- Progreso de Meta de Horas y Faltantes -->
           <div style="width: 100%; border-top: 1px solid var(--color-border); padding-top: 8px; margin-top: 2px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; margin-bottom: 5px;">
+            <div
+              style="display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; margin-bottom: 5px;">
               <span style="color: var(--color-text-muted); font-weight: 600;">Progreso de Pasantía:</span>
               <span id="stat-pronostico-porcentaje" style="font-weight: 700; color: #0F5FA6;">0% (0 / 280 hrs)</span>
             </div>
             <div style="width: 100%; height: 8px; background: #E2E8F0; border-radius: 99px; overflow: hidden;">
-              <div id="stat-pronostico-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #0F5FA6, #0D9488); border-radius: 99px; transition: width 0.4s ease;"></div>
+              <div id="stat-pronostico-bar"
+                style="height: 100%; width: 0%; background: linear-gradient(90deg, #0F5FA6, #0D9488); border-radius: 99px; transition: width 0.4s ease;">
+              </div>
             </div>
-            <div style="font-size: 11.5px; color: #64748B; margin-top: 6px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
+            <div
+              style="font-size: 11.5px; color: #64748B; margin-top: 6px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
               <span>Faltan: <b id="stat-pronostico-faltan" style="color: #0F5FA6; font-weight: 700;">0 hrs</b></span>
-              <span>Ritmo: <b id="stat-pronostico-ritmo-val" style="color: #0F5FA6; font-weight: 700;">20 hrs/sem</b></span>
+              <span>Ritmo: <b id="stat-pronostico-ritmo-val" style="color: #0F5FA6; font-weight: 700;">20
+                  hrs/sem</b></span>
             </div>
           </div>
         </div>
@@ -217,7 +226,8 @@
             <div class="stat-info" style="flex: 1;">
               <span class="stat-label">Horas acumuladas</span>
               <div class="stat-value-row">
-                <span class="stat-value" id="stat-hours" style="font-size: 20px; font-weight: 800; color: #081426;">00:00:00</span>
+                <span class="stat-value" id="stat-hours"
+                  style="font-size: 20px; font-weight: 800; color: #081426;">00:00:00</span>
                 <span class="stat-badge" style="background: #F0FDF4; color: #16A34A; font-weight: 700;">HH:MM:SS</span>
               </div>
               <span class="stat-subtext" id="stat-hours-decimal"
@@ -230,15 +240,17 @@
             style="display: flex; gap: 8px; width: 100%; border-top: 1px solid var(--color-border); padding-top: 8px; margin-top: 2px;">
             <div
               style="flex: 1; background: #FEF2F2; padding: 6px 10px; border-radius: 8px; border: 1px solid #FECACA;">
-              <span style="font-size: 10.5px; color: #DC2626; font-weight: 600; display: block;">❄️ Total Congeladas:</span>
-              <span id="stat-hours-congeladas"
-                style="font-size: 12.5px; font-weight: 700; color: #DC2626;">00:00:00 (0 h)</span>
+              <span style="font-size: 10.5px; color: #DC2626; font-weight: 600; display: block;">❄️ Total
+                Congeladas:</span>
+              <span id="stat-hours-congeladas" style="font-size: 12.5px; font-weight: 700; color: #DC2626;">00:00:00 (0
+                h)</span>
             </div>
             <div
               style="flex: 1; background: #F0FDF4; padding: 6px 10px; border-radius: 8px; border: 1px solid #BBF7D0;">
-              <span style="font-size: 10.5px; color: #16A34A; font-weight: 600; display: block;">✅ Total Disponibles:</span>
-              <span id="stat-hours-disponibles"
-                style="font-size: 12.5px; font-weight: 700; color: #16A34A;">00:00:00 (0 h)</span>
+              <span style="font-size: 10.5px; color: #16A34A; font-weight: 600; display: block;">✅ Total
+                Disponibles:</span>
+              <span id="stat-hours-disponibles" style="font-size: 12.5px; font-weight: 700; color: #16A34A;">00:00:00 (0
+                h)</span>
             </div>
           </div>
         </div>
@@ -305,12 +317,12 @@
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                   <circle cx="12" cy="7" r="4" />
                 </svg>
-                Buscar Usuario (Nombre o Apellido):
+                Buscar Pasante (Nombre, Apellido o CI):
               </label>
               <div class="autocomplete-container">
                 <div class="autocomplete-input-wrap input-icon-wrap icon-user">
                   <input id="userAutocompleteInput" type="text"
-                    placeholder="Escribe el nombre o apellido del usuario (Enter para filtrar)..." autocomplete="off">
+                    placeholder="Buscar por Nombre, Apellido o Carnet de Identidad (CI)..." autocomplete="off">
                   <button type="button" class="autocomplete-clear-btn" id="btnClearUser"
                     title="Limpiar usuario seleccionado">&times;</button>
                 </div>
@@ -395,7 +407,7 @@
               </div>
             </div>
 
-            <!-- Botón Limpiar Filtros Reacomodado con nuevo color -->
+            <!-- Botón Limpiar Filtros Reacomodado con nuevo color + Botón Añadir Asistencia Extraordinaria -->
             <div class="filter-buttons-right">
               <button class="btn-outline-clean" id="btn-limpiar" type="button" title="Restablecer todos los filtros">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
@@ -406,6 +418,14 @@
                   <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
                 </svg>
                 Limpiar Filtros
+              </button>
+              <button class="btn-manual-asistencia-filter" id="btn-abrir-asistencia-manual-filter" type="button"
+                title="Añadir asistencia extraordinaria (ej. cuando el biométrico no captó la huella)">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+                Agregar Asistencia
               </button>
             </div>
           </div>
@@ -784,10 +804,279 @@
           </div>
         </div>
       </div>
+
+      <!-- MODAL 5: AÑADIR ASISTENCIA EXTRAORDINARIA / MANUAL -->
+      <div class="modal-backdrop" id="modalAsistenciaManualBackdrop"
+        style="display: none; align-items: center; justify-content: center; z-index: 9999;">
+        <div class="modal" id="modalAsistenciaManual"
+          style="max-width: 660px; max-height: 92vh; overflow-y: auto; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);">
+          <div class="modal-header-custom"
+            style="display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 16px; border-bottom: 1px solid #E2E8F0; margin-bottom: 16px;">
+            <div>
+              <div class="modal-badge-tag"
+                style="background: #FEF3C7; color: #B45309; font-weight: 700; padding: 4px 10px; border-radius: 6px; font-size: 11px; text-transform: uppercase; display: inline-flex; align-items: center; gap: 4px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.5">
+                  <path
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                Registro Excepcional
+              </div>
+              <h3 style="margin: 8px 0 2px 0; font-size: 20px; font-weight: 800; color: #0F172A;">Añadir Asistencia
+                Manual</h3>
+              <p style="margin: 0; font-size: 13px; color: #64748B;">Uso estricto ante fallas biométricas (ej. huella no
+                captada) o excepciones autorizadas</p>
+            </div>
+            <button type="button" class="modal-close-btn" id="btnXCerrarAsistenciaManual"
+              style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #64748B; cursor: pointer;">&times;</button>
+          </div>
+
+          <!-- Banner de advertencia -->
+          <div
+            style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; display: flex; align-items: flex-start; gap: 10px;">
+            <div style="color: #D97706; font-size: 18px; flex-shrink: 0; line-height: 1;">⚠️</div>
+            <div style="font-size: 12.5px; color: #92400E; line-height: 1.45;">
+              <strong>Atención Administrador:</strong> Esta función registra una jornada presencial oficial en el
+              sistema. Utilízala estrictamente cuando el pasante asistió pero el biométrico no captó la huella o se
+              requiera justificar el día.
+            </div>
+          </div>
+
+          <form id="formAsistenciaManual" autocomplete="off">
+            <!-- 1. Pasante (Autocompletado unificado, idéntico al buscador general) -->
+            <div style="margin-bottom: 14px;">
+              <label for="manualUserAutocompleteInput"
+                style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.2" style="margin-right: 4px; vertical-align: -2px;">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+                Pasante (Usuario): <span style="color: #DC2626;">*</span>
+              </label>
+
+              <div class="autocomplete-container" style="position: relative; width: 100%;">
+                <div class="autocomplete-input-wrap input-icon-wrap icon-user">
+                  <input id="manualUserAutocompleteInput" type="text"
+                    placeholder="Buscar por Nombre, Apellido o Carnet de Identidad (CI)..." autocomplete="off" required>
+                  <button type="button" class="autocomplete-clear-btn" id="btnManualClearUser"
+                    title="Limpiar pasante seleccionado">&times;</button>
+                </div>
+                <!-- Dropdown con sugerencias de autocompletado -->
+                <div class="autocomplete-dropdown" id="manualUserAutocompleteDropdown"></div>
+              </div>
+              <!-- Input oculto para el id del usuario seleccionado -->
+              <input type="hidden" id="manual_id_usuario" name="id_usuario" value="" required>
+
+              <!-- Alerta si el pasante ya culminó las 280 horas -->
+              <div id="manual_pasante_culminado_alerta"
+                style="display: none; background: #FEF2F2; border: 1.5px solid #F87171; border-radius: 8px; padding: 10px 12px; margin-top: 8px;">
+                <div style="display: flex; align-items: flex-start; gap: 8px;">
+                  <span style="font-size: 16px; line-height: 1;">🎓</span>
+                  <div style="font-size: 12.5px; color: #991B1B; line-height: 1.45;">
+                    <strong style="color: #7F1D1D;">Pasante Culminado (280 hrs alcanzadas):</strong>
+                    <div id="manual_culminado_texto" style="margin-top: 2px;">Este pasante ya completó
+                      satisfactoriamente sus 280 horas requeridas de pasantía. El sistema bloquea el registro de nuevas
+                      jornadas de asistencia.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. Lugar / Modalidad (Oficina vs Obras Activas) -->
+            <div style="margin-bottom: 14px;">
+              <label for="manual_id_lugar"
+                style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">
+                Lugar / Ubicación: <span style="color: #DC2626;">*</span>
+              </label>
+              <select id="manual_id_lugar" name="id_lugar" class="filter-select-custom" required
+                style="width: 100%; height: 42px; background-color: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 8px; padding: 0 12px; font-size: 13.5px; color: #0F172A;">
+                <option value="">-- Selecciona Oficina u Obra Activa --</option>
+                <% const listManual=(typeof lugaresManual !=='undefined' && lugaresManual.length> 0) ? lugaresManual :
+                  (lugares || []);
+                  const ofi = listManual.find(function(l) { return l.tipo === 'OFICINA'; });
+                  const obs = listManual.filter(function(l) { return l.tipo === 'OBRA' && (l.estado === 'ACTIVO' ||
+                  l.estado == 1 || typeof l.estado === 'undefined'); });
+                  %>
+                  <% if (ofi) { %>
+                    <optgroup label="Sede Central">
+                      <option value="<%= ofi.id_lugar %>" selected>🏢 <%= ofi.nombre %> (Oficina Principal)</option>
+                    </optgroup>
+                    <% } %>
+                      <% if (obs.length> 0) { %>
+                        <optgroup label="Obras Existentes y Activas">
+                          <% obs.forEach(function(o) { %>
+                            <option value="<%= o.id_lugar %>">🏗️ <%= o.nombre %>
+                            </option>
+                            <% }); %>
+                        </optgroup>
+                        <% } %>
+              </select>
+            </div>
+
+            <!-- 3. Fecha de Asistencia (Fila Completa para máxima visibilidad) -->
+            <div style="margin-bottom: 14px;">
+              <label for="manual_fecha"
+                style="display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">
+                <span>📅 Fecha de Asistencia: <span style="color: #DC2626;">*</span></span>
+                <span style="font-size: 11.5px; font-weight: normal; color: #64748B;">Máximo: Hoy</span>
+              </label>
+              <input type="date" id="manual_fecha" name="fecha" required
+                max="<%= new Date().toISOString().slice(0, 10) %>"
+                style="width: 100%; height: 44px; background-color: #FFFFFF !important; color: #0F172A !important; -webkit-text-fill-color: #0F172A !important; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 0 14px; font-size: 14.5px; font-weight: 600; font-family: inherit; color-scheme: light !important; box-sizing: border-box;">
+
+              <!-- Alerta si ya existe asistencia registrada en esta fecha -->
+              <div id="manual_asistencia_duplicada_alerta"
+                style="display: none; background: #FFFBEB; border: 1.5px solid #FCD34D; border-radius: 8px; padding: 10px 12px; margin-top: 8px;">
+                <div style="display: flex; align-items: flex-start; gap: 8px;">
+                  <span style="color: #D97706; font-size: 16px; line-height: 1;">⚠️</span>
+                  <div style="font-size: 12.5px; color: #92400E; line-height: 1.45;">
+                    <strong style="color: #78350F;">Ya existe asistencia registrada para esta fecha:</strong>
+                    <div id="manual_duplicada_texto" style="margin-top: 2px;">El pasante ya tiene un registro de jornada
+                      en este día. No se permiten asistencias duplicadas.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. Horarios de Inicio y Fin (2 Columnas Espaciosas con hora visible) -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 8px;">
+              <div>
+                <label for="manual_hora_entrada"
+                  style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">
+                  ⏰ Hora Entrada (Inicio): <span style="color: #DC2626;">*</span>
+                </label>
+                <input type="time" id="manual_hora_entrada" name="hora_entrada" required value="08:30"
+                  style="width: 100%; height: 44px; background-color: #FFFFFF !important; color: #0F172A !important; -webkit-text-fill-color: #0F172A !important; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 0 14px; font-size: 15px; font-weight: 700; font-family: inherit; color-scheme: light !important; box-sizing: border-box;">
+              </div>
+              <div>
+                <label for="manual_hora_salida"
+                  style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">
+                  🏁 Hora Salida (Fin): <span style="color: #DC2626;">*</span>
+                </label>
+                <input type="time" id="manual_hora_salida" name="hora_salida" required value="12:30"
+                  style="width: 100%; height: 44px; background-color: #FFFFFF !important; color: #0F172A !important; -webkit-text-fill-color: #0F172A !important; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 0 14px; font-size: 15px; font-weight: 700; font-family: inherit; color-scheme: light !important; box-sizing: border-box;">
+              </div>
+            </div>
+
+
+            <!-- Badge de cálculo dinámico de duración -->
+            <div id="manual_calculo_duracion_wrap"
+              style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between;">
+              <span style="font-size: 12.5px; color: #166534; font-weight: 600;">⏱️ Duración Calculada:</span>
+              <span id="manual_duracion_texto" style="font-size: 13px; font-weight: 800; color: #15803D;">04:00 (4.0
+                hrs)</span>
+            </div>
+
+            <!-- 4. Motivo de la excepción -->
+            <div style="margin-bottom: 14px;">
+              <label for="manual_motivo_select"
+                style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">
+                Motivo / Justificación: <span style="color: #DC2626;">*</span>
+              </label>
+              <select id="manual_motivo_select" class="filter-select-custom" required
+                style="width: 100%; height: 42px; background-color: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 8px; padding: 0 12px; font-size: 13.5px; margin-bottom: 8px;">
+                <option value="Biométrico no captó huella dactilar" selected>Falla biométrico: No captó huella dactilar
+                  del pasante</option>
+                <option value="Dispositivo biométrico sin energía o fuera de línea">Biométrico sin energía o fuera de
+                  línea</option>
+                <option value="Jornada presencial en obra sin equipo biométrico">Jornada en obra sin equipo biométrico
+                  disponible</option>
+                <option value="Marcación omitida con justificación verbal autorizada">Marcación omitida justificada
+                  verbalmente y autorizada</option>
+                <option value="OTRO">Otro motivo específico (describir abajo)</option>
+              </select>
+              <style>
+                .swal2-container {
+                  z-index: 20000 !important;
+                }
+                #manual_admin_password,
+                #manual_motivo_detalle,
+                #manual_tarea {
+                  color: #0F172A !important;
+                  -webkit-text-fill-color: #0F172A !important;
+                  background-color: #FFFFFF !important;
+                  color-scheme: light !important;
+                }
+                #manual_admin_password::placeholder,
+                #manual_motivo_detalle::placeholder,
+                #manual_tarea::placeholder {
+                  color: #94A3B8 !important;
+                  -webkit-text-fill-color: #94A3B8 !important;
+                  opacity: 1 !important;
+                  font-weight: normal;
+                }
+                #manual_admin_password:focus,
+                #manual_motivo_detalle:focus,
+                #manual_tarea:focus {
+                  outline: none !important;
+                  border-color: #0F5FA6 !important;
+                  box-shadow: 0 0 0 3px rgba(15, 95, 166, 0.15) !important;
+                }
+              </style>
+              <input type="text" id="manual_motivo_detalle" name="motivo_detalle"
+                placeholder="Detalle adicional u observación complementaria sobre el motivo..."
+                style="width: 100%; height: 38px; background-color: #FFFFFF !important; color: #0F172A !important; -webkit-text-fill-color: #0F172A !important; color-scheme: light !important; border: 1px solid #CBD5E1; border-radius: 8px; padding: 0 12px; font-size: 13px; font-family: inherit; box-sizing: border-box;">
+            </div>
+
+            <!-- 5. Tarea / Bitácora inicial (opcional) -->
+            <div style="margin-bottom: 16px;">
+              <label for="manual_tarea"
+                style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">
+                Bitácora / Actividades realizadas <span
+                  style="font-size: 12px; color: #64748B; font-weight: normal;">(Opcional, el pasante podrá completarla
+                  en su panel)</span>:
+              </label>
+              <textarea id="manual_tarea" name="tarea" rows="2"
+                placeholder="Describe brevemente las actividades si las conoces, o déjalo vacío para que el pasante las complete..."
+                style="width: 100%; background-color: #FFFFFF !important; color: #0F172A !important; -webkit-text-fill-color: #0F172A !important; color-scheme: light !important; border: 1px solid #CBD5E1; border-radius: 8px; padding: 8px 12px; font-size: 13px; font-family: inherit; resize: vertical; box-sizing: border-box;"></textarea>
+            </div>
+
+            <!-- 6. Verificación de Seguridad del Administrador -->
+            <div
+              style="background: #EFF6FF; border: 1.5px solid #BFDBFE; border-radius: 10px; padding: 14px; margin-bottom: 18px;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <span style="font-size: 16px;">🔐</span>
+                <label for="manual_admin_password"
+                  style="font-size: 13px; font-weight: 700; color: #1E40AF; margin: 0;">
+                  Verificación de Seguridad Administrador: <span style="color: #DC2626;">*</span>
+                </label>
+              </div>
+              <p style="margin: 0 0 10px 0; font-size: 12px; color: #3B82F6;">
+                Ingresa tu contraseña personal de Administrador o la clave de autorización maestra del sistema:
+              </p>
+              <div style="position: relative; display: flex; align-items: center;">
+                <input type="password" id="manual_admin_password" name="admin_password" required
+                  placeholder="Tu contraseña de Administrador" autocomplete="current-password"
+                  style="width: 100%; height: 44px; background-color: #FFFFFF !important; color: #0F172A !important; -webkit-text-fill-color: #0F172A !important; color-scheme: light !important; border: 1.5px solid #93C5FD; border-radius: 8px; padding: 0 44px 0 14px; font-size: 15px; font-weight: 600; font-family: inherit; box-sizing: border-box;">
+                <button type="button" id="btnToggleManualPass"
+                  style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #64748B; font-size: 18px; padding: 4px; display: flex; align-items: center; justify-content: center;"
+                  title="Ver u ocultar contraseña">👁️</button>
+              </div>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="modal-actions"
+              style="display: flex; align-items: center; justify-content: flex-end; gap: 10px;">
+              <button type="button" class="btn btn-secondary" id="btnCerrarAsistenciaManual">Cancelar</button>
+              <button type="submit" class="btn btn-primary" id="btnSubmitAsistenciaManual"
+                style="background: linear-gradient(135deg, #0F5FA6 0%, #0D9488 100%); border: none; font-weight: 700; padding: 10px 22px; cursor: pointer;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.5" style="margin-right: 4px;">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                Registrar Asistencia
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div> <!-- .reportes-admin-wrapper -->
 
     <script id="data-usuarios" type="application/json"><%- JSON.stringify(usuarios || []) %></script>
     <script id="data-lugares" type="application/json"><%- JSON.stringify(lugares || []) %></script>
+    <script id="data-lugares-manual"
+      type="application/json"><%- JSON.stringify(typeof lugaresManual !== 'undefined' ? lugaresManual : []) %></script>
     <script>
       // Listas inyectadas desde el backend
       const listaUsuarios = JSON.parse(document.getElementById('data-usuarios')?.textContent || '[]');
@@ -827,17 +1116,26 @@
         return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
       }
 
-      // Renderizar dropdown de autocompletado
+      // Renderizar dropdown de autocompletado con soporte multi-término (Nombre, Apellidos y CI)
       function renderAutocomplete(query = '') {
         const q = query.trim().toLowerCase();
         autoDropdown.innerHTML = '';
 
         let filtrados = listaUsuarios;
-        if (q) {
+        const tokens = q ? q.split(/\s+/).filter(Boolean) : [];
+
+        if (tokens.length > 0) {
           filtrados = listaUsuarios.filter(u => {
             const nom = (u.nombre || '').toLowerCase();
+            const primNom = (u.primer_nombre || '').toLowerCase();
+            const apePat = (u.apellido_paterno || '').toLowerCase();
+            const apeMat = (u.apellido_materno || '').toLowerCase();
             const ci = String(u.CI || '').toLowerCase();
-            return nom.includes(q) || ci.includes(q);
+            const carr = (u.carrera_nombre || u.carrera || '').toLowerCase();
+            const uni = (u.universidad || '').toLowerCase();
+            const fullInverted = `${apePat} ${apeMat} ${primNom}`.trim();
+            const searchable = `${nom} ${fullInverted} ${ci} ${carr} ${uni}`;
+            return tokens.every(tok => searchable.includes(tok));
           });
         }
 
@@ -875,12 +1173,17 @@
           item.className = `autocomplete-item ${hiddenUserId.value == u.id_usuario ? 'selected' : ''}`;
 
           let nombreHTML = escapeHTML(u.nombre);
-          if (q) {
-            const regex = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-            nombreHTML = nombreHTML.replace(regex, '<span class="autocomplete-highlight">$1</span>');
+          let ciHTML = escapeHTML(String(u.CI || ''));
+
+          if (tokens.length > 0) {
+            tokens.forEach(tok => {
+              const regex = new RegExp(`(${tok.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+              nombreHTML = nombreHTML.replace(regex, '<span class="autocomplete-highlight">$1</span>');
+              ciHTML = ciHTML.replace(regex, '<span class="autocomplete-highlight">$1</span>');
+            });
           }
 
-          const carreraText = u.carrera ? ` · ${escapeHTML(u.carrera)}` : '';
+          const carreraText = (u.carrera_nombre || u.carrera) ? ` · ${escapeHTML(u.carrera_nombre || u.carrera)}` : '';
           const uniText = u.universidad ? ` (${escapeHTML(u.universidad)})` : '';
 
           item.innerHTML = `
@@ -888,7 +1191,7 @@
         <div class="user-item-info">
           <span class="user-item-name">${nombreHTML}</span>
           <span class="user-item-sub">
-            <span class="user-item-badge">CI: ${escapeHTML(u.CI)}</span>
+            <span class="user-item-badge">CI: ${ciHTML}</span>
             <span>${carreraText}${uniText}</span>
           </span>
         </div>
@@ -2081,14 +2384,14 @@
                   </div>
                   <div>
                     <h4 class="ranking-hbar-title" id="rankingHbarTitle">
-                      ${currentRankingCohort === 'culminados' 
-                        ? 'Ranking de pasantes que culminaron las 280 hrs' 
-                        : (currentRankingOrder === 'desc' ? 'Top 10 pasantes en curso por horas acumuladas' : 'Top 10 pasantes en curso con menos horas acumuladas')}
+                      ${currentRankingCohort === 'culminados'
+              ? 'Ranking de pasantes que culminaron las 280 hrs'
+              : (currentRankingOrder === 'desc' ? 'Top 10 pasantes en curso por horas acumuladas' : 'Top 10 pasantes en curso con menos horas acumuladas')}
                     </h4>
                     <p class="ranking-hbar-subtitle" id="rankingHbarSubtitle">
-                      ${currentRankingCohort === 'culminados' 
-                        ? 'Pasantes que completaron satisfactoriamente la meta oficial de 280 horas' 
-                        : 'Pasantes activos que aún no han acumulado sus 280 horas'}
+                      ${currentRankingCohort === 'culminados'
+              ? 'Pasantes que completaron satisfactoriamente la meta oficial de 280 horas'
+              : 'Pasantes activos que aún no han acumulado sus 280 horas'}
                     </p>
                   </div>
                 </div>
@@ -2119,7 +2422,7 @@
         currentRankingCohort = cohort;
         document.getElementById('btnRankingCohortEnCurso')?.classList.toggle('active', cohort === 'en_curso');
         document.getElementById('btnRankingCohortCulminados')?.classList.toggle('active', cohort === 'culminados');
-        
+
         const titleEl = document.getElementById('rankingHbarTitle');
         const subEl = document.getElementById('rankingHbarSubtitle');
         const iconWrap = document.getElementById('rankingHbarIconWrap');
@@ -2133,8 +2436,8 @@
           }
         } else {
           if (titleEl) {
-            titleEl.textContent = currentRankingOrder === 'desc' 
-              ? 'Top 10 pasantes en curso por horas acumuladas' 
+            titleEl.textContent = currentRankingOrder === 'desc'
+              ? 'Top 10 pasantes en curso por horas acumuladas'
               : 'Top 10 pasantes en curso con menos horas acumuladas';
           }
           if (subEl) subEl.textContent = 'Pasantes activos que aún no han acumulado sus 280 horas';
@@ -2190,7 +2493,7 @@
         const top10 = list.slice(0, 10);
 
         if (top10.length === 0) {
-          const emptyMsg = currentRankingCohort === 'culminados' 
+          const emptyMsg = currentRankingCohort === 'culminados'
             ? 'No hay pasantes que hayan culminado las 280 horas en la carrera seleccionada.'
             : 'No se encontraron pasantes en curso para la carrera seleccionada.';
           listWrap.innerHTML = `<div style="color: var(--color-text-muted); font-size: 13px; text-align: center; padding: 30px;">${escapeHTML(emptyMsg)}</div>`;
@@ -2222,7 +2525,7 @@
           const nameDisplay = escapeHTML(u.primer_nombre || (u.nombre ? u.nombre.split(' ')[0] : 'Pasante'));
           const isCulminado = u.es_culminado || hrs >= 280;
 
-          const badgeExtra = isCulminado 
+          const badgeExtra = isCulminado
             ? `<span style="font-size: 10px; background: #DCFCE7; color: #166534; border: 1px solid #BBF7D0; padding: 1px 6px; border-radius: 4px; margin-left: 6px; font-weight: 700;">100% Meta</span>`
             : '';
 
@@ -3441,6 +3744,597 @@
         }
       });
 
+      /* ==========================================================================
+         LÓGICA: AÑADIR ASISTENCIA MANUAL EXTRAORDINARIA (ADMINISTRADOR)
+         ========================================================================== */
+      const modalAsistenciaManualBackdrop = document.getElementById('modalAsistenciaManualBackdrop');
+      const btnAbrirAsistenciaManual = document.getElementById('btn-abrir-asistencia-manual');
+      const btnAbrirAsistenciaManualFilter = document.getElementById('btn-abrir-asistencia-manual-filter');
+      const btnXCerrarAsistenciaManual = document.getElementById('btnXCerrarAsistenciaManual');
+      const btnCerrarAsistenciaManual = document.getElementById('btnCerrarAsistenciaManual');
+      const formAsistenciaManual = document.getElementById('formAsistenciaManual');
+      const manualHoraEntrada = document.getElementById('manual_hora_entrada');
+      const manualHoraSalida = document.getElementById('manual_hora_salida');
+      const manualDuracionTexto = document.getElementById('manual_duracion_texto');
+      const manualDuracionWrap = document.getElementById('manual_calculo_duracion_wrap');
+      const btnToggleManualPass = document.getElementById('btnToggleManualPass');
+      const manualAdminPassword = document.getElementById('manual_admin_password');
+
+      // Elementos del autocompletado de pasantes en el modal (idéntico al buscador general)
+      const manualAutoInput = document.getElementById('manualUserAutocompleteInput');
+      const manualAutoDropdown = document.getElementById('manualUserAutocompleteDropdown');
+      const manualHiddenUserId = document.getElementById('manual_id_usuario');
+      const btnManualClearUser = document.getElementById('btnManualClearUser');
+
+      // Alertas y bloqueo de submit para Asistencia Manual
+      function mostrarAlertaCulminado(mostrar, mensaje = '') {
+        const alerta = document.getElementById('manual_pasante_culminado_alerta');
+        const textoEl = document.getElementById('manual_culminado_texto');
+        if (!alerta) return;
+        if (mostrar) {
+          if (textoEl && mensaje) textoEl.innerHTML = mensaje;
+          alerta.style.display = 'block';
+        } else {
+          alerta.style.display = 'none';
+        }
+      }
+
+      function mostrarAlertaDuplicada(mostrar, mensaje = '') {
+        const alerta = document.getElementById('manual_asistencia_duplicada_alerta');
+        const textoEl = document.getElementById('manual_duplicada_texto');
+        if (!alerta) return;
+        if (mostrar) {
+          if (textoEl && mensaje) textoEl.innerHTML = mensaje;
+          alerta.style.display = 'block';
+        } else {
+          alerta.style.display = 'none';
+        }
+      }
+
+      function bloquearSubmitManual(bloquear) {
+        const btnSubmit = document.getElementById('btnSubmitAsistenciaManual');
+        if (btnSubmit) {
+          btnSubmit.disabled = Boolean(bloquear);
+          if (bloquear) {
+            btnSubmit.style.opacity = '0.5';
+            btnSubmit.style.cursor = 'not-allowed';
+            btnSubmit.title = 'No se puede registrar: Pasante culminado o asistencia ya existente';
+          } else {
+            btnSubmit.style.opacity = '1';
+            btnSubmit.style.cursor = 'pointer';
+            btnSubmit.title = '';
+          }
+        }
+      }
+
+      async function verificarAsistenciaDuplicada() {
+        const id_usuario = manualHiddenUserId?.value;
+        const fecha = document.getElementById('manual_fecha')?.value;
+
+        if (!id_usuario) {
+          mostrarAlertaCulminado(false);
+          mostrarAlertaDuplicada(false);
+          bloquearSubmitManual(false);
+          return;
+        }
+
+        const u = listaUsuarios.find(user => String(user.id_usuario) === String(id_usuario));
+        const esCulmLocal = u && Boolean(u.es_culminado == 1 || u.es_culminado === true || Number(u.horas_acumuladas) >= 280);
+        if (esCulmLocal) {
+          mostrarAlertaCulminado(true, `El pasante <b>${escapeHTML(u.nombre)}</b> ya completó sus 280 horas requeridas de pasantía (${u.horas_acumuladas || 280} hrs acumuladas). No es posible añadir más asistencias.`);
+          mostrarAlertaDuplicada(false);
+          bloquearSubmitManual(true);
+          return;
+        } else {
+          mostrarAlertaCulminado(false);
+        }
+
+        if (!fecha) {
+          mostrarAlertaDuplicada(false);
+          bloquearSubmitManual(false);
+          return;
+        }
+
+        try {
+          const resp = await fetch(`/api/admin/asistencias/check-existencia?id_usuario=${encodeURIComponent(id_usuario)}&fecha=${encodeURIComponent(fecha)}`);
+          if (!resp.ok) return;
+          const data = await resp.json();
+
+          if (data.es_culminado) {
+            mostrarAlertaCulminado(true, data.msg || 'El pasante ya completó sus 280 horas requeridas de pasantía.');
+            mostrarAlertaDuplicada(false);
+            bloquearSubmitManual(true);
+            return;
+          } else {
+            mostrarAlertaCulminado(false);
+          }
+
+          if (data.existe && data.asistencia) {
+            const a = data.asistencia;
+            const texto = `El pasante <b>${escapeHTML(a.usuario_nombre || 'seleccionado')}</b> ya tiene una asistencia registrada en esta fecha (<b>${escapeHTML(a.lugar)}: ${a.hora_entrada} a ${a.hora_salida}</b>, Estado: ${a.estado}). No se permiten asistencias duplicadas el mismo día.`;
+            mostrarAlertaDuplicada(true, texto);
+            bloquearSubmitManual(true);
+          } else {
+            mostrarAlertaDuplicada(false);
+            bloquearSubmitManual(false);
+          }
+        } catch (err) {
+          console.warn('Error al verificar asistencia y culminación:', err);
+        }
+      }
+
+      function renderManualAutocomplete(query = '') {
+        if (!manualAutoDropdown) return;
+        const q = (query || '').trim().toLowerCase();
+        manualAutoDropdown.innerHTML = '';
+
+        let filtrados = listaUsuarios;
+        const tokens = q ? q.split(/\s+/).filter(Boolean) : [];
+
+        if (tokens.length > 0) {
+          filtrados = listaUsuarios.filter(u => {
+            const nom = (u.nombre || '').toLowerCase();
+            const primNom = (u.primer_nombre || '').toLowerCase();
+            const apePat = (u.apellido_paterno || '').toLowerCase();
+            const apeMat = (u.apellido_materno || '').toLowerCase();
+            const ci = String(u.CI || '').toLowerCase();
+            const carr = (u.carrera_nombre || u.carrera || '').toLowerCase();
+            const uni = (u.universidad || '').toLowerCase();
+            const fullInverted = `${apePat} ${apeMat} ${primNom}`.trim();
+            const searchable = `${nom} ${fullInverted} ${ci} ${carr} ${uni}`;
+            return tokens.every(tok => searchable.includes(tok));
+          });
+        }
+
+        if (filtrados.length === 0) {
+          manualAutoDropdown.innerHTML = `
+            <div class="autocomplete-empty" style="padding: 12px 14px; color: #64748B; font-size: 13px; text-align: center;">
+              No se encontraron pasantes coincidentes con "<strong>${escapeHTML(query)}</strong>"
+            </div>
+          `;
+          manualAutoDropdown.classList.add('show');
+          return;
+        }
+
+        filtrados.forEach(u => {
+          const item = document.createElement('div');
+          const isSelected = manualHiddenUserId && manualHiddenUserId.value == u.id_usuario;
+          const esCulminado = Boolean(u.es_culminado == 1 || u.es_culminado === true || Number(u.horas_acumuladas) >= 280);
+
+          item.className = `autocomplete-item ${isSelected ? 'selected' : ''} ${esCulminado ? 'item-pasante-culminado' : ''}`;
+          if (esCulminado) {
+            item.style.backgroundColor = '#FEF2F2';
+            item.style.borderLeft = '3px solid #EF4444';
+          }
+
+          let nombreHTML = escapeHTML(u.nombre);
+          let ciHTML = escapeHTML(String(u.CI || ''));
+
+          if (tokens.length > 0) {
+            tokens.forEach(tok => {
+              const regex = new RegExp(`(${tok.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+              nombreHTML = nombreHTML.replace(regex, '<span class="autocomplete-highlight">$1</span>');
+              ciHTML = ciHTML.replace(regex, '<span class="autocomplete-highlight">$1</span>');
+            });
+          }
+
+          const carreraText = (u.carrera_nombre || u.carrera) ? ` · ${escapeHTML(u.carrera_nombre || u.carrera)}` : '';
+          const uniText = u.universidad ? ` (${escapeHTML(u.universidad)})` : '';
+          const badgeCulminado = esCulminado
+            ? `<span style="background: #FEE2E2; color: #991B1B; border: 1px solid #FCA5A5; font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 4px; margin-left: 6px; display: inline-flex; align-items: center; gap: 3px;">🎓 280h Culminadas</span>`
+            : '';
+
+          item.innerHTML = `
+            <div class="user-avatar-initials" style="${esCulminado ? 'background: #FEE2E2; color: #DC2626;' : ''}">${getInitials(u.nombre)}</div>
+            <div class="user-item-info">
+              <span class="user-item-name" style="${esCulminado ? 'color: #991B1B;' : ''}">${nombreHTML} ${badgeCulminado}</span>
+              <span class="user-item-sub">
+                <span class="user-item-badge">CI: ${ciHTML}</span>
+                <span>${carreraText}${uniText}</span>
+              </span>
+            </div>
+          `;
+
+          item.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (esCulminado) {
+              Swal.fire({
+                icon: 'warning',
+                title: 'Pasante Culminado',
+                html: `<b>${escapeHTML(u.nombre)}</b> ya completó satisfactoriamente las <b>280 horas requeridas</b> de pasantía (${u.horas_acumuladas || 280} hrs acumuladas).<br><br>Por regla del sistema, <b>ya no es posible agregar nuevas asistencias</b> a pasantes culminados.`,
+                confirmButtonColor: '#0F5FA6',
+                confirmButtonText: 'Entendido'
+              });
+              return;
+            }
+            seleccionarManualUsuario(u);
+            manualAutoDropdown.classList.remove('show');
+          });
+
+          manualAutoDropdown.appendChild(item);
+        });
+
+        manualAutoDropdown.classList.add('show');
+      }
+
+      function seleccionarManualUsuario(u) {
+        if (!manualHiddenUserId || !manualAutoInput) return;
+        if (u) {
+          const esCulminado = Boolean(u.es_culminado == 1 || u.es_culminado === true || Number(u.horas_acumuladas) >= 280);
+          if (esCulminado) {
+            Swal.fire({
+              icon: 'warning',
+              title: 'Pasante Culminado',
+              html: `El pasante <b>${escapeHTML(u.nombre)}</b> ya completó sus <b>280 horas</b> de pasantía. No está permitido registrar nuevas asistencias para este usuario.`,
+              confirmButtonColor: '#0F5FA6'
+            });
+            seleccionarManualUsuario(null);
+            return;
+          }
+          manualHiddenUserId.value = u.id_usuario;
+          manualAutoInput.value = `${u.nombre} (${u.CI})`;
+          if (btnManualClearUser) btnManualClearUser.style.display = 'flex';
+          mostrarAlertaCulminado(false);
+          verificarAsistenciaDuplicada();
+        } else {
+          manualHiddenUserId.value = '';
+          manualAutoInput.value = '';
+          if (btnManualClearUser) btnManualClearUser.style.display = 'none';
+          mostrarAlertaCulminado(false);
+          mostrarAlertaDuplicada(false);
+          bloquearSubmitManual(false);
+        }
+      }
+
+      if (manualAutoInput) {
+        manualAutoInput.addEventListener('focus', () => {
+          renderManualAutocomplete(manualAutoInput.value);
+        });
+
+        manualAutoInput.addEventListener('input', () => {
+          manualHiddenUserId.value = ''; // Si escribe, resetea la selección fija por ID
+          if (btnManualClearUser) btnManualClearUser.style.display = manualAutoInput.value ? 'flex' : 'none';
+          mostrarAlertaCulminado(false);
+          mostrarAlertaDuplicada(false);
+          bloquearSubmitManual(false);
+          renderManualAutocomplete(manualAutoInput.value);
+        });
+      }
+
+      if (btnManualClearUser) {
+        btnManualClearUser.addEventListener('click', () => {
+          seleccionarManualUsuario(null);
+          if (manualAutoDropdown) manualAutoDropdown.classList.remove('show');
+          if (manualAutoInput) manualAutoInput.focus();
+        });
+      }
+
+      // Evento al cambiar fecha de asistencia manual
+      const manualFechaInput = document.getElementById('manual_fecha');
+      if (manualFechaInput) {
+        manualFechaInput.addEventListener('change', () => {
+          verificarAsistenciaDuplicada();
+        });
+      }
+
+      // Cerrar dropdown del modal al hacer clic fuera del contenedor
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('#modalAsistenciaManual .autocomplete-container')) {
+          if (manualAutoDropdown) manualAutoDropdown.classList.remove('show');
+        }
+      });
+
+      function abrirModalAsistenciaManual() {
+        if (!modalAsistenciaManualBackdrop) return;
+
+        // Si hay un usuario seleccionado en el filtro principal, preseleccionarlo en el modal solo si no es culminado
+        const currentFilteredUserId = document.getElementById('filterUsuario')?.value;
+        if (currentFilteredUserId) {
+          const u = listaUsuarios.find(user => String(user.id_usuario) === String(currentFilteredUserId));
+          const esCulminado = u && Boolean(u.es_culminado == 1 || u.es_culminado === true || Number(u.horas_acumuladas) >= 280);
+          if (u && !esCulminado) {
+            seleccionarManualUsuario(u);
+          } else {
+            seleccionarManualUsuario(null);
+          }
+        } else {
+          seleccionarManualUsuario(null);
+        }
+
+        // Establecer fecha por defecto (hoy)
+        const fechaInput = document.getElementById('manual_fecha');
+        if (fechaInput && !fechaInput.value) {
+          const hoy = new Date();
+          const yyyy = hoy.getFullYear();
+          const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+          const dd = String(hoy.getDate()).padStart(2, '0');
+          fechaInput.value = `${yyyy}-${mm}-${dd}`;
+        }
+
+        // Establecer horas por defecto si están vacías
+        if (manualHoraEntrada && !manualHoraEntrada.value) manualHoraEntrada.value = '08:30';
+        if (manualHoraSalida && !manualHoraSalida.value) manualHoraSalida.value = '12:30';
+
+        calcularDuracionManual();
+        verificarAsistenciaDuplicada();
+        modalAsistenciaManualBackdrop.style.display = 'flex';
+      }
+
+      function cerrarModalAsistenciaManual() {
+        if (!modalAsistenciaManualBackdrop) return;
+        modalAsistenciaManualBackdrop.style.display = 'none';
+      }
+
+      if (btnAbrirAsistenciaManual) btnAbrirAsistenciaManual.addEventListener('click', abrirModalAsistenciaManual);
+      if (btnAbrirAsistenciaManualFilter) btnAbrirAsistenciaManualFilter.addEventListener('click', abrirModalAsistenciaManual);
+      if (btnXCerrarAsistenciaManual) btnXCerrarAsistenciaManual.addEventListener('click', cerrarModalAsistenciaManual);
+      if (btnCerrarAsistenciaManual) btnCerrarAsistenciaManual.addEventListener('click', cerrarModalAsistenciaManual);
+
+      if (modalAsistenciaManualBackdrop) {
+        modalAsistenciaManualBackdrop.addEventListener('click', (e) => {
+          if (e.target === modalAsistenciaManualBackdrop) cerrarModalAsistenciaManual();
+        });
+      }
+
+      // Ver u ocultar contraseña de administrador
+      if (btnToggleManualPass && manualAdminPassword) {
+        btnToggleManualPass.addEventListener('click', () => {
+          const isPass = manualAdminPassword.type === 'password';
+          manualAdminPassword.type = isPass ? 'text' : 'password';
+          btnToggleManualPass.textContent = isPass ? '🙈' : '👁️';
+        });
+      }
+
+      // Cálculo de duración en tiempo real
+      function calcularDuracionManual() {
+        const ent = manualHoraEntrada?.value;
+        const sal = manualHoraSalida?.value;
+        if (!ent || !sal) {
+          if (manualDuracionTexto) {
+            manualDuracionTexto.textContent = '00:00 (0 hrs)';
+            manualDuracionTexto.style.color = '#0F5FA6';
+          }
+          if (manualDuracionWrap) {
+            manualDuracionWrap.style.background = '#F8FAFC';
+            manualDuracionWrap.style.borderColor = '#E2E8F0';
+          }
+          return;
+        }
+
+        const [h1, m1] = ent.split(':').map(Number);
+        const [h2, m2] = sal.split(':').map(Number);
+        const mins1 = h1 * 60 + m1;
+        const mins2 = h2 * 60 + m2;
+        const diffMins = mins2 - mins1;
+
+        if (diffMins <= 0) {
+          if (manualDuracionTexto) {
+            manualDuracionTexto.textContent = '⚠️ Salida debe ser posterior a Entrada';
+            manualDuracionTexto.style.color = '#DC2626';
+          }
+          if (manualDuracionWrap) {
+            manualDuracionWrap.style.background = '#FEF2F2';
+            manualDuracionWrap.style.borderColor = '#FECACA';
+          }
+        } else {
+          const horas = Math.floor(diffMins / 60);
+          const minutos = diffMins % 60;
+          const dec = (diffMins / 60).toFixed(1);
+          const pad = n => String(n).padStart(2, '0');
+          if (manualDuracionTexto) {
+            manualDuracionTexto.textContent = `${pad(horas)}:${pad(minutos)} (${dec} hrs)`;
+            manualDuracionTexto.style.color = '#15803D';
+          }
+          if (manualDuracionWrap) {
+            manualDuracionWrap.style.background = '#F0FDF4';
+            manualDuracionWrap.style.borderColor = '#BBF7D0';
+          }
+        }
+      }
+
+      if (manualHoraEntrada) manualHoraEntrada.addEventListener('input', calcularDuracionManual);
+      if (manualHoraSalida) manualHoraSalida.addEventListener('input', calcularDuracionManual);
+
+      // Mostrar/ocultar input detalle cuando motivo sea 'OTRO'
+      const manualMotivoSelect = document.getElementById('manual_motivo_select');
+      const manualMotivoDetalle = document.getElementById('manual_motivo_detalle');
+      if (manualMotivoSelect && manualMotivoDetalle) {
+        manualMotivoSelect.addEventListener('change', () => {
+          if (manualMotivoSelect.value === 'OTRO') {
+            manualMotivoDetalle.placeholder = 'Describe el motivo específico de la excepción (obligatorio)...';
+            manualMotivoDetalle.required = true;
+            manualMotivoDetalle.focus();
+          } else {
+            manualMotivoDetalle.placeholder = 'Detalle adicional u observación complementaria sobre el motivo...';
+            manualMotivoDetalle.required = false;
+          }
+        });
+      }
+
+      // Enviar formulario con confirmación SweetAlert2
+      if (formAsistenciaManual) {
+        formAsistenciaManual.addEventListener('submit', async (e) => {
+          e.preventDefault();
+
+          const id_usuario = document.getElementById('manual_id_usuario')?.value;
+          const manualAutoInputEl = document.getElementById('manualUserAutocompleteInput');
+          const nombreUsuario = manualAutoInputEl?.value || 'Pasante';
+
+          const id_lugar = document.getElementById('manual_id_lugar')?.value;
+          const selectLugar = document.getElementById('manual_id_lugar');
+          const nombreLugar = selectLugar?.options[selectLugar.selectedIndex]?.text || 'Lugar';
+
+          const fecha = document.getElementById('manual_fecha')?.value;
+          const hora_entrada = document.getElementById('manual_hora_entrada')?.value;
+          const hora_salida = document.getElementById('manual_hora_salida')?.value;
+          const motivo_select = document.getElementById('manual_motivo_select')?.value;
+          const motivo_detalle = document.getElementById('manual_motivo_detalle')?.value?.trim();
+          const tarea = document.getElementById('manual_tarea')?.value?.trim();
+          const admin_password = document.getElementById('manual_admin_password')?.value;
+
+          if (!id_usuario || !id_lugar || !fecha || !hora_entrada || !hora_salida || !admin_password) {
+            Swal.fire({
+              icon: 'warning',
+              title: 'Campos Incompletos',
+              text: 'Por favor completa todos los campos requeridos y tu contraseña de administrador.'
+            });
+            return;
+          }
+
+          // Validar que el usuario no haya culminado las 280 horas
+          const uSel = listaUsuarios.find(user => String(user.id_usuario) === String(id_usuario));
+          if (uSel && (uSel.es_culminado == 1 || uSel.es_culminado === true || Number(uSel.horas_acumuladas) >= 280)) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Pasante Culminado',
+              html: `No se puede registrar asistencia. El pasante <b>${escapeHTML(uSel.nombre)}</b> ya completó sus <b>280 horas</b> requeridas de pasantía (${uSel.horas_acumuladas || 280} hrs acumuladas).`
+            });
+            return;
+          }
+
+          if (hora_salida <= hora_entrada) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Horario Inválido',
+              text: 'La hora de fin (salida) debe ser posterior a la hora de inicio (entrada).'
+            });
+            return;
+          }
+
+          let motivoFinal = motivo_select;
+          if (motivo_select === 'OTRO' && motivo_detalle) {
+            motivoFinal = motivo_detalle;
+          } else if (motivo_detalle) {
+            motivoFinal = `${motivo_select} - ${motivo_detalle}`;
+          }
+
+          const duracionTexto = manualDuracionTexto?.textContent || '';
+
+          // 1. Ocultar el modal de Asistencia Manual para ver la confirmación de SweetAlert claramente
+          if (modalAsistenciaManualBackdrop) {
+            modalAsistenciaManualBackdrop.style.display = 'none';
+          }
+
+          // Modal de Confirmación "¿Realmente está seguro?"
+          const confirmResult = await Swal.fire({
+            title: '¿Confirmar Asistencia Manual?',
+            html: `
+              <div style="text-align: left; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; font-size: 13.5px; line-height: 1.6;">
+                <div style="margin-bottom: 6px;"><b>👤 Pasante:</b> <span style="color: #0f5fa6; font-weight: 700;">${escapeHTML(nombreUsuario)}</span></div>
+                <div style="margin-bottom: 6px;"><b>📅 Fecha:</b> <span>${escapeHTML(fecha)}</span></div>
+                <div style="margin-bottom: 6px;"><b>⏰ Horario:</b> <span>${escapeHTML(hora_entrada)} a ${escapeHTML(hora_salida)}</span> (<b style="color: #16a34a;">${escapeHTML(duracionTexto)}</b>)</div>
+                <div style="margin-bottom: 6px;"><b>📍 Ubicación:</b> <span>${escapeHTML(nombreLugar)}</span></div>
+                <div style="margin-bottom: 6px;"><b>📝 Motivo:</b> <span>${escapeHTML(motivoFinal)}</span></div>
+                ${tarea ? `<div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #cbd5e1;"><b>📋 Actividad:</b> <span style="font-size: 12.5px; color: #475569;">${escapeHTML(tarea)}</span></div>` : ''}
+              </div>
+              <p style="margin-top: 12px; font-size: 12px; color: #64748b; text-align: center;">
+                Esta jornada se registrará formalmente en el sistema y se contabilizará en el total de horas del pasante.
+              </p>
+            `,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#0f5fa6',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Sí, registrar en el sistema',
+            cancelButtonText: 'Revisar datos',
+            allowOutsideClick: false
+          });
+
+          // 2. Si el usuario hace clic en "Revisar datos", reabrir el modal con todos los datos intactos
+          if (!confirmResult.isConfirmed) {
+            if (modalAsistenciaManualBackdrop) {
+              modalAsistenciaManualBackdrop.style.display = 'flex';
+            }
+            return;
+          }
+
+          // 3. Si confirma, mostrar animación de carga mientras se guarda
+          Swal.fire({
+            title: 'Registrando Asistencia...',
+            text: 'Guardando jornada en el sistema, por favor espera.',
+            allowOutsideClick: false,
+            didOpen: () => {
+              Swal.showLoading();
+            }
+          });
+
+          const btnSubmit = document.getElementById('btnSubmitAsistenciaManual');
+          if (btnSubmit) {
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = 'Registrando...';
+          }
+
+          try {
+            const resp = await fetch('/api/admin/asistencias/manual', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                id_usuario,
+                id_lugar,
+                fecha,
+                hora_entrada,
+                hora_salida,
+                motivo: motivoFinal,
+                motivo_detalle,
+                tarea,
+                admin_password
+              })
+            });
+
+            const data = await resp.json();
+
+            if (data.ok) {
+              cerrarModalAsistenciaManual();
+              formAsistenciaManual.reset();
+              seleccionarManualUsuario(null);
+              calcularDuracionManual();
+
+              await Swal.fire({
+                icon: 'success',
+                title: 'Asistencia Registrada',
+                text: data.msg || 'La asistencia extraordinaria ha sido guardada correctamente.',
+                timer: 2200,
+                showConfirmButton: false
+              });
+
+              // Recargar reportes y métricas
+              fetchReportes(currentPage);
+            } else {
+              await Swal.fire({
+                icon: 'error',
+                title: 'No se pudo registrar',
+                text: data.msg || 'Ocurrió un error al registrar la asistencia.'
+              });
+              // Reabrir el modal para que pueda corregir los datos (ej. contraseña)
+              if (modalAsistenciaManualBackdrop) {
+                modalAsistenciaManualBackdrop.style.display = 'flex';
+              }
+            }
+          } catch (errNet) {
+            console.error('Error al registrar asistencia manual:', errNet);
+            await Swal.fire({
+              icon: 'error',
+              title: 'Error de Conexión',
+              text: 'No se pudo conectar con el servidor para registrar la asistencia.'
+            });
+            // Reabrir el modal ante error de red
+            if (modalAsistenciaManualBackdrop) {
+              modalAsistenciaManualBackdrop.style.display = 'flex';
+            }
+          } finally {
+            if (btnSubmit) {
+              btnSubmit.disabled = false;
+              btnSubmit.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right: 4px;">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                Registrar Asistencia
+              `;
+            }
+          }
+        });
+      }
+
       // Carga Inicial
       fetchReportes(1);
     </script>
@@ -3453,18 +4347,30 @@
             <div class="modal-culminados-icon">🎓</div>
             <div>
               <h3 class="modal-culminados-title">Pasantes que Culminaron su Pasantía</h3>
-              <p class="modal-culminados-subtitle">Listado de pasantes con el 100% de la meta de 280 horas completada</p>
+              <p class="modal-culminados-subtitle">Listado de pasantes con el 100% de la meta de 280 horas completada
+              </p>
             </div>
           </div>
-          <button type="button" class="modal-culminados-close" onclick="cerrarModalPasantesCulminados()" title="Cerrar ventana">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          <button type="button" class="modal-culminados-close" onclick="cerrarModalPasantesCulminados()"
+            title="Cerrar ventana">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2.5">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
           </button>
         </div>
 
         <div class="modal-culminados-search-wrap">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" id="inputBuscarCulminados" class="modal-culminados-search-input" placeholder="Buscar pasante por nombre, CI o carrera..." oninput="filtrarPasantesCulminados(this.value)">
-          <span id="badgeContadorCulminados" class="aviso-badge-status aviso-status-completado" style="font-size: 12px; font-weight: 700;">0 culminados</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="#64748b" stroke-width="2">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input type="text" id="inputBuscarCulminados" class="modal-culminados-search-input"
+            placeholder="Buscar pasante por nombre, CI o carrera..." oninput="filtrarPasantesCulminados(this.value)">
+          <span id="badgeContadorCulminados" class="aviso-badge-status aviso-status-completado"
+            style="font-size: 12px; font-weight: 700;">0 culminados</span>
         </div>
 
         <div class="modal-culminados-body">
