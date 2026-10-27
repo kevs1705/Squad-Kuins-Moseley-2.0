@@ -2462,15 +2462,18 @@
         const [h2, m2] = fin.split(':').map(Number);
         const min1 = h1 * 60 + m1;
         const min2 = h2 * 60 + m2;
-        const diff = min2 - min1;
-
-        if (diff <= 0) {
+        let diff = min2 - min1;
+        let esPasaMedianoche = false;
+        if (diff < 0) {
+          diff += 1440; // suma 24 horas (cruce de medianoche)
+          esPasaMedianoche = true;
+        } else if (diff === 0) {
           if (badgeDuracionHE) {
             badgeDuracionHE.style.display = 'flex';
             badgeDuracionHE.style.background = '#FEF2F2';
             badgeDuracionHE.style.borderColor = '#FECACA';
             badgeDuracionHE.style.color = '#991B1B';
-            txtDuracionHE.textContent = 'La hora de fin debe ser posterior a la hora de inicio';
+            txtDuracionHE.textContent = 'La hora de inicio y fin no pueden ser iguales';
           }
           return;
         }
@@ -2483,7 +2486,7 @@
           badgeDuracionHE.style.background = '#EFF6FF';
           badgeDuracionHE.style.borderColor = '#BFDBFE';
           badgeDuracionHE.style.color = '#1E40AF';
-          txtDuracionHE.textContent = `Duración estimada: ${hrs}h ${mins > 0 ? mins + 'm' : ''} (Acreditará ~${hrsDobles} hrs al aprobarse)`;
+          txtDuracionHE.textContent = `Duración estimada: ${hrs}h ${mins > 0 ? mins + 'm' : ''}${esPasaMedianoche ? ' (pasa medianoche)' : ''} (Acreditará ~${hrsDobles} hrs al aprobarse)`;
         }
       }
 
@@ -2507,8 +2510,8 @@
           Swal.fire({ icon: 'warning', title: 'Fecha requerida', text: 'Por favor selecciona la fecha de la jornada.' });
           return;
         }
-        if (!hora_inicio || !hora_fin || hora_inicio >= hora_fin) {
-          Swal.fire({ icon: 'warning', title: 'Horas inválidas', text: 'Verifica las horas de inicio y fin (la hora de fin debe ser posterior).' });
+        if (!hora_inicio || !hora_fin || hora_inicio === hora_fin) {
+          Swal.fire({ icon: 'warning', title: 'Horas inválidas', text: 'Verifica las horas de inicio y fin (no pueden ser iguales).' });
           return;
         }
 
