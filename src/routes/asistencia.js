@@ -25,11 +25,9 @@ router.get('/usuario/asistencia', requireAuth, async (req, res) => {
     const [totals] = await db.query(`
       SELECT COALESCE(
         SUM(
-          TIMESTAMPDIFF(
-            SECOND,
-            TIMESTAMP(fecha, hora_entrada),
-            TIMESTAMP(fecha, hora_salida)
-          )
+          IF(hora_salida < hora_entrada,
+             TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha, hora_entrada), TIMESTAMP(fecha, hora_salida)) + 86400,
+             TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha, hora_entrada), TIMESTAMP(fecha, hora_salida)))
         ), 0
       ) AS total_segundos
       FROM asistencias
@@ -42,11 +40,9 @@ router.get('/usuario/asistencia', requireAuth, async (req, res) => {
     const [totalsHE] = await db.query(`
       SELECT COALESCE(
         SUM(
-          TIMESTAMPDIFF(
-            SECOND,
-            TIMESTAMP(fecha_solicitada, hora_inicio),
-            TIMESTAMP(fecha_solicitada, hora_fin)
-          )
+          IF(hora_fin < hora_inicio,
+             TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha_solicitada, hora_inicio), TIMESTAMP(fecha_solicitada, hora_fin)) + 86400,
+             TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha_solicitada, hora_inicio), TIMESTAMP(fecha_solicitada, hora_fin)))
         ), 0
       ) AS total_segundos_he
       FROM notificaciones

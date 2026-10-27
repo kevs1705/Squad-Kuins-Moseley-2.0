@@ -50,11 +50,9 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
     const [totals] = await db.query(`
       SELECT COALESCE(
         SUM(
-          TIMESTAMPDIFF(
-            SECOND,
-            TIMESTAMP(fecha, hora_entrada),
-            TIMESTAMP(fecha, hora_salida)
-          )
+          IF(hora_salida < hora_entrada,
+             TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha, hora_entrada), TIMESTAMP(fecha, hora_salida)) + 86400,
+             TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha, hora_entrada), TIMESTAMP(fecha, hora_salida)))
         ), 0
       ) AS total_segundos
       FROM asistencias
@@ -67,11 +65,9 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
     const [totalsHE] = await db.query(`
       SELECT COALESCE(
         SUM(
-          TIMESTAMPDIFF(
-            SECOND,
-            TIMESTAMP(fecha_solicitada, hora_inicio),
-            TIMESTAMP(fecha_solicitada, hora_fin)
-          )
+          IF(hora_fin < hora_inicio,
+             TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha_solicitada, hora_inicio), TIMESTAMP(fecha_solicitada, hora_fin)) + 86400,
+             TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha_solicitada, hora_inicio), TIMESTAMP(fecha_solicitada, hora_fin)))
         ), 0
       ) AS total_segundos_he
       FROM notificaciones
@@ -89,11 +85,9 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
     const [totalsObs] = await db.query(`
       SELECT COALESCE(
         SUM(
-          TIMESTAMPDIFF(
-            SECOND,
-            TIMESTAMP(a.fecha, a.hora_entrada),
-            TIMESTAMP(a.fecha, a.hora_salida)
-          )
+          IF(a.hora_salida < a.hora_entrada,
+             TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)) + 86400,
+             TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)))
         ), 0
       ) AS total_segundos_obs
       FROM asistencias a
@@ -115,11 +109,9 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
     const [totalsObsHE] = await db.query(`
       SELECT COALESCE(
         SUM(
-          TIMESTAMPDIFF(
-            SECOND,
-            TIMESTAMP(fecha_solicitada, hora_inicio),
-            TIMESTAMP(fecha_solicitada, hora_fin)
-          )
+          IF(hora_fin < hora_inicio,
+             TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha_solicitada, hora_inicio), TIMESTAMP(fecha_solicitada, hora_fin)) + 86400,
+             TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha_solicitada, hora_inicio), TIMESTAMP(fecha_solicitada, hora_fin)))
         ), 0
       ) AS total_segundos_obs_he
       FROM notificaciones
@@ -171,7 +163,9 @@ router.get('/usuario/reporte', requireAuth, async (req, res) => {
         a.hora_entrada AS hora_entrada_raw,
         a.hora_salida AS hora_salida_raw,
         DATE_FORMAT(a.fecha, '%Y-%m-%d') AS fecha_raw,
-        TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)) AS duracion_segundos
+        IF(a.hora_salida < a.hora_entrada,
+           TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)) + 86400,
+           TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida))) AS duracion_segundos
       FROM asistencias a
       LEFT JOIN asistencias_geo ag ON a.id_asistencia = ag.id_asistencia
       LEFT JOIN lugares l ON a.id_lugar = l.id_lugar
@@ -832,7 +826,9 @@ router.get('/reportes/export', requireAuth, async (req, res) => {
         TIME_FORMAT(n.hora_inicio, '%H:%i:%s') AS hora_entrada,
         TIME_FORMAT(n.hora_fin, '%H:%i:%s') AS hora_salida,
         IF(n.hora_fin IS NOT NULL AND n.hora_inicio IS NOT NULL,
-           SEC_TO_TIME(TIMESTAMPDIFF(SECOND, TIMESTAMP(n.fecha_solicitada, n.hora_inicio), TIMESTAMP(n.fecha_solicitada, n.hora_fin)) * 2),
+           SEC_TO_TIME(IF(n.hora_fin < n.hora_inicio,
+                          TIMESTAMPDIFF(SECOND, TIMESTAMP(n.fecha_solicitada, n.hora_inicio), TIMESTAMP(n.fecha_solicitada, n.hora_fin)) + 86400,
+                          TIMESTAMPDIFF(SECOND, TIMESTAMP(n.fecha_solicitada, n.hora_inicio), TIMESTAMP(n.fecha_solicitada, n.hora_fin))) * 2),
            '00:00:00') AS horas_trabajadas,
         n.tarea,
         n.observacion_admin AS observacion
@@ -850,11 +846,9 @@ router.get('/reportes/export', requireAuth, async (req, res) => {
     const [totals] = await db.query(`
       SELECT COALESCE(
         SUM(
-          TIMESTAMPDIFF(
-            SECOND,
-            TIMESTAMP(fecha, hora_entrada),
-            TIMESTAMP(fecha, hora_salida)
-          )
+          IF(hora_salida < hora_entrada,
+             TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha, hora_entrada), TIMESTAMP(fecha, hora_salida)) + 86400,
+             TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha, hora_entrada), TIMESTAMP(fecha, hora_salida)))
         ), 0
       ) AS total_segundos
       FROM asistencias
@@ -867,11 +861,9 @@ router.get('/reportes/export', requireAuth, async (req, res) => {
     const [totalsHE] = await db.query(`
       SELECT COALESCE(
         SUM(
-          TIMESTAMPDIFF(
-            SECOND,
-            TIMESTAMP(fecha_solicitada, hora_inicio),
-            TIMESTAMP(fecha_solicitada, hora_fin)
-          )
+          IF(hora_fin < hora_inicio,
+             TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha_solicitada, hora_inicio), TIMESTAMP(fecha_solicitada, hora_fin)) + 86400,
+             TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha_solicitada, hora_inicio), TIMESTAMP(fecha_solicitada, hora_fin)))
         ), 0
       ) AS total_segundos_he
       FROM notificaciones

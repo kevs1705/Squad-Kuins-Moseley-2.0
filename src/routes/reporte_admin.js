@@ -57,7 +57,9 @@ router.get('/admin/reportes', requireAdmin, async (req, res) => {
        LEFT JOIN (
          SELECT id_usuario,
                 SUM(IF(hora_entrada IS NOT NULL AND hora_salida IS NOT NULL AND estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO'),
-                       TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha, hora_entrada), TIMESTAMP(fecha, hora_salida)),
+                       IF(hora_salida < hora_entrada,
+                          TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha, hora_entrada), TIMESTAMP(fecha, hora_salida)) + 86400,
+                          TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha, hora_entrada), TIMESTAMP(fecha, hora_salida))),
                        0)) AS total_segundos
          FROM asistencias
          WHERE estado != 'ANULADO'
@@ -66,7 +68,9 @@ router.get('/admin/reportes', requireAdmin, async (req, res) => {
        LEFT JOIN (
          SELECT id_usuario,
                 SUM(IF(hora_inicio IS NOT NULL AND hora_fin IS NOT NULL,
-                       TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha_solicitada, hora_inicio), TIMESTAMP(fecha_solicitada, hora_fin)) * 2,
+                       IF(hora_fin < hora_inicio,
+                          TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha_solicitada, hora_inicio), TIMESTAMP(fecha_solicitada, hora_fin)) + 86400,
+                          TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha_solicitada, hora_inicio), TIMESTAMP(fecha_solicitada, hora_fin))) * 2,
                        0)) AS total_segundos_he
          FROM notificaciones
          WHERE estado = 2
@@ -201,7 +205,9 @@ async function fetchCombinedRecords({ id_carrera, estado_duracion, id_usuario, i
         TIME_FORMAT(a.hora_entrada, '%H:%i') AS hora_entrada,
         TIME_FORMAT(a.hora_salida, '%H:%i') AS hora_salida,
         IF(a.hora_salida IS NOT NULL AND a.hora_entrada IS NOT NULL,
-           TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)),
+           IF(a.hora_salida < a.hora_entrada,
+              TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)) + 86400,
+              TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida))),
            NULL
         ) AS duracion_segundos,
         a.estado AS asistencia_estado,
@@ -296,7 +302,9 @@ async function fetchCombinedRecords({ id_carrera, estado_duracion, id_usuario, i
         TIME_FORMAT(n.hora_inicio, '%H:%i') AS hora_entrada,
         TIME_FORMAT(n.hora_fin, '%H:%i') AS hora_salida,
         IF(n.hora_fin IS NOT NULL AND n.hora_inicio IS NOT NULL,
-           TIMESTAMPDIFF(SECOND, TIMESTAMP(n.fecha_solicitada, n.hora_inicio), TIMESTAMP(n.fecha_solicitada, n.hora_fin)) * 2,
+           IF(n.hora_fin < n.hora_inicio,
+              TIMESTAMPDIFF(SECOND, TIMESTAMP(n.fecha_solicitada, n.hora_inicio), TIMESTAMP(n.fecha_solicitada, n.hora_fin)) + 86400,
+              TIMESTAMPDIFF(SECOND, TIMESTAMP(n.fecha_solicitada, n.hora_inicio), TIMESTAMP(n.fecha_solicitada, n.hora_fin))) * 2,
            NULL
         ) AS duracion_segundos,
         CASE 
@@ -503,7 +511,9 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
          id_usuario,
          COUNT(id_asistencia) AS total_dias,
          COALESCE(SUM(IF(hora_entrada IS NOT NULL AND hora_salida IS NOT NULL AND estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO'),
-                         TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha, hora_entrada), TIMESTAMP(fecha, hora_salida)),
+                         IF(hora_salida < hora_entrada,
+                            TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha, hora_entrada), TIMESTAMP(fecha, hora_salida)) + 86400,
+                            TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha, hora_entrada), TIMESTAMP(fecha, hora_salida))),
                          0)), 0) AS total_segundos,
          MAX(IF(hora_entrada IS NOT NULL AND hora_salida IS NOT NULL AND estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO'), DATE_FORMAT(fecha, '%Y-%m-%d'), NULL)) AS ultima_fecha_asistencia
        FROM asistencias
@@ -516,7 +526,9 @@ router.get('/api/admin/reportes', requireAdmin, async (req, res) => {
          id_usuario,
          COUNT(id_notificacion) AS total_dias_he,
          COALESCE(SUM(IF(hora_inicio IS NOT NULL AND hora_fin IS NOT NULL,
-                         TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha_solicitada, hora_inicio), TIMESTAMP(fecha_solicitada, hora_fin)) * 2,
+                         IF(hora_fin < hora_inicio,
+                            TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha_solicitada, hora_inicio), TIMESTAMP(fecha_solicitada, hora_fin)) + 86400,
+                            TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha_solicitada, hora_inicio), TIMESTAMP(fecha_solicitada, hora_fin))) * 2,
                          0)), 0) AS total_segundos_he,
          MAX(IF(hora_inicio IS NOT NULL AND hora_fin IS NOT NULL, DATE_FORMAT(fecha_solicitada, '%Y-%m-%d'), NULL)) AS ultima_fecha_he
        FROM notificaciones
@@ -1249,12 +1261,16 @@ router.get('/api/admin/asistencias/check-existencia', requireAdmin, async (req, 
     const [segRows] = await db.query(
       `SELECT 
         (COALESCE((
-          SELECT SUM(TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)))
+          SELECT SUM(IF(a.hora_salida < a.hora_entrada,
+                        TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)) + 86400,
+                        TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida))))
           FROM asistencias a 
           WHERE a.id_usuario = ? AND a.estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO')
             AND a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL
         ), 0) + COALESCE((
-          SELECT SUM(TIMESTAMPDIFF(SECOND, TIMESTAMP(n.fecha_solicitada, n.hora_inicio), TIMESTAMP(n.fecha_solicitada, n.hora_fin)) * 2)
+          SELECT SUM(IF(n.hora_fin < n.hora_inicio,
+                        TIMESTAMPDIFF(SECOND, TIMESTAMP(n.fecha_solicitada, n.hora_inicio), TIMESTAMP(n.fecha_solicitada, n.hora_fin)) + 86400,
+                        TIMESTAMPDIFF(SECOND, TIMESTAMP(n.fecha_solicitada, n.hora_inicio), TIMESTAMP(n.fecha_solicitada, n.hora_fin))) * 2)
           FROM notificaciones n
           WHERE n.id_usuario = ? AND n.estado = 2
             AND n.hora_inicio IS NOT NULL AND n.hora_fin IS NOT NULL
@@ -1385,12 +1401,16 @@ router.post('/api/admin/asistencias/manual', requireAdmin, async (req, res) => {
     const [segRows] = await db.query(
       `SELECT 
         (COALESCE((
-          SELECT SUM(TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)))
+          SELECT SUM(IF(a.hora_salida < a.hora_entrada,
+                        TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)) + 86400,
+                        TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida))))
           FROM asistencias a 
           WHERE a.id_usuario = ? AND a.estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO')
             AND a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL
         ), 0) + COALESCE((
-          SELECT SUM(TIMESTAMPDIFF(SECOND, TIMESTAMP(n.fecha_solicitada, n.hora_inicio), TIMESTAMP(n.fecha_solicitada, n.hora_fin)) * 2)
+          SELECT SUM(IF(n.hora_fin < n.hora_inicio,
+                        TIMESTAMPDIFF(SECOND, TIMESTAMP(n.fecha_solicitada, n.hora_inicio), TIMESTAMP(n.fecha_solicitada, n.hora_fin)) + 86400,
+                        TIMESTAMPDIFF(SECOND, TIMESTAMP(n.fecha_solicitada, n.hora_inicio), TIMESTAMP(n.fecha_solicitada, n.hora_fin))) * 2)
           FROM notificaciones n
           WHERE n.id_usuario = ? AND n.estado = 2
             AND n.hora_inicio IS NOT NULL AND n.hora_fin IS NOT NULL
@@ -1623,7 +1643,9 @@ router.get('/api/admin/usuario/:id_usuario/calendario', requireAdmin, async (req
          COALESCE(ag.modalidad, 'PRESENCIAL') AS modalidad,
          a.estado AS asistencia_estado,
          IF(a.hora_salida IS NOT NULL AND a.hora_entrada IS NOT NULL,
-            TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)),
+            IF(a.hora_salida < a.hora_entrada,
+               TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)) + 86400,
+               TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida))),
             NULL
          ) AS duracion_segundos,
          r.id_reporte,

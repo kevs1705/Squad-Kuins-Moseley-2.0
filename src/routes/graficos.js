@@ -146,7 +146,9 @@ router.get("/api/graficos/analytics", requireAuth, requireAdmin, async (req, res
     const [asistencias] = await db.query(
       `SELECT a.id_asistencia, a.id_usuario, a.fecha, a.hora_entrada, a.hora_salida, a.estado, a.id_lugar,
               COALESCE(ag.modalidad, 'PRESENCIAL') AS modalidad,
-              TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)) AS duracion_segundos
+              IF(a.hora_salida < a.hora_entrada,
+                 TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)) + 86400,
+                 TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida))) AS duracion_segundos
        FROM asistencias a
        LEFT JOIN asistencias_geo ag ON ag.id_asistencia = a.id_asistencia
        WHERE a.id_usuario IN (?) AND a.estado NOT IN ('ANULADO', 'RECHAZADO') 
@@ -172,7 +174,9 @@ router.get("/api/graficos/analytics", requireAuth, requireAdmin, async (req, res
 
     const [horasExtras] = await db.query(
       `SELECT n.id_notificacion, n.id_usuario, n.fecha_solicitada,
-              TIMESTAMPDIFF(SECOND, TIMESTAMP(n.fecha_solicitada, n.hora_inicio), TIMESTAMP(n.fecha_solicitada, n.hora_fin)) * 2 AS duracion_segundos
+              IF(n.hora_fin < n.hora_inicio,
+                 TIMESTAMPDIFF(SECOND, TIMESTAMP(n.fecha_solicitada, n.hora_inicio), TIMESTAMP(n.fecha_solicitada, n.hora_fin)) + 86400,
+                 TIMESTAMPDIFF(SECOND, TIMESTAMP(n.fecha_solicitada, n.hora_inicio), TIMESTAMP(n.fecha_solicitada, n.hora_fin))) * 2 AS duracion_segundos
        FROM notificaciones n
        WHERE n.id_usuario IN (?) AND n.estado = 2
          AND n.hora_inicio IS NOT NULL AND n.hora_fin IS NOT NULL
@@ -464,7 +468,9 @@ router.get("/api/graficos/analytics", requireAuth, requireAdmin, async (req, res
                 DATE_FORMAT(a.hora_salida, '%H:%i') AS hora_salida,
                 a.estado,
                 COALESCE(l.nombre, 'Oficina Central') AS lugar_nombre,
-                ROUND(TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)) / 3600, 1) AS duracion
+                ROUND(IF(a.hora_salida < a.hora_entrada,
+                        TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)) + 86400,
+                        TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida))) / 3600, 1) AS duracion
          FROM asistencias a
          LEFT JOIN lugares l ON l.id_lugar = a.id_lugar
          WHERE a.id_usuario = ? AND a.estado NOT IN ('ANULADO', 'RECHAZADO')
@@ -586,7 +592,9 @@ router.get("/api/graficos/export-pasantes-excel", requireAuth, requireAdmin, asy
       const [asistencias] = await db.query(
         `SELECT a.id_asistencia, a.id_usuario, a.fecha, a.hora_entrada, a.hora_salida, a.estado, a.id_lugar,
                 COALESCE(ag.modalidad, 'PRESENCIAL') AS modalidad,
-                TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)) AS duracion_segundos
+                IF(a.hora_salida < a.hora_entrada,
+                   TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)) + 86400,
+                   TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida))) AS duracion_segundos
          FROM asistencias a
          LEFT JOIN asistencias_geo ag ON ag.id_asistencia = a.id_asistencia
          WHERE a.id_usuario IN (?) AND a.estado NOT IN ('ANULADO', 'RECHAZADO') 
@@ -610,7 +618,9 @@ router.get("/api/graficos/export-pasantes-excel", requireAuth, requireAdmin, asy
 
       const [horasExtras] = await db.query(
         `SELECT n.id_notificacion, n.id_usuario, n.fecha_solicitada,
-                TIMESTAMPDIFF(SECOND, TIMESTAMP(n.fecha_solicitada, n.hora_inicio), TIMESTAMP(n.fecha_solicitada, n.hora_fin)) * 2 AS duracion_segundos
+                IF(n.hora_fin < n.hora_inicio,
+                   TIMESTAMPDIFF(SECOND, TIMESTAMP(n.fecha_solicitada, n.hora_inicio), TIMESTAMP(n.fecha_solicitada, n.hora_fin)) + 86400,
+                   TIMESTAMPDIFF(SECOND, TIMESTAMP(n.fecha_solicitada, n.hora_inicio), TIMESTAMP(n.fecha_solicitada, n.hora_fin))) * 2 AS duracion_segundos
          FROM notificaciones n
          WHERE n.id_usuario IN (?) AND n.estado = 2
            AND n.hora_inicio IS NOT NULL AND n.hora_fin IS NOT NULL
@@ -946,7 +956,9 @@ router.get("/api/graficos/line", async (req, res) => {
         COALESCE(
           SUM(
             IF(a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL,
-               TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)),
+               IF(a.hora_salida < a.hora_entrada,
+                  TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)) + 86400,
+                  TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida))),
                0)
           ), 0
         ) / 3600 AS horas_semana
@@ -984,7 +996,9 @@ router.get("/api/graficos/pie", async (_req, res) => {
         COALESCE(
           SUM(
             IF(a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL,
-               TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)),
+               IF(a.hora_salida < a.hora_entrada,
+                  TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida)) + 86400,
+                  TIMESTAMPDIFF(SECOND, TIMESTAMP(a.fecha, a.hora_entrada), TIMESTAMP(a.fecha, a.hora_salida))),
                0)
           ), 0
         ) / 3600 AS horas

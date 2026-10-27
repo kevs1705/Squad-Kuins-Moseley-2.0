@@ -39,7 +39,7 @@ router.get('/notificaciones_admin', requireAuth, requireRole(1), async (req, res
         n.estado,
         n.observacion_admin,
         IF(n.hora_fin IS NOT NULL AND n.hora_inicio IS NOT NULL,
-           TIME_FORMAT(TIMEDIFF(n.hora_fin, n.hora_inicio), '%H:%i'),
+           TIME_FORMAT(TIMEDIFF(IF(n.hora_fin < n.hora_inicio, ADDTIME(n.hora_fin, '24:00:00'), n.hora_fin), n.hora_inicio), '%H:%i'),
            '00:00'
         ) AS duracion_calculada,
         DATE_FORMAT(n.creado_en, '%Y-%m-%d %H:%i:%s') AS creado_en,
@@ -91,7 +91,7 @@ router.get('/notificaciones_admin', requireAuth, requireRole(1), async (req, res
         r.observacion AS reporte_observacion,
         
         IF(a.hora_salida IS NOT NULL AND a.hora_entrada IS NOT NULL,
-           TIME_FORMAT(TIMEDIFF(a.hora_salida, a.hora_entrada), '%H:%i'),
+           TIME_FORMAT(TIMEDIFF(IF(a.hora_salida < a.hora_entrada, ADDTIME(a.hora_salida, '24:00:00'), a.hora_salida), a.hora_entrada), '%H:%i'),
            '00:00'
         ) AS horas_calculadas
       FROM asistencias a
@@ -140,7 +140,9 @@ async function getPasantesDisponibles() {
     LEFT JOIN (
       SELECT 
         id_usuario,
-        SUM(TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha, hora_entrada), TIMESTAMP(fecha, hora_salida))) AS total_seg
+        SUM(IF(hora_salida < hora_entrada,
+               TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha, hora_entrada), TIMESTAMP(fecha, hora_salida)) + 86400,
+               TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha, hora_entrada), TIMESTAMP(fecha, hora_salida)))) AS total_seg
       FROM asistencias
       WHERE estado NOT IN ('ANULADO', 'OBSERVADO', 'RECHAZADO')
         AND hora_entrada IS NOT NULL AND hora_salida IS NOT NULL
@@ -149,7 +151,9 @@ async function getPasantesDisponibles() {
     LEFT JOIN (
       SELECT 
         id_usuario,
-        SUM(TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha_solicitada, hora_inicio), TIMESTAMP(fecha_solicitada, hora_fin)) * 2) AS total_seg_he
+        SUM(IF(hora_fin < hora_inicio,
+               TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha_solicitada, hora_inicio), TIMESTAMP(fecha_solicitada, hora_fin)) + 86400,
+               TIMESTAMPDIFF(SECOND, TIMESTAMP(fecha_solicitada, hora_inicio), TIMESTAMP(fecha_solicitada, hora_fin))) * 2) AS total_seg_he
       FROM notificaciones
       WHERE estado = 2
         AND hora_inicio IS NOT NULL AND hora_fin IS NOT NULL
@@ -203,14 +207,14 @@ router.post('/api/admin/horas-extras/asignar', requireAuth, requireRole(1), asyn
     if (hIni.length === 5) hIni += ':00';
     if (hFin.length === 5) hFin += ':00';
 
-    if (hIni >= hFin) {
-      return res.status(400).json({ ok: false, msg: 'La hora de fin debe ser posterior a la hora de inicio.' });
+    if (hIni === hFin) {
+      return res.status(400).json({ ok: false, msg: 'La hora de inicio y de fin no pueden ser iguales.' });
     }
 
-    // Calcular cantidad de horas en decimal
+    // Calcular cantidad de horas en decimal (soporta cruce de medianoche)
     const [diffRows] = await db.query(
-      `SELECT ROUND(TIMESTAMPDIFF(SECOND, TIMESTAMP(?, ?), TIMESTAMP(?, ?)) / 3600, 2) AS horas_calc`,
-      [fecha, hIni, fecha, hFin]
+      `SELECT ROUND(IF(? < ?, TIMESTAMPDIFF(SECOND, TIMESTAMP(?, ?), TIMESTAMP(?, ?)) + 86400, TIMESTAMPDIFF(SECOND, TIMESTAMP(?, ?), TIMESTAMP(?, ?))) / 3600, 2) AS horas_calc`,
+      [hFin, hIni, fecha, hIni, fecha, hFin, fecha, hIni, fecha, hFin]
     );
     const horasCantidad = diffRows[0]?.horas_calc || 0;
 
